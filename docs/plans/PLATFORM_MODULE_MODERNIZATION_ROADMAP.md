@@ -67,7 +67,8 @@
 | **6** | AI orchestration | ✅ Complete (2026-06-02) | Summarize, extract/confirm tasks, meeting recap, suggest links |
 | **6.5** | Workspace intelligence | ✅ Complete (2026-06-02) | `getWorkspaceContext`; rule-based insights; intelligent Home |
 | **7** | Certification audit | ✅ Complete (2026-06-02) | Constitutional audit + operation matrix; readiness review; **not certified** |
-| **7+** | Certification sign-off | Planned | NB-P0-1 entity + NB-P0-2 AI executor; `NOTEBOOK_LEVEL3_CERTIFICATION_REVIEW` |
+| **7+** | Certification hardening | ✅ Complete (2026-06-02) | `notebook:page` entity; ActionExecutor + toolExecutor AI paths |
+| **8** | Level 3 certification | ✅ Complete (2026-06-02) | [NOTEBOOK_LEVEL3_CERTIFICATION_REVIEW.md](../architecture/audits/NOTEBOOK_LEVEL3_CERTIFICATION_REVIEW.md) — **Certified**; not Reference #5 |
 
 **Phase 3A docs:** [NOTEBOOK_LINK_SCHEMA_DESIGN.md](../architecture/NOTEBOOK_LINK_SCHEMA_DESIGN.md), [NOTEBOOK_LINK_API_DESIGN.md](../architecture/NOTEBOOK_LINK_API_DESIGN.md), [NOTEBOOK_LINK_ACCESS_RULES.md](../architecture/NOTEBOOK_LINK_ACCESS_RULES.md), [NOTEBOOK_LINK_IMPLEMENTATION_PLAN.md](../architecture/NOTEBOOK_LINK_IMPLEMENTATION_PLAN.md).
 
@@ -75,7 +76,7 @@
 
 **Relationship model:** **B — NotebookLink + V_Link** ([NOTEBOOK_RELATIONSHIP_MODEL.md](../architecture/NOTEBOOK_RELATIONSHIP_MODEL.md)).
 
-**Next:** Notebook **Phase 7+** (blocker burn-down + L3 sign-off — do not certify without review). **Place** remains **Reference Module #5** candidate.
+**Next:** **Place** (Reference Module #5 candidate) when product prioritizes Wave 3. Notebook **Level 3 Certified** — post-cert hygiene NB-H1–H7 optional.
 
 ---
 

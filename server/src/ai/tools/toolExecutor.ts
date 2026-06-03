@@ -86,6 +86,37 @@ export async function executeTool(
         }
         break;
       }
+      case 'summarize_notebook_page': {
+        const pageId = (args.pageId as string)?.trim();
+        if (!pageId) {
+          result = { success: false, message: 'pageId is required.' };
+          break;
+        }
+        const { summarizePage } = await import('../../services/notebook/notebookAIActionService.js');
+        const summary = await summarizePage(pageId, userId);
+        result = {
+          success: true,
+          message: summary.summary?.slice(0, 500) || 'Summary generated.',
+          data: { pageId, summary },
+        };
+        break;
+      }
+      case 'extract_notebook_action_items': {
+        const pageId = (args.pageId as string)?.trim();
+        if (!pageId) {
+          result = { success: false, message: 'pageId is required.' };
+          break;
+        }
+        const selectedText = (args.selectedText as string) || undefined;
+        const { extractActionItems } = await import('../../services/notebook/notebookAIActionService.js');
+        const extracted = await extractActionItems({ pageId, userId, selectedText });
+        result = {
+          success: true,
+          message: `Proposed ${extracted.proposals.length} action item(s). Confirm in Notebook to create tasks.`,
+          data: { pageId, proposals: extracted.proposals, warnings: extracted.warnings },
+        };
+        break;
+      }
       case 'create_todo': {
         const title = (args.title as string)?.trim();
         if (!title) {

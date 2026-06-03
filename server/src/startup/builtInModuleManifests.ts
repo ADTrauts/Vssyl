@@ -357,6 +357,16 @@ export function buildBuiltInModuleManifest(moduleId: BuiltInModuleId): BuiltInMo
           }
         ),
         routes: [{ path: '/notebook', label: 'Notebook' }],
+        entities: [
+          {
+            type: 'page',
+            displayName: 'Page',
+            pluralName: 'Pages',
+            vlinkEntityType: 'NOTE',
+            supportsTrash: true,
+            supportsSearch: true,
+          },
+        ],
       };
     case 'vlink':
       return base(['vlink:read', 'vlink:write'], {

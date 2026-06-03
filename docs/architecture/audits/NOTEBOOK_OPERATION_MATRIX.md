@@ -1,7 +1,7 @@
 # Notebook Operation Matrix
 
 **Module id:** `notebook` (+ `notes` page domain)  
-**Status:** Phase 7 audit (2026-06-02) — **not certified**  
+**Status:** Level 3 Certified (2026-06-02) — certification-time assessment in [NOTEBOOK_LEVEL3_CERTIFICATION_REVIEW.md](./NOTEBOOK_LEVEL3_CERTIFICATION_REVIEW.md)  
 **Related:** [NOTEBOOK_CONSTITUTIONAL_AUDIT.md](./NOTEBOOK_CONSTITUTIONAL_AUDIT.md), [NOTEBOOK_CERTIFICATION_READINESS_REVIEW.md](./NOTEBOOK_CERTIFICATION_READINESS_REVIEW.md), [NOTEBOOK_CERTIFICATION_STRATEGY.md](../NOTEBOOK_CERTIFICATION_STRATEGY.md)
 
 ---
@@ -64,8 +64,15 @@
 | **Meeting template page** | NB + Notes | `notesPageService` + tags | Client | P | — | P | P | N | — | — | — | — | `type:meeting` tag |
 | **Calendar EventDrawer → Notebook** | NB | Client navigation | `EventDrawer` | — | — | — | — | — | — | — | — | — | Phase 4 UX |
 | **Notes AI context recent/pinned** | Notes | `notesVisibilityService` | `notesAIContextController` | P | C | N | N | N | — | P | — | — | Delegated providers |
-| **ActionExecutor notebook ops** | NB | — | — | — | — | — | — | — | — | N | — | — | Blocker for L3 AI gate |
-| **toolExecutor notebook ops** | NB | — | — | — | — | — | — | — | — | N | — | — | Blocker for L3 AI gate |
+| **ActionExecutor summarize_page** | NB | `notebookAIActionService` | — | P | C | N | N | N | — | — | C | — | Read-only LLM |
+| **ActionExecutor extract_action_items** | NB | `notebookAIActionService` | — | P | C | N | N | N | — | — | C | — | Propose only |
+| **ActionExecutor meeting_recap** | NB | `notebookAIActionService` | — | P | C | N | N | N | — | — | C | — | Read-only |
+| **ActionExecutor suggest_links** | NB | `notebookAIActionService` | — | P | C | N | N | N | — | — | C | — | Read-only |
+| **ActionExecutor get_page_ai_context** | NB | `notebookAIContextService` | — | P | C | N | N | N | — | — | C | — | No LLM |
+| **ActionExecutor confirm_action_items** | NB | — | — | — | — | — | — | — | — | — | C | — | Rejected — HTTP confirm only |
+| **toolExecutor summarize_notebook_page** | NB | `notebookAIActionService` | — | — | C | N | N | N | — | — | C | — | No Prisma |
+| **toolExecutor extract_notebook_action_items** | NB | `notebookAIActionService` | — | — | C | N | N | N | — | — | C | — | No auto-write |
+| **Platform entity notebook:page** | NB | `registerNotebookPlatformEntities` | — | — | — | — | — | — | — | — | — | P | V_Link alias NOTE; trash via `notes` |
 
 ---
 
@@ -76,7 +83,7 @@
 | `notebook` capabilities.trash | omitted | Page trash via `notes` handler | **C** |
 | `notebook` capabilities.vlink | omitted | NOTE resolver under `notes` entity | **C** (until `notebook:page` registered) |
 | `notebook` operationalLinks | true | `notebook_links` API | **C** |
-| `notebook` entities[] | omitted | No false entity claim | **C** |
+| `notebook` entities[] | `page` registered | `notebook:page` descriptor | **C** |
 | `notes` trash | true | `registerGlobalTrashHandlers('notes')` | **C** |
 | `notes` routes label | Notebook | User-facing `/notebook` | **C** |
 | `coreModuleRegistry` notes | disabled | Hidden from picker | **C** |
@@ -103,7 +110,8 @@
 | Area | Blocker for L3 sign-off? | Rationale |
 |------|--------------------------|-----------|
 | `notebook:page` entity registration | **Yes** | Ledger gate #6 |
-| ActionExecutor / toolExecutor twins | **Yes** | Ledger gate #11 for `ai: true` |
+| ActionExecutor / toolExecutor twins | **Resolved (7+)** | Read-only ops registered; confirm remains HTTP-only |
+| Platform entity `notebook:page` | **Resolved (7+)** | `registerNotebookPlatformEntities` + manifest `entities[]` |
 | Link visibility direct Prisma | **No** (P1) | Tighten to calendar visibility service |
 | Notes folder/share legacy | **No** (P1) | Sub-domain Level 2 acceptable |
 | Realtime | **No** | Truthfully omitted |

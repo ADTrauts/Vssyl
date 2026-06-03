@@ -14,6 +14,7 @@
 | 2 | **Chat** (`chat`) | 3 — Certified | Realtime, AI routing, notifications, thin controllers | [CHAT_LEVEL3_CERTIFICATION_REVIEW.md](./audits/CHAT_LEVEL3_CERTIFICATION_REVIEW.md) |
 | 3 | **Calendar** (`calendar`) | 3 — Certified | Scheduler, reminders, recurrence, time-based reads | [CALENDAR_LEVEL3_CERTIFICATION_REVIEW.md](./audits/CALENDAR_LEVEL3_CERTIFICATION_REVIEW.md) |
 | 4 | **Todo** (`todo`) | 3 — Certified | Task lifecycle, assignment, work management, calendar/file links | [TODO_LEVEL3_CERTIFICATION_REVIEW.md](./audits/TODO_LEVEL3_CERTIFICATION_REVIEW.md) |
+| — | **Notebook** (`notebook`) | 3 — Certified (composition) | Operational links, workspace intelligence, grounded AI orchestration — **not Reference #5** | [NOTEBOOK_LEVEL3_CERTIFICATION_REVIEW.md](./audits/NOTEBOOK_LEVEL3_CERTIFICATION_REVIEW.md) |
 
 **Rule:** Copy **patterns**, not file names blindly. Every module still needs its own constitutional audit and operation matrix before implementation.
 
@@ -122,12 +123,13 @@ Product module **`notebook`** composes Notes pages, Todo tasks, Calendar events,
 |---------|--------|----------------|
 | Composition reads | ✅ | `notebookContextService`, `notebookWorkspaceContextService` |
 | Operational links | ✅ | `notebookLinkService`, PE `notebook:link:*` |
-| AI orchestration | 🟡 | `notebookAIActionService` — HTTP ✅; ActionExecutor twins pending |
+| AI orchestration | 🟢 | `notebookAIActionService` — HTTP + ActionExecutor + toolExecutor (read-only) |
 | Page domain | Delegated | `notes*Service`, Global Trash `moduleId: notes` |
-| Manifest truth | ✅ | `operationalLinks: true`; no false `trash`/`vlink` on `notebook` |
-| Certification | **Ready for L3 review** — not certified | [NOTEBOOK_CERTIFICATION_READINESS_REVIEW.md](./audits/NOTEBOOK_CERTIFICATION_READINESS_REVIEW.md) |
+| Platform entity | 🟢 | `notebook:page` registered; `NOTEBOOK_PAGE_ENTITY_TYPE`; V_Link alias `NOTE` |
+| Manifest truth | ✅ | `entities[]`, `operationalLinks`, no false `trash`/`vlink` on `notebook` |
+| Certification | **Level 3 Certified** (2026-06-02) | Composition module; not Reference #5 — see review doc |
 
-**Reference #5:** **Place** remains the primary Reference Module #5 candidate. Notebook may add a **composition appendix** after L3 sign-off; not required for certification.
+**Reference #5:** **Place** remains the primary Reference Module #5 candidate. Notebook is L3 Certified but **not** numbered Reference #5 — composition patterns in [NOTEBOOK_LEVEL3_CERTIFICATION_REVIEW.md](./audits/NOTEBOOK_LEVEL3_CERTIFICATION_REVIEW.md) §9.
 
 ### Notes — sub-domain (dependency)
 
@@ -160,8 +162,8 @@ Use this catalog when filling **“reference module pattern to copy”** columns
 | Chat | [CHAT_LEVEL3_CERTIFICATION_REVIEW.md](./audits/CHAT_LEVEL3_CERTIFICATION_REVIEW.md) | [CHAT_SERVICE_EXTRACTION_PLAN.md](./audits/CHAT_SERVICE_EXTRACTION_PLAN.md) |
 | Calendar | [CALENDAR_LEVEL3_CERTIFICATION_REVIEW.md](./audits/CALENDAR_LEVEL3_CERTIFICATION_REVIEW.md) | [CALENDAR_SERVICE_EXTRACTION_PLAN.md](./audits/CALENDAR_SERVICE_EXTRACTION_PLAN.md) |
 | Todo (Phase 0) | [TODO_LEVEL3_CERTIFICATION_REVIEW.md](./audits/TODO_LEVEL3_CERTIFICATION_REVIEW.md) | [TODO_CONSTITUTIONAL_AUDIT.md](./audits/TODO_CONSTITUTIONAL_AUDIT.md) |
-| Notebook (Phase 7) | [NOTEBOOK_CERTIFICATION_READINESS_REVIEW.md](./audits/NOTEBOOK_CERTIFICATION_READINESS_REVIEW.md) | [NOTEBOOK_CONSTITUTIONAL_AUDIT.md](./audits/NOTEBOOK_CONSTITUTIONAL_AUDIT.md), [NOTEBOOK_OPERATION_MATRIX.md](./audits/NOTEBOOK_OPERATION_MATRIX.md) |
+| Notebook (L3) | [NOTEBOOK_LEVEL3_CERTIFICATION_REVIEW.md](./audits/NOTEBOOK_LEVEL3_CERTIFICATION_REVIEW.md) | [NOTEBOOK_CONSTITUTIONAL_AUDIT.md](./audits/NOTEBOOK_CONSTITUTIONAL_AUDIT.md), [NOTEBOOK_OPERATION_MATRIX.md](./audits/NOTEBOOK_OPERATION_MATRIX.md) |
 
 ---
 
-*Last updated: 2026-06-02 (Notebook Phase 7 audit — not certified)*
+*Last updated: 2026-06-02 (Notebook Level 3 Certified — composition, not Reference #5)*

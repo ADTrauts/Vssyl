@@ -14,8 +14,8 @@ Notebook Phases 1–6.5 delivered a **composition product module** with owned **
 
 | Decision | Outcome |
 |----------|---------|
-| **Ready for Level 3 certification review?** | **Yes** — schedule formal review with Architecture |
-| **Ready to certify (ledger Level 3)?** | **No** — 2 P0 blockers, several P1 partials |
+| **Ready for Level 3 certification review?** | **Yes** — P0 blockers resolved in Phase 7+ (2026-06-02) |
+| **Ready to certify (ledger Level 3)?** | **Yes** — superseded by [NOTEBOOK_LEVEL3_CERTIFICATION_REVIEW.md](./NOTEBOOK_LEVEL3_CERTIFICATION_REVIEW.md) (2026-06-02) |
 | **Certify in Phase 7?** | **No** (explicit scope) |
 | **Reference Module #5** | **Place remains primary candidate**; Notebook may publish a **composition appendix** later, not required for L3 |
 
@@ -30,12 +30,12 @@ Notebook Phases 1–6.5 delivered a **composition product module** with owned **
 | 3 | Policy Engine | 🟡 | Link + page dual; folder/share gaps |
 | 4 | Global Trash | 🟡 | **Truthful** — trash via `notes`, not falsely on `notebook` |
 | 5 | V_Link | 🟡 | NOTE resolver; product entity id not `notebook:page` |
-| 6 | Platform entities | 🔴 | **`notebook:page` not registered** |
+| 6 | Platform entities | 🟢 | **`notebook:page` registered** — `registerNotebookPlatformEntities`; manifest `entities[]` |
 | 7 | Domain events | 🟡 | Link events ✅; page events partial |
 | 8 | Module activity | 🟡 | Link + page writes; no notebook facade |
 | 9 | Notifications | 🟡 | `notes_shared` only |
 | 10 | Realtime | 🟢 | N/A — correctly omitted |
-| 11 | AI compliance | 🟡 | HTTP compliant; **executor twins missing** |
+| 11 | AI compliance | 🟢 | HTTP + ActionExecutor + toolExecutor (read-only); confirm HTTP-only |
 | 12 | Manifest truth | 🟢 | No false trash/vlink on `notebook` |
 | 13 | Tests | 🟡 | ~30 focused tests; not full matrix parity with Todo |
 | 14 | Documentation | 🟢 | Constitutional audit + matrix (this phase) |
@@ -43,12 +43,12 @@ Notebook Phases 1–6.5 delivered a **composition product module** with owned **
 
 ---
 
-## P0 blockers (must resolve before certification sign-off)
+## P0 blockers (resolved Phase 7+)
 
-| ID | Blocker | Owner phase | Evidence |
-|----|---------|-------------|----------|
-| **NB-P0-1** | Register **`notebook:page`** platform entity + manifest `entities[]` under `moduleId: notebook` | 7+ implementation | `platformEntityRegistry` still `notes` only |
-| **NB-P0-2** | Register **ActionExecutor** / **toolExecutor** paths for notebook AI operations (or remove `ai: true` until done) | Deferred from Phase 6 | No `notebook` in `ActionExecutor.ts` |
+| ID | Blocker | Status | Evidence |
+|----|---------|--------|----------|
+| **NB-P0-1** | Register **`notebook:page`** platform entity + manifest `entities[]` | ✅ Resolved | `registerNotebookPlatformEntities`, `NOTEBOOK_PAGE_ENTITY_TYPE`, manifest `entities[]` |
+| **NB-P0-2** | **ActionExecutor** / **toolExecutor** notebook AI paths | ✅ Resolved | `executeNotebookAction`; `summarize_notebook_page` / `extract_notebook_action_items` tools |
 
 ---
 

@@ -26,6 +26,7 @@ export const MODULE_MENTION_ALIASES: Record<string, string[]> = {
   scheduling: ['scheduling', 'shifts', 'shift', 'coverage', 'schedule', 'roster'],
   todo: ['todo', 'todos', 'task', 'tasks', 'to-do', 'todo-list'],
   notes: ['notes', 'note', 'journal', 'memo'],
+  notebook: ['notebook', 'page', 'pages', 'meeting notes', 'meeting page'],
   place: ['place', 'places', 'discovery', 'discover', 'local'],
   dashboard: ['dashboard', 'home', 'widgets', 'workspace'],
 };
@@ -136,6 +137,15 @@ export function selectContextProvider(
         return pick('pinned_notes');
       }
       return pick('recent_notes') ?? providers[0];
+
+    case 'notebook':
+      if (/\b(task|todo|action)\b/.test(q) && names.has('task_overview')) {
+        return pick('task_overview');
+      }
+      if (/\b(pinned|pin)\b/.test(q) && names.has('pinned_pages')) {
+        return pick('pinned_pages');
+      }
+      return pick('recent_pages') ?? providers[0];
 
     case 'place':
       if (

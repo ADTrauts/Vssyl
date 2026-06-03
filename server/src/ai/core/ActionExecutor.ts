@@ -202,6 +202,7 @@ export class ActionExecutor {
       business: this.executeBusinessAction.bind(this),
       dashboard: this.executeDashboardAction.bind(this),
       calendar: this.executeCalendarAction.bind(this),
+      notebook: this.executeNotebookAction.bind(this),
       tasks: this.executeTasksAction.bind(this),
       todo: this.executeTasksAction.bind(this),
       notifications: this.executeNotificationsAction.bind(this),
@@ -1199,6 +1200,184 @@ export class ActionExecutor {
           false
         ),
       };
+    }
+  }
+
+  private notebookActionMetadata(
+    action: AIAction,
+    startTime: number,
+    operation: string,
+    affectedUsers: string[],
+    rollbackAvailable: boolean
+  ) {
+    return {
+      executionTime: Date.now() - startTime,
+      module: 'notebook' as const,
+      operation,
+      affectedUsers,
+      rollbackAvailable,
+    };
+  }
+
+  private notebookActionResult(
+    action: AIAction,
+    startTime: number,
+    operation: string,
+    outcome: { success: true; data: unknown } | { success: false; error: string },
+    affectedUsers: string[],
+    rollbackAvailable: boolean
+  ): ActionExecutionResult {
+    if (!outcome.success) {
+      return {
+        actionId: action.id,
+        success: false,
+        error: outcome.error,
+        metadata: this.notebookActionMetadata(action, startTime, operation, affectedUsers, rollbackAvailable),
+      };
+    }
+    return {
+      actionId: action.id,
+      success: true,
+      result: outcome.data,
+      metadata: this.notebookActionMetadata(action, startTime, operation, affectedUsers, rollbackAvailable),
+    };
+  }
+
+  /**
+   * Notebook module action executor — read-only AI via notebookAIActionService (Phase 7+).
+   * Writes (confirm action items) are HTTP-only with explicit user confirmation.
+   */
+  private async executeNotebookAction(
+    action: AIAction,
+    userContext: UserContext
+  ): Promise<ActionExecutionResult> {
+    const startTime = Date.now();
+    const { operation, parameters } = action;
+
+    try {
+      const {
+        summarizePage,
+        extractActionItems,
+        generateMeetingRecap,
+        suggestLinks,
+      } = await import('../../services/notebook/notebookAIActionService.js');
+      const { loadGroundedAIContext } = await import(
+        '../../services/notebook/notebookAIContextService.js'
+      );
+
+      const pageId = parameters?.pageId != null ? String(parameters.pageId) : '';
+      if (!pageId) {
+        return this.notebookActionResult(
+          action,
+          startTime,
+          operation,
+          { success: false, error: 'pageId is required' },
+          action.affectedUsers || [],
+          false
+        );
+      }
+
+      switch (operation) {
+        case 'summarize_page': {
+          const data = await summarizePage(pageId, userContext.userId);
+          return this.notebookActionResult(
+            action,
+            startTime,
+            'summarize_page',
+            { success: true, data },
+            action.affectedUsers || [],
+            false
+          );
+        }
+
+        case 'extract_action_items': {
+          const selectedText =
+            parameters?.selectedText != null ? String(parameters.selectedText) : undefined;
+          const data = await extractActionItems({
+            pageId,
+            userId: userContext.userId,
+            selectedText,
+          });
+          return this.notebookActionResult(
+            action,
+            startTime,
+            'extract_action_items',
+            { success: true, data },
+            action.affectedUsers || [],
+            false
+          );
+        }
+
+        case 'meeting_recap': {
+          const data = await generateMeetingRecap(pageId, userContext.userId);
+          return this.notebookActionResult(
+            action,
+            startTime,
+            'meeting_recap',
+            { success: true, data },
+            action.affectedUsers || [],
+            false
+          );
+        }
+
+        case 'suggest_links': {
+          const data = await suggestLinks(pageId, userContext.userId);
+          return this.notebookActionResult(
+            action,
+            startTime,
+            'suggest_links',
+            { success: true, data },
+            action.affectedUsers || [],
+            false
+          );
+        }
+
+        case 'get_page_ai_context': {
+          const data = await loadGroundedAIContext(pageId, userContext.userId);
+          return this.notebookActionResult(
+            action,
+            startTime,
+            'get_page_ai_context',
+            { success: true, data },
+            action.affectedUsers || [],
+            false
+          );
+        }
+
+        case 'confirm_action_items':
+          return this.notebookActionResult(
+            action,
+            startTime,
+            'confirm_action_items',
+            {
+              success: false,
+              error:
+                'confirm_action_items requires explicit user approval — use POST /api/notebook/pages/:pageId/ai/action-items/confirm',
+            },
+            action.affectedUsers || [],
+            false
+          );
+
+        default:
+          return this.notebookActionResult(
+            action,
+            startTime,
+            operation,
+            { success: false, error: `Unknown notebook operation: ${operation}` },
+            action.affectedUsers || [],
+            false
+          );
+      }
+    } catch (error: unknown) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      return this.notebookActionResult(
+        action,
+        startTime,
+        operation,
+        { success: false, error: err.message || 'Notebook action failed' },
+        action.affectedUsers || [],
+        false
+      );
     }
   }
 

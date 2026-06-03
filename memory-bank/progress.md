@@ -29,9 +29,13 @@
 
 **Phase 6.5 (2026-06-02):** `notebookWorkspaceContextService` + intelligent Home; rule-based workspace insights; aggregation via Notes/Todo/Calendar/Drive visibility.
 
-**Phase 7 audit (2026-06-02):** [NOTEBOOK_CONSTITUTIONAL_AUDIT.md](../docs/architecture/audits/NOTEBOOK_CONSTITUTIONAL_AUDIT.md), [NOTEBOOK_OPERATION_MATRIX.md](../docs/architecture/audits/NOTEBOOK_OPERATION_MATRIX.md), [NOTEBOOK_CERTIFICATION_READINESS_REVIEW.md](../docs/architecture/audits/NOTEBOOK_CERTIFICATION_READINESS_REVIEW.md). Ledger: **Ready for Level 3 review** — **not certified**. P0: `notebook:page` entity, ActionExecutor twins.
+**Phase 7 audit (2026-06-02):** Constitutional audit pack.
 
-**Next:** **Phase 7+** — blocker burn-down + L3 sign-off. **Place** remains Reference #5 candidate. Do **not** start Place unless prioritized.
+**Phase 7+ hardening (2026-06-02):** `registerNotebookPlatformEntities`; `executeNotebookAction`; notebook toolExecutor tools; manifest `entities[]`.
+
+**Phase 8 (2026-06-02):** **Level 3 Certified** — [NOTEBOOK_LEVEL3_CERTIFICATION_REVIEW.md](../docs/architecture/audits/NOTEBOOK_LEVEL3_CERTIFICATION_REVIEW.md). Not Reference #5.
+
+**Next:** **Place** (Reference #5 candidate) when prioritized; optional Notebook hygiene NB-H1–H7.
 
 **Docs:** [NOTEBOOK_IMPLEMENTATION_PLAN.md](../docs/architecture/NOTEBOOK_IMPLEMENTATION_PLAN.md), [NOTEBOOK_PRODUCT_ARCHITECTURE_REVIEW.md](../docs/architecture/NOTEBOOK_PRODUCT_ARCHITECTURE_REVIEW.md)
 

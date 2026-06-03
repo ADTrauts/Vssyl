@@ -2,6 +2,7 @@ import {
   registerCalendarPlatformEntities,
   registerChatPlatformEntities,
   registerDrivePlatformEntities,
+  registerNotebookPlatformEntities,
   registerNotesPlatformEntities,
   registerTodoPlatformEntities,
 } from '../platform/platformEntityRegistry';
@@ -13,6 +14,7 @@ export function registerPlatformEntities(): void {
   registerCalendarPlatformEntities();
   registerTodoPlatformEntities();
   registerNotesPlatformEntities();
+  registerNotebookPlatformEntities();
   void logger.info('Platform entity descriptors registered', {
     operation: 'register_platform_entities',
     modules: [
@@ -21,6 +23,7 @@ export function registerPlatformEntities(): void {
       { moduleId: 'calendar', entityTypes: ['event'] },
       { moduleId: 'todo', entityTypes: ['task'] },
       { moduleId: 'notes', entityTypes: ['page'] },
+      { moduleId: 'notebook', entityTypes: ['page'] },
     ],
   });
 }

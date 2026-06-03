@@ -151,12 +151,13 @@ Notebook certifies as a **composition module** — like Business Workspace in sc
 
 ## Pre-certification blockers (track now)
 
-| Blocker | Resolve in |
-|---------|------------|
-| Manifest `trash: true` on `notes` without handler | Phase 2 |
-| AI actions declared for notes but not in executor | Phase 6 or remove from manifest |
-| No `notebook:page` entity | Phase 7 |
-| Inline Prisma in notes controllers | Phase 2 |
+| Blocker | Status |
+|---------|--------|
+| Manifest `trash: true` on `notes` without handler | ✅ Phase 2 — `notesTrashService` |
+| Notebook AI not in ActionExecutor / toolExecutor | ✅ Phase 7+ — read-only ops; confirm HTTP-only |
+| No `notebook:page` entity | ✅ Phase 7+ — `registerNotebookPlatformEntities` |
+| Inline Prisma in notes controllers (core CRUD) | ✅ Phase 2 — delegated to `notes*Service` |
+| Formal Level 3 sign-off | ✅ [NOTEBOOK_LEVEL3_CERTIFICATION_REVIEW.md](./audits/NOTEBOOK_LEVEL3_CERTIFICATION_REVIEW.md) (2026-06-02) |
 
 ---
 

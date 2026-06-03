@@ -91,11 +91,30 @@ export function registerTodoPlatformEntities(): void {
   });
 }
 
-/** Notes page entity (Notebook product surface; storage model Note). */
+/** Notes page entity — storage domain (Global Trash `moduleId: notes`). */
 export function registerNotesPlatformEntities(): void {
   registerPlatformEntity({
     entityType: 'page',
     moduleId: 'notes',
+    displayName: 'Page',
+    pluralName: 'Pages',
+    vlinkEntityType: 'NOTE',
+    supportsTrash: true,
+    supportsSearch: true,
+    activityTargetType: 'page',
+  });
+}
+
+/**
+ * Product-level page entity for Notebook (`notebook:page`).
+ * Storage remains `Note` under module `notes`; V_Link resolves via `NOTE`.
+ */
+export const NOTEBOOK_PAGE_ENTITY_TYPE = 'NOTEBOOK_PAGE';
+
+export function registerNotebookPlatformEntities(): void {
+  registerPlatformEntity({
+    entityType: 'page',
+    moduleId: 'notebook',
     displayName: 'Page',
     pluralName: 'Pages',
     vlinkEntityType: 'NOTE',

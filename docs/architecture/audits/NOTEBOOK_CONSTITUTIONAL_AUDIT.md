@@ -2,7 +2,7 @@
 
 **Module id:** `notebook` (product) + `notes` (page domain dependency)  
 **Phase:** **7 — Audit & governance** (2026-06-02)  
-**Certification status:** **Not certified** — ready for **Level 3 certification review** with documented blockers  
+**Certification status:** **Level 3 Certified** (2026-06-02) — see [NOTEBOOK_LEVEL3_CERTIFICATION_REVIEW.md](./NOTEBOOK_LEVEL3_CERTIFICATION_REVIEW.md)  
 **Date:** 2026-06-02  
 **Benchmarks:** [REFERENCE_MODULE_CATALOG.md](../REFERENCE_MODULE_CATALOG.md) — File Hub #1, Chat #2, Calendar #3, Todo #4  
 **Related:** [NOTEBOOK_CERTIFICATION_STRATEGY.md](../NOTEBOOK_CERTIFICATION_STRATEGY.md), [NOTEBOOK_OPERATION_MATRIX.md](./NOTEBOOK_OPERATION_MATRIX.md), [NOTEBOOK_CERTIFICATION_READINESS_REVIEW.md](./NOTEBOOK_CERTIFICATION_READINESS_REVIEW.md), [CERTIFICATION_LEDGER.md](../CERTIFICATION_LEDGER.md)
@@ -176,15 +176,15 @@ No Notebook-owned task, file, or calendar tables.
 | **Module Activity** | 🟡 | Link writes emit; page writes via `notesActivityService`; no unified notebook facade |
 | **Notifications** | 🟡 | `notes_shared` via notes; **no notebook manifest notification types** |
 | **Realtime** | 🟢 | **N/A** — not claimed; manifest omits `realtime` |
-| **Platform Entity Registration** | 🔴 | **`notebook:page` not registered** — entity still `moduleId: notes` |
+| **Platform Entity Registration** | 🟢 | **`notebook:page` registered** (Phase 7+); `notes:page` retained for storage/trash |
 | **V_Link** | 🟡 | NOTE resolver exists; Notebook manifest **does not** claim `vlink: true` |
 | **Capability Matrix** | 🟢 | `operationalLinks: true`; no false trash/vlink on `notebook` |
-| **AI Compliance** | 🟡 | HTTP → `notebookAIActionService`; grounded reads; confirm-before-write; **no ActionExecutor/toolExecutor** |
+| **AI Compliance** | 🟢 | HTTP + ActionExecutor + toolExecutor → `notebookAI*Service`; confirm rejected on executor path |
 | **Scheduler Integration** | 🟢 | **N/A** — no notebook cron |
 | **Documentation** | 🟢 | NOTEBOOK_* architecture set + this audit |
 | **Tests** | 🟡 | Strong link/context/AI coverage; gaps on full L3 sign-off matrix |
 
-**Overall:** **Medium–High** for a **composition module** — suitable to **open Level 3 certification review**; **not** ready to flip ledger to **Certified** without resolving 🔴/critical 🟡 blockers.
+**Overall:** **High** for a **composition module** — **Level 3 Certified** per [NOTEBOOK_LEVEL3_CERTIFICATION_REVIEW.md](./NOTEBOOK_LEVEL3_CERTIFICATION_REVIEW.md) (2026-06-02).
 
 ---
 
@@ -268,11 +268,11 @@ See [NOTEBOOK_OPERATION_MATRIX.md](./NOTEBOOK_OPERATION_MATRIX.md) § Manifest r
 | Question | Answer |
 |----------|--------|
 | Ready for **Level 3 certification review**? | **Yes** — evidence package complete enough for formal review |
-| Ready to **certify** (ledger Level 3)? | **No** — blockers in [NOTEBOOK_CERTIFICATION_READINESS_REVIEW.md](./NOTEBOOK_CERTIFICATION_READINESS_REVIEW.md) |
-| Reference Module #5? | **Defer** — **Place** remains primary #5 candidate; Notebook optional as **composition reference** appendix only |
-| Start Place initiative? | **No** (per phase scope) |
+| Ready to **certify** (ledger Level 3)? | **Yes** — certified 2026-06-02 |
+| Reference Module #5? | **No** — **Place** remains primary #5 candidate |
+| Start Place initiative? | **When product prioritizes Wave 3** |
 
-**Do not certify in Phase 7.** Next step after blocker burn-down: `NOTEBOOK_LEVEL3_CERTIFICATION_REVIEW.md` sign-off.
+**Certified in Phase 8.** Post-cert hygiene: NB-H1–H7 in Level 3 review §10.
 
 ---
 

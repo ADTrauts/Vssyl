@@ -1,16 +1,12 @@
 # Active Context - Vssyl Business Admin & AI Integration
 
-## Most recent completed project — Notebook Phase 7 Certification audit (June 2026) ✅
+## Most recent completed project — Notebook Level 3 Certified (June 2026) ✅
 
-**Status:** **AUDIT COMPLETE** — Constitutional audit + operation matrix + readiness review. **Not certified.** Ledger: Notebook **Ready for Level 3 review**.
+**Status:** **Level 3 — Certified** (composition module). **Not** Reference Module #5 — Place remains #5 candidate.
 
-**Prior:** Phase 6.5 workspace intelligence; Phases 1–6 composition (links, AI, Notes services).
+**Evidence:** [`NOTEBOOK_LEVEL3_CERTIFICATION_REVIEW.md`](../docs/architecture/audits/NOTEBOOK_LEVEL3_CERTIFICATION_REVIEW.md), [`CERTIFICATION_LEDGER.md`](../docs/architecture/CERTIFICATION_LEDGER.md)
 
-**P0 before sign-off:** `notebook:page` platform entity (NB-P0-1); ActionExecutor/toolExecutor AI twins (NB-P0-2).
-
-**Next:** Phase 7+ implementation for blockers → `NOTEBOOK_LEVEL3_CERTIFICATION_REVIEW.md`. **Do not certify without review.** **Do not start Place** unless product prioritizes.
-
-**Docs:** [`NOTEBOOK_CONSTITUTIONAL_AUDIT.md`](../docs/architecture/audits/NOTEBOOK_CONSTITUTIONAL_AUDIT.md), [`NOTEBOOK_CERTIFICATION_READINESS_REVIEW.md`](../docs/architecture/audits/NOTEBOOK_CERTIFICATION_READINESS_REVIEW.md), [`CERTIFICATION_LEDGER.md`](../docs/architecture/CERTIFICATION_LEDGER.md)
+**Next:** Optional post-cert hygiene (NB-H1–H7). **Place** when Wave 3 prioritized — do not start without product go-ahead.
 
 ---
 

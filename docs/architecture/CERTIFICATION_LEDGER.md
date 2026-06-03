@@ -90,8 +90,8 @@ Vssyl certifies modules against **two authorities simultaneously**. A module is 
 | **Chat** | `chat` | **High** | **High** | **3 — Certified** | **Reference Module #2** (Level 3) | [CHAT_LEVEL3_CERTIFICATION_REVIEW](./audits/CHAT_LEVEL3_CERTIFICATION_REVIEW.md), [CHAT_OPERATION_MATRIX](./audits/CHAT_OPERATION_MATRIX.md) |
 | **Calendar** | `calendar` | **High** | **High** | **3 — Certified** | **Reference Module #3** (Level 3) | [CALENDAR_LEVEL3_CERTIFICATION_REVIEW](./audits/CALENDAR_LEVEL3_CERTIFICATION_REVIEW.md) |
 | **Todo** | `todo` | **High** | **High** | **3 — Certified** | **Reference Module #4** (Level 3) | [TODO_LEVEL3_CERTIFICATION_REVIEW](./audits/TODO_LEVEL3_CERTIFICATION_REVIEW.md), [TODO_OPERATION_MATRIX](./audits/TODO_OPERATION_MATRIX.md) |
-| **Notebook** | `notebook` | **Partial** | **Partial** | **2 — Ready for Level 3 review** | **Not certified** — Phase 7 audit complete (2026-06-02); P0 blockers remain | [NOTEBOOK_CONSTITUTIONAL_AUDIT](./audits/NOTEBOOK_CONSTITUTIONAL_AUDIT.md), [NOTEBOOK_OPERATION_MATRIX](./audits/NOTEBOOK_OPERATION_MATRIX.md), [NOTEBOOK_CERTIFICATION_READINESS_REVIEW](./audits/NOTEBOOK_CERTIFICATION_READINESS_REVIEW.md) |
-| **Notes** | `notes` | **Partial** | **Low** | **2 — Sub-domain** | **Dependency** of Notebook — page domain; Global Trash handler; not separate product cert | `notes*Service`; entity `NOTE`; cert path via Notebook L3 |
+| **Notebook** | `notebook` | **High** | **Partial** | **3 — Certified** | **Composition module** (2026-06-02) — not Reference #5 | [NOTEBOOK_LEVEL3_CERTIFICATION_REVIEW](./audits/NOTEBOOK_LEVEL3_CERTIFICATION_REVIEW.md), [NOTEBOOK_OPERATION_MATRIX](./audits/NOTEBOOK_OPERATION_MATRIX.md) |
+| **Notes** | `notes` | **Partial** | **Low** | **2 — Sub-domain** | **Dependency** of Notebook L3 — page storage; Global Trash handler | `notes*Service`; `notes:page` entity; no separate product L3 |
 | **Place** | `place` | **Low** | **Low** | **0 — Legacy** | **Reference Module #5 candidate** — not started (Wave 3) | Multi-controller; minimal manifest |
 | **Dashboard** | `dashboard` | **Partial** | **Partial** | **1 — Stabilizing** | Not started (Wave 3) | Dual widget registry; weak activity |
 | **Analytics** | `analytics` | **Partial** | **N/A** | **1 — Stabilizing** | Not started (Wave 3) | Pseudo-module; subscriber stubs |
@@ -105,7 +105,7 @@ Track cross-cutting certification separately; modules depend on these.
 |--------|---------------------------|---------------------|-------|--------|
 | Global Trash API | High | High (drive + chat + calendar + todo + **notes** handlers) | 2 | Notes handler shipped (Notebook Phase 2) |
 | NotificationService | High | High (drive adapter) | 2 | Consolidation — notebook manifest notification types optional |
-| V_Link | High | High (drive + chat + calendar + todo + **NOTE**) | 2 | `notebook:page` entity registration pending (NB-P0-1) |
+| V_Link | High | High (drive + chat + calendar + todo + **NOTE**) | 2 | `notebook:page` product entity registered; V_Link storage alias NOTE |
 | Policy Engine | Partial | High (drive + chat + calendar + todo + **notes/notebook link** dual) | 2 | Notes + notebook link PE shipped |
 | Domain Event Bus | Partial | High (drive taxonomy) | 1 | Taxonomy thin beyond drive |
 | Module Activity | Partial | High (drive writes) | 1 | Legacy read paths platform-wide |

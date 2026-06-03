@@ -37,6 +37,40 @@ export const AI_TOOL_DEFINITIONS = [
   {
     type: 'function' as const,
     function: {
+      name: 'summarize_notebook_page',
+      description:
+        'Summarize a Notebook page (read-only). Returns summary, key decisions, and follow-ups grounded on page content and links.',
+      parameters: {
+        type: 'object',
+        properties: {
+          pageId: { type: 'string', description: 'Notebook page id (note id)' },
+        },
+        required: ['pageId'],
+      },
+    },
+  },
+  {
+    type: 'function' as const,
+    function: {
+      name: 'extract_notebook_action_items',
+      description:
+        'Propose action items from a Notebook page (read-only). Does not create tasks — user must confirm via Notebook UI.',
+      parameters: {
+        type: 'object',
+        properties: {
+          pageId: { type: 'string', description: 'Notebook page id (note id)' },
+          selectedText: {
+            type: 'string',
+            description: 'Optional excerpt to focus extraction',
+          },
+        },
+        required: ['pageId'],
+      },
+    },
+  },
+  {
+    type: 'function' as const,
+    function: {
       name: 'create_todo',
       description: 'Create a new to-do task for the user.',
       parameters: {
@@ -52,4 +86,9 @@ export const AI_TOOL_DEFINITIONS = [
   },
 ];
 
-export type AIToolName = 'list_drive_files' | 'share_file' | 'create_todo';
+export type AIToolName =
+  | 'list_drive_files'
+  | 'share_file'
+  | 'summarize_notebook_page'
+  | 'extract_notebook_action_items'
+  | 'create_todo';

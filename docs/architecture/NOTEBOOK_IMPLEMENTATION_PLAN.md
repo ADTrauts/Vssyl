@@ -2,7 +2,7 @@
 
 **Phase:** 0.75  
 **Date:** 2026-06-01  
-**Status:** Phase 7 audit complete (2026-06-02) — Level 3 **review ready**, **not certified**  
+**Status:** **Level 3 Certified** (2026-06-02) — Phase 8 sign-off; not Reference Module #5  
 **Authorities:** [NOTEBOOK_TECHNICAL_ARCHITECTURE.md](./NOTEBOOK_TECHNICAL_ARCHITECTURE.md), product specs Phase 0.5  
 
 **Hard constraints (all phases):** No Todo `todo*Service` / controller changes. No schema without explicit schema ACT. Notes domain extraction is **Notebook track hygiene**, not standalone Notes certification wave.
@@ -220,14 +220,24 @@ See [NOTEBOOK_CERTIFICATION_STRATEGY.md](./NOTEBOOK_CERTIFICATION_STRATEGY.md).
 - [x] Manifest truth reviewed (no false trash/vlink on `notebook`)
 - [x] Ledger: Notebook row **Ready for Level 3 review** (not certified)
 
-## Phase 7+ — Certification sign-off (planned)
+## Phase 7+ — Certification hardening ✅ (2026-06-02)
 
-- [ ] Manifest: `entities: [{ id: 'page', type: 'notebook:page' }]`
-- [ ] `registerNotebookPlatformEntities` (NB-P0-1)
-- [ ] ActionExecutor / toolExecutor notebook AI twins (NB-P0-2)
-- [ ] `NOTEBOOK_LEVEL3_CERTIFICATION_REVIEW.md` sign-off
-- [ ] Optional: deprecate standalone `notes` in module picker
-- [ ] Ledger: Notebook Level 3 Certified
+- [x] `registerNotebookPlatformEntities` — product entity `notebook:page` (`NOTEBOOK_PAGE_ENTITY_TYPE`)
+- [x] Manifest `entities[]` for `page` (V_Link alias `NOTE`)
+- [x] `ActionExecutor.executeNotebookAction` — read-only ops; confirm rejected on executor
+- [x] `toolExecutor` — `summarize_notebook_page`, `extract_notebook_action_items`
+- [x] Tests: platform entity, manifest, ActionExecutor, toolExecutor, AI routing
+
+## Phase 8 — Level 3 certification ✅ (2026-06-02)
+
+- [x] [NOTEBOOK_LEVEL3_CERTIFICATION_REVIEW.md](./audits/NOTEBOOK_LEVEL3_CERTIFICATION_REVIEW.md)
+- [x] Ledger: Notebook **Level 3 — Certified**
+- [x] Reference #5: **Declined** — Place remains candidate
+
+## Post-certification hygiene (optional)
+
+- [ ] NB-H1–H7 per certification review §10
+- [ ] Optional: deprecate standalone `notes` in admin module lists
 
 ---
 

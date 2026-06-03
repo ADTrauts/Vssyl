@@ -777,6 +777,31 @@ const BUILT_IN_MODULES: Array<{ moduleId: string; moduleName: string; aiContext:
         { name: 'list_pages', description: 'List pages', permissions: ['notes:read'] },
         { name: 'create_task', description: 'Create a task from Notebook', permissions: ['todo:write'] },
         { name: 'list_tasks', description: 'List open tasks', permissions: ['todo:read'] },
+        {
+          name: 'summarize_page',
+          description: 'Summarize a page (read-only)',
+          permissions: ['notes:read', 'notebook:link:read'],
+        },
+        {
+          name: 'extract_action_items',
+          description: 'Propose action items from a page (no auto-write)',
+          permissions: ['notes:read', 'notebook:link:read'],
+        },
+        {
+          name: 'meeting_recap',
+          description: 'Generate a meeting recap from a page (read-only)',
+          permissions: ['notes:read', 'notebook:link:read'],
+        },
+        {
+          name: 'suggest_links',
+          description: 'Suggest links to tasks or events (read-only)',
+          permissions: ['notes:read', 'notebook:link:read'],
+        },
+        {
+          name: 'get_page_ai_context',
+          description: 'Load grounded page context for AI (read-only)',
+          permissions: ['notes:read', 'notebook:link:read'],
+        },
       ],
       contextProviders: [
         {
