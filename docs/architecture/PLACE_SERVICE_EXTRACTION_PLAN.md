@@ -3,7 +3,7 @@
 **Module id:** `place`  
 **Version:** 1.0.0  
 **Last updated:** 2026-06-03  
-**Status:** Wave **1G complete** (2026-06-03) — communities, discovery dismiss, getPlace enrichment, connection/transaction boundaries; Wave **2A** (trash + V_Link) next  
+**Status:** Wave **2B complete** (2026-06-03) — constitutional refresh + readiness audit; Wave **2C** (L2 certification prep) next  
 **Wave:** Place Wave 1  
 
 **Authorities:**
@@ -360,7 +360,7 @@ These are **mandatory in the extraction roadmap** but named separately to keep t
 
 ---
 
-### Phase 2B — Manifest truth + tests (~0.5 week)
+### Phase 2B — Manifest truth + tests (~0.5 week) ✅
 
 | Deliverable | Est. |
 |-------------|------|
@@ -369,25 +369,86 @@ These are **mandatory in the extraction roadmap** but named separately to keep t
 | Operation matrix refresh (~57 rows) | 0.5d |
 | `builtInModuleManifests.place.test.ts`, handler registration tests | 1d |
 
----
-
-### Phase 3 — Level 3 certification review (~0.5 week)
-
-| Deliverable | Est. |
-|-------------|------|
-| `PLACE_LEVEL3_CERTIFICATION_REVIEW.md` | 1d |
-| Ledger promotion **0 → 2 → 3** (no skip) | — |
-| Reference Module #5 council packet | — |
+**Exit:** [PLACE_LEVEL3_READINESS_REVIEW.md](./audits/PLACE_LEVEL3_READINESS_REVIEW.md) — L2 candidacy; P0 debt documented.
 
 ---
 
-### Phase 4 — Reference Module #5 (post-L3, council)
+### Phase 2C — L2 certification prep + constitutional cleanup ✅ (2026-06-03)
 
-| Deliverable | |
-|-------------|--|
-| Pattern guide section: external graph + listing + discovery + routing | |
-| `PLACE_REFERENCE_IMPLEMENTATION_REVIEW.md` | |
-| Catalog promotion Reference #5 | |
+| Deliverable | Status |
+|-------------|--------|
+| Single platform activity read model (remove dual feed) | ✅ |
+| `placeTransactionService` + thin `placeTransactionController` | ✅ |
+| Connection + transaction Policy Engine (`place:connection.*`, `place:transaction.*`) | ✅ |
+| Manifest reconciliation (4 notifications, read-only AI actions) | ✅ |
+| Workspace alignment documented (hub defer to L3) | ✅ |
+| [PLACE_LEVEL2_READINESS_REVIEW.md](./audits/PLACE_LEVEL2_READINESS_REVIEW.md) | ✅ |
+
+**Exit:** **Eligible for formal Level 2 certification review** — no P0 blockers. **Do not** open L3 review or Reference #5 council.
+
+---
+
+### Phase 2D — Formal Level 2 certification review ✅ (2026-06-02)
+
+| Deliverable | Status |
+|-------------|--------|
+| Constitutional + matrix + controller + manifest + AI verification | ✅ |
+| [PLACE_LEVEL2_CERTIFICATION_REVIEW.md](./audits/PLACE_LEVEL2_CERTIFICATION_REVIEW.md) | ✅ |
+| Ledger promotion → **Level 2 — Certified** | ✅ |
+
+**Exit:** **Level 2 — Certified.** **L3 prep next** — do not open L3 review or Reference #5 council.
+
+---
+
+### Phase 3A — L3 preparation ✅ (2026-06-02)
+
+| Deliverable | Status |
+|-------------|--------|
+| `PlaceWorkspaceLanding` + `BrandedWorkDashboard` helpers | ✅ |
+| Community activity / domain events / selective realtime | ✅ |
+| Location privacy Policy Engine | ✅ |
+| Operation matrix refresh (**0 N** rows) | ✅ |
+
+**Exit:** L3 prep gaps from Wave 2D closed. **Formal L3 certification review not opened** — Wave **3B** readiness audit next.
+
+---
+
+### Phase 3B — L3 readiness audit ✅ (2026-06-02)
+
+| Deliverable | Status |
+|-------------|--------|
+| Graph/meeting/listing/connection/community lifecycle **C** | ✅ |
+| Community join/leave notifications + manifest (6 types) | ✅ |
+| Listing write realtime fan-out | ✅ |
+| Interests / follow visibility / node-update domain events | ✅ |
+| Operation matrix reconciliation (**35 C / 28 P / 0 N**) | ✅ |
+| Constitutional audit + L2 cert review 3B sections | ✅ |
+
+**Exit:** **C density target met** (35 ≥ 20). **Formal L3 certification review not opened** per governance scope — eligible after product sign-off. Transaction activity/events remain **P**.
+
+---
+
+### Phase 3C — Formal L3 certification ✅ (2026-06-02)
+
+| Deliverable | Status |
+|-------------|--------|
+| `PLACE_LEVEL3_CERTIFICATION_REVIEW.md` | ✅ |
+| Ledger promotion **2 → 3** | ✅ |
+| Constitutional audit + matrix posture update | ✅ |
+
+**Exit:** **Level 3 — Certified.** Reference #5 council **not opened**.
+
+---
+
+### Phase 4 — Reference Module #5 (post-L3, council) ✅ (2026-06-02)
+
+| Deliverable | Status |
+|-------------|--------|
+| `PLACE_PATTERN_GUIDE.md` | ✅ Wave 4A |
+| `PLACE_COMMERCE_BOUNDARY.md` | ✅ Wave 4A |
+| `PLACE_REFERENCE_IMPLEMENTATION_REVIEW.md` | ✅ Wave 4A |
+| `PLACE_REFERENCE_COUNCIL_REVIEW.md` | ✅ Wave 4B — **Approve** |
+| Catalog / ledger Reference #5 promotion | ✅ **Place designated Reference Module #5** |
 
 ---
 
@@ -405,7 +466,7 @@ These are **mandatory in the extraction roadmap** but named separately to keep t
 | Send connection request | Member service (target) / controller interim | notification |
 | Accept connection | `placeService` | notification, realtime |
 | Communities | `placeCommunityService` | activity (1G) |
-| Transactions / clicks | **`placeTransactionService`** (deferred) or interim controller | activity when enabled |
+| Transactions / clicks | **`placeTransactionService`** | activity when enabled (telemetry partial) |
 | Global search listings | `placeVisibilityService.searchListings` | — |
 | AI recommendations / purchase / reservation | `placeAIActionService` | visibility reads |
 | AI context providers | `placeVisibilityService` via `placeAIActionService` mappers | — |
@@ -512,8 +573,8 @@ Wave 1D  placeListingService + placeMeetingService   ✅ Done (2026-06-03)
 Wave 1E  Controller collapse                         ✅ Done (2026-06-03)
 Wave 1F  placeAIActionService + executors            ✅ Done (2026-06-03)
 Wave 1G  Communities + dismiss + enrichment          ✅ Done (2026-06-03)
-Wave 2A  placeTrashService + V_Link + entities       ○ Next
-Wave 2B  Manifest + matrix refresh                   ○
+Wave 2A  placeTrashService + V_Link + entities       ● Complete (2026-06-03)
+Wave 2B  Manifest + matrix refresh                   ● Complete (2026-06-03)
 Wave 3   PLACE_LEVEL3_CERTIFICATION_REVIEW           ○
 Wave 4   Reference Module #5 council                 ○
 ```

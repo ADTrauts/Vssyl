@@ -1,8 +1,8 @@
 import { emitModuleActivityEvent } from '../moduleActivityService';
 
 /**
- * Platform module activity only (Option A). Local `PlaceActivityFeedItem` is not written here;
- * Feed tab UI may still read legacy table until a read adapter is added (Phase 1E+).
+ * Platform module activity only (Wave 2C).
+ * Legacy `PlaceActivityFeedItem` table is retained for historical rows but is not read or written on product paths.
  */
 
 export async function recordNodeAdded(params: {
@@ -31,6 +31,22 @@ export async function recordNodeRemoved(params: {
     actorUserId: params.actorUserId,
     moduleId: 'place',
     action: 'delete',
+    targetType: 'node',
+    targetId: params.nodeId,
+    metadata: { nodeType: params.nodeType, entityId: params.entityId },
+  });
+}
+
+export async function recordNodeUpdated(params: {
+  actorUserId: string;
+  nodeId: string;
+  nodeType: string;
+  entityId: string;
+}): Promise<void> {
+  await emitModuleActivityEvent({
+    actorUserId: params.actorUserId,
+    moduleId: 'place',
+    action: 'update',
     targetType: 'node',
     targetId: params.nodeId,
     metadata: { nodeType: params.nodeType, entityId: params.entityId },
@@ -186,6 +202,21 @@ export async function recordInterestsUpdated(params: {
   });
 }
 
+export async function recordFollowVisibilityUpdated(params: {
+  actorUserId: string;
+  businessId: string;
+  isVisible: boolean;
+}): Promise<void> {
+  await emitModuleActivityEvent({
+    actorUserId: params.actorUserId,
+    moduleId: 'place',
+    action: 'update',
+    targetType: 'follow_visibility',
+    targetId: params.businessId,
+    metadata: { isVisible: params.isVisible },
+  });
+}
+
 export async function recordConnectionRequested(params: {
   actorUserId: string;
   relationshipId: string;
@@ -213,5 +244,144 @@ export async function recordConnectionAccepted(params: {
     targetType: 'connection',
     targetId: params.relationshipId,
     metadata: { withUserId: params.withUserId },
+  });
+}
+
+export async function recordListingTrashed(params: {
+  actorUserId: string;
+  listingId: string;
+  businessId: string;
+}): Promise<void> {
+  await emitModuleActivityEvent({
+    actorUserId: params.actorUserId,
+    moduleId: 'place',
+    action: 'trash',
+    targetType: 'listing',
+    targetId: params.listingId,
+    businessId: params.businessId,
+  });
+}
+
+export async function recordListingRestored(params: {
+  actorUserId: string;
+  listingId: string;
+  businessId: string;
+}): Promise<void> {
+  await emitModuleActivityEvent({
+    actorUserId: params.actorUserId,
+    moduleId: 'place',
+    action: 'restore',
+    targetType: 'listing',
+    targetId: params.listingId,
+    businessId: params.businessId,
+  });
+}
+
+export async function recordListingPermanentlyDeleted(params: {
+  actorUserId: string;
+  listingId: string;
+  businessId: string;
+}): Promise<void> {
+  await emitModuleActivityEvent({
+    actorUserId: params.actorUserId,
+    moduleId: 'place',
+    action: 'permanently_delete',
+    targetType: 'listing',
+    targetId: params.listingId,
+    businessId: params.businessId,
+  });
+}
+
+export async function recordMeetingTrashed(params: {
+  actorUserId: string;
+  meetingId: string;
+}): Promise<void> {
+  await emitModuleActivityEvent({
+    actorUserId: params.actorUserId,
+    moduleId: 'place',
+    action: 'trash',
+    targetType: 'meeting',
+    targetId: params.meetingId,
+  });
+}
+
+export async function recordMeetingRestored(params: {
+  actorUserId: string;
+  meetingId: string;
+}): Promise<void> {
+  await emitModuleActivityEvent({
+    actorUserId: params.actorUserId,
+    moduleId: 'place',
+    action: 'restore',
+    targetType: 'meeting',
+    targetId: params.meetingId,
+  });
+}
+
+export async function recordMeetingPermanentlyDeleted(params: {
+  actorUserId: string;
+  meetingId: string;
+}): Promise<void> {
+  await emitModuleActivityEvent({
+    actorUserId: params.actorUserId,
+    moduleId: 'place',
+    action: 'permanently_delete',
+    targetType: 'meeting',
+    targetId: params.meetingId,
+  });
+}
+
+export async function recordCommunityCreated(params: {
+  actorUserId: string;
+  communityId: string;
+  communityName: string;
+}): Promise<void> {
+  await emitModuleActivityEvent({
+    actorUserId: params.actorUserId,
+    moduleId: 'place',
+    action: 'create',
+    targetType: 'community',
+    targetId: params.communityId,
+    metadata: { communityName: params.communityName },
+  });
+}
+
+export async function recordCommunityJoined(params: {
+  actorUserId: string;
+  communityId: string;
+}): Promise<void> {
+  await emitModuleActivityEvent({
+    actorUserId: params.actorUserId,
+    moduleId: 'place',
+    action: 'join',
+    targetType: 'community',
+    targetId: params.communityId,
+  });
+}
+
+export async function recordCommunityLeft(params: {
+  actorUserId: string;
+  communityId: string;
+}): Promise<void> {
+  await emitModuleActivityEvent({
+    actorUserId: params.actorUserId,
+    moduleId: 'place',
+    action: 'leave',
+    targetType: 'community',
+    targetId: params.communityId,
+  });
+}
+
+export async function recordCommunityAutoClustered(params: {
+  actorUserId: string;
+  clustersCreated: number;
+}): Promise<void> {
+  await emitModuleActivityEvent({
+    actorUserId: params.actorUserId,
+    moduleId: 'place',
+    action: 'auto_cluster',
+    targetType: 'community',
+    targetId: params.actorUserId,
+    metadata: { clustersCreated: params.clustersCreated },
   });
 }

@@ -831,7 +831,10 @@ export class ChatSocketService {
       | 'place:meeting:created'
       | 'place:meeting:updated'
       | 'place:meeting:cancelled'
-      | 'place:listing:updated',
+      | 'place:listing:updated'
+      | 'place:community:member_joined'
+      | 'place:community:member_left'
+      | 'place:community:auto_clustered',
     data: Record<string, unknown>
   ) {
     const payload = { ...data, timestamp: new Date().toISOString() };

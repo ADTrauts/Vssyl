@@ -1939,6 +1939,8 @@ enum VLinkEntityType {
   TASK
   TODO
   NOTE
+  PLACE_LISTING
+  PLACE_MEETING
   DASHBOARD
   WIDGET
   USER
@@ -6719,11 +6721,14 @@ model BusinessPlaceListing {
 
   interactionLinks BusinessInteractionLink[]
 
+  trashedAt       DateTime?
+
   createdAt       DateTime      @default(now())
   updatedAt       DateTime      @updatedAt
 
   @@index([category])
   @@index([isEnabled, isPublished])
+  @@index([trashedAt])
   @@map("business_place_listings")
 }
 
@@ -6901,6 +6906,8 @@ model PlaceMeetingPlace {
 
   invites         PlaceMeetingInvite[]
 
+  trashedAt       DateTime?
+
   createdAt       DateTime             @default(now())
   updatedAt       DateTime             @updatedAt
 
@@ -6908,6 +6915,7 @@ model PlaceMeetingPlace {
   @@index([businessId])
   @@index([scheduledAt])
   @@index([status])
+  @@index([trashedAt])
   @@map("place_meeting_places")
 }
 

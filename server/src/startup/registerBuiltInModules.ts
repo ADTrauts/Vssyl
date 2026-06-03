@@ -896,8 +896,10 @@ const BUILT_IN_MODULES: Array<{ moduleId: string; moduleName: string; aiContext:
       ],
       actions: [
         { name: 'view_place', description: 'View the user\'s personal Main Street', permissions: ['place:read'] },
-        { name: 'add_node', description: 'Add a business or connection to the neighborhood', permissions: ['place:write'] },
-        { name: 'explore_businesses', description: 'Discover new businesses and places', permissions: ['place:read'] },
+        { name: 'search_places', description: 'Search published Place listings', permissions: ['place:read'] },
+        { name: 'recommend_places', description: 'Get personalized Place recommendations', permissions: ['place:read'] },
+        { name: 'purchase_help', description: 'Guidance for external purchase links (read-only)', permissions: ['place:read'] },
+        { name: 'reservation_help', description: 'Guidance for reservations via external links (read-only)', permissions: ['place:read'] },
       ],
       contextProviders: [
         {

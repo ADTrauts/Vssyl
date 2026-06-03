@@ -23,6 +23,8 @@ export type PolicyResourceType =
   | 'place_node'
   | 'place_listing'
   | 'place_meeting'
+  | 'place_connection'
+  | 'place_transaction'
   | 'conversation'
   | 'message';
 

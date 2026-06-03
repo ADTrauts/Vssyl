@@ -29,7 +29,7 @@ import DriveModuleWrapper from '../drive/DriveModuleWrapper';
 import CalendarModuleWrapper from '../calendar/CalendarModuleWrapper';
 import { NotebookShell } from '../notebook/NotebookShell';
 import { TodoModule } from '../todo/TodoModule';
-import { PlaceListingEditor } from '../place/PlaceListingEditor';
+import PlaceWorkspaceLanding from '../place/PlaceWorkspaceLanding';
 import { VLinkModule } from '../vlink/VLinkModule';
 import DriveSidebar from '../../app/drive/DriveSidebar';
 import CalendarListSidebar from '../calendar/CalendarListSidebar';
@@ -671,15 +671,7 @@ export default function BusinessWorkspaceContent({ business, currentModule, busi
           />
         );
       case 'place':
-        return (
-          <div className="h-full overflow-auto p-4">
-            <PlaceListingEditor
-              businessId={business.id}
-              token={session?.accessToken as string | undefined}
-              compact={false}
-            />
-          </div>
-        );
+        return <PlaceWorkspaceLanding businessId={business.id} />;
       case 'vlink':
         return (
           <VLinkModule

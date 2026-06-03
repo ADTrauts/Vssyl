@@ -5,6 +5,7 @@ import { PlaceServiceError } from './placeErrors';
 export const PUBLISHED_LISTING_WHERE: Prisma.BusinessPlaceListingWhereInput = {
   isEnabled: true,
   isPublished: true,
+  trashedAt: null,
   business: { einVerified: true },
 };
 

@@ -11,6 +11,7 @@ import {
 import { assertPlacePolicyAllowed } from './placePolicyDual';
 import * as placeActivity from './placeActivityService';
 import * as placeDomain from './placeDomainEventService';
+import * as placeRealtime from './placeRealtimeService';
 
 export const PLACE_CATEGORIES = [
   'RESTAURANT',
@@ -119,6 +120,10 @@ async function emitListingSideEffects(params: {
   });
   placeDomain.recordListingUpdatedDomainEvent({
     actorUserId: params.userId,
+    listingId: params.listingId,
+    businessId: params.businessId,
+  });
+  placeRealtime.broadcastListingUpdated(params.businessId, {
     listingId: params.listingId,
     businessId: params.businessId,
   });

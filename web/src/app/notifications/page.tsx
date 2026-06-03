@@ -74,6 +74,8 @@ const LEGACY_TYPE_MAPPING: Record<string, string> = {
   'place_meeting_rsvp': 'place',
   'place_connection_request': 'place',
   'place_connection_accepted': 'place',
+  'place_community_member_joined': 'place',
+  'place_community_member_left': 'place',
   'place_community_invite': 'place',
   'notes_shared': 'notes',
 };

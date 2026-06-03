@@ -37,6 +37,14 @@ import {
   softTrashNotesItem,
   type NotesTrashItemType,
 } from '../services/notes/notesTrashService';
+import {
+  emptyPlaceTrash,
+  listTrashedPlaceItemsForGlobalTrash,
+  permanentlyDeletePlaceItem,
+  restorePlaceItem,
+  softTrashPlaceItem,
+  type PlaceTrashItemType,
+} from '../services/place/placeTrashService';
 import { logger } from '../lib/logger';
 
 export function registerGlobalTrashHandlers(): void {
@@ -198,8 +206,42 @@ export function registerGlobalTrashHandlers(): void {
     listTrashed: async ({ userId }) => listTrashedPagesForGlobalTrash(userId),
   });
 
+  registerGlobalTrashModuleHandler({
+    moduleId: 'place',
+    moduleName: 'Place',
+    supportedTypes: ['listing', 'meeting'],
+    softTrash: async ({ userId, type, id }) => {
+      if (type !== 'listing' && type !== 'meeting') {
+        throw new Error(`Unsupported place trash type: ${type}`);
+      }
+      await softTrashPlaceItem({
+        userId,
+        type: type as PlaceTrashItemType,
+        id,
+      });
+    },
+    restore: async ({ userId, type, id }) => {
+      if (type !== 'listing' && type !== 'meeting') return false;
+      return restorePlaceItem({
+        userId,
+        type: type as PlaceTrashItemType,
+        id,
+      });
+    },
+    permanentDelete: async ({ userId, type, id }) => {
+      if (type !== 'listing' && type !== 'meeting') return false;
+      return permanentlyDeletePlaceItem({
+        userId,
+        type: type as PlaceTrashItemType,
+        id,
+      });
+    },
+    emptyModuleTrash: async ({ userId }) => emptyPlaceTrash({ userId }),
+    listTrashed: async ({ userId }) => listTrashedPlaceItemsForGlobalTrash(userId),
+  });
+
   void logger.info('Registered Global Trash module handlers', {
     operation: 'global_trash_handlers_register',
-    modules: ['drive', 'chat', 'calendar', 'todo', 'notes'],
+    modules: ['drive', 'chat', 'calendar', 'todo', 'notes', 'place'],
   });
 }

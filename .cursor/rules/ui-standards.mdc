@@ -7,6 +7,8 @@ globs:
 
 # UI standards
 
+**UX governance:** [`docs/ux/UX_CONSTITUTION.md`](../../docs/ux/UX_CONSTITUTION.md), [`docs/ux/DESIGN_TOKENS.md`](../../docs/ux/DESIGN_TOKENS.md) — agent rule [`ux-standards.mdc`](./ux-standards.mdc).
+
 ## Shared components
 
 ```typescript
@@ -29,4 +31,4 @@ On **dark** backgrounds: `text-gray-300`+ or `text-white` as appropriate.
 
 Inactive UI should stay readable — prefer **`text-gray-600` minimum**, not `text-gray-500`, on light backgrounds.
 
-**Last updated:** 2026-05-05
+**Last updated:** 2026-06-03

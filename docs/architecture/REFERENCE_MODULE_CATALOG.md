@@ -14,6 +14,7 @@
 | 2 | **Chat** (`chat`) | 3 — Certified | Realtime, AI routing, notifications, thin controllers | [CHAT_LEVEL3_CERTIFICATION_REVIEW.md](./audits/CHAT_LEVEL3_CERTIFICATION_REVIEW.md) |
 | 3 | **Calendar** (`calendar`) | 3 — Certified | Scheduler, reminders, recurrence, time-based reads | [CALENDAR_LEVEL3_CERTIFICATION_REVIEW.md](./audits/CALENDAR_LEVEL3_CERTIFICATION_REVIEW.md) |
 | 4 | **Todo** (`todo`) | 3 — Certified | Task lifecycle, assignment, work management, calendar/file links | [TODO_LEVEL3_CERTIFICATION_REVIEW.md](./audits/TODO_LEVEL3_CERTIFICATION_REVIEW.md) |
+| 5 | **Place** (`place`) | 3 — Certified | External graph, directory, discovery, commerce routing, dual-surface | [PLACE_REFERENCE_COUNCIL_REVIEW.md](./audits/PLACE_REFERENCE_COUNCIL_REVIEW.md), [PLACE_PATTERN_GUIDE.md](./PLACE_PATTERN_GUIDE.md) |
 | — | **Notebook** (`notebook`) | 3 — Certified (composition) | Operational links, workspace intelligence, grounded AI orchestration — **not Reference #5** | [NOTEBOOK_LEVEL3_CERTIFICATION_REVIEW.md](./audits/NOTEBOOK_LEVEL3_CERTIFICATION_REVIEW.md) |
 
 **Rule:** Copy **patterns**, not file names blindly. Every module still needs its own constitutional audit and operation matrix before implementation.
@@ -103,6 +104,27 @@
 
 ---
 
+## Place — Reference Module #5 (Level 3)
+
+**Copy for:** External graph modules, business directory surfaces, commerce routing, dual consumer/publisher UX.
+
+| Pattern | What to copy | Key artifacts |
+|---------|--------------|----------------|
+| External personal graph | User-scoped Main Street; typed nodes | `placeService`, `PlaceNode`, `BusinessFollow` sync |
+| Dual-surface module | Consumer `/place` + publisher workspace | `PlaceWorkspaceLanding`, scoped PE |
+| Directory + verification gates | Published listing; EIN gate on discovery | `placeListingService`, `placeVisibilityService` |
+| Commerce routing (not checkout) | Interaction links + click telemetry | [PLACE_COMMERCE_BOUNDARY.md](./PLACE_COMMERCE_BOUNDARY.md) |
+| Connection mirror | Member Relationship + PlaceNode on accept | `placeConnectionService` |
+| Meeting-at-place + Calendar delegate | Social meeting; event via Calendar service | `placeMeetingService.linkToCalendar` |
+| Bounded community | Join/leave side effects; no Chat messages | `placeCommunityService` |
+| Global Trash + V_Link | Listing + meeting entities | `placeTrashService`, `placeVlinkAccessService` |
+
+**Do not copy:** Payment processing, PO/invoice workflows, vendor onboarding, public follower counts, Chat message persistence.
+
+**Evidence:** [PLACE_PATTERN_GUIDE.md](./PLACE_PATTERN_GUIDE.md), [PLACE_COMMERCE_BOUNDARY.md](./PLACE_COMMERCE_BOUNDARY.md), [PLACE_REFERENCE_COUNCIL_REVIEW.md](./audits/PLACE_REFERENCE_COUNCIL_REVIEW.md). **Designated Reference Module #5** (Wave 4B, 2026-06-02).
+
+---
+
 ## Module guidance — which references to weight
 
 | Target module | Primary references | Secondary | Unique teachable angle |
@@ -110,7 +132,7 @@
 | **Todo** | *(certified — see Reference #4 above)* | — | — |
 | **Notes** | *(paused 2026-06-01 — see Notebook initiative)* | — | Superseded by Notebook product track |
 | **Notebook** | Todo (#4), File Hub (#1), Calendar (#3) | Chat (#2) AI facade patterns | Composition + NotebookLink; Phase 7 audit complete — **not L3 certified** |
-| **Place** | File Hub (entities, V_Link), Chat (visibility) | Calendar (scheduling links), Notebook (listing embed) | **Reference Module #5 candidate** — Wave 1F AI executor complete; [PLACE_DOMAIN_MODEL.md](./PLACE_DOMAIN_MODEL.md), [PLACE_SERVICE_EXTRACTION_PLAN.md](./PLACE_SERVICE_EXTRACTION_PLAN.md) |
+| **Place** | File Hub (entities, V_Link), Chat (visibility) | Calendar (scheduling links), Notebook (listing embed) | **Reference Module #5** — external graph, directory, routing (2026-06-02) |
 | **Dashboard** | File Hub (manifest, activity), Chat (realtime widgets) | — | Widget registry, composition (not full module CRUD) |
 | **Analytics** | File Hub (activity vs analytics separation) | — | Read-only / derived metrics; often N/A trash |
 | **Business Workspace** | All three (composition only) | — | Hub switch, module landing pattern; not a data module |
@@ -129,7 +151,7 @@ Product module **`notebook`** composes Notes pages, Todo tasks, Calendar events,
 | Manifest truth | ✅ | `entities[]`, `operationalLinks`, no false `trash`/`vlink` on `notebook` |
 | Certification | **Level 3 Certified** (2026-06-02) | Composition module; not Reference #5 — see review doc |
 
-**Reference #5:** **Place** remains the primary Reference Module #5 candidate. Notebook is L3 Certified but **not** numbered Reference #5 — composition patterns in [NOTEBOOK_LEVEL3_CERTIFICATION_REVIEW.md](./audits/NOTEBOOK_LEVEL3_CERTIFICATION_REVIEW.md) §9.
+**Reference #5:** **Place** is **Reference Module #5** (**Level 3 Certified**, council Wave **4B**, 2026-06-02). Teachable patterns: [PLACE_PATTERN_GUIDE.md](./PLACE_PATTERN_GUIDE.md), commerce law: [PLACE_COMMERCE_BOUNDARY.md](./PLACE_COMMERCE_BOUNDARY.md), council record: [PLACE_REFERENCE_COUNCIL_REVIEW.md](./audits/PLACE_REFERENCE_COUNCIL_REVIEW.md). Notebook is L3 Certified composition module — **not** Reference #5.
 
 ### Notes — sub-domain (dependency)
 
@@ -164,7 +186,8 @@ Use this catalog when filling **“reference module pattern to copy”** columns
 | Calendar | [CALENDAR_LEVEL3_CERTIFICATION_REVIEW.md](./audits/CALENDAR_LEVEL3_CERTIFICATION_REVIEW.md) | [CALENDAR_SERVICE_EXTRACTION_PLAN.md](./audits/CALENDAR_SERVICE_EXTRACTION_PLAN.md) |
 | Todo (Phase 0) | [TODO_LEVEL3_CERTIFICATION_REVIEW.md](./audits/TODO_LEVEL3_CERTIFICATION_REVIEW.md) | [TODO_CONSTITUTIONAL_AUDIT.md](./audits/TODO_CONSTITUTIONAL_AUDIT.md) |
 | Notebook (L3) | [NOTEBOOK_LEVEL3_CERTIFICATION_REVIEW.md](./audits/NOTEBOOK_LEVEL3_CERTIFICATION_REVIEW.md) | [NOTEBOOK_CONSTITUTIONAL_AUDIT.md](./audits/NOTEBOOK_CONSTITUTIONAL_AUDIT.md), [NOTEBOOK_OPERATION_MATRIX.md](./audits/NOTEBOOK_OPERATION_MATRIX.md) |
+| Place (Reference #5) | [PLACE_REFERENCE_COUNCIL_REVIEW.md](./audits/PLACE_REFERENCE_COUNCIL_REVIEW.md) | [PLACE_PATTERN_GUIDE.md](./PLACE_PATTERN_GUIDE.md), [PLACE_COMMERCE_BOUNDARY.md](./PLACE_COMMERCE_BOUNDARY.md), [PLACE_REFERENCE_IMPLEMENTATION_REVIEW.md](./audits/PLACE_REFERENCE_IMPLEMENTATION_REVIEW.md) |
 
 ---
 
-*Last updated: 2026-06-03 (Place Wave 1G satellite cleanup complete)*
+*Last updated: 2026-06-02 (Place designated Reference Module #5 — Wave 4B council)*

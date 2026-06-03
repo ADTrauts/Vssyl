@@ -138,6 +138,30 @@ export function registerCalendarPlatformEntities(): void {
   });
 }
 
+/** Place listing + meeting entity descriptors — Wave 2A (community/node/transaction deferred). */
+export function registerPlacePlatformEntities(): void {
+  registerPlatformEntity({
+    entityType: 'listing',
+    moduleId: 'place',
+    displayName: 'Place listing',
+    pluralName: 'Place listings',
+    vlinkEntityType: 'PLACE_LISTING',
+    supportsTrash: true,
+    supportsSearch: true,
+    activityTargetType: 'listing',
+  });
+  registerPlatformEntity({
+    entityType: 'meeting',
+    moduleId: 'place',
+    displayName: 'Place meeting',
+    pluralName: 'Place meetings',
+    vlinkEntityType: 'PLACE_MEETING',
+    supportsTrash: true,
+    supportsSearch: false,
+    activityTargetType: 'meeting',
+  });
+}
+
 /** Test-only reset. */
 export function clearPlatformEntityRegistryForTests(): void {
   registry.clear();

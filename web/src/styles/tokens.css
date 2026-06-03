@@ -1,0 +1,90 @@
+/**
+ * Vssyl UX design tokens (Wave 0)
+ * Five families: colors, typography, spacing, radius, shadows.
+ * Aliases existing globals.css :root vars — additive only.
+ * See docs/ux/DESIGN_TOKENS.md
+ */
+
+:root {
+  /* --- Family 1: Colors --- */
+  --v-color-background: var(--background);
+  --v-color-surface: var(--card);
+  --v-color-surface-muted: var(--muted);
+  --v-color-border: var(--border);
+  --v-color-border-strong: #d1d5db;
+  --v-color-text-primary: var(--foreground);
+  --v-color-text-secondary: var(--neutral-mid);
+  --v-color-text-muted: #6b7280;
+  --v-color-primary: var(--primary);
+  --v-color-primary-hover: #1e60cc;
+  --v-color-primary-soft: rgba(39, 139, 238, 0.12);
+  --v-color-success: var(--primary-green);
+  --v-color-warning: var(--highlight-yellow);
+  --v-color-danger: var(--accent-red);
+  --v-color-info: var(--info-blue);
+
+  /* --- Family 2: Typography (role composites) --- */
+  --v-font-family: var(--font-inter), ui-sans-serif, system-ui, sans-serif;
+  --v-font-display-size: 2.25rem;
+  --v-font-display-line-height: 1.2;
+  --v-font-display-weight: 700;
+  --v-font-heading-size: 1.5rem;
+  --v-font-heading-line-height: 1.3;
+  --v-font-heading-weight: 600;
+  --v-font-body-size: 1rem;
+  --v-font-body-line-height: 1.5;
+  --v-font-body-weight: 400;
+  --v-font-caption-size: 0.75rem;
+  --v-font-caption-line-height: 1.4;
+  --v-font-caption-weight: 400;
+
+  /* --- Family 3: Spacing (4px grid) --- */
+  --v-space-1: 0.25rem;
+  --v-space-2: 0.5rem;
+  --v-space-3: 0.75rem;
+  --v-space-4: 1rem;
+  --v-space-5: 1.25rem;
+  --v-space-6: 1.5rem;
+  --v-space-8: 2rem;
+  --v-space-10: 2.5rem;
+  --v-space-12: 3rem;
+  --v-space-16: 4rem;
+
+  /* --- Family 4: Radius --- */
+  --v-radius-none: 0;
+  --v-radius-sm: 0.25rem;
+  --v-radius-md: 0.375rem;
+  --v-radius-lg: 0.5rem;
+  --v-radius-xl: 0.75rem;
+  --v-radius-2xl: 1rem;
+  --v-radius-full: 9999px;
+  --v-radius-button: var(--v-radius-md);
+  --v-radius-card: var(--v-radius-lg);
+  --v-radius-panel: var(--v-radius-xl);
+  --v-radius-modal: var(--v-radius-2xl);
+
+  /* --- Family 5: Shadows --- */
+  --v-shadow-none: none;
+  --v-shadow-subtle: 0 1px 2px rgba(0, 0, 0, 0.05);
+  --v-shadow-card: 0 1px 3px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.06);
+  --v-shadow-panel: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+  --v-shadow-overlay: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --v-shadow-modal: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+}
+
+.dark {
+  --v-color-border-strong: #475569;
+  --v-color-text-muted: #94a3b8;
+  --v-color-primary-hover: #3b82f6;
+  --v-color-primary-soft: rgba(96, 165, 250, 0.15);
+  --v-shadow-card: 0 1px 3px rgba(0, 0, 0, 0.3);
+  --v-shadow-panel: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
+  --v-shadow-overlay: 0 10px 15px -3px rgba(0, 0, 0, 0.45);
+  --v-shadow-modal: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+}
+
+/*
+ * Future waves — example Tailwind usage (do not migrate modules yet):
+ *   bg-v-surface text-v-text-primary border-v-border rounded-v-card shadow-v-card
+ *   p-[var(--v-space-4)] gap-[var(--v-space-2)]
+ */

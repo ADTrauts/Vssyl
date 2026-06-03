@@ -1,5 +1,17 @@
 # Active Context - Vssyl Business Admin & AI Integration
 
+## UX Modernization — Wave 0 Foundation (June 2026) ✅
+
+**Status:** **SHIPPED** — UX governance docs (`docs/ux/`), `ux-standards.mdc`, additive `--v-*` tokens in `web/src/styles/tokens.css` + Tailwind `v.*` namespace. No module redesigns or UX certification yet.
+
+**Canonical:** [`docs/ux/UX_CONSTITUTION.md`](../docs/ux/UX_CONSTITUTION.md), [`UX_MODERNIZATION_ROADMAP.md`](../docs/ux/UX_MODERNIZATION_ROADMAP.md)
+
+**Reference UX candidate (not certified):** Drive / File Hub
+
+**Next:** Wave 1 — adopt tokens in shared primitives after visual review; Wave 0 inventory table completion before module audits.
+
+---
+
 ## AI Conversation Reasoning Layer (June 2026) ✅
 
 **Status:** **IMPLEMENTED** — deterministic pre-generation layer in `server/src/ai/conversation/`, wired into `DigitalLifeTwinCore` after query analysis.
@@ -14,11 +26,21 @@
 
 ## Most recent completed project — Notebook Level 3 Certified (June 2026) ✅
 
-**Status:** **Level 3 — Certified** (composition module). **Not** Reference Module #5 — Place remains #5 candidate.
+**Status:** **Level 3 — Certified** (composition module). **Not** Reference Module #5 — Place is Reference #5 **Strong Candidate** (**Level 2 Certified**).
 
 **Evidence:** [`NOTEBOOK_LEVEL3_CERTIFICATION_REVIEW.md`](../docs/architecture/audits/NOTEBOOK_LEVEL3_CERTIFICATION_REVIEW.md), [`CERTIFICATION_LEDGER.md`](../docs/architecture/CERTIFICATION_LEDGER.md)
 
-**Next:** Place Wave **2A** (Global Trash + V_Link + platform entities). Optional Notebook hygiene NB-H1–H7.
+**Next:** Dashboard / Analytics / Business Workspace modernization. Optional Place post-Reference hygiene PL-H1–H7.
+
+**Place Wave 4B (2026-06-02):** **Reference Module #5 designated** — [PLACE_REFERENCE_COUNCIL_REVIEW.md](../docs/architecture/audits/PLACE_REFERENCE_COUNCIL_REVIEW.md). Council vote: **Approve**.
+
+**Place Wave 4A (2026-06-02):** Reference #5 evidence package.
+
+**Place Wave 2D (2026-06-02):** **Level 2 — Certified** — [PLACE_LEVEL2_CERTIFICATION_REVIEW.md](../docs/architecture/audits/PLACE_LEVEL2_CERTIFICATION_REVIEW.md).
+
+**Place Wave 2C (2026-06-03):** [PLACE_LEVEL2_READINESS_REVIEW.md](../docs/architecture/audits/PLACE_LEVEL2_READINESS_REVIEW.md) — P0 cleanup complete; eligible for L2 review.
+
+**Place Wave 2A (2026-06-03):** Global Trash + V_Link + platform entities + Notebook `PLACE_LISTING` validation.
 
 **Place Wave 1G (2026-06-03):** `placeCommunityService`; dismiss in `placeService`; `getEnrichedPlaceGraph`; connection boundary; transactions deferred — **Wave 1 extraction complete**.
 

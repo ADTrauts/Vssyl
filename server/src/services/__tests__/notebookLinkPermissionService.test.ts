@@ -11,6 +11,7 @@ import {
 } from '../notebook/notebookLinkPermissionService';
 import * as linkVisibility from '../notebook/notebookLinkVisibilityService';
 import * as driveVisibility from '../driveVisibilityService';
+import * as placeVlink from '../place/placeVlinkAccessService';
 import { NotebookLinkServiceError } from '../notebook/notebookLinkErrors';
 
 describe('notebookLinkPermissionService', () => {
@@ -162,6 +163,38 @@ describe('notebookLinkPermissionService', () => {
         page,
         targetType: 'CALENDAR_EVENT',
         targetId: 'evt-1',
+      })
+    ).rejects.toMatchObject({ code: 'not_found' });
+  });
+
+  it('allows PLACE_LISTING when listing is accessible', async () => {
+    vi.spyOn(placeVlink, 'assertNotebookListingTargetReadable').mockResolvedValue({
+      listingId: 'listing-1',
+      businessId: 'biz-1',
+      title: 'Shop',
+    });
+
+    await expect(
+      assertTargetReadable({
+        userId: 'u1',
+        page,
+        targetType: 'PLACE_LISTING',
+        targetId: 'listing-1',
+      })
+    ).resolves.toBeUndefined();
+  });
+
+  it('denies PLACE_LISTING when listing is trashed or inaccessible', async () => {
+    vi.spyOn(placeVlink, 'assertNotebookListingTargetReadable').mockRejectedValue(
+      new Error('Listing not found')
+    );
+
+    await expect(
+      assertTargetReadable({
+        userId: 'u1',
+        page,
+        targetType: 'PLACE_LISTING',
+        targetId: 'listing-trashed',
       })
     ).rejects.toMatchObject({ code: 'not_found' });
   });

@@ -1,6 +1,4 @@
 import { Request, Response } from 'express';
-import { Prisma, PlaceActivityType } from '@prisma/client';
-import { prisma } from '../lib/prisma';
 import { logger } from '../lib/logger';
 import { getUserFromRequest } from '../middleware/auth';
 import { respondPlaceServiceError } from '../services/place/placeErrors';
@@ -95,40 +93,3 @@ export async function getPlaceAnalyticsContext(req: Request, res: Response): Pro
 }
 
 /* </place-visibility-read-handlers> */
-
-/** Helper: Record an activity feed item (called from other controllers). Phase 1D will move to activity service. */
-export async function recordActivity(
-  userId: string,
-  type: PlaceActivityType,
-  title: string,
-  options?: {
-    description?: string;
-    businessId?: string;
-    targetUserId?: string;
-    meetingId?: string;
-    transactionId?: string;
-    communityId?: string;
-    metadata?: Record<string, unknown>;
-    isPrivate?: boolean;
-  }
-): Promise<void> {
-  try {
-    await prisma.placeActivityFeedItem.create({
-      data: {
-        userId,
-        type,
-        title,
-        description: options?.description || null,
-        businessId: options?.businessId || null,
-        targetUserId: options?.targetUserId || null,
-        meetingId: options?.meetingId || null,
-        transactionId: options?.transactionId || null,
-        communityId: options?.communityId || null,
-        metadata: options?.metadata ? (options.metadata as Prisma.InputJsonValue) : undefined,
-        isPrivate: options?.isPrivate ?? false,
-      },
-    });
-  } catch {
-    // Non-critical — don't fail parent operations
-  }
-}

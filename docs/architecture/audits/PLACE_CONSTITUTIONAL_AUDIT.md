@@ -2,14 +2,28 @@
 
 **Module id:** `place`  
 **Phase:** **Wave 0 — Audit & governance** (2026-06-02)  
-**Certification status:** **Level 0 — Legacy** (current state only)  
+**Certification status:** **Level 3 — Certified** (post–Wave 3C 2026-06-02)  
 **Date:** 2026-06-02  
 **Benchmarks:** [REFERENCE_MODULE_CATALOG.md](../REFERENCE_MODULE_CATALOG.md) — File Hub #1, Chat #2, Calendar #3, Todo #4  
 **Related:** [PLACE_OPERATION_MATRIX.md](./PLACE_OPERATION_MATRIX.md), [CERTIFICATION_LEDGER.md](../CERTIFICATION_LEDGER.md), [PLATFORM_MODULE_MODERNIZATION_ROADMAP.md](../../plans/PLATFORM_MODULE_MODERNIZATION_ROADMAP.md)
 
 > **Wave 1F delta (2026-06-03):** `placeAIActionService` owns read-only AI ops; `placeAIController` is thin (no Prisma); `ActionExecutor` + `toolExecutor` register read-only Place twins. Manifest `ai: true` reconciled.
 >
-> **Wave 1G delta (2026-06-03):** `placeCommunityService`; `placeService.dismissSuggestion`; `placeVisibilityService.getEnrichedPlaceGraph`; `placeConnectionService` boundary documented; `placeTransactionController` **deferred** (documented exception). Sections 1.5–1.7 below remain **Wave 0 baseline** unless superseded by operation matrix.
+> **Wave 1G delta (2026-06-03):** `placeCommunityService`; `placeService.dismissSuggestion`; `placeVisibilityService.getEnrichedPlaceGraph`; `placeConnectionService` boundary documented; transactions deferred (superseded by 2C).
+>
+> **Wave 2B delta (2026-06-03):** Full constitutional refresh — [PLACE_LEVEL3_READINESS_REVIEW.md](./PLACE_LEVEL3_READINESS_REVIEW.md). Scorecard §3 below superseded for current posture. **Estimated level: Level 2 candidacy.** Not ready for formal L3 certification review.
+>
+> **Wave 2C delta (2026-06-03):** P0 cleanup — [PLACE_LEVEL2_READINESS_REVIEW.md](./PLACE_LEVEL2_READINESS_REVIEW.md). Single platform activity read model; `placeTransactionService`; connection/transaction PE; manifest reconciliation.
+>
+> **Wave 2D delta (2026-06-02):** Formal L2 certification — [PLACE_LEVEL2_CERTIFICATION_REVIEW.md](./PLACE_LEVEL2_CERTIFICATION_REVIEW.md). **Level 2 — Certified.** Reference #5 **Strong Candidate** (council not opened). **Not certified L3.**
+>
+> **Wave 3A delta (2026-06-02):** L3 preparation — workspace hub, community side effects, location privacy PE. Matrix **0 N** rows. **L3 certification review not opened.**
+>
+> **Wave 3B delta (2026-06-02):** C density push — graph/meeting/listing/connection/community lifecycle **C**; community join/leave notifications (6 manifest types); listing realtime on writes; interests/follow-visibility/node-update domain events. Matrix **35 C / 28 P / 0 N**. **Formal L3 certification review not opened** (eligible after product sign-off).
+>
+> **Wave 3C delta (2026-06-02):** Formal Level 3 certification — [PLACE_LEVEL3_CERTIFICATION_REVIEW.md](./PLACE_LEVEL3_CERTIFICATION_REVIEW.md). **Level 3 — Certified.** Reference #5 council **not opened**.
+>
+> **Wave 4B delta (2026-06-02):** Reference Module #5 council — [PLACE_REFERENCE_COUNCIL_REVIEW.md](./PLACE_REFERENCE_COUNCIL_REVIEW.md). **Reference Module #5 designated.** Level remains **3 — Certified**.
 
 ---
 
@@ -223,26 +237,51 @@ All routes use `authenticateJWT` at router level.
 
 ## 3. Constitutional compliance scorecard
 
+**Wave 2B refresh (2026-06-03)** — see [PLACE_LEVEL3_READINESS_REVIEW.md](./PLACE_LEVEL3_READINESS_REVIEW.md) for full rationale.
+
+| Standard | C/P/N | 🟢/🟡/🔴 | Evidence |
+| -------- | ----- | -------- | -------- |
+| **Canonical Services** | P | 🟡 | 18 `place*Service` files; **`placeTransactionService` missing** |
+| **Thin Controllers** | P | 🟡 | 7/8 thin; **`placeTransactionController` Prisma-inline** |
+| **Policy Engine** | P | 🟡 | `placePolicyDual` on graph/listing/meeting/trash; gaps on connections, transactions, location privacy |
+| **Global Trash** | C | 🟢 | Wave 2A — listing + meeting via `placeTrashService` |
+| **Visibility Services** | C | 🟢 | `placeVisibilityService` — explore, search, AI context, feed adapter |
+| **Domain Events** | P | 🟡 | `placeDomainEventService` on mutations + trash; communities/transactions omit |
+| **Module Activity** | P | 🟡 | `placeActivityService` on mutations; **dual feed** with legacy `PlaceActivityFeedItem` |
+| **Notifications** | P | 🟡 | 4 types emitted; manifest declares 2 |
+| **Realtime** | C | 🟢 | `placeRealtimeService` via Chat socket adapter |
+| **Platform Entity Registration** | C | 🟢 | `place:listing`, `place:meeting` — Wave 2A |
+| **V_Link** | C | 🟢 | Access, lifecycle, resolver, Notebook listing validation |
+| **Capability Matrix** | P | 🟡 | Core capabilities aligned; notifications subset; businessWorkspace partial |
+| **AI Compliance** | C | 🟢 | `placeAIActionService`; read-only ActionExecutor + tools |
+| **Scheduler Integration** | 🔴 | 🔴 | No jobs; analytics snapshots unscheduled |
+| **Documentation** | P | 🟡 | Wave 0 body retained for history; 2B readiness doc authoritative |
+| **Tests** | P | 🟡 | 27 `*place*.test.ts` files; 1 calendar-link integration |
+
+**Overall constitutional posture:** **Medium–High for Level 2 candidacy** — no longer Level 0. **Two P0 items** remain: dual activity model; transaction controller bypass. **Not ready for Level 3 certification review.**
+
+### Wave 0 scorecard (historical — superseded)
+
+<details>
+<summary>Pre-extraction scorecard (2026-06-02)</summary>
+
 | Standard | Status | Evidence |
 | -------- | ------ | -------- |
 | **Canonical Services** | 🔴 | Zero `place*Service.ts` files |
 | **Thin Controllers** | 🔴 | 8 controllers, ~3,847 LOC, all Prisma-inline |
-| **Policy Engine** | 🔴 | No `placePolicyDual`; no `evaluateModuleMutationPolicyDual` usage; `policyEngine.ts` has no Place actions |
-| **Global Trash** | 🔴 | No `trashedAt`; no handler; hard deletes on nodes, links, meetings |
-| **Visibility Services** | 🔴 | No `placeVisibilityService`; explore/search inline queries |
-| **Domain Events** | 🔴 | No `place.*` registered in domain event bus |
-| **Module Activity** | 🔴 | No `emitModuleActivityEvent`; local feed unused |
-| **Notifications** | 🔴 | UI types in `notifications/page.tsx`; **zero** server emits; manifest omits `notifications[]` |
-| **Realtime** | 🟡 | Partial via `chatSocketService`; manifest truthfully omits capability |
-| **Platform Entity Registration** | 🔴 | No entities; `PLACE_LISTING` in Notebook link enum only |
-| **V_Link** | 🔴 | No resolver, access, or lifecycle services |
-| **Capability Matrix** | 🟡 | Minimal manifest — mostly truthful omissions; **`ai: true`** without executor twins |
-| **AI Compliance** | 🔴 | All AI paths use Prisma in controllers; no ActionExecutor/toolExecutor |
-| **Scheduler Integration** | 🔴 | No jobs; `PlaceAnalyticsSnapshot` has no scheduled writer found |
-| **Documentation** | 🟡 | Product context rich; **no** prior constitutional audit (this doc) |
+| **Policy Engine** | 🔴 | No `placePolicyDual` |
+| **Global Trash** | 🔴 | No `trashedAt`; no handler |
+| **Visibility Services** | 🔴 | No `placeVisibilityService` |
+| **Domain Events** | 🔴 | No `place.*` registered |
+| **Module Activity** | 🔴 | No `emitModuleActivityEvent` |
+| **Notifications** | 🔴 | Zero server emits |
+| **Realtime** | 🟡 | Partial via chat socket |
+| **Platform Entity Registration** | 🔴 | None |
+| **V_Link** | 🔴 | No resolver |
+| **AI Compliance** | 🔴 | Prisma in controllers |
 | **Tests** | 🔴 | One integration test |
 
-**Overall constitutional posture:** **Low** — functional product surface with **Level 0** platform contract compliance.
+</details>
 
 ---
 
@@ -406,18 +445,36 @@ All routes use `authenticateJWT` at router level.
 
 ## 15. Recommended next phase
 
-**Wave 1 — Service boundary extraction (no certification target yet)**
+**Wave 2C — L2 certification prep** (governance only until ACT approval):
 
-1. **`PLACE_IMPLEMENTATION_PLAN.md`** — phased extraction order (visibility → listing → meeting → transaction).
-2. **`placeVisibilityService`** — all read paths (explore, profile, search provider relocation).
-3. **`placeListingService`** + **`placePolicyDual`** — listing/link mutations; PE actions defined.
-4. **`placeMeetingService`** — delegate calendar writes to **`calendarEventService`**; remove direct `prisma.event.create`.
-5. **`placeNotificationService`** — wire existing UI types or remove from UI until ready.
-6. Wire **`recordActivity`** or migrate to **`emitModuleActivityEvent`** (pick one activity model).
-7. Manifest reconciliation — declare `notifications[]`, `entities[]`, `realtime` truthfully when implemented.
+1. Activity feed single-model migration (platform activity only; retire or bridge legacy feed)
+2. **`placeTransactionService`** extraction **or** signed commerce-out-of-scope for L2 validation
+3. Manifest `notifications[]` reconciliation (4 runtime types vs 2 declared)
+4. **`PlaceWorkspaceLanding`** + `BrandedWorkDashboard` place icon/name
+5. Connection Policy Engine on send/accept
+6. Formal **L2 certification review** when above P0/P1 items addressed — produce `PLACE_LEVEL2_CERTIFICATION_REVIEW.md` only when approved
 
-**Do not pursue Level 3 until** operation matrix shows majority **C** rows and Calendar/Chat delegation is verified by integration tests.
+**Do not** open Level 3 certification review or Reference #5 council until L2 certified and hub/commerce story complete. See [PLACE_LEVEL3_READINESS_REVIEW.md](./PLACE_LEVEL3_READINESS_REVIEW.md).
 
 ---
 
-*Wave 0 audit only — no code changes.*
+*Wave 0 audit baseline; Wave 2B refresh 2026-06-03 — no runtime code changes in 2B.*
+
+---
+
+## 16. Current constitutional scorecard (Wave 3B — 2026-06-02)
+
+| Contract area | Verdict | Notes |
+|---------------|---------|-------|
+| Service extraction | **C** | 12+ canonical `place*Service` modules; thin controllers |
+| Policy Engine (writes) | **C** | Graph, listing, meeting, connection, community, privacy handlers wired |
+| Policy Engine (reads) | **P** | Visibility/discovery reads partial vs write parity |
+| Activity + domain events | **C** | All primary write lifecycles emit on success |
+| Notifications | **C** | 6 runtime types; manifest aligned; community join/leave added 3B |
+| Realtime | **C** | Graph, connections, meetings, listings, community |
+| Global Trash + V_Link | **C** | Listing + meeting entities |
+| Business workspace hub | **C** | `PlaceWorkspaceLanding` |
+| Transactions / commerce | **P** | Service extracted; activity/events deferred |
+| Operation matrix | **35 C / 28 P / 0 N** | Exceeds 20+ **C** L3 prep target |
+
+**Estimated certification level:** **Level 3 — Certified** + **Reference Module #5** (Wave 4B).

@@ -14,7 +14,8 @@ Quick index; each `.mdc` file is the source of truth for its topic. **Placement 
 | **`typescript-quality.mdc`** | `any` policy, routers, Prisma JSON | — |
 | **`database-prisma.mdc`** | Modular Prisma, migrations | `docs/guides/PRISMA_MIGRATION_DISCIPLINE.md` |
 | **`storage-and-ai-attachments.mdc`** | GCS, vision pipeline | — |
-| **`ui-standards.mdc`** | `shared/components`, contrast | — |
+| **`ui-standards.mdc`** | `shared/components`, contrast | `docs/ux/COMPONENT_STANDARDS.md` |
+| **`ux-standards.mdc`** | UX constitution, tokens, layouts, a11y | `docs/ux/` |
 | **`frontend-proxy-auth-consistency.mdc`** | Proxy, auth UX, providers | — |
 | **`backend-trust-boundaries.mdc`** | Auth, tenancy, sockets, webhooks | — |
 | **`policy-engine.mdc`** | Policy Engine v1 enforcement | `docs/architecture/POLICY_ENGINE.md` |
@@ -38,6 +39,17 @@ Quick index; each `.mdc` file is the source of truth for its topic. **Placement 
 
 Index: `docs/architecture/README.md`
 
+## UX docs (`docs/ux/`)
+
+| Doc | Use when |
+|-----|----------|
+| **`UX_CONSTITUTION.md`** | Any UI change; token ownership |
+| `DESIGN_TOKENS.md` | Colors, type, spacing, radius, shadows |
+| `LAYOUT_PATTERNS.md` | New pages or shells |
+| `UX_AUDIT_TEMPLATE.md` | Module UX review |
+
+Index: `docs/ux/README.md`
+
 **Platform hardening (May 2026):** Policy Engine v1 + dual enforcement on wired routes, domain event taxonomy/adoption, workspace realtime consolidation, marketplace certification gates, Drive PE-D1/D2 — see `memory-bank/progress.md` (Platform Hardening Phase Complete).
 
 ## Critical rules (must follow)
@@ -60,7 +72,7 @@ Index: `docs/architecture/README.md`
 |------|-------|
 | Any task | `source-of-truth.mdc`, `core.mdc`, Memory Bank baseline |
 | API / server | `api-and-auth.mdc`, `backend-trust-boundaries.mdc`, `policy-engine.mdc`, `domain-events.mdc` |
-| Frontend UI | `ui-standards.mdc`, `frontend-proxy-auth-consistency.mdc`, `runtime-state-boundaries.mdc` |
+| Frontend UI | `ui-standards.mdc`, **`ux-standards.mdc`**, `frontend-proxy-auth-consistency.mdc`, `runtime-state-boundaries.mdc` |
 | Dashboard / business workspace runtime | `workspace-runtime.mdc`, `runtime-state-boundaries.mdc` |
 | Schema / DB | `database-prisma.mdc` |
 | New module (first-party) | `module-interoperability.mdc`, `module-development.mdc`, **`platform-standards.mdc`** |
@@ -85,4 +97,4 @@ Index: `docs/architecture/README.md`
 | `docs/guides/MODULE_DEVELOPMENT_LONG_REFERENCE.md` | **Redirect** → `MODULE_DEVELOPMENT_GUIDE.md` |
 | `docs/guides/POLICY_ENGINE.md`, `docs/guides/DOMAIN_EVENTS.md` | **Redirect** → `docs/architecture/` |
 
-**Last updated:** 2026-05-16
+**Last updated:** 2026-06-03

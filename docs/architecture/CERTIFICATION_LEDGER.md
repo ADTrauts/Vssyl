@@ -92,7 +92,7 @@ Vssyl certifies modules against **two authorities simultaneously**. A module is 
 | **Todo** | `todo` | **High** | **High** | **3 — Certified** | **Reference Module #4** (Level 3) | [TODO_LEVEL3_CERTIFICATION_REVIEW](./audits/TODO_LEVEL3_CERTIFICATION_REVIEW.md), [TODO_OPERATION_MATRIX](./audits/TODO_OPERATION_MATRIX.md) |
 | **Notebook** | `notebook` | **High** | **Partial** | **3 — Certified** | **Composition module** (2026-06-02) — not Reference #5 | [NOTEBOOK_LEVEL3_CERTIFICATION_REVIEW](./audits/NOTEBOOK_LEVEL3_CERTIFICATION_REVIEW.md), [NOTEBOOK_OPERATION_MATRIX](./audits/NOTEBOOK_OPERATION_MATRIX.md) |
 | **Notes** | `notes` | **Partial** | **Low** | **2 — Sub-domain** | **Dependency** of Notebook L3 — page storage; Global Trash handler | `notes*Service`; `notes:page` entity; no separate product L3 |
-| **Place** | `place` | **Low** | **Low** | **2 — candidacy** | **Reference Module #5 candidate** — Wave **1B–1G** complete (2026-06-03); not certified L2 | [PLACE_CONSTITUTIONAL_AUDIT](./audits/PLACE_CONSTITUTIONAL_AUDIT.md), [PLACE_OPERATION_MATRIX](./audits/PLACE_OPERATION_MATRIX.md), [PLACE_PRODUCT_ARCHITECTURE_REVIEW](./PLACE_PRODUCT_ARCHITECTURE_REVIEW.md), [PLACE_SERVICE_EXTRACTION_PLAN](./PLACE_SERVICE_EXTRACTION_PLAN.md), [PLACE_DOMAIN_MODEL](./PLACE_DOMAIN_MODEL.md) |
+| **Place** | `place` | **Partial** | **Partial** | **3 — Certified** | **Reference Module #5** (Level 3) — Wave **4B** council 2026-06-02 | [PLACE_REFERENCE_COUNCIL_REVIEW](./audits/PLACE_REFERENCE_COUNCIL_REVIEW.md), [PLACE_PATTERN_GUIDE](./PLACE_PATTERN_GUIDE.md), [PLACE_COMMERCE_BOUNDARY](./PLACE_COMMERCE_BOUNDARY.md), [PLACE_LEVEL3_CERTIFICATION_REVIEW](./audits/PLACE_LEVEL3_CERTIFICATION_REVIEW.md) |
 | **Dashboard** | `dashboard` | **Partial** | **Partial** | **1 — Stabilizing** | Not started (Wave 3) | Dual widget registry; weak activity |
 | **Analytics** | `analytics` | **Partial** | **N/A** | **1 — Stabilizing** | Not started (Wave 3) | Pseudo-module; subscriber stubs |
 | **Business Workspace** | *(composition)* | **Partial** | **Partial** | **1 — Stabilizing** | Not started (Wave 3) | Switch rendering; lifecycle partial |
@@ -106,7 +106,7 @@ Track cross-cutting certification separately; modules depend on these.
 | Global Trash API | High | High (drive + chat + calendar + todo + **notes** handlers) | 2 | Notes handler shipped (Notebook Phase 2) |
 | NotificationService | High | High (drive adapter) | 2 | Consolidation — notebook manifest notification types optional |
 | V_Link | High | High (drive + chat + calendar + todo + **NOTE**) | 2 | `notebook:page` product entity registered; V_Link storage alias NOTE |
-| Policy Engine | Partial | High (drive + chat + calendar + todo + **notes/notebook link** + **place graph** dual) | 2 | Place graph PE Phase 1B |
+| Policy Engine | Partial | High (drive + chat + calendar + todo + **notes/notebook link** + **place** writes) | 2 | Place connection + transaction PE Wave 2C |
 | Domain Event Bus | Partial | High (drive taxonomy) | 1 | Taxonomy thin beyond drive |
 | Module Activity | Partial | High (drive writes) | 1 | Legacy read paths platform-wide |
 | AI Tools / Actions | Low | Partial (drive tools compliant) | 0 | `toolExecutor` / `ActionExecutor` violations |
@@ -271,7 +271,25 @@ Waves align with [`PLATFORM_MODULE_MODERNIZATION_ROADMAP.md`](../plans/PLATFORM_
 
 **Place Phase 1F (2026-06-03):** `placeAIActionService`; thin `placeAIController`; ActionExecutor + toolExecutor read-only ops.
 
-**Place Phase 1G (2026-06-03):** `placeCommunityService`; discovery dismiss in `placeService`; `getEnrichedPlaceGraph`; connection boundary documented; transactions deferred. **Wave 1 extraction complete — Phase 2A ready.**
+**Place Phase 1G (2026-06-03):** `placeCommunityService`; discovery dismiss in `placeService`; `getEnrichedPlaceGraph`; connection boundary documented; transactions deferred. **Wave 1 extraction complete.**
+
+**Place Phase 2A (2026-06-03):** `trashedAt` on listing + meeting; `placeTrashService`; Global Trash handler; V_Link access/lifecycle; platform entities; Notebook `PLACE_LISTING` validation; manifest trash/vlink/entities.
+
+**Place Phase 2B (2026-06-03):** [PLACE_LEVEL3_READINESS_REVIEW.md](./audits/PLACE_LEVEL3_READINESS_REVIEW.md) — constitutional refresh; operation matrix deduplicated (63 ops: 10 C / 46 P / 7 N); manifest truth audit; **not certified L2/L3**; **Reference #5 candidate** (not council-ready). **Phase 2C (L2 prep) next.**
+
+**Place Phase 2C (2026-06-03):** [PLACE_LEVEL2_READINESS_REVIEW.md](./audits/PLACE_LEVEL2_READINESS_REVIEW.md) — P0 cleanup: single activity model, `placeTransactionService`, connection/transaction PE, manifest reconciliation (63 ops: 11 C / 50 P / 2 N); **eligible for formal L2 certification review**.
+
+**Place Phase 2D (2026-06-02):** [PLACE_LEVEL2_CERTIFICATION_REVIEW.md](./audits/PLACE_LEVEL2_CERTIFICATION_REVIEW.md) — **Level 2 — Certified**.
+
+**Place Phase 3A (2026-06-02):** L3 prep — workspace hub, community side effects, location privacy PE; matrix **12 C / 51 P / 0 N**; **L3 certification review not opened**.
+
+**Place Phase 3B (2026-06-02):** C density push — graph/meeting/listing/connection/community lifecycles **C**; community notifications; matrix **35 C / 28 P / 0 N**; **formal L3 certification review eligible, not opened**.
+
+**Place Phase 3C (2026-06-02):** [PLACE_LEVEL3_CERTIFICATION_REVIEW.md](./audits/PLACE_LEVEL3_CERTIFICATION_REVIEW.md) — **Level 3 — Certified**. Reference #5 council **not opened**.
+
+**Place Phase 4A (2026-06-02):** Reference #5 evidence package — pattern guide, commerce boundary, reference implementation review. **Council Ready with Conditions.**
+
+**Place Phase 4B (2026-06-02):** [PLACE_REFERENCE_COUNCIL_REVIEW.md](./audits/PLACE_REFERENCE_COUNCIL_REVIEW.md) — council **Approve**; **Reference Module #5 designated** (Level 3).
 
 **Post–Level 3 punch-list (non-blocking):** matrix refresh; `TodoWorkspaceLanding.tsx`; optional `todo_due` cron; satellite PE/activity; Level 4 council review.
 
@@ -281,22 +299,22 @@ Waves align with [`PLATFORM_MODULE_MODERNIZATION_ROADMAP.md`](../plans/PLATFORM_
 
 | Module | not started | audit | service extraction | compliance | certification | Target level |
 |--------|-------------|-------|-------------------|------------|---------------|--------------|
-| Place | ○ | **●** | ○ | ○ | ○ | 2→3 |
+| Place | ○ | **●** | **●** | **●** | **●** | 3 |
 | Business Workspace | **●** | ○ | ○ | ○ | ○ | 2 |
 | Dashboard | **●** | ○ | ○ | ○ | ○ | 2 |
 | Analytics | **●** | ○ | ○ | ○ | ○ | 2 |
 
-**Place** may certify at Level 2 first (validation track) before full Level 3 if product scope excludes trash/V_Link.
+**Place** certified **Level 3** (Wave 3C). **Reference Module #5** designated (Wave 4B council). Optional post-Reference hygiene PL-H1–H7.
 
 ### Continuous platform tracks (all waves)
 
 | Track | Owner phase | Status |
 |-------|-------------|--------|
-| Global Trash handler expansion | compliance | not started |
-| Manifest / capability reconcile | compliance | not started |
-| AI tool/executor service routing | compliance | not started |
-| Notification metadata consolidation | compliance | not started |
-| V_Link resolver expansion | compliance | not started |
+| Global Trash handler expansion | compliance | **partial** — Place 2A |
+| Manifest / capability reconcile | compliance | **partial** — Place 2C core aligned |
+| AI tool/executor service routing | compliance | **partial** — Place 1F read-only |
+| Notification metadata consolidation | compliance | **partial** — Place 6 types in manifest 3B |
+| V_Link resolver expansion | compliance | **partial** — Place 2A listing/meeting |
 | Scheduler job inventory (§22) | audit | not started |
 
 ---

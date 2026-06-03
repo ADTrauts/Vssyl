@@ -136,23 +136,6 @@ export default function BrandedWorkDashboard({
     return getModuleDisplayName(normalizeModuleId(module));
   };
 
-  // Normalize module IDs coming from config/installed modules to route-safe IDs
-  const normalizeModuleId = (rawId: string): string => {
-    const id = rawId.toLowerCase();
-    if (id === 'hr' || id.startsWith('hr-') || id.startsWith('hr_') || id.includes('hr') && id.includes('manage')) {
-      return 'hr';
-    }
-    if (id === 'scheduling' || id.startsWith('scheduling') || id.includes('schedule') || id.includes('schedule-builder')) {
-      return 'scheduling';
-    }
-    if (id === 'calendar' || id.startsWith('cal')) return 'calendar';
-    if (id === 'drive' || id.includes('drive')) return 'drive';
-    if (id === 'chat' || id.includes('chat')) return 'chat';
-    if (id === 'members' || id.includes('member')) return 'members';
-    if (id === 'admin') return 'admin';
-    return id;
-  };
-
   // Get available modules from business configuration based on user permissions
   const getAvailableModules = () => {
     if (!configuration || !session?.user?.id) {

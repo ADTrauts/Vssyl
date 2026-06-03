@@ -1,6 +1,6 @@
 # Place Domain Model
 
-**Status:** **Locked** — Wave 1B gate (design only; no schema/code changes)  
+**Status:** **Locked** — Wave 1B gate; **Wave 2A implemented** (2026-06-03) — `trashedAt` on listing/meeting, trash service, Global Trash, V_Link, platform entities  
 **Module id:** `place`  
 **Date:** 2026-06-02  
 **Parent:** [PLACE_SERVICE_EXTRACTION_PLAN.md](./PLACE_SERVICE_EXTRACTION_PLAN.md)  

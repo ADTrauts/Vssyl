@@ -76,7 +76,7 @@
 
 **Relationship model:** **B — NotebookLink + V_Link** ([NOTEBOOK_RELATIONSHIP_MODEL.md](../architecture/NOTEBOOK_RELATIONSHIP_MODEL.md)).
 
-**Next:** **Place Wave 1** — service boundary extraction per [PLACE_CONSTITUTIONAL_AUDIT.md](../architecture/audits/PLACE_CONSTITUTIONAL_AUDIT.md) (Reference Module #5 candidate; Level 0 today). Notebook **Level 3 Certified** — post-cert hygiene NB-H1–H7 optional.
+**Next:** Dashboard / Analytics / Business Workspace modernization (Wave 3). Optional Place post-Reference hygiene PL-H1–H7. Notebook post-cert hygiene NB-H1–H7 optional.
 
 **Place Wave 0 (2026-06-02):** Constitutional audit + operation matrix complete — [PLACE_CONSTITUTIONAL_AUDIT.md](../architecture/audits/PLACE_CONSTITUTIONAL_AUDIT.md), [PLACE_OPERATION_MATRIX.md](../architecture/audits/PLACE_OPERATION_MATRIX.md). **Level 0 — Legacy**; ~57 operations inventoried; 8 controllers / 62 endpoints / 17 Place-owned models; zero canonical services.
 
@@ -94,7 +94,25 @@
 
 **Place Wave 1F (2026-06-03):** `placeAIActionService`; thin `placeAIController`; ActionExecutor + toolExecutor read-only twins; manifest `ai: true` reconciled.
 
-**Place Wave 1G (2026-06-03):** `placeCommunityService`; discovery dismiss; `getEnrichedPlaceGraph`; connection boundary closeout; transactions deferred. **Wave 1 extraction complete — Phase 2A ready.**
+**Place Wave 1G (2026-06-03):** `placeCommunityService`; discovery dismiss; `getEnrichedPlaceGraph`; connection boundary closeout; transactions deferred. **Wave 1 extraction complete.**
+
+**Place Wave 2A (2026-06-03):** Global Trash + V_Link + platform entities; manifest trash/vlink/entities.
+
+**Place Wave 2B (2026-06-03):** [PLACE_LEVEL3_READINESS_REVIEW.md](../architecture/audits/PLACE_LEVEL3_READINESS_REVIEW.md) — constitutional + matrix + manifest audit; **not certified**; **Phase 2C (L2 prep) next**.
+
+**Place Wave 2C (2026-06-03):** [PLACE_LEVEL2_READINESS_REVIEW.md](../architecture/audits/PLACE_LEVEL2_READINESS_REVIEW.md) — P0 cleanup; eligible for formal L2 review.
+
+**Place Wave 2D (2026-06-02):** [PLACE_LEVEL2_CERTIFICATION_REVIEW.md](../architecture/audits/PLACE_LEVEL2_CERTIFICATION_REVIEW.md) — **Level 2 — Certified**.
+
+**Place Wave 3A (2026-06-02):** L3 prep — workspace hub, community side effects, location privacy PE; matrix 12 C / 51 P / 0 N; **L3 certification review not opened**.
+
+**Place Wave 3B (2026-06-02):** C density push — lifecycle **C** rows; 6 notification types; matrix **35 C / 28 P / 0 N**.
+
+**Place Wave 3C (2026-06-02):** Formal L3 certification — **Level 3 Certified**.
+
+**Place Wave 4B (2026-06-02):** Reference Module #5 council — **Approve**; Place designated **Reference Module #5** (Level 3).
+
+**Place Wave 4A (2026-06-02):** Reference #5 evidence package complete.
 
 ---
 

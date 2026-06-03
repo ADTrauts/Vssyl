@@ -30,21 +30,38 @@ export type PlacePolicyAction =
   | typeof POLICY_ACTIONS.PLACE_LISTING_IMAGE_UPDATE
   | typeof POLICY_ACTIONS.PLACE_LISTING_INTERACTION_LINK_WRITE
   | typeof POLICY_ACTIONS.PLACE_LISTING_REPORT
+  | typeof POLICY_ACTIONS.PLACE_LISTING_TRASH
+  | typeof POLICY_ACTIONS.PLACE_LISTING_RESTORE
+  | typeof POLICY_ACTIONS.PLACE_LISTING_PERMANENT_DELETE
   | typeof POLICY_ACTIONS.PLACE_DISCOVERY_READ
   | typeof POLICY_ACTIONS.PLACE_MEETING_READ
   | typeof POLICY_ACTIONS.PLACE_MEETING_CREATE
   | typeof POLICY_ACTIONS.PLACE_MEETING_UPDATE
   | typeof POLICY_ACTIONS.PLACE_MEETING_CANCEL
   | typeof POLICY_ACTIONS.PLACE_MEETING_RSVP
-  | typeof POLICY_ACTIONS.PLACE_MEETING_LINK_CALENDAR;
+  | typeof POLICY_ACTIONS.PLACE_MEETING_LINK_CALENDAR
+  | typeof POLICY_ACTIONS.PLACE_MEETING_TRASH
+  | typeof POLICY_ACTIONS.PLACE_MEETING_RESTORE
+  | typeof POLICY_ACTIONS.PLACE_MEETING_PERMANENT_DELETE
+  | typeof POLICY_ACTIONS.PLACE_CONNECTION_REQUEST
+  | typeof POLICY_ACTIONS.PLACE_CONNECTION_ACCEPT
+  | typeof POLICY_ACTIONS.PLACE_TRANSACTION_READ
+  | typeof POLICY_ACTIONS.PLACE_TRANSACTION_CREATE
+  | typeof POLICY_ACTIONS.PLACE_TRANSACTION_PRIVACY_UPDATE
+  | typeof POLICY_ACTIONS.PLACE_INTERACTION_CLICK
+  | typeof POLICY_ACTIONS.PLACE_INTERACTION_STATS_READ
+  | typeof POLICY_ACTIONS.PLACE_LOCATION_PRIVACY_READ
+  | typeof POLICY_ACTIONS.PLACE_LOCATION_PRIVACY_UPDATE;
+
+export type PlacePolicyResourceType = Extract<
+  PolicyResourceType,
+  'place' | 'place_node' | 'place_listing' | 'place_meeting' | 'place_connection' | 'place_transaction'
+>;
 
 export interface PlacePolicyDualParams {
   userId: string;
   action: PlacePolicyAction;
-  resourceType: Extract<
-    PolicyResourceType,
-    'place' | 'place_node' | 'place_listing' | 'place_meeting'
-  >;
+  resourceType: PlacePolicyResourceType;
   resourceId: string;
   metadata?: Record<string, unknown>;
 }

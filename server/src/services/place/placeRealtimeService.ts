@@ -141,3 +141,47 @@ export function broadcastConnectionAccepted(
     /* socket not initialized in tests */
   }
 }
+
+export function broadcastCommunityMemberJoined(
+  recipientUserId: string,
+  payload: { communityId: string; memberUserId: string; communityName?: string }
+): void {
+  try {
+    getChatSocketService().broadcastPlaceEvent(
+      recipientUserId,
+      'place:community:member_joined',
+      payload
+    );
+  } catch {
+    /* socket not initialized in tests */
+  }
+}
+
+export function broadcastCommunityMemberLeft(
+  recipientUserId: string,
+  payload: { communityId: string; memberUserId: string }
+): void {
+  try {
+    getChatSocketService().broadcastPlaceEvent(
+      recipientUserId,
+      'place:community:member_left',
+      payload
+    );
+  } catch {
+    /* socket not initialized in tests */
+  }
+}
+
+export function broadcastCommunityAutoClustered(
+  userIds: string[],
+  payload: { communityId: string; communityName: string }
+): void {
+  const unique = [...new Set(userIds.filter(Boolean))];
+  for (const userId of unique) {
+    try {
+      getChatSocketService().broadcastPlaceEvent(userId, 'place:community:auto_clustered', payload);
+    } catch {
+      /* socket not initialized in tests */
+    }
+  }
+}

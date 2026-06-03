@@ -1,5 +1,19 @@
 # Block-on-Block Platform - Progress
 
+## UX Modernization — Wave 0 Foundation (June 2026) ✅
+
+**Status:** **SHIPPED** — `docs/ux/` (constitution, tokens, layouts, components, interactions, a11y, scorecard, audit template, roadmap); `.cursor/rules/ux-standards.mdc`; `web/src/styles/tokens.css` + `ux.css`; Tailwind `v.*` extend. No module UX certification.
+
+| Deliverable | Path |
+|-------------|------|
+| UX constitution | `docs/ux/UX_CONSTITUTION.md` |
+| Design tokens | `docs/ux/DESIGN_TOKENS.md`, `web/src/styles/tokens.css` |
+| Reference UX candidate | Drive / File Hub (uncertified) — `docs/ux/UX_MODERNIZATION_ROADMAP.md` |
+
+**Next:** Wave 1 token adoption in shared primitives; module inventory before Wave 4 audits.
+
+---
+
 ## AI Conversation Reasoning Layer (June 2026) ✅
 
 **Status:** **SHIPPED** — Heuristic conversation objective, confidence scoring, premature-solution guard, coaching policy; wired into `DigitalLifeTwinCore` before provider generation.
@@ -51,7 +65,110 @@
 
 **Phase 8 (2026-06-02):** **Level 3 Certified** — [NOTEBOOK_LEVEL3_CERTIFICATION_REVIEW.md](../docs/architecture/audits/NOTEBOOK_LEVEL3_CERTIFICATION_REVIEW.md). Not Reference #5.
 
-**Next:** Place Wave **2A** (Global Trash + V_Link + entities).
+**Next:** Dashboard / Analytics / Business Workspace modernization. Optional Place PL-H1–H7 hygiene.
+
+## Place — Wave 4B (June 2026) ✅
+
+| Item | Status |
+|------|--------|
+| Council vote | **C. Approve** |
+| Reference Module #5 | **Designated** (`place`) |
+| Level | **3 — Certified** (unchanged) |
+| Council record | [PLACE_REFERENCE_COUNCIL_REVIEW.md](../docs/architecture/audits/PLACE_REFERENCE_COUNCIL_REVIEW.md) |
+
+## Place — Wave 4A (June 2026) ✅
+
+| Item | Status |
+|------|--------|
+| Evidence package | Pattern guide + commerce boundary + reference implementation review |
+| Council readiness | Completed — Wave 4B **Approve** |
+| Reference #5 assigned | **Yes** — Wave 4B |
+
+## Place — Wave 3C (June 2026) ✅
+
+| Item | Status |
+|------|--------|
+| Formal L3 review | [PLACE_LEVEL3_CERTIFICATION_REVIEW.md](../docs/architecture/audits/PLACE_LEVEL3_CERTIFICATION_REVIEW.md) |
+| Certification | **Level 3 — Certified** |
+| Reference #5 council | **Not opened** |
+| Matrix | **35 C / 28 P / 0 N** (unchanged from 3B) |
+
+## Place — Wave 3B (June 2026) ✅
+
+| Item | Status |
+|------|--------|
+| Community notifications | `place_community_member_joined` / `_left` → creator |
+| Graph lifecycle | interests, node update, follow visibility domain events |
+| Listing writes | `broadcastListingUpdated` on side effects |
+| Matrix | **35 C / 28 P / 0 N** (was 12/51) |
+| Formal L3 review | Completed in Wave 3C |
+
+## Place — Wave 3A (June 2026) ✅
+
+**Status:** L3 preparation complete — **formal L3 certification review not opened**.
+
+| Area | Outcome |
+|------|---------|
+| Workspace hub | `PlaceWorkspaceLanding.tsx`; business workspace switch; dashboard icon/name |
+| Community | Activity + domain events + selective realtime |
+| Location privacy | `place:locationPrivacy.read` / `update` PE |
+| Matrix | 12 C / 51 P / **0 N** |
+
+## Place — Wave 2D (June 2026) ✅
+
+**Status:** **Level 2 — Certified** (governance review only; no runtime changes).
+
+| Area | Outcome |
+|------|---------|
+| Certification | **Level 2 — Certified** (2026-06-02) |
+| Matrix | 63 ops — 11 C / 50 P / 2 N; **no P0** |
+| Reference #5 | **Strong Candidate** — council **not** opened |
+| L3 | **Not certified** — prep next |
+
+**Evidence:** [PLACE_LEVEL2_CERTIFICATION_REVIEW.md](../docs/architecture/audits/PLACE_LEVEL2_CERTIFICATION_REVIEW.md)
+
+## Place — Wave 2C (June 2026) ✅
+
+**Status:** P0 constitutional cleanup complete — **eligible for formal L2 certification review**.
+
+| Area | Outcome |
+|------|---------|
+| Activity | Platform module activity only on product read/write paths |
+| Transactions | `placeTransactionService`; thin controller; PE on writes/reads |
+| Connections | `place:connection.request` / `accept` PE + dual |
+| Manifest | 4 notification types; read-only AI action catalog |
+| Docs | [PLACE_LEVEL2_READINESS_REVIEW.md](../docs/architecture/audits/PLACE_LEVEL2_READINESS_REVIEW.md); matrix 11 C / 50 P / 2 N |
+
+**Not done:** L3 review, Reference #5 council, `PlaceWorkspaceLanding` hub.
+
+## Place — Wave 2B (June 2026) ✅
+
+**Status:** Constitutional refresh & readiness audit — **not certified**
+
+| Deliverable | Path |
+|-------------|------|
+| Readiness review | [PLACE_LEVEL3_READINESS_REVIEW.md](../docs/architecture/audits/PLACE_LEVEL3_READINESS_REVIEW.md) |
+| Constitutional audit refresh | [PLACE_CONSTITUTIONAL_AUDIT.md](../docs/architecture/audits/PLACE_CONSTITUTIONAL_AUDIT.md) §3 |
+| Operation matrix | 63 operations — **10 C / 46 P / 7 N** |
+| Manifest audit | trash/vlink/search/realtime/ai aligned; notifications **underclaim** (2 declared, 4 emitted) |
+
+**Decisions:** Approaching L2 certification; **not ready** for formal L3 review; **Reference #5 candidate** (not council-ready).
+
+## Place — Wave 2A (June 2026) ✅
+
+**Status:** Platform compliance layer shipped — **not certified L2**
+
+| Deliverable | Path |
+|-------------|------|
+| Schema | `trashedAt` on `BusinessPlaceListing`, `PlaceMeetingPlace`; migration `20260603140000_place_listing_meeting_trash_vlink` |
+| Trash service | `server/src/services/place/placeTrashService.ts` |
+| Global Trash | `registerGlobalTrashHandlers` moduleId `place` (`listing`, `meeting`) |
+| V_Link | `placeVlinkAccessService`, `placeVlinkLifecycleService`; resolver in `vlinkEntityResolverService` |
+| Platform entities | `registerPlacePlatformEntities` — `place:listing`, `place:meeting` |
+| Notebook | `PLACE_LISTING` backend validation in `notebookLinkPermissionService` |
+| Manifest | `builtInModuleManifests` — `trash`, `vlink`, `entities[]`, meeting notifications |
+
+**Tests:** 45+ Wave 2A unit tests (trash, V_Link, global trash handler, manifest, resolver, notebook).
 
 ## Place — Wave 1B–1G (June 2026) ✅
 

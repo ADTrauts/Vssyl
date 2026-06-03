@@ -17,6 +17,12 @@ import {
   resolveTodoTaskForVLink,
   userCanLinkTodoTask,
 } from './todoVlinkAccessService';
+import {
+  resolvePlaceListingForVLink,
+  resolvePlaceMeetingForVLink,
+  userCanLinkPlaceListing,
+  userCanLinkPlaceMeeting,
+} from './place/placeVlinkAccessService';
 
 export type EntityAccessLevel = 'full' | 'restricted';
 
@@ -85,6 +91,28 @@ export async function resolveEntityAccess(
         url: result.url,
       };
     }
+    case VLinkEntityType.PLACE_LISTING: {
+      const result = await resolvePlaceListingForVLink(userId, entityId);
+      if (!result.allowed) {
+        return { access: 'restricted', title: result.title };
+      }
+      return {
+        access: 'full',
+        title: result.title,
+        url: result.url,
+      };
+    }
+    case VLinkEntityType.PLACE_MEETING: {
+      const result = await resolvePlaceMeetingForVLink(userId, entityId);
+      if (!result.allowed) {
+        return { access: 'restricted', title: result.title };
+      }
+      return {
+        access: 'full',
+        title: result.title,
+        url: result.url,
+      };
+    }
     default:
       return resolveNonDriveEntityAccess(userId, entityType, entityId);
   }
@@ -133,6 +161,10 @@ export async function userCanLinkEntity(
     case VLinkEntityType.TASK:
     case VLinkEntityType.TODO:
       return userCanLinkTodoTask(userId, entityId);
+    case VLinkEntityType.PLACE_LISTING:
+      return userCanLinkPlaceListing(userId, entityId);
+    case VLinkEntityType.PLACE_MEETING:
+      return userCanLinkPlaceMeeting(userId, entityId);
     default: {
       const resolved = await resolveEntityAccess(userId, entityType, entityId);
       return resolved.access === 'full';
@@ -157,6 +189,10 @@ export function entityTypeLabel(entityType: VLinkEntityType): string {
       return 'Task';
     case VLinkEntityType.NOTE:
       return 'Note';
+    case VLinkEntityType.PLACE_LISTING:
+      return 'Place listing';
+    case VLinkEntityType.PLACE_MEETING:
+      return 'Place meeting';
     default:
       return 'Item';
   }

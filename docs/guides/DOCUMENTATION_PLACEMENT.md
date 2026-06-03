@@ -8,6 +8,7 @@ Where to put new docs and rules. **Agent placement policy** also lives in `.curs
 |---------|----------|
 | Agent must/must-not behavior | `.cursor/rules/*.mdc` (short; cross-link long docs) |
 | Platform architecture (why, diagrams, checklists) | `docs/architecture/` |
+| UX standards (tokens, layouts, certification) | `docs/ux/` |
 | How-to, onboarding, templates, troubleshooting | `docs/guides/` |
 | Product intent, status, decisions | `memory-bank/` |
 | Setup / secrets / SMTP / Stripe | `docs/setup/` |
@@ -36,6 +37,7 @@ Where to put new docs and rules. **Agent placement policy** also lives in `.curs
 
 - `docs/guides/README.md`
 - `docs/architecture/README.md` (architecture only)
+- `docs/ux/README.md` (UX only)
 - `docs/README.md`
 - `.cursor/rules/RULES_SUMMARY.md`
 

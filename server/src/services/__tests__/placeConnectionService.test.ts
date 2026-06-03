@@ -4,6 +4,7 @@ import * as placeActivity from '../place/placeActivityService';
 import * as placeDomain from '../place/placeDomainEventService';
 import * as placeNotification from '../place/placeNotificationService';
 import * as placeRealtime from '../place/placeRealtimeService';
+import * as placePolicyDual from '../place/placePolicyDual';
 import {
   acceptConnection,
   sendConnectionRequest,
@@ -13,6 +14,7 @@ import { PlaceServiceError } from '../place/placeErrors';
 describe('placeConnectionService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.spyOn(placePolicyDual, 'assertPlacePolicyAllowed').mockResolvedValue(undefined);
     vi.spyOn(placeActivity, 'recordConnectionRequested').mockResolvedValue(undefined);
     vi.spyOn(placeActivity, 'recordConnectionAccepted').mockResolvedValue(undefined);
     vi.spyOn(placeActivity, 'recordNodeAdded').mockResolvedValue(undefined);

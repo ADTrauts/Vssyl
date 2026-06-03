@@ -29,6 +29,8 @@ enum VLinkEntityType {
   TASK
   TODO
   NOTE
+  PLACE_LISTING
+  PLACE_MEETING
   DASHBOARD
   WIDGET
   USER

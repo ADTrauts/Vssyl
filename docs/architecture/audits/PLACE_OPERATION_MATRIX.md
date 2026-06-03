@@ -1,8 +1,9 @@
 # Place Operation Matrix
 
 **Module id:** `place`  
-**Status:** Level **2 candidacy** (Phase 1B–1G complete 2026-06-03). **Not certified Level 2** — trash, V_Link still outstanding; transactions explicitly deferred.
-**Related:** [PLACE_CONSTITUTIONAL_AUDIT.md](./PLACE_CONSTITUTIONAL_AUDIT.md), [CERTIFICATION_LEDGER.md](../CERTIFICATION_LEDGER.md), [PLATFORM_MODULE_MODERNIZATION_ROADMAP.md](../../plans/PLATFORM_MODULE_MODERNIZATION_ROADMAP.md)
+**Status:** Level **3 — Certified**; **Reference Module #5** (Wave 4B council 2026-06-02).  
+**Certification review:** [PLACE_LEVEL3_CERTIFICATION_REVIEW.md](./PLACE_LEVEL3_CERTIFICATION_REVIEW.md) · **Reference #5:** [PLACE_REFERENCE_COUNCIL_REVIEW.md](./PLACE_REFERENCE_COUNCIL_REVIEW.md)  
+**Related:** [PLACE_CONSTITUTIONAL_AUDIT.md](./PLACE_CONSTITUTIONAL_AUDIT.md), [CERTIFICATION_LEDGER.md](../CERTIFICATION_LEDGER.md)
 
 ---
 
@@ -11,153 +12,155 @@
 | Symbol | Meaning |
 |--------|---------|
 | **C** | Compliant — correct layer, side effects on success |
-| **P** | Partial — works; wrong layer, incomplete pipeline, or delegated dependency gap |
+| **P** | Partial — works; wrong layer, incomplete pipeline, or documented gap |
 | **N** | Non-compliant or missing |
 | **—** | Not applicable |
 
-**Owner:** `PL` = Place-owned · `Biz` = Business domain · `Cal` = Calendar #3 · `Mem` = Member/Relationship · `Chat` = Chat realtime infra · `FH` = File Hub storage infra
+**Owner:** `PL` = Place-owned · `Biz` = Business · `Cal` = Calendar #3 · `Mem` = Member · `Chat` = Chat realtime · `FH` = File Hub · `NB` = Notebook
 
-**Columns:** PE = Policy Engine · Activity = platform module activity · Event = domain event · RT = realtime · AI = platform AI executor path · Trash = Global Trash
-
----
-
-## Master operation matrix
-
-| Operation | Owner | Service | Controller | PE | Visibility | Activity | Event | Notification | RT | AI | Trash | V_Link | Notes |
-| --------- | ----- | ------- | ---------- | -- | ---------- | -------- | ----- | ------------ | -- | -- | ----- | ------ | ----- |
-| **Get/create Place** | PL | `placeVisibilityService` | `placeController.getPlace` | P | C | N | N | N | — | — | — | — | `getEnrichedPlaceGraph` |
-| **Update Place settings** | PL | `placeService` | `updatePlaceSettings` | P | — | N | N | N | — | — | — | — | `placePolicyDual` + legacy owner |
-| **Complete setup** | PL | `placeService` | `completeSetup` | P | — | N | N | N | — | — | — | — | Sets `isSetupComplete` |
-| **Add node (follow)** | PL | `placeService` | `addNode` | P | — | P | P | N | P | — | N | — | Activity + domain + RT on success |
-| **Update node layout** | PL | `placeService` | `updateNode` | P | P | N | N | N | — | — | — | — | Layout-only; no activity |
-| **Remove node (unfollow)** | PL | `placeService` | `removeNode` | P | — | P | P | N | P | — | N | — | Activity + domain + RT on success |
-| **Set interests** | PL | `placeService` | `setInterests` | P | — | P | N | N | — | — | — | — | Platform activity only |
-| **Complete setup** | PL | `placeService` | `completeSetup` | P | — | P | P | N | — | — | — | — | Setup completed domain event |
-| **Get/update follow visibility** | PL | `placeService` | `getFollowVisibility` / `updateFollowVisibility` | P | — | N | N | N | — | — | — | — | Per business; user-scoped |
-| **Send connection request** | Mem + PL | `placeConnectionService` | `sendConnectionRequest` | N | — | P | P | P | P | — | — | — | Interim Place-owned; Member handoff 1G |
-| **Accept connection** | Mem + PL | `placeConnectionService` | `acceptConnection` | N | — | P | P | P | P | — | — | — | Mirrors PlaceNode both sides |
-| **Explore listings** | PL | `placeVisibilityService` | `explorePlaces` | P | P | N | N | N | — | — | — | — | Published + EIN only |
-| **Business profile (public)** | PL | `placeVisibilityService` | `getBusinessProfile` | P | P | N | N | N | — | — | — | — | No follower count leak |
-| **Get listing (admin read)** | PL | `placeVisibilityService` | `getListing` | P | P | N | N | N | — | — | — | — | Admin draft read via visibility |
-| **Get categories** | PL | `placeVisibilityService` | `getCategories` | — | — | — | — | — | — | — | — | — | Static catalog |
-| **Local / for-you discovery** | PL | `placeVisibilityService` | `getLocalSuggestions` / `getForYouSuggestions` | P | P | N | N | N | — | — | — | — | Dismissed + interests respected |
-| **List connections** | PL + Mem | `placeVisibilityService` | `getConnections` | P | P | N | N | N | — | — | — | — | Member `relationship` read; Place-owned UX |
-| **Search users (Place add people)** | PL | `placeVisibilityService` | `searchUsers` | N | P | N | N | N | — | — | — | — | Broader than Member search (documented) |
-| **Global search Place provider** | PL | `placeVisibilityService` | `searchController` | P | P | N | N | N | — | — | — | — | `searchListingsForUser` |
-| **Activity feed read** | PL | `placeVisibilityService` | `getActivityFeed` | P | P | P | — | N | — | — | — | — | Platform activity read adapter + legacy merge |
-| **Location privacy get/update** | PL | `placeMeetingService` | `get/updateLocationPrivacy` | N | — | N | N | N | — | — | — | — | User-level meeting privacy settings |
-| **Personal analytics / export** | PL | `placeVisibilityService` | `getPersonalAnalytics` / `exportUserData` | P | P | N | N | N | — | — | — | — | User-scoped |
-| **List/get meeting (read)** | PL | `placeVisibilityService` | `getMeetings` / `getMeeting` | P | P | N | N | N | — | — | — | — | Creator/invitee only |
-| **Report listing** | PL | `placeListingService` | `reportListing` | P | — | P | P | N | — | — | — | — | `contentReport`; moderator notify deferred |
-| **Upsert listing** | PL | `placeListingService` | `upsertListing` | P | — | P | P | N | — | — | — | — | Zod + auto-flag |
-| **Upload/delete cover** | PL + FH | `placeListingService` | `uploadCoverImage` / `deleteCoverImage` | P | — | P | P | N | — | — | — | — | `storageService` |
-| **Upload/delete avatar** | PL + FH | `placeListingService` | `uploadAvatarImage` / `deleteAvatarImage` | P | — | P | P | N | — | — | — | — | Same |
-| **CRUD interaction links** | PL | `placeListingService` | `add/update/deleteInteractionLink` | P | — | P | P | N | — | — | N | — | Hard delete links |
-| **List transactions** | PL | — (deferred) | `getTransactions` | N | P | N | N | N | — | — | — | — | **Deferred 1G** — controller Prisma |
-| **Get transaction** | PL | — (deferred) | `getTransaction` | N | P | N | N | N | — | — | — | — | **Deferred 1G** |
-| **Create transaction** | PL | — (deferred) | `createTransaction` | N | — | N | N | N | — | — | — | — | **Deferred 1G** — append-only telemetry |
-| **Update transaction privacy** | PL | — (deferred) | `updateTransactionPrivacy` | N | — | N | N | N | — | — | — | — | **Deferred 1G** |
-| **Transaction summary** | PL | — | `getTransactionSummary` | N | P | N | N | N | — | — | — | — | Aggregates |
-| **Track interaction click** | PL | — | `trackInteractionClick` | N | — | N | N | N | — | — | — | — | Also creates EXTERNAL_CLICK tx |
-| **Interaction stats (admin)** | PL | — | `getInteractionStats` | N | P | N | N | N | — | — | — | — | Business admin |
-| **List meetings (legacy row)** | PL | `placeVisibilityService` | `getMeetings` | P | P | N | N | N | — | — | — | — | See consolidated row above |
-| **Create meeting** | PL | `placeMeetingService` | `createMeeting` | P | — | P | P | P | P | — | — | — | Invites; `place_meeting_invite` notify + RT |
-| **Update meeting** | PL | `placeMeetingService` | `updateMeeting` | P | — | P | P | N | P | — | N | — | Creator only |
-| **Cancel meeting** | PL | `placeMeetingService` | `deleteMeeting` | P | — | P | P | N | P | — | N | — | Soft cancel status |
-| **RSVP meeting** | PL | `placeMeetingService` | `rsvpMeeting` | P | — | P | P | P | P | — | — | — | `place_meeting_rsvp` notify creator |
-| **Link meeting to calendar** | PL + Cal | `placeMeetingService` | `linkToCalendar` | P | P | P | P | N | P | — | — | — | **`calendarEventService.createEvent`**; Place owns `eventId` only |
-| **Location privacy (legacy row)** | PL | `placeMeetingService` | `get/updateLocationPrivacy` | N | — | N | N | N | — | — | — | — | See consolidated row above |
-| **List/create/get community** | PL | `placeCommunityService` | `placeCommunityController` | P | C | N | N | N | — | — | — | — | No activity/notifications yet |
-| **Join/leave community** | PL | `placeCommunityService` | `joinCommunity` / `leaveCommunity` | P | C | N | N | N | — | — | — | — | No invite notification |
-| **Auto-cluster communities** | PL | — | `generateAutoClusters` | N | — | N | N | N | — | — | — | — | Batch write |
-| **Activity feed (legacy row)** | PL | `placeVisibilityService` | `getActivityFeed` | P | P | N | N | N | — | — | — | — | See consolidated row above |
-| **Personal analytics (legacy row)** | PL | `placeVisibilityService` | `getPersonalAnalytics` | P | P | N | N | N | — | — | — | — | See consolidated row above |
-| **GDPR export (legacy row)** | PL | `placeVisibilityService` | `exportUserData` | P | P | N | N | N | — | — | — | — | See consolidated row above |
-| **Local discovery (legacy row)** | PL | `placeVisibilityService` | `getLocalSuggestions` | P | P | N | N | N | — | — | — | — | See consolidated row above |
-| **For-you discovery (legacy row)** | PL | `placeVisibilityService` | `getForYouSuggestions` | P | P | N | N | N | — | — | — | — | See consolidated row above |
-| **Dismiss suggestion** | PL | `placeService` | `dismissSuggestion` | P | C | N | N | N | — | — | — | — | Idempotent upsert |
-| **AI recommendations** | PL | `placeAIActionService` | `getAIRecommendations` | N | C | N | N | N | — | C | — | — | `recommendPlaces` via visibility |
-| **AI purchase help** | PL | `placeAIActionService` | `getPurchaseHelp` | N | C | N | N | N | — | C | — | — | Link guidance only; no transaction |
-| **AI reservation help** | PL | `placeAIActionService` | `getReservationHelp` | N | C | N | N | N | — | C | — | — | External links only; no calendar create |
-| **AI context overview** | PL | `placeVisibilityService` | `getPlaceContextOverview` | P | P | N | N | N | — | P | — | — | Provider registered |
-| **AI context connections** | PL | `placeVisibilityService` | `getPlaceConnectionsContext` | P | P | N | N | N | — | P | — | — | |
-| **AI context discoveries** | PL | `placeVisibilityService` | `getPlaceDiscoveriesContext` | P | P | N | N | N | — | P | — | — | Pipeline source `vssyl_place` |
-| **AI context activity** | PL | `placeAIActionService` → visibility | `getPlaceActivityContext` | P | P | N | N | N | — | C | — | — | |
-| **AI context analytics** | PL | `placeVisibilityService` | `getPlaceAnalyticsContext` | P | P | N | N | N | — | P | — | — | |
-| **Global search listings** | PL | `placeVisibilityService` | `searchController` | P | P | N | N | N | — | — | — | — | `searchListingsForUser` |
-| **Business workspace listing editor** | PL | — | Client `PlaceListingEditor` | — | P | N | N | N | — | — | — | — | No hub landing component |
-| **Place home UX** | PL | — | Client `PlaceContext` + tabs | — | P | N | N | N | P | — | — | — | WebSocket refresh |
-| **Notebook link PLACE_LISTING** | NB | — | — | — | — | — | — | — | — | — | — | N | **Fail closed 400** |
+**Primary verdict:** Row-level **C/P/N** in last column — worst material gap on write paths (service + PE + activity for mutations). **—** columns do not block **C**.
 
 ---
 
-## Manifest truth rows
+## Master operation matrix (3B — reconciled)
+
+| Operation | Owner | Service | Controller | PE | Visibility | Activity | Event | Notification | RT | AI | Trash | V_Link | Primary |
+| --------- | ----- | ------- | ---------- | -- | ---------- | -------- | ----- | ------------ | -- | -- | ----- | ------ | ------- |
+| **Get Place graph** | PL | `placeVisibilityService` | `getPlace` | P | C | — | — | — | — | — | — | — | **P** |
+| **Update Place settings** | PL | `placeService` | `updatePlaceSettings` | C | — | — | — | — | — | — | — | — | **P** |
+| **Complete setup** | PL | `placeService` | `completeSetup` | C | — | C | C | — | — | — | — | — | **C** |
+| **Add node (follow)** | PL | `placeService` | `addNode` | C | — | C | C | — | C | — | — | — | **C** |
+| **Update node layout** | PL | `placeService` | `updateNode` | C | C | C | C | — | — | — | — | — | **C** |
+| **Remove node (unfollow)** | PL | `placeService` | `removeNode` | C | — | C | C | — | C | — | — | — | **C** |
+| **Set interests** | PL | `placeService` | `setInterests` | C | — | C | C | — | — | — | — | — | **C** |
+| **Get/update follow visibility** | PL | `placeService` | follow visibility handlers | C | — | C | C | — | — | — | — | — | **C** |
+| **Send connection request** | Mem+PL | `placeConnectionService` | `sendConnectionRequest` | C | — | C | C | C | C | — | — | — | **C** |
+| **Accept connection** | Mem+PL | `placeConnectionService` | `acceptConnection` | C | — | C | C | C | C | — | — | — | **C** |
+| **Explore listings** | PL | `placeVisibilityService` | `explorePlaces` | P | P | — | — | — | — | — | — | — | **P** |
+| **Business profile (public)** | PL | `placeVisibilityService` | `getBusinessProfile` | P | P | — | — | — | — | — | — | — | **P** |
+| **Get listing (admin)** | PL | `placeVisibilityService` | `getListing` | P | P | — | — | — | — | — | — | — | **P** |
+| **Get categories** | PL | `placeVisibilityService` | `getCategories` | — | — | — | — | — | — | — | — | — | **C** |
+| **Upsert listing** | PL | `placeListingService` | `upsertListing` | C | — | C | C | — | C | — | — | — | **C** |
+| **Upload/delete cover** | PL+FH | `placeListingService` | cover handlers | C | — | C | C | — | C | — | — | — | **C** |
+| **Upload/delete avatar** | PL+FH | `placeListingService` | avatar handlers | C | — | C | C | — | C | — | — | — | **C** |
+| **CRUD interaction links** | PL | `placeListingService` | link handlers | C | — | C | C | — | C | — | — | — | **C** |
+| **Report listing** | PL | `placeListingService` | `reportListing` | C | — | C | C | — | — | — | — | — | **C** |
+| **Local / for-you discovery** | PL | `placeVisibilityService` | discovery handlers | P | P | — | — | — | — | — | — | — | **P** |
+| **Dismiss suggestion** | PL | `placeService` | `dismissSuggestion` | C | C | — | — | — | — | — | — | — | **P** |
+| **List connections** | PL+Mem | `placeVisibilityService` | `getConnections` | P | P | — | — | — | — | — | — | — | **P** |
+| **Search users (Place)** | PL | `placeVisibilityService` | `searchUsers` | N | P | — | — | — | — | — | — | — | **P** |
+| **Global search listings** | PL | `placeVisibilityService` | `searchController` | P | P | — | — | — | — | — | — | — | **P** |
+| **Activity feed read** | PL | `placeVisibilityService` | `getActivityFeed` | P | P | C | — | — | — | — | — | — | **P** |
+| **Personal analytics** | PL | `placeVisibilityService` | `getPersonalAnalytics` | P | P | — | — | — | — | — | — | — | **P** |
+| **GDPR export** | PL | `placeVisibilityService` | `exportUserData` | P | P | — | — | — | — | — | — | — | **P** |
+| **List/get meeting** | PL | `placeVisibilityService` | meeting read handlers | P | P | — | — | — | — | — | — | — | **P** |
+| **Create meeting** | PL | `placeMeetingService` | `createMeeting` | C | — | C | C | C | C | — | — | — | **C** |
+| **Update meeting** | PL | `placeMeetingService` | `updateMeeting` | C | — | C | C | — | C | — | — | — | **C** |
+| **Cancel meeting** | PL | `placeMeetingService` | `deleteMeeting` | C | — | C | C | — | C | — | — | — | **C** |
+| **RSVP meeting** | PL | `placeMeetingService` | `rsvpMeeting` | C | — | C | C | C | C | — | — | — | **C** |
+| **Link meeting to calendar** | PL+Cal | `placeMeetingService` | `linkToCalendar` | C | C | C | C | — | C | — | — | — | **C** |
+| **Location privacy** | PL | `placeMeetingService` | privacy handlers | C | — | — | — | — | — | — | — | — | **C** |
+| **List/create/get community** | PL | `placeCommunityService` | community handlers | C | C | C | C | — | — | — | — | — | **C** |
+| **Join/leave community** | PL | `placeCommunityService` | join/leave | C | C | C | C | C | C | — | — | — | **C** |
+| **Auto-cluster communities** | PL | `placeCommunityService` | `generateAutoClusters` | C | — | C | C | — | C | — | — | — | **C** |
+| **List transactions** | PL | `placeTransactionService` | `getTransactions` | P | P | — | — | — | — | — | — | — | **P** |
+| **Get/create/update transaction** | PL | `placeTransactionService` | transaction handlers | P | P/N | — | — | — | — | — | — | — | **P** |
+| **Transaction summary** | PL | `placeTransactionService` | `getTransactionSummary` | P | P | — | — | — | — | — | — | — | **P** |
+| **Track interaction click** | PL | `placeTransactionService` | `trackInteractionClick` | P | — | — | — | — | — | — | — | — | **P** |
+| **Interaction stats** | PL | `placeTransactionService` | `getInteractionStats` | P | P | — | — | — | — | — | — | — | **P** |
+| **AI recommendations** | PL | `placeAIActionService` | `getAIRecommendations` | — | C | — | — | — | — | C | — | — | **C** |
+| **AI purchase help** | PL | `placeAIActionService` | `getPurchaseHelp` | — | C | — | — | — | — | C | — | — | **C** |
+| **AI reservation help** | PL | `placeAIActionService` | `getReservationHelp` | — | C | — | — | — | — | C | — | — | **C** |
+| **AI context (5 providers)** | PL | visibility / AI | context handlers | P | P | — | — | — | — | P | — | — | **P** |
+| **Trash listing** | PL | `placeTrashService` | Global Trash | C | — | C | C | — | — | — | C | — | **C** |
+| **Restore listing** | PL | `placeTrashService` | Global Trash | C | — | C | C | — | — | — | C | — | **C** |
+| **Permanent delete listing** | PL | `placeTrashService` | Global Trash | C | — | C | C | — | — | — | C | — | **C** |
+| **Trash meeting** | PL | `placeTrashService` | Global Trash | C | — | C | C | — | — | — | C | — | **C** |
+| **Restore meeting** | PL | `placeTrashService` | Global Trash | C | — | C | C | — | — | — | C | — | **C** |
+| **Permanent delete meeting** | PL | `placeTrashService` | Global Trash | C | — | C | C | — | — | — | C | — | **C** |
+| **V_Link resolve listing** | PL | `placeVlinkAccessService` | resolver | C | C | — | — | — | — | — | — | C | **C** |
+| **V_Link resolve meeting** | PL | `placeVlinkAccessService` | resolver | C | C | — | — | — | — | — | — | C | **C** |
+| **Notebook PLACE_LISTING link** | NB+PL | `placeVlinkAccessService` | Notebook API | P | P | — | — | — | — | — | — | P | **P** |
+| **Business workspace hub** | PL | `PlaceWorkspaceLanding` | workspace switch | — | C | — | — | — | — | — | — | — | **C** |
+| **Place home UX** | PL | — | client | — | P | — | — | — | P | — | — | — | **P** |
+
+---
+
+## Manifest truth rows (3B)
 
 | Surface | Claim | Runtime | Verdict |
 |---------|-------|---------|---------|
-| `place` capabilities.trash | omitted | No `trashedAt`; hard deletes | **C** (truthful omission) |
-| `place` capabilities.vlink | omitted | No entity/resolver | **C** |
-| `place` capabilities.realtime | omitted | Partial socket via Chat service | **C** (omission OK; document partial RT) |
-| `place` capabilities.ai | true | HTTP AI + context providers + ActionExecutor + toolExecutor (read-only) | **C** — reconciled Wave 1F |
-| `place` capabilities.notifications | omitted | UI types exist; server never emits | **C** manifest; **N** product/UI gap |
-| `place` entities[] | omitted | No platform registration | **C** |
-| `place` notifications[] | omitted | No server notifications | **C** |
-| `coreModuleRegistry` place | active | Routes registered | **C** |
-| `BrandedWorkDashboard` place icon/name | missing | `moduleIcons` only | **N** hub pattern |
-| `PlaceWorkspaceLanding` | missing | Listing editor inline in workspace switch | **N** module-development rule |
-| Product memory bank “notifications integrated” | claimed | No `NotificationService` calls | **N** doc drift |
+| `capabilities.trash` | true | `placeTrashService` + handler | **C** |
+| `capabilities.vlink` | true | Access + lifecycle + resolver | **C** |
+| `capabilities.search` | true | Listing search provider | **C** |
+| `capabilities.realtime` | true | `placeRealtimeService` (+ community events) | **C** |
+| `capabilities.globalActivity` | true | Platform activity writes + reads | **C** |
+| `capabilities.notifications` | true | 6 server types; manifest lists 6 | **C** |
+| `capabilities.ai` | true | Read-only HTTP + executor + tools | **C** |
+| `capabilities.businessWorkspace` | true | `PlaceWorkspaceLanding` + listing editor | **C** |
+| `entities[]` | listing, meeting | Platform registry | **C** |
+| `notifications[]` | 6 types | Matches `placeNotificationService` | **C** |
 
 ---
 
-## Operation count summary (audit-time)
+## Operation count summary (3B)
 
 | Class | Rows | C | P | N |
 |-------|------|---|---|---|
-| Place core / graph / settings | 8 | 0 | 2 | 6 |
-| Connections / member overlap | 4 | 0 | 2 | 2 |
-| Listings / explore / moderation | 10 | 0 | 6 | 4 |
-| Transactions / clicks | 6 | 0 | 4 | 2 |
-| Meetings / calendar / privacy | 7 | 0 | 4 | 3 |
-| Communities | 4 | 0 | 1 | 3 |
+| Graph / settings / interests | 8 | 6 | 2 | 0 |
+| Connections | 2 | 2 | 0 | 0 |
+| Listings / explore / moderation | 11 | 6 | 5 | 0 |
+| Discovery / connections UX | 3 | 0 | 3 | 0 |
+| Meetings / calendar / privacy | 6 | 5 | 1 | 0 |
+| Communities | 4 | 4 | 0 | 0 |
 | Feed / analytics / export | 3 | 0 | 3 | 0 |
-| Discovery | 3 | 0 | 2 | 1 |
-| AI (HTTP + context) | 8 | 0 | 8 | 0 |
-| Search / UX / cross-module | 4 | 0 | 3 | 1 |
-| **Total inventoried** | **~57** | **0** | **35** | **22** |
+| Transactions / clicks | 7 | 0 | 7 | 0 |
+| AI | 8 | 3 | 5 | 0 |
+| Trash / V_Link / Notebook | 9 | 8 | 1 | 0 |
+| UX / workspace | 2 | 1 | 1 | 0 |
+| **Total** | **63** | **35** | **28** | **0** |
+
+**3A → 3B delta:** **12 → 35 C** (+23); **51 → 28 P** (−23); **0 N** unchanged.
 
 ---
 
-## Certification impact
+## Remaining P rows — reconciliation (3B)
 
-| Area | Blocker for L2? | Blocker for L3? | Rationale |
-|------|-----------------|-----------------|-----------|
-| Canonical services | **Yes** | **Yes** | Zero service layer |
-| Policy Engine on writes | **Yes** | **Yes** | No actions / dual |
-| Calendar delegation | **Yes** | **Yes** | Direct event create |
-| Module activity / events | **Yes** | **Yes** | No platform activity |
-| Notifications | P1 | **Yes** if product requires | UI types without backend |
-| V_Link + entity | P1 | **Yes** for Reference #5 | Listing/meeting share lifecycle |
-| Global Trash | P2 | **Yes** if deletes must be soft | Hard delete today |
-| ActionExecutor twins | ~~P2~~ **Resolved 1F** | **Yes** for manifest `ai: true` | Read-only ops via `placeAIActionService` |
-| Tests | **Yes** | **Yes** | One integration test |
-| Realtime | No | No | Truthfully omitted from manifest |
-
----
-
-## Target state (post–Wave 1 extraction)
-
-Mirror Todo #4 / File Hub bar:
-
-- **`placeVisibilityService`** — explore, profile, search, AI context reads
-- **`placeAIActionService`** — read-only AI ops; visibility-backed grounding
-- **`placeListingService`** + **`placePolicyDual`** — listing/link/image mutations
-- **`placeMeetingService`** → **`calendarEventService`** for event creation
-- **`placeNotificationService`** — align with UI types or remove UI entries
-- **`placeActivityService`** OR wire feed to **`emitModuleActivityEvent`** (single model)
-- **`registerPlacePlatformEntities`** → `place:listing`, `place:meeting`
-- **`registerGlobalTrashHandlers('place')`** — if product requires soft delete
-- Operation matrix re-run with majority **C** before L2 promotion
+| Operation | Why P | Requirement for C | Blocks L3? |
+|-----------|-------|-------------------|----------|
+| **Get Place graph** | Read path; PE dual on graph reads still partial vs write handlers | Dedicated `place:graph.read` PE + visibility audit | No — read path |
+| **Update Place settings** | No activity/domain on settings mutation | Add normalized activity + domain event for settings | No — low fan-out |
+| **Explore / profile / admin listing / discovery reads** | Visibility + read PE partial | Consolidate read PE; document visibility matrix | No |
+| **Dismiss suggestion** | Idempotent preference; no activity by design | Optional preference domain event | No |
+| **List connections / global search / analytics / export** | Read-heavy; PE partial on cross-user reads | Read PE handlers + bounded result sets | No |
+| **Search users (Place)** | `PLACE_DISCOVERY_READ` PE not fully wired on route | Wire PE on `searchUsers` | **Soft** — discovery surface |
+| **Activity feed read** | Feed adapter PE partial | Align feed read with platform activity contract | No |
+| **List/get meeting** | Read path PE partial | Meeting read PE consolidation | No |
+| **Transactions (7 rows)** | No activity/events on commerce writes | Transaction activity + domain events + optional notifications | **Yes** — commerce lifecycle |
+| **AI context providers** | Provider latency / scoping partial | Provider perf + authZ audit per provider | **Soft** — AI exposure |
+| **Notebook PLACE_LISTING link** | Cross-module V_Link validation partial | Notebook link resolver parity with listing V_Link | **Soft** — cross-module |
+| **Place home UX** | Client-only; realtime partial on graph UX | Client hub parity with workspace landing | No — UX polish |
 
 ---
 
-*Wave 0 audit; Phase 1B graph + Phase 1C visibility 2026-06-03 — consolidated read rows at top; legacy duplicate rows retained for diff trace.*
+## Certification impact (3C)
+
+| Area | L2 | L3 | Status |
+|------|----|----|--------|
+| Graph lifecycle writes | ✅ | ✅ | **C** |
+| Connection lifecycle | ✅ | ✅ | **C** |
+| Meeting lifecycle writes | ✅ | ✅ | **C** |
+| Listing lifecycle writes | ✅ | ✅ | **C** |
+| Community lifecycle | ✅ | ✅ | **C** |
+| Location privacy | ✅ | ✅ | **C** |
+| Transaction commerce | ✅ | 🟡 | **P** — post-L3 punch-list PL-H2 |
+| Operation matrix **N** rows | — | ✅ | **0** |
+| Formal L3 certification | — | ✅ | **[PLACE_LEVEL3_CERTIFICATION_REVIEW.md](./PLACE_LEVEL3_CERTIFICATION_REVIEW.md)** |
+
+**L2 certification:** **Certified** (Wave 2D).  
+**L3 certification:** **Certified** (Wave 3C).  
+**Reference Module #5:** **Designated** (Wave 4B council).
+
+---
+
+*Wave 3C matrix status 2026-06-02. Operation rows unchanged from 3B; certification posture updated.*

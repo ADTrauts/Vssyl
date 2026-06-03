@@ -55,6 +55,17 @@ Technical implementation references and troubleshooting — **index:** [`guides/
 
 **AI architecture / module AI guides** were consolidated (April 2026). Living rules: `memory-bank/aiContextSystem.md`. Archived copies: `archive/guides-merged-2026/`. **AI runbooks:** [`ai/README.md`](./ai/README.md).
 
+### UX standards (`ux/`)
+
+Visual and interaction governance (complement architecture certification). **Index:** [`ux/README.md`](./ux/README.md).
+
+- **UX_CONSTITUTION.md** — Non-negotiable UX principles and Shared Token Ownership
+- **DESIGN_TOKENS.md** — Five token families (`--v-*`); Tailwind `v.*` namespace
+- **LAYOUT_PATTERNS.md**, **COMPONENT_STANDARDS.md**, **INTERACTION_STANDARDS.md**, **ACCESSIBILITY_STANDARDS.md**
+- **UX_CERTIFICATION_SCORECARD.md**, **UX_AUDIT_TEMPLATE.md**, **UX_MODERNIZATION_ROADMAP.md**
+
+Agent rule: `.cursor/rules/ux-standards.mdc`
+
 ### Architecture (`architecture/`)
 
 Cross-cutting design notes (complement `memory-bank/systemPatterns.md`). **Index:** [`architecture/README.md`](./architecture/README.md).

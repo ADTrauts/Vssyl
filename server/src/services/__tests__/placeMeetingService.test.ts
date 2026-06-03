@@ -10,11 +10,14 @@ import * as calendarEventService from '../calendarEventService';
 import * as calendarVlinkAccess from '../calendarVlinkAccessService';
 import {
   createMeeting,
+  getLocationPrivacy,
   linkToCalendar,
   rsvpMeeting,
+  updateLocationPrivacy,
   updateMeeting,
 } from '../place/placeMeetingService';
 import { PlaceServiceError } from '../place/placeErrors';
+import { POLICY_ACTIONS } from '../../auth/policyActions';
 
 describe('placeMeetingService', () => {
   beforeEach(() => {
@@ -193,5 +196,52 @@ describe('placeMeetingService', () => {
 
     expect(calendarVlinkAccess.userCanLinkCalendarEvent).toHaveBeenCalledWith('u1', 'evt-existing');
     expect(result.eventId).toBe('evt-existing');
+  });
+
+  it('getLocationPrivacy enforces location privacy read policy', async () => {
+    vi.spyOn(prisma.placeLocationPrivacy, 'findUnique').mockResolvedValue({
+      userId: 'u1',
+      shareLocationWithConnections: true,
+      showOnMeetingPlaces: true,
+    } as never);
+
+    await getLocationPrivacy('u1');
+
+    expect(placePolicyDual.assertPlacePolicyAllowed).toHaveBeenCalledWith({
+      userId: 'u1',
+      action: POLICY_ACTIONS.PLACE_LOCATION_PRIVACY_READ,
+      resourceType: 'place',
+      resourceId: 'u1',
+    });
+  });
+
+  it('updateLocationPrivacy enforces location privacy update policy', async () => {
+    vi.spyOn(prisma.placeLocationPrivacy, 'upsert').mockResolvedValue({
+      userId: 'u1',
+      shareLocationWithConnections: false,
+      showOnMeetingPlaces: true,
+    } as never);
+
+    await updateLocationPrivacy({
+      userId: 'u1',
+      shareLocationWithConnections: false,
+    });
+
+    expect(placePolicyDual.assertPlacePolicyAllowed).toHaveBeenCalledWith({
+      userId: 'u1',
+      action: POLICY_ACTIONS.PLACE_LOCATION_PRIVACY_UPDATE,
+      resourceType: 'place',
+      resourceId: 'u1',
+    });
+  });
+
+  it('updateLocationPrivacy denies when policy blocks', async () => {
+    vi.spyOn(placePolicyDual, 'assertPlacePolicyAllowed').mockRejectedValue(
+      new PlaceServiceError('Forbidden', 'forbidden', 403)
+    );
+
+    await expect(
+      updateLocationPrivacy({ userId: 'u1', showOnMeetingPlaces: false })
+    ).rejects.toMatchObject({ code: 'forbidden' });
   });
 });

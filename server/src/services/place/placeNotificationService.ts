@@ -12,6 +12,10 @@ import { NotificationService } from '../notificationService';
  * Phase 1E:
  * - place_connection_request
  * - place_connection_accepted
+ *
+ * Wave 3B:
+ * - place_community_member_joined
+ * - place_community_member_left
  */
 
 export async function notifyConnectionRequest(params: {
@@ -156,6 +160,81 @@ export async function notifyMeetingRsvp(params: {
     await logger.error('Failed to deliver place meeting RSVP notification', {
       operation: 'place_notification_meeting_rsvp',
       meetingId,
+      error: { message: err.message, stack: err.stack },
+    });
+  }
+}
+
+export async function notifyCommunityMemberJoined(params: {
+  actorUserId: string;
+  creatorId: string;
+  communityId: string;
+  communityName: string;
+}): Promise<void> {
+  const { actorUserId, creatorId, communityId, communityName } = params;
+  if (!creatorId || creatorId === actorUserId) return;
+
+  try {
+    const member = await prisma.user.findUnique({
+      where: { id: actorUserId },
+      select: { name: true },
+    });
+    const memberName = member?.name ?? 'Someone';
+
+    await NotificationService.createNotification({
+      userId: creatorId,
+      type: 'place_community_member_joined',
+      title: 'New community member',
+      body: `${memberName} joined ${communityName}`,
+      data: {
+        communityId,
+        moduleId: 'place',
+        actorUserId,
+      },
+    });
+  } catch (error: unknown) {
+    const err = error instanceof Error ? error : new Error(String(error));
+    await logger.error('Failed to deliver place community member joined notification', {
+      operation: 'place_notification_community_member_joined',
+      communityId,
+      error: { message: err.message, stack: err.stack },
+    });
+  }
+}
+
+export async function notifyCommunityMemberLeft(params: {
+  actorUserId: string;
+  creatorId: string;
+  communityId: string;
+  communityName?: string;
+}): Promise<void> {
+  const { actorUserId, creatorId, communityId, communityName } = params;
+  if (!creatorId || creatorId === actorUserId) return;
+
+  try {
+    const member = await prisma.user.findUnique({
+      where: { id: actorUserId },
+      select: { name: true },
+    });
+    const memberName = member?.name ?? 'Someone';
+    const label = communityName ? ` ${communityName}` : '';
+
+    await NotificationService.createNotification({
+      userId: creatorId,
+      type: 'place_community_member_left',
+      title: 'Community member left',
+      body: `${memberName} left${label}`,
+      data: {
+        communityId,
+        moduleId: 'place',
+        actorUserId,
+      },
+    });
+  } catch (error: unknown) {
+    const err = error instanceof Error ? error : new Error(String(error));
+    await logger.error('Failed to deliver place community member left notification', {
+      operation: 'place_notification_community_member_left',
+      communityId,
       error: { message: err.message, stack: err.stack },
     });
   }

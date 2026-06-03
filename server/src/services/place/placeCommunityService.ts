@@ -2,17 +2,18 @@ import { prisma } from '../../lib/prisma';
 import { POLICY_ACTIONS } from '../../auth/policyActions';
 import { PlaceServiceError } from './placeErrors';
 import { assertPlacePolicyAllowed } from './placePolicyDual';
+import * as placeActivity from './placeActivityService';
+import * as placeDomain from './placeDomainEventService';
+import * as placeNotification from './placeNotificationService';
+import * as placeRealtime from './placeRealtimeService';
 
 /**
- * Place-owned community CRUD (Wave 1G).
+ * Place-owned community CRUD (Wave 1G, side effects Wave 3A).
  *
- * Deferred gaps (documented — do not overbuild):
- * - Domain events / module activity not emitted (immature product lifecycle)
- * - Notifications for invites/membership not implemented
- * - Global Trash / V_Link / platform entities deferred to Phase 2A
- * - Full `place:community.*` Policy Engine actions pending taxonomy extension
- *
- * Future: richer invite flows may remain here or move to a social layer; not Member domain.
+ * Activity + domain events on create/join/leave/auto-cluster.
+ * Realtime fan-out to community creator on join/leave; auto-cluster members notified.
+ * Notifications to community creator on join/leave (Wave 3B).
+ * Global Trash / V_Link / platform entities deferred by design.
  */
 
 function requireUserId(userId: string | null | undefined): string {
@@ -66,7 +67,7 @@ export async function createCommunity(params: {
     throw new PlaceServiceError('name is required', 'invalid', 400);
   }
 
-  return prisma.placeCommunity.create({
+  const community = await prisma.placeCommunity.create({
     data: {
       name,
       description: params.description || null,
@@ -83,6 +84,19 @@ export async function createCommunity(params: {
       creator: { select: { id: true, name: true } },
     },
   });
+
+  await placeActivity.recordCommunityCreated({
+    actorUserId: uid,
+    communityId: community.id,
+    communityName: community.name,
+  });
+  placeDomain.recordCommunityCreatedDomainEvent({
+    actorUserId: uid,
+    communityId: community.id,
+    communityName: community.name,
+  });
+
+  return community;
 }
 
 export async function listCommunities(userId: string, filter?: string | null) {
@@ -145,7 +159,10 @@ export async function joinCommunity(userId: string, communityId: string) {
   const uid = requireUserId(userId);
   await assertCommunityWrite(uid);
 
-  const community = await prisma.placeCommunity.findUnique({ where: { id: communityId } });
+  const community = await prisma.placeCommunity.findUnique({
+    where: { id: communityId },
+    select: { id: true, name: true, isPublic: true, creatorId: true },
+  });
   if (!community) {
     throw new PlaceServiceError('Community not found', 'not_found', 404);
   }
@@ -168,12 +185,34 @@ export async function joinCommunity(userId: string, communityId: string) {
     data: { communityId, userId: uid },
   });
 
+  await placeActivity.recordCommunityJoined({ actorUserId: uid, communityId });
+  placeDomain.recordCommunityJoinedDomainEvent({ actorUserId: uid, communityId });
+
+  if (community.creatorId && community.creatorId !== uid) {
+    placeRealtime.broadcastCommunityMemberJoined(community.creatorId, {
+      communityId,
+      memberUserId: uid,
+      communityName: community.name,
+    });
+    await placeNotification.notifyCommunityMemberJoined({
+      actorUserId: uid,
+      creatorId: community.creatorId,
+      communityId,
+      communityName: community.name,
+    });
+  }
+
   return { joined: true as const };
 }
 
 export async function leaveCommunity(userId: string, communityId: string) {
   const uid = requireUserId(userId);
   await assertCommunityWrite(uid);
+
+  const community = await prisma.placeCommunity.findUnique({
+    where: { id: communityId },
+    select: { creatorId: true, name: true },
+  });
 
   const membership = await prisma.placeCommunityMember.findUnique({
     where: { communityId_userId: { communityId, userId: uid } },
@@ -185,6 +224,22 @@ export async function leaveCommunity(userId: string, communityId: string) {
   await prisma.placeCommunityMember.delete({
     where: { id: membership.id },
   });
+
+  await placeActivity.recordCommunityLeft({ actorUserId: uid, communityId });
+  placeDomain.recordCommunityLeftDomainEvent({ actorUserId: uid, communityId });
+
+  if (community?.creatorId && community.creatorId !== uid) {
+    placeRealtime.broadcastCommunityMemberLeft(community.creatorId, {
+      communityId,
+      memberUserId: uid,
+    });
+    await placeNotification.notifyCommunityMemberLeft({
+      actorUserId: uid,
+      creatorId: community.creatorId,
+      communityId,
+      communityName: community.name,
+    });
+  }
 
   return { left: true as const };
 }
@@ -237,7 +292,7 @@ export async function generateAutoClusters(userId: string) {
         });
         const clusterName = `Fans of ${businesses.map((b) => b.name).join(', ')}`;
 
-        await prisma.placeCommunity.create({
+        const cluster = await prisma.placeCommunity.create({
           data: {
             name: clusterName,
             description: `Auto-discovered group sharing ${sharedBizIds.size} common places`,
@@ -251,8 +306,24 @@ export async function generateAutoClusters(userId: string) {
           },
         });
         clustersCreated++;
+
+        placeRealtime.broadcastCommunityAutoClustered([userA, userB], {
+          communityId: cluster.id,
+          communityName: cluster.name,
+        });
       }
     }
+  }
+
+  if (clustersCreated > 0) {
+    await placeActivity.recordCommunityAutoClustered({
+      actorUserId: uid,
+      clustersCreated,
+    });
+    placeDomain.recordCommunityAutoClusteredDomainEvent({
+      actorUserId: uid,
+      clustersCreated,
+    });
   }
 
   return { clustersCreated };

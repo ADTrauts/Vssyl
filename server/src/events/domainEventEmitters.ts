@@ -1131,6 +1131,49 @@ export function emitPlaceNodeRemovedEvent(params: {
   );
 }
 
+export function emitPlaceNodeUpdatedEvent(params: {
+  actorUserId: string;
+  nodeId: string;
+  nodeType: string;
+  entityId: string;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.PLACE_NODE_UPDATED, {
+      actorUserId: params.actorUserId,
+      entityId: params.nodeId,
+      metadata: { moduleId: 'place', nodeType: params.nodeType, entityId: params.entityId },
+    })
+  );
+}
+
+export function emitPlaceInterestsUpdatedEvent(params: {
+  actorUserId: string;
+  placeId: string;
+  categories: string[];
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.PLACE_INTERESTS_UPDATED, {
+      actorUserId: params.actorUserId,
+      entityId: params.placeId,
+      metadata: { moduleId: 'place', categories: params.categories },
+    })
+  );
+}
+
+export function emitPlaceFollowVisibilityUpdatedEvent(params: {
+  actorUserId: string;
+  businessId: string;
+  isVisible: boolean;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.PLACE_FOLLOW_VISIBILITY_UPDATED, {
+      actorUserId: params.actorUserId,
+      entityId: params.businessId,
+      metadata: { moduleId: 'place', businessId: params.businessId, isVisible: params.isVisible },
+    })
+  );
+}
+
 export function emitPlaceListingUpdatedEvent(params: {
   actorUserId: string;
   listingId: string;
@@ -1172,6 +1215,51 @@ export function emitPlaceListingReportedEvent(params: {
       entityId: params.businessId,
       businessId: params.businessId,
       metadata: { moduleId: 'place', businessId: params.businessId, reason: params.reason },
+    })
+  );
+}
+
+export function emitPlaceListingTrashedEvent(params: {
+  actorUserId: string;
+  listingId: string;
+  businessId: string;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.PLACE_LISTING_TRASHED, {
+      actorUserId: params.actorUserId,
+      entityId: params.listingId,
+      businessId: params.businessId,
+      metadata: { moduleId: 'place', businessId: params.businessId },
+    })
+  );
+}
+
+export function emitPlaceListingRestoredEvent(params: {
+  actorUserId: string;
+  listingId: string;
+  businessId: string;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.PLACE_LISTING_RESTORED, {
+      actorUserId: params.actorUserId,
+      entityId: params.listingId,
+      businessId: params.businessId,
+      metadata: { moduleId: 'place', businessId: params.businessId },
+    })
+  );
+}
+
+export function emitPlaceListingPermanentlyDeletedEvent(params: {
+  actorUserId: string;
+  listingId: string;
+  businessId: string;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.PLACE_LISTING_PERMANENTLY_DELETED, {
+      actorUserId: params.actorUserId,
+      entityId: params.listingId,
+      businessId: params.businessId,
+      metadata: { moduleId: 'place', businessId: params.businessId },
     })
   );
 }
@@ -1253,6 +1341,45 @@ export function emitPlaceMeetingLinkedToCalendarEvent(params: {
   );
 }
 
+export function emitPlaceMeetingTrashedEvent(params: {
+  actorUserId: string;
+  meetingId: string;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.PLACE_MEETING_TRASHED, {
+      actorUserId: params.actorUserId,
+      entityId: params.meetingId,
+      metadata: { moduleId: 'place' },
+    })
+  );
+}
+
+export function emitPlaceMeetingRestoredEvent(params: {
+  actorUserId: string;
+  meetingId: string;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.PLACE_MEETING_RESTORED, {
+      actorUserId: params.actorUserId,
+      entityId: params.meetingId,
+      metadata: { moduleId: 'place' },
+    })
+  );
+}
+
+export function emitPlaceMeetingPermanentlyDeletedEvent(params: {
+  actorUserId: string;
+  meetingId: string;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.PLACE_MEETING_PERMANENTLY_DELETED, {
+      actorUserId: params.actorUserId,
+      entityId: params.meetingId,
+      metadata: { moduleId: 'place' },
+    })
+  );
+}
+
 export function emitPlaceConnectionRequestedEvent(params: {
   actorUserId: string;
   relationshipId: string;
@@ -1290,6 +1417,59 @@ export function emitPlaceSetupCompletedEvent(params: {
       actorUserId: params.actorUserId,
       entityId: params.placeId,
       metadata: { moduleId: 'place' },
+    })
+  );
+}
+
+export function emitPlaceCommunityCreatedEvent(params: {
+  actorUserId: string;
+  communityId: string;
+  communityName: string;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.PLACE_COMMUNITY_CREATED, {
+      actorUserId: params.actorUserId,
+      entityId: params.communityId,
+      metadata: { moduleId: 'place', communityName: params.communityName },
+    })
+  );
+}
+
+export function emitPlaceCommunityJoinedEvent(params: {
+  actorUserId: string;
+  communityId: string;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.PLACE_COMMUNITY_JOINED, {
+      actorUserId: params.actorUserId,
+      entityId: params.communityId,
+      metadata: { moduleId: 'place', communityId: params.communityId },
+    })
+  );
+}
+
+export function emitPlaceCommunityLeftEvent(params: {
+  actorUserId: string;
+  communityId: string;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.PLACE_COMMUNITY_LEFT, {
+      actorUserId: params.actorUserId,
+      entityId: params.communityId,
+      metadata: { moduleId: 'place', communityId: params.communityId },
+    })
+  );
+}
+
+export function emitPlaceCommunityAutoClusteredEvent(params: {
+  actorUserId: string;
+  clustersCreated: number;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.PLACE_COMMUNITY_AUTO_CLUSTERED, {
+      actorUserId: params.actorUserId,
+      entityId: params.actorUserId,
+      metadata: { moduleId: 'place', clustersCreated: params.clustersCreated },
     })
   );
 }

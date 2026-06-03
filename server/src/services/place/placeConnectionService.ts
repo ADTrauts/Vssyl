@@ -1,5 +1,7 @@
 import { prisma } from '../../lib/prisma';
+import { POLICY_ACTIONS } from '../../auth/policyActions';
 import { PlaceServiceError } from './placeErrors';
+import { assertPlacePolicyAllowed } from './placePolicyDual';
 import * as placeActivity from './placeActivityService';
 import * as placeDomain from './placeDomainEventService';
 import * as placeNotification from './placeNotificationService';
@@ -30,6 +32,13 @@ export async function sendConnectionRequest(params: {
   if (targetUserId === userId) {
     throw new PlaceServiceError('Cannot connect with yourself', 'invalid', 400);
   }
+
+  await assertPlacePolicyAllowed({
+    userId,
+    action: POLICY_ACTIONS.PLACE_CONNECTION_REQUEST,
+    resourceType: 'place_connection',
+    resourceId: targetUserId,
+  });
 
   const existing = await prisma.relationship.findFirst({
     where: {
@@ -96,6 +105,13 @@ export async function acceptConnection(params: {
       400
     );
   }
+
+  await assertPlacePolicyAllowed({
+    userId,
+    action: POLICY_ACTIONS.PLACE_CONNECTION_ACCEPT,
+    resourceType: 'place_connection',
+    resourceId: relationshipId,
+  });
 
   const updated = await prisma.relationship.update({
     where: { id: relationshipId },

@@ -5,6 +5,7 @@ import { assertCanReadPage, assertCanWritePage } from '../notes/notesPermissionS
 import { getTaskByIdIfAccessible } from '../todoVisibilityService';
 import { validateAccessibleFileIds } from '../driveVisibilityService';
 import { userCanAccessCalendarEvent } from './notebookLinkVisibilityService';
+import { assertNotebookListingTargetReadable } from '../place/placeVlinkAccessService';
 import { NotebookLinkServiceError } from './notebookLinkErrors';
 import { evaluateNotebookLinkPolicyDual } from './notebookPolicyDual';
 
@@ -129,12 +130,19 @@ export async function assertTargetReadable(params: {
       return;
     }
     case 'CHAT_CONVERSATION':
-    case 'PLACE_LISTING':
       throw new NotebookLinkServiceError(
         `${targetType} links are not supported in this release`,
         'unsupported',
         400
       );
+    case 'PLACE_LISTING': {
+      try {
+        await assertNotebookListingTargetReadable(userId, targetId);
+      } catch {
+        throw new NotebookLinkServiceError('Listing not found', 'not_found', 404);
+      }
+      return;
+    }
     case 'PAGE':
       throw new NotebookLinkServiceError('Cannot link a page to itself as target', 'invalid', 400);
     default:

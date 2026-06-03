@@ -222,7 +222,15 @@ export async function updateNode(input: UpdatePlaceNodeInput) {
     resourceId: input.nodeId,
   });
 
-  return prisma.placeNode.update({
+  const node = await prisma.placeNode.findUnique({
+    where: { id: input.nodeId },
+    select: { id: true, nodeType: true, entityId: true },
+  });
+  if (!node) {
+    throw new PlaceServiceError('Node not found', 'not_found', 404);
+  }
+
+  const updated = await prisma.placeNode.update({
     where: { id: input.nodeId },
     data: {
       ...(input.positionX !== undefined && { positionX: input.positionX }),
@@ -232,6 +240,21 @@ export async function updateNode(input: UpdatePlaceNodeInput) {
       ...(input.pinned !== undefined && { pinned: input.pinned }),
     },
   });
+
+  await placeActivity.recordNodeUpdated({
+    actorUserId: input.userId,
+    nodeId: node.id,
+    nodeType: node.nodeType,
+    entityId: node.entityId,
+  });
+  placeDomain.recordNodeUpdatedDomainEvent({
+    actorUserId: input.userId,
+    nodeId: node.id,
+    nodeType: node.nodeType,
+    entityId: node.entityId,
+  });
+
+  return updated;
 }
 
 export async function removeNode(input: RemovePlaceNodeInput) {
@@ -303,6 +326,11 @@ export async function setInterests(input: SetPlaceInterestsInput) {
     placeId: place.id,
     categories: input.categories,
   });
+  placeDomain.recordInterestsUpdatedDomainEvent({
+    actorUserId: input.userId,
+    placeId: place.id,
+    categories: input.categories,
+  });
 
   return interests;
 }
@@ -342,11 +370,24 @@ export async function updateFollowVisibility(input: UpdateFollowVisibilityInput)
     metadata: { businessId: input.businessId },
   });
 
-  return prisma.placeFollowVisibility.upsert({
+  const visibility = await prisma.placeFollowVisibility.upsert({
     where: { userId_businessId: { userId: input.userId, businessId: input.businessId } },
     update: { isVisible: input.isVisible },
     create: { userId: input.userId, businessId: input.businessId, isVisible: input.isVisible },
   });
+
+  await placeActivity.recordFollowVisibilityUpdated({
+    actorUserId: input.userId,
+    businessId: input.businessId,
+    isVisible: input.isVisible,
+  });
+  placeDomain.recordFollowVisibilityUpdatedDomainEvent({
+    actorUserId: input.userId,
+    businessId: input.businessId,
+    isVisible: input.isVisible,
+  });
+
+  return visibility;
 }
 
 /**

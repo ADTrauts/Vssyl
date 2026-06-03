@@ -1,14 +1,8 @@
 import { Request, Response } from 'express';
-import { prisma } from '../lib/prisma';
 import { logger } from '../lib/logger';
 import { getUserFromRequest } from '../middleware/auth';
-
-/**
- * Commerce / transaction telemetry — **deferred Wave 1G** (Phase 2A+).
- * Rationale: append-only telemetry; not required for Level 2 candidacy; Stripe integration TBD.
- * Operation matrix marks rows as accepted partial/deferred; manifest does not claim commerce capability.
- */
-
+import { respondPlaceServiceError } from '../services/place/placeErrors';
+import * as placeTransactionService from '../services/place/placeTransactionService';
 
 function logPlaceTransactionError(desc: string, operation: string, err: unknown): void {
   const e = err instanceof Error ? err : new Error(String(err));
@@ -17,329 +11,170 @@ function logPlaceTransactionError(desc: string, operation: string, err: unknown)
     error: { message: e.message, stack: e.stack },
   });
 }
+
 function getUserId(req: Request): string | null {
   const user = getUserFromRequest(req);
   return user?.id ?? null;
 }
 
-const VSSYL_FEE_RATE = 0.029; // 2.9% platform fee (Shopify-style)
-
-// ============================================================================
-// TRANSACTIONS
-// ============================================================================
-
-/**
- * POST /api/place/transactions
- * Create a new Place transaction (purchase or external click)
- */
 export async function createTransaction(req: Request, res: Response): Promise<void> {
   try {
     const userId = getUserId(req);
-    if (!userId) { res.status(401).json({ success: false, error: 'Authentication required' }); return; }
-
-    const { businessId, type, amount, currency, description, externalService, externalUrl, interactionLinkId } = req.body;
-
-    if (!businessId || !type) {
-      res.status(400).json({ success: false, error: 'businessId and type are required' });
+    if (!userId) {
+      res.status(401).json({ success: false, error: 'Authentication required' });
       return;
     }
 
-    const vssylFee = type === 'PURCHASE' && amount ? Math.round(amount * VSSYL_FEE_RATE * 100) / 100 : null;
+    const { businessId, type, amount, currency, description, externalService, externalUrl, interactionLinkId } =
+      req.body;
 
-    const transaction = await prisma.placeTransaction.create({
-      data: {
-        userId,
-        businessId,
-        type,
-        amount: amount || null,
-        currency: currency || 'USD',
-        vssylFee,
-        description: description || null,
-        externalService: externalService || null,
-        externalUrl: externalUrl || null,
-        interactionLinkId: interactionLinkId || null,
-        status: type === 'EXTERNAL_CLICK' ? 'COMPLETED' : 'PENDING',
-        completedAt: type === 'EXTERNAL_CLICK' ? new Date() : null,
-      },
+    const transaction = await placeTransactionService.createTransaction({
+      userId,
+      businessId,
+      type,
+      amount,
+      currency,
+      description,
+      externalService,
+      externalUrl,
+      interactionLinkId,
     });
 
     res.status(201).json({ success: true, data: transaction });
   } catch (error: unknown) {
-    const err = error as Error;
-    logPlaceTransactionError('Error creating transaction', 'place_transaction_create', err);
+    if (respondPlaceServiceError(res, error)) return;
+    logPlaceTransactionError('Error creating transaction', 'place_transaction_create', error);
     res.status(500).json({ success: false, error: 'Failed to create transaction' });
   }
 }
 
-/**
- * GET /api/place/transactions
- * Get the current user's transaction history
- */
 export async function getTransactions(req: Request, res: Response): Promise<void> {
   try {
     const userId = getUserId(req);
-    if (!userId) { res.status(401).json({ success: false, error: 'Authentication required' }); return; }
+    if (!userId) {
+      res.status(401).json({ success: false, error: 'Authentication required' });
+      return;
+    }
 
     const { limit, offset, type, businessId } = req.query;
-    const take = Math.min(parseInt(limit as string) || 30, 100);
-    const skip = parseInt(offset as string) || 0;
+    const result = await placeTransactionService.listTransactions({
+      userId,
+      limit: typeof limit === 'string' ? parseInt(limit, 10) : undefined,
+      offset: typeof offset === 'string' ? parseInt(offset, 10) : undefined,
+      type: typeof type === 'string' ? type : undefined,
+      businessId: typeof businessId === 'string' ? businessId : undefined,
+    });
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const where: any = { userId };
-    if (type && typeof type === 'string') where.type = type;
-    if (businessId && typeof businessId === 'string') where.businessId = businessId;
-
-    const [transactions, total] = await Promise.all([
-      prisma.placeTransaction.findMany({
-        where,
-        include: {
-          business: { select: { id: true, name: true, logo: true } },
-        },
-        orderBy: { createdAt: 'desc' },
-        take,
-        skip,
-      }),
-      prisma.placeTransaction.count({ where }),
-    ]);
-
-    res.json({ success: true, data: transactions, pagination: { total, limit: take, offset: skip } });
+    res.json({ success: true, data: result.transactions, pagination: result.pagination });
   } catch (error: unknown) {
-    const err = error as Error;
-    logPlaceTransactionError('Error fetching transactions', 'place_transaction_list', err);
+    if (respondPlaceServiceError(res, error)) return;
+    logPlaceTransactionError('Error fetching transactions', 'place_transaction_list', error);
     res.status(500).json({ success: false, error: 'Failed to fetch transactions' });
   }
 }
 
-/**
- * GET /api/place/transactions/:transactionId
- * Get a single transaction with receipt data
- */
 export async function getTransaction(req: Request, res: Response): Promise<void> {
   try {
     const userId = getUserId(req);
-    if (!userId) { res.status(401).json({ success: false, error: 'Authentication required' }); return; }
-
-    const { transactionId } = req.params;
-
-    const transaction = await prisma.placeTransaction.findUnique({
-      where: { id: transactionId },
-      include: {
-        business: { select: { id: true, name: true, logo: true, email: true } },
-      },
-    });
-
-    if (!transaction || transaction.userId !== userId) {
-      res.status(404).json({ success: false, error: 'Transaction not found' });
+    if (!userId) {
+      res.status(401).json({ success: false, error: 'Authentication required' });
       return;
     }
 
+    const transaction = await placeTransactionService.getTransaction({
+      userId,
+      transactionId: req.params.transactionId,
+    });
+
     res.json({ success: true, data: transaction });
   } catch (error: unknown) {
-    const err = error as Error;
-    logPlaceTransactionError('Error fetching transaction', 'place_transaction_get', err);
+    if (respondPlaceServiceError(res, error)) return;
+    logPlaceTransactionError('Error fetching transaction', 'place_transaction_get', error);
     res.status(500).json({ success: false, error: 'Failed to fetch transaction' });
   }
 }
 
-/**
- * PUT /api/place/transactions/:transactionId/privacy
- * Toggle transaction privacy
- */
 export async function updateTransactionPrivacy(req: Request, res: Response): Promise<void> {
   try {
     const userId = getUserId(req);
-    if (!userId) { res.status(401).json({ success: false, error: 'Authentication required' }); return; }
-
-    const { transactionId } = req.params;
-    const { isPrivate } = req.body;
-
-    if (typeof isPrivate !== 'boolean') {
-      res.status(400).json({ success: false, error: 'isPrivate must be a boolean' });
+    if (!userId) {
+      res.status(401).json({ success: false, error: 'Authentication required' });
       return;
     }
 
-    const transaction = await prisma.placeTransaction.findUnique({ where: { id: transactionId } });
-    if (!transaction || transaction.userId !== userId) {
-      res.status(404).json({ success: false, error: 'Transaction not found' });
-      return;
-    }
-
-    const updated = await prisma.placeTransaction.update({
-      where: { id: transactionId },
-      data: { isPrivate },
+    const updated = await placeTransactionService.updateTransactionPrivacy({
+      userId,
+      transactionId: req.params.transactionId,
+      isPrivate: req.body.isPrivate,
     });
 
     res.json({ success: true, data: updated });
   } catch (error: unknown) {
-    const err = error as Error;
-    logPlaceTransactionError('Error updating transaction privacy', 'place_transaction_privacy', err);
+    if (respondPlaceServiceError(res, error)) return;
+    logPlaceTransactionError('Error updating transaction privacy', 'place_transaction_privacy', error);
     res.status(500).json({ success: false, error: 'Failed to update privacy' });
   }
 }
 
-/**
- * GET /api/place/transactions/summary
- * Get transaction summary stats for the user
- */
 export async function getTransactionSummary(req: Request, res: Response): Promise<void> {
   try {
     const userId = getUserId(req);
-    if (!userId) { res.status(401).json({ success: false, error: 'Authentication required' }); return; }
+    if (!userId) {
+      res.status(401).json({ success: false, error: 'Authentication required' });
+      return;
+    }
 
-    const [totalCount, purchases, clicks] = await Promise.all([
-      prisma.placeTransaction.count({ where: { userId } }),
-      prisma.placeTransaction.aggregate({
-        where: { userId, type: 'PURCHASE', status: 'COMPLETED' },
-        _sum: { amount: true },
-        _count: { id: true },
-      }),
-      prisma.placeTransaction.count({ where: { userId, type: 'EXTERNAL_CLICK' } }),
-    ]);
-
-    // Top businesses by interaction
-    const topBusinesses = await prisma.placeTransaction.groupBy({
-      by: ['businessId'],
-      where: { userId },
-      _count: { id: true },
-      orderBy: { _count: { id: 'desc' } },
-      take: 5,
-    });
-
-    const topIds = topBusinesses.map(t => t.businessId);
-    const businesses = topIds.length > 0
-      ? await prisma.business.findMany({
-          where: { id: { in: topIds } },
-          select: { id: true, name: true, logo: true },
-        })
-      : [];
-
-    const businessMap = Object.fromEntries(businesses.map(b => [b.id, b]));
-
-    res.json({
-      success: true,
-      data: {
-        totalTransactions: totalCount,
-        totalSpent: purchases._sum.amount || 0,
-        purchaseCount: purchases._count.id,
-        externalClickCount: clicks,
-        topBusinesses: topBusinesses.map(t => ({
-          business: businessMap[t.businessId] || { id: t.businessId, name: 'Unknown' },
-          interactionCount: t._count.id,
-        })),
-      },
-    });
+    const data = await placeTransactionService.getTransactionSummary(userId);
+    res.json({ success: true, data });
   } catch (error: unknown) {
-    const err = error as Error;
-    logPlaceTransactionError('Error fetching summary', 'place_transaction_summary', err);
+    if (respondPlaceServiceError(res, error)) return;
+    logPlaceTransactionError('Error fetching summary', 'place_transaction_summary', error);
     res.status(500).json({ success: false, error: 'Failed to fetch summary' });
   }
 }
 
-// ============================================================================
-// INTERACTION CLICK TRACKING
-// ============================================================================
-
-/**
- * POST /api/place/interactions/click
- * Track an interaction link click (analytics + creates EXTERNAL_CLICK transaction)
- */
 export async function trackInteractionClick(req: Request, res: Response): Promise<void> {
   try {
     const userId = getUserId(req);
-    if (!userId) { res.status(401).json({ success: false, error: 'Authentication required' }); return; }
-
-    const { businessId, interactionLinkId, externalService, url } = req.body;
-
-    if (!businessId || !url) {
-      res.status(400).json({ success: false, error: 'businessId and url are required' });
+    if (!userId) {
+      res.status(401).json({ success: false, error: 'Authentication required' });
       return;
     }
 
-    // Record click
-    await prisma.placeInteractionClick.create({
-      data: {
-        userId,
-        businessId,
-        interactionLinkId: interactionLinkId || '',
-        externalService: externalService || 'CUSTOM',
-        url,
-      },
-    });
-
-    // Also create an EXTERNAL_CLICK transaction
-    await prisma.placeTransaction.create({
-      data: {
-        userId,
-        businessId,
-        type: 'EXTERNAL_CLICK',
-        status: 'COMPLETED',
-        description: `Visited ${externalService || 'external link'}`,
-        externalService: externalService || null,
-        externalUrl: url,
-        interactionLinkId: interactionLinkId || null,
-        completedAt: new Date(),
-      },
+    const { businessId, interactionLinkId, externalService, url } = req.body;
+    await placeTransactionService.trackInteractionClick({
+      userId,
+      businessId,
+      interactionLinkId,
+      externalService,
+      url,
     });
 
     res.json({ success: true, message: 'Click tracked' });
   } catch (error: unknown) {
-    const err = error as Error;
-    logPlaceTransactionError('Error tracking click', 'place_transaction_click', err);
+    if (respondPlaceServiceError(res, error)) return;
+    logPlaceTransactionError('Error tracking click', 'place_transaction_click', error);
     res.status(500).json({ success: false, error: 'Failed to track click' });
   }
 }
 
-/**
- * GET /api/place/interactions/stats/:businessId
- * Get interaction stats for a business (business admin view)
- */
 export async function getInteractionStats(req: Request, res: Response): Promise<void> {
   try {
     const userId = getUserId(req);
-    if (!userId) { res.status(401).json({ success: false, error: 'Authentication required' }); return; }
-
-    const { businessId } = req.params;
-
-    // Verify admin access
-    const member = await prisma.businessMember.findUnique({
-      where: { businessId_userId: { businessId, userId } },
-    });
-    if (!member || !member.isActive || (member.role !== 'ADMIN' && member.role !== 'MANAGER')) {
-      res.status(403).json({ success: false, error: 'Admin access required' });
+    if (!userId) {
+      res.status(401).json({ success: false, error: 'Authentication required' });
       return;
     }
 
-    const [totalClicks, clicksByService, recentClicks] = await Promise.all([
-      prisma.placeInteractionClick.count({ where: { businessId } }),
-      prisma.placeInteractionClick.groupBy({
-        by: ['externalService'],
-        where: { businessId },
-        _count: { id: true },
-      }),
-      prisma.placeInteractionClick.count({
-        where: {
-          businessId,
-          createdAt: { gte: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) },
-        },
-      }),
-    ]);
-
-    const followerCount = await prisma.placeNode.count({
-      where: { nodeType: 'BUSINESS', entityId: businessId },
+    const data = await placeTransactionService.getInteractionStats({
+      userId,
+      businessId: req.params.businessId,
     });
 
-    res.json({
-      success: true,
-      data: {
-        totalClicks,
-        clicksLast7Days: recentClicks,
-        followerCount,
-        byService: clicksByService.map(c => ({ service: c.externalService, count: c._count.id })),
-      },
-    });
+    res.json({ success: true, data });
   } catch (error: unknown) {
-    const err = error as Error;
-    logPlaceTransactionError('Error fetching stats', 'place_transaction_stats', err);
+    if (respondPlaceServiceError(res, error)) return;
+    logPlaceTransactionError('Error fetching stats', 'place_transaction_stats', error);
     res.status(500).json({ success: false, error: 'Failed to fetch stats' });
   }
 }

@@ -125,7 +125,7 @@ describe('placeVisibilityService', () => {
     vi.spyOn(prisma.placeMeetingInvite, 'count').mockResolvedValue(0 as never);
     vi.spyOn(prisma.placeCommunityMember, 'count').mockResolvedValue(0 as never);
     vi.spyOn(prisma.placeTransaction, 'groupBy').mockResolvedValue([] as never);
-    vi.spyOn(prisma.placeActivityFeedItem, 'findMany').mockResolvedValue([] as never);
+    vi.spyOn(prisma.log, 'count').mockResolvedValue(0 as never);
     vi.spyOn(prisma.placeNode, 'findMany').mockResolvedValue([] as never);
 
     await getPersonalAnalytics('u1');
@@ -167,7 +167,7 @@ describe('placeVisibilityService', () => {
     );
   });
 
-  it('getActivityFeed merges platform module activity with legacy feed rows', async () => {
+  it('getActivityFeed reads platform module activity only', async () => {
     vi.spyOn(prisma.relationship, 'findMany').mockResolvedValue([] as never);
     vi.spyOn(prisma.log, 'findMany').mockResolvedValue([
       {
@@ -185,7 +185,6 @@ describe('placeVisibilityService', () => {
     vi.spyOn(prisma.user, 'findMany').mockResolvedValue([
       { id: 'u1', name: 'Alice', image: null },
     ] as never);
-    vi.spyOn(prisma.placeActivityFeedItem, 'findMany').mockResolvedValue([] as never);
 
     const result = await getActivityFeed('u1', { limit: 10 });
 

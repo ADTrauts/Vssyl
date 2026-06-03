@@ -410,6 +410,13 @@ export async function getLocationPrivacy(userId: string) {
     throw new PlaceServiceError('Authentication required', 'unauthorized', 401);
   }
 
+  await assertPlacePolicyAllowed({
+    userId,
+    action: POLICY_ACTIONS.PLACE_LOCATION_PRIVACY_READ,
+    resourceType: 'place',
+    resourceId: userId,
+  });
+
   let privacy = await prisma.placeLocationPrivacy.findUnique({ where: { userId } });
   if (!privacy) {
     privacy = await prisma.placeLocationPrivacy.create({ data: { userId } });
@@ -425,6 +432,13 @@ export async function updateLocationPrivacy(params: {
   if (!params.userId) {
     throw new PlaceServiceError('Authentication required', 'unauthorized', 401);
   }
+
+  await assertPlacePolicyAllowed({
+    userId: params.userId,
+    action: POLICY_ACTIONS.PLACE_LOCATION_PRIVACY_UPDATE,
+    resourceType: 'place',
+    resourceId: params.userId,
+  });
 
   const data: Record<string, boolean> = {};
   if (typeof params.shareLocationWithConnections === 'boolean') {

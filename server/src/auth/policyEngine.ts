@@ -934,6 +934,15 @@ export async function authorize(input: PolicyInput): Promise<PolicyDecision> {
     return authorizePlaceListingReport(input);
   }
 
+  const placeListingTrashActions: string[] = [
+    POLICY_ACTIONS.PLACE_LISTING_TRASH,
+    POLICY_ACTIONS.PLACE_LISTING_RESTORE,
+    POLICY_ACTIONS.PLACE_LISTING_PERMANENT_DELETE,
+  ];
+  if (placeListingTrashActions.includes(action) && input.resourceType === 'place_listing') {
+    return authorizePlaceListingAdminWrite(input);
+  }
+
   if (action === POLICY_ACTIONS.PLACE_MEETING_CREATE && input.resourceType === 'place_meeting') {
     return authorizePlaceMeetingCreate(input);
   }
@@ -952,6 +961,66 @@ export async function authorize(input: PolicyInput): Promise<PolicyDecision> {
 
   if (action === POLICY_ACTIONS.PLACE_MEETING_LINK_CALENDAR && input.resourceType === 'place_meeting') {
     return authorizePlaceMeetingLinkCalendar(input);
+  }
+
+  const placeMeetingTrashActions: string[] = [
+    POLICY_ACTIONS.PLACE_MEETING_TRASH,
+    POLICY_ACTIONS.PLACE_MEETING_RESTORE,
+    POLICY_ACTIONS.PLACE_MEETING_PERMANENT_DELETE,
+  ];
+  if (placeMeetingTrashActions.includes(action) && input.resourceType === 'place_meeting') {
+    return authorizePlaceMeetingUpdate(input);
+  }
+
+  if (action === POLICY_ACTIONS.PLACE_CONNECTION_REQUEST && input.resourceType === 'place_connection') {
+    return authorizePlaceConnectionRequest(input);
+  }
+
+  if (action === POLICY_ACTIONS.PLACE_CONNECTION_ACCEPT && input.resourceType === 'place_connection') {
+    return authorizePlaceConnectionAccept(input);
+  }
+
+  if (
+    action === POLICY_ACTIONS.PLACE_TRANSACTION_READ &&
+    input.resourceType === 'place_transaction'
+  ) {
+    return authorizePlaceTransactionRead(input);
+  }
+
+  if (
+    action === POLICY_ACTIONS.PLACE_TRANSACTION_CREATE &&
+    input.resourceType === 'place_transaction'
+  ) {
+    return authorizePlaceTransactionCreate(input);
+  }
+
+  if (
+    action === POLICY_ACTIONS.PLACE_TRANSACTION_PRIVACY_UPDATE &&
+    input.resourceType === 'place_transaction'
+  ) {
+    return authorizePlaceTransactionRead(input);
+  }
+
+  if (
+    action === POLICY_ACTIONS.PLACE_INTERACTION_CLICK &&
+    input.resourceType === 'place_transaction'
+  ) {
+    return authorizePlaceTransactionCreate(input);
+  }
+
+  if (
+    action === POLICY_ACTIONS.PLACE_INTERACTION_STATS_READ &&
+    input.resourceType === 'place_listing'
+  ) {
+    return authorizePlaceListingAdminWrite(input);
+  }
+
+  const placeLocationPrivacyActions: string[] = [
+    POLICY_ACTIONS.PLACE_LOCATION_PRIVACY_READ,
+    POLICY_ACTIONS.PLACE_LOCATION_PRIVACY_UPDATE,
+  ];
+  if (placeLocationPrivacyActions.includes(action) && input.resourceType === 'place') {
+    return authorizePlaceLocationPrivacyOwner(input);
   }
 
   return deny(input, 'POLICY_NOT_IMPLEMENTED');
@@ -1257,6 +1326,7 @@ async function authorizePlaceListingRead(input: PolicyInput): Promise<PolicyDeci
     select: {
       isEnabled: true,
       isPublished: true,
+      trashedAt: true,
       business: { select: { einVerified: true } },
     },
   });
@@ -1264,6 +1334,7 @@ async function authorizePlaceListingRead(input: PolicyInput): Promise<PolicyDeci
   if (
     listing?.isEnabled &&
     listing.isPublished &&
+    !listing.trashedAt &&
     listing.business.einVerified
   ) {
     return { allow: true, matchedPolicy: 'place_listing_public_read' };
@@ -1298,6 +1369,20 @@ async function authorizePlaceDiscoveryRead(input: PolicyInput): Promise<PolicyDe
   }
 
   return { allow: true, matchedPolicy: 'place_discovery_owner' };
+}
+
+async function authorizePlaceLocationPrivacyOwner(input: PolicyInput): Promise<PolicyDecision> {
+  const userId = resolveUserId(input);
+  if (!userId) {
+    return deny(input, 'NOT_MEMBER');
+  }
+
+  const resourceId = input.resourceId;
+  if (!resourceId || resourceId !== userId) {
+    return deny(input, 'NOT_OWNER');
+  }
+
+  return { allow: true, matchedPolicy: 'place_location_privacy_owner' };
 }
 
 async function authorizePlaceMeetingRead(input: PolicyInput): Promise<PolicyDecision> {
@@ -1457,6 +1542,59 @@ async function authorizePlaceMeetingRsvp(input: PolicyInput): Promise<PolicyDeci
 
 async function authorizePlaceMeetingLinkCalendar(input: PolicyInput): Promise<PolicyDecision> {
   return authorizePlaceMeetingRead(input);
+}
+
+async function authorizePlaceConnectionRequest(input: PolicyInput): Promise<PolicyDecision> {
+  const userId = resolveUserId(input);
+  if (!userId) {
+    return deny(input, 'NOT_MEMBER');
+  }
+  const targetUserId = input.resourceId;
+  if (!targetUserId || targetUserId === userId) {
+    return deny(input, 'NOT_OWNER');
+  }
+  return { allow: true, matchedPolicy: 'place_connection_request' };
+}
+
+async function authorizePlaceConnectionAccept(input: PolicyInput): Promise<PolicyDecision> {
+  const userId = resolveUserId(input);
+  if (!userId) {
+    return deny(input, 'NOT_MEMBER');
+  }
+  const relationship = await prisma.relationship.findUnique({
+    where: { id: input.resourceId },
+    select: { receiverId: true, status: true },
+  });
+  if (!relationship || relationship.receiverId !== userId) {
+    return deny(input, 'NOT_OWNER');
+  }
+  if (relationship.status !== 'PENDING') {
+    return deny(input, 'INSUFFICIENT_ROLE');
+  }
+  return { allow: true, matchedPolicy: 'place_connection_accept' };
+}
+
+async function authorizePlaceTransactionRead(input: PolicyInput): Promise<PolicyDecision> {
+  const userId = resolveUserId(input);
+  if (!userId) {
+    return deny(input, 'NOT_MEMBER');
+  }
+  const transaction = await prisma.placeTransaction.findUnique({
+    where: { id: input.resourceId },
+    select: { userId: true },
+  });
+  if (!transaction || transaction.userId !== userId) {
+    return deny(input, 'NOT_OWNER');
+  }
+  return { allow: true, matchedPolicy: 'place_transaction_owner' };
+}
+
+async function authorizePlaceTransactionCreate(input: PolicyInput): Promise<PolicyDecision> {
+  const userId = resolveUserId(input);
+  if (!userId) {
+    return deny(input, 'NOT_MEMBER');
+  }
+  return { allow: true, matchedPolicy: 'place_transaction_create' };
 }
 
 export async function enforcePolicy(input: PolicyInput): Promise<PolicyDecision & { allow: true }> {

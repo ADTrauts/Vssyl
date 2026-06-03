@@ -474,17 +474,12 @@ export async function getActivityFeed(
 
   const visibleUserIds = [uid, ...connectionIds];
 
-  const [platformItems, legacyItems] = await Promise.all([
+  const [platformItems] = await Promise.all([
     fetchPlatformActivityFeedItems(visibleUserIds, uid, params.type),
-    fetchLegacyActivityFeedItems(uid, connectionIds, params.type),
   ]);
 
-  const merged = [...platformItems, ...legacyItems].sort(
-    (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime()
-  );
-
-  const total = merged.length;
-  const items = merged.slice(skip, skip + take);
+  const total = platformItems.length;
+  const items = platformItems.slice(skip, skip + take);
 
   return { items, pagination: { total, limit: take, offset: skip } };
 }
@@ -625,39 +620,15 @@ async function fetchPlatformActivityFeedItems(
   return items;
 }
 
-async function fetchLegacyActivityFeedItems(
-  userId: string,
-  connectionIds: string[],
-  typeFilter?: string
-): Promise<FeedItemShape[]> {
-  const where: Prisma.PlaceActivityFeedItemWhereInput = {
-    OR: [{ userId }, { userId: { in: connectionIds }, isPrivate: false }],
-  };
-
-  if (typeFilter) {
-    where.type = typeFilter as Prisma.EnumPlaceActivityTypeFilter;
-  }
-
-  const legacy = await prisma.placeActivityFeedItem.findMany({
-    where,
-    include: { user: { select: { id: true, name: true, image: true } } },
-    orderBy: { createdAt: 'desc' },
-    take: 200,
+async function countUserPlatformActivitySince(userId: string, since: Date): Promise<number> {
+  return prisma.log.count({
+    where: {
+      operation: 'module_activity_event',
+      module: 'place',
+      userId,
+      createdAt: { gte: since },
+    },
   });
-
-  return legacy.map((item) => ({
-    id: item.id,
-    userId: item.userId,
-    type: item.type,
-    title: item.title,
-    description: item.description,
-    businessId: item.businessId,
-    targetUserId: item.targetUserId,
-    meetingId: item.meetingId,
-    isPrivate: item.isPrivate,
-    createdAt: item.createdAt,
-    user: item.user,
-  }));
 }
 
 export async function getPersonalAnalytics(userId: string, period?: string) {
@@ -720,11 +691,7 @@ export async function getPersonalAnalytics(userId: string, period?: string) {
       orderBy: { _count: { id: 'desc' } },
       take: 10,
     }),
-    prisma.placeActivityFeedItem.findMany({
-      where: { userId: uid, createdAt: { gte: periodStart } },
-      orderBy: { createdAt: 'desc' },
-      take: 10,
-    }),
+    countUserPlatformActivitySince(uid, periodStart),
     prisma.placeNode.findMany({
       where: {
         place: { userId: uid },
@@ -789,7 +756,7 @@ export async function getPersonalAnalytics(userId: string, period?: string) {
     engagement: {
       meetingsCreated,
       meetingsAttended,
-      totalActivity: recentActivity.length,
+      totalActivity: recentActivity,
     },
     topBusinesses: topCategoryData.map((td) => ({
       businessId: td.businessId,
@@ -813,7 +780,7 @@ export async function exportUserData(userId: string) {
     resourceId: uid,
   });
 
-  const [place, transactions, meetings, invites, communities, feed, dismissed, locationPrivacy, followVisibility] =
+  const [place, transactions, meetings, invites, communities, platformActivityCount, dismissed, locationPrivacy, followVisibility] =
     await Promise.all([
       prisma.place.findUnique({
         where: { userId: uid },
@@ -836,9 +803,12 @@ export async function exportUserData(userId: string) {
         where: { userId: uid },
         include: { community: { select: { name: true, type: true } } },
       }),
-      prisma.placeActivityFeedItem.findMany({
-        where: { userId: uid },
-        orderBy: { createdAt: 'desc' },
+      prisma.log.count({
+        where: {
+          operation: 'module_activity_event',
+          module: 'place',
+          userId: uid,
+        },
       }),
       prisma.placeDismissedSuggestion.findMany({ where: { userId: uid } }),
       prisma.placeLocationPrivacy.findUnique({ where: { userId: uid } }),
@@ -893,7 +863,7 @@ export async function exportUserData(userId: string) {
       role: c.role,
       joinedAt: c.joinedAt,
     })),
-    activityCount: feed.length,
+    activityCount: platformActivityCount,
     dismissedSuggestions: dismissed.length,
     privacySettings: {
       location: locationPrivacy,
@@ -1245,6 +1215,15 @@ export async function validateAccessibleListingIds(
   const denied: string[] = [];
 
   for (const businessId of uniqueIds) {
+    const listing = await prisma.businessPlaceListing.findUnique({
+      where: { businessId },
+      select: { id: true, trashedAt: true },
+    });
+    if (listing?.trashedAt) {
+      denied.push(businessId);
+      continue;
+    }
+
     if (await canReadPublishedListing(businessId)) {
       allowed.push(businessId);
       continue;
@@ -1252,10 +1231,6 @@ export async function validateAccessibleListingIds(
 
     const member = await findListingAdminMember(uid, businessId);
     if (member) {
-      const listing = await prisma.businessPlaceListing.findUnique({
-        where: { businessId },
-        select: { id: true },
-      });
       if (listing) {
         allowed.push(businessId);
       } else {

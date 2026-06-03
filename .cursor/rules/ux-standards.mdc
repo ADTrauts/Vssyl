@@ -1,0 +1,38 @@
+---
+description: UX constitution, design tokens, layouts — use shared --v-* tokens; no module token forks
+globs:
+  - web/**/*.tsx
+  - web/**/*.css
+  - shared/**/*.tsx
+---
+
+# UX standards
+
+**Full docs:** `docs/ux/` — start with [`UX_CONSTITUTION.md`](../../docs/ux/UX_CONSTITUTION.md).
+
+## Non-negotiables (summary)
+
+1. Use `--v-*` / Tailwind `v.*` tokens before raw hex or one-off sizes ([`DESIGN_TOKENS.md`](../../docs/ux/DESIGN_TOKENS.md)).
+2. Use an approved layout pattern ([`LAYOUT_PATTERNS.md`](../../docs/ux/LAYOUT_PATTERNS.md)).
+3. Reuse `shared/components` ([`ui-standards.mdc`](./ui-standards.mdc), [`COMPONENT_STANDARDS.md`](../../docs/ux/COMPONENT_STANDARDS.md)).
+4. Light + dark mode for major module surfaces.
+5. Interactive states: hover, focus, disabled, loading where applicable.
+6. Empty states: icon, title, description, action when useful.
+7. Destructive actions: confirm or Global Trash soft-delete.
+8. Accessibility required ([`ACCESSIBILITY_STANDARDS.md`](../../docs/ux/ACCESSIBILITY_STANDARDS.md)).
+9. UX changes must not bypass auth, permissions, or module boundaries.
+
+## Shared Token Ownership
+
+**No module-local design token systems** (e.g. `PlaceColorSystem.ts`, custom spacing scales). All colors, typography, spacing, radii, and shadows come from `web/src/styles/tokens.css`. Business branding may override tokens via the approved branding layer only.
+
+## New UI
+
+- Prefer `bg-v-surface`, `text-v-primary`, `var(--v-color-primary)` for new code.
+- Legacy `bg-blue-600`, `--primary`, Tailwind grays remain until migration waves.
+
+## Module UX review
+
+[`UX_AUDIT_TEMPLATE.md`](../../docs/ux/UX_AUDIT_TEMPLATE.md) + [`UX_CERTIFICATION_SCORECARD.md`](../../docs/ux/UX_CERTIFICATION_SCORECARD.md).
+
+**Last updated:** 2026-06-03

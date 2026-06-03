@@ -12,12 +12,10 @@ function extractRegion(source: string, startMarker: string, endMarker: string): 
 }
 
 /**
- * Documented controller exceptions (Wave 1G):
- * - placeTransactionController — commerce telemetry deferred (Phase 2A+ / product priority)
- * - placeAnalyticsController.recordActivity — legacy feed write helper (deprecated)
+ * Place controller contracts (Wave 2C): all route controllers delegate to services — no Prisma in handlers.
  */
 
-describe('Place controller contracts (Phase 1G)', () => {
+describe('Place controller contracts (Wave 2C)', () => {
   it('placeController core graph handlers have no prisma', () => {
     const source = readFileSync(join(process.cwd(), 'src/controllers/placeController.ts'), 'utf8');
     const core = extractRegion(source, '/* <place-core-graph-handlers> */', '/* </place-core-graph-handlers> */');
@@ -92,9 +90,21 @@ describe('Place controller contracts (Phase 1G)', () => {
     expect(core).not.toMatch(/\bprisma\./);
   });
 
-  it('placeTransactionController remains deferred exception with prisma', () => {
-    const source = readFileSync(join(process.cwd(), 'src/controllers/placeTransactionController.ts'), 'utf8');
-    expect(source).toMatch(/\bprisma\./);
-    expect(source).toMatch(/deferred/i);
+  it('placeTransactionController delegates to placeTransactionService (Wave 2C)', () => {
+    const source = readFileSync(
+      join(process.cwd(), 'src/controllers/placeTransactionController.ts'),
+      'utf8'
+    );
+    expect(source).toMatch(/placeTransactionService\./);
+    expect(source).not.toMatch(/\bprisma\./);
+  });
+
+  it('placeAnalyticsController has no legacy recordActivity helper', () => {
+    const source = readFileSync(
+      join(process.cwd(), 'src/controllers/placeAnalyticsController.ts'),
+      'utf8'
+    );
+    expect(source).not.toMatch(/recordActivity/);
+    expect(source).not.toMatch(/\bprisma\./);
   });
 });
