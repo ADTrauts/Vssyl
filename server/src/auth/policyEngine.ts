@@ -882,6 +882,78 @@ export async function authorize(input: PolicyInput): Promise<PolicyDecision> {
     return authorizeCalendarAvailabilityRead(input);
   }
 
+  const placeGraphActions: string[] = [
+    POLICY_ACTIONS.PLACE_READ,
+    POLICY_ACTIONS.PLACE_WRITE,
+    POLICY_ACTIONS.PLACE_SETTINGS_UPDATE,
+    POLICY_ACTIONS.PLACE_SETUP_COMPLETE,
+    POLICY_ACTIONS.PLACE_INTERESTS_UPDATE,
+    POLICY_ACTIONS.PLACE_FOLLOW_VISIBILITY_UPDATE,
+  ];
+  if (placeGraphActions.includes(action) && input.resourceType === 'place') {
+    return authorizePlaceOwner(input);
+  }
+
+  const placeNodeActions: string[] = [
+    POLICY_ACTIONS.PLACE_NODE_CREATE,
+    POLICY_ACTIONS.PLACE_NODE_UPDATE,
+    POLICY_ACTIONS.PLACE_NODE_DELETE,
+    POLICY_ACTIONS.PLACE_NODE_READ,
+  ];
+  if (placeNodeActions.includes(action) && input.resourceType === 'place_node') {
+    return authorizePlaceNodeOwner(input);
+  }
+
+  if (action === POLICY_ACTIONS.PLACE_LISTING_READ && input.resourceType === 'place_listing') {
+    return authorizePlaceListingRead(input);
+  }
+
+  if (action === POLICY_ACTIONS.PLACE_DISCOVERY_READ && input.resourceType === 'place') {
+    return authorizePlaceDiscoveryRead(input);
+  }
+
+  if (action === POLICY_ACTIONS.PLACE_MEETING_READ && input.resourceType === 'place_meeting') {
+    return authorizePlaceMeetingRead(input);
+  }
+
+  const placeListingWriteActions: string[] = [
+    POLICY_ACTIONS.PLACE_LISTING_WRITE,
+    POLICY_ACTIONS.PLACE_LISTING_UNPUBLISH,
+    POLICY_ACTIONS.PLACE_LISTING_IMAGE_UPDATE,
+    POLICY_ACTIONS.PLACE_LISTING_INTERACTION_LINK_WRITE,
+  ];
+  if (placeListingWriteActions.includes(action) && input.resourceType === 'place_listing') {
+    return authorizePlaceListingAdminWrite(input);
+  }
+
+  if (action === POLICY_ACTIONS.PLACE_LISTING_PUBLISH && input.resourceType === 'place_listing') {
+    return authorizePlaceListingPublish(input);
+  }
+
+  if (action === POLICY_ACTIONS.PLACE_LISTING_REPORT && input.resourceType === 'place_listing') {
+    return authorizePlaceListingReport(input);
+  }
+
+  if (action === POLICY_ACTIONS.PLACE_MEETING_CREATE && input.resourceType === 'place_meeting') {
+    return authorizePlaceMeetingCreate(input);
+  }
+
+  if (action === POLICY_ACTIONS.PLACE_MEETING_UPDATE && input.resourceType === 'place_meeting') {
+    return authorizePlaceMeetingUpdate(input);
+  }
+
+  if (action === POLICY_ACTIONS.PLACE_MEETING_CANCEL && input.resourceType === 'place_meeting') {
+    return authorizePlaceMeetingCancel(input);
+  }
+
+  if (action === POLICY_ACTIONS.PLACE_MEETING_RSVP && input.resourceType === 'place_meeting') {
+    return authorizePlaceMeetingRsvp(input);
+  }
+
+  if (action === POLICY_ACTIONS.PLACE_MEETING_LINK_CALENDAR && input.resourceType === 'place_meeting') {
+    return authorizePlaceMeetingLinkCalendar(input);
+  }
+
   return deny(input, 'POLICY_NOT_IMPLEMENTED');
 }
 
@@ -1103,6 +1175,288 @@ async function authorizeCalendarAvailabilityRead(input: PolicyInput): Promise<Po
     return deny(input, 'NOT_MEMBER');
   }
   return { allow: true, matchedPolicy: 'calendar_availability_authenticated' };
+}
+
+async function authorizePlaceOwner(input: PolicyInput): Promise<PolicyDecision> {
+  const userId = resolveUserId(input);
+  if (!userId) {
+    return deny(input, 'NOT_MEMBER');
+  }
+
+  const resourceId = input.resourceId;
+  if (!resourceId || typeof resourceId !== 'string') {
+    return deny(input, 'POLICY_NOT_IMPLEMENTED');
+  }
+
+  if (resourceId === userId) {
+    return { allow: true, matchedPolicy: 'place_owner_self' };
+  }
+
+  const place = await prisma.place.findFirst({
+    where: {
+      OR: [{ id: resourceId }, { userId: resourceId }],
+    },
+    select: { id: true, userId: true },
+  });
+
+  if (!place || place.userId !== userId) {
+    return deny(input, 'NOT_OWNER');
+  }
+
+  return { allow: true, matchedPolicy: 'place_owner' };
+}
+
+async function authorizePlaceNodeOwner(input: PolicyInput): Promise<PolicyDecision> {
+  const userId = resolveUserId(input);
+  if (!userId) {
+    return deny(input, 'NOT_MEMBER');
+  }
+
+  const resourceId = input.resourceId;
+  if (!resourceId || typeof resourceId !== 'string') {
+    return deny(input, 'POLICY_NOT_IMPLEMENTED');
+  }
+
+  if (input.action === POLICY_ACTIONS.PLACE_NODE_CREATE) {
+    return authorizePlaceOwner({
+      ...input,
+      resourceType: 'place',
+      resourceId,
+    });
+  }
+
+  const node = await prisma.placeNode.findUnique({
+    where: { id: resourceId },
+    select: { id: true, place: { select: { userId: true } } },
+  });
+
+  if (!node || node.place.userId !== userId) {
+    return deny(input, 'NOT_OWNER');
+  }
+
+  return { allow: true, matchedPolicy: 'place_node_owner' };
+}
+
+async function authorizePlaceListingRead(input: PolicyInput): Promise<PolicyDecision> {
+  const userId = resolveUserId(input);
+  if (!userId) {
+    return deny(input, 'NOT_MEMBER');
+  }
+
+  const resourceId = input.resourceId;
+  if (!resourceId || typeof resourceId !== 'string') {
+    return deny(input, 'POLICY_NOT_IMPLEMENTED');
+  }
+
+  if (resourceId === 'explore' || resourceId === 'search') {
+    return { allow: true, matchedPolicy: 'place_listing_public_catalog' };
+  }
+
+  const listing = await prisma.businessPlaceListing.findUnique({
+    where: { businessId: resourceId },
+    select: {
+      isEnabled: true,
+      isPublished: true,
+      business: { select: { einVerified: true } },
+    },
+  });
+
+  if (
+    listing?.isEnabled &&
+    listing.isPublished &&
+    listing.business.einVerified
+  ) {
+    return { allow: true, matchedPolicy: 'place_listing_public_read' };
+  }
+
+  const member = await prisma.businessMember.findFirst({
+    where: {
+      businessId: resourceId,
+      userId,
+      isActive: true,
+      role: { in: ['ADMIN', 'MANAGER'] },
+    },
+    select: { id: true },
+  });
+
+  if (member) {
+    return { allow: true, matchedPolicy: 'place_listing_admin_read' };
+  }
+
+  return deny(input, 'NOT_OWNER');
+}
+
+async function authorizePlaceDiscoveryRead(input: PolicyInput): Promise<PolicyDecision> {
+  const userId = resolveUserId(input);
+  if (!userId) {
+    return deny(input, 'NOT_MEMBER');
+  }
+
+  const resourceId = input.resourceId;
+  if (!resourceId || resourceId !== userId) {
+    return deny(input, 'NOT_OWNER');
+  }
+
+  return { allow: true, matchedPolicy: 'place_discovery_owner' };
+}
+
+async function authorizePlaceMeetingRead(input: PolicyInput): Promise<PolicyDecision> {
+  const userId = resolveUserId(input);
+  if (!userId) {
+    return deny(input, 'NOT_MEMBER');
+  }
+
+  const meetingId = input.resourceId;
+  if (!meetingId || typeof meetingId !== 'string') {
+    return deny(input, 'POLICY_NOT_IMPLEMENTED');
+  }
+
+  if (input.metadata?.scope === 'list' && meetingId === userId) {
+    return { allow: true, matchedPolicy: 'place_meeting_list_authenticated' };
+  }
+
+  const meeting = await prisma.placeMeetingPlace.findUnique({
+    where: { id: meetingId },
+    select: {
+      creatorId: true,
+      invites: { select: { inviteeId: true } },
+    },
+  });
+
+  if (!meeting) {
+    return deny(input, 'NOT_OWNER');
+  }
+
+  const isParticipant =
+    meeting.creatorId === userId ||
+    meeting.invites.some((invite) => invite.inviteeId === userId);
+
+  if (!isParticipant) {
+    return deny(input, 'NOT_MEMBER');
+  }
+
+  return { allow: true, matchedPolicy: 'place_meeting_participant' };
+}
+
+async function authorizePlaceListingAdminWrite(input: PolicyInput): Promise<PolicyDecision> {
+  const userId = resolveUserId(input);
+  if (!userId) {
+    return deny(input, 'NOT_MEMBER');
+  }
+
+  const businessId = input.resourceId;
+  if (!businessId || typeof businessId !== 'string') {
+    return deny(input, 'POLICY_NOT_IMPLEMENTED');
+  }
+
+  const member = await prisma.businessMember.findFirst({
+    where: {
+      businessId,
+      userId,
+      isActive: true,
+      role: { in: ['ADMIN', 'MANAGER'] },
+    },
+    select: { id: true },
+  });
+
+  if (!member) {
+    return deny(input, 'NOT_OWNER');
+  }
+
+  return { allow: true, matchedPolicy: 'place_listing_admin_write' };
+}
+
+async function authorizePlaceListingPublish(input: PolicyInput): Promise<PolicyDecision> {
+  const admin = await authorizePlaceListingAdminWrite(input);
+  if (!admin.allow) {
+    return admin;
+  }
+
+  const businessId = input.resourceId;
+  if (!businessId || typeof businessId !== 'string') {
+    return deny(input, 'POLICY_NOT_IMPLEMENTED');
+  }
+
+  const business = await prisma.business.findUnique({
+    where: { id: businessId },
+    select: { einVerified: true },
+  });
+
+  if (!business?.einVerified) {
+    return deny(input, 'INSUFFICIENT_ROLE');
+  }
+
+  return { allow: true, matchedPolicy: 'place_listing_publish' };
+}
+
+async function authorizePlaceListingReport(input: PolicyInput): Promise<PolicyDecision> {
+  const userId = resolveUserId(input);
+  if (!userId) {
+    return deny(input, 'NOT_MEMBER');
+  }
+  return { allow: true, matchedPolicy: 'place_listing_report_authenticated' };
+}
+
+async function authorizePlaceMeetingCreate(input: PolicyInput): Promise<PolicyDecision> {
+  const userId = resolveUserId(input);
+  if (!userId) {
+    return deny(input, 'NOT_MEMBER');
+  }
+  return { allow: true, matchedPolicy: 'place_meeting_create_authenticated' };
+}
+
+async function authorizePlaceMeetingUpdate(input: PolicyInput): Promise<PolicyDecision> {
+  const userId = resolveUserId(input);
+  if (!userId) {
+    return deny(input, 'NOT_MEMBER');
+  }
+
+  const meetingId = input.resourceId;
+  if (!meetingId || typeof meetingId !== 'string') {
+    return deny(input, 'POLICY_NOT_IMPLEMENTED');
+  }
+
+  const meeting = await prisma.placeMeetingPlace.findUnique({
+    where: { id: meetingId },
+    select: { creatorId: true },
+  });
+
+  if (!meeting || meeting.creatorId !== userId) {
+    return deny(input, 'NOT_OWNER');
+  }
+
+  return { allow: true, matchedPolicy: 'place_meeting_creator' };
+}
+
+async function authorizePlaceMeetingCancel(input: PolicyInput): Promise<PolicyDecision> {
+  return authorizePlaceMeetingUpdate(input);
+}
+
+async function authorizePlaceMeetingRsvp(input: PolicyInput): Promise<PolicyDecision> {
+  const userId = resolveUserId(input);
+  if (!userId) {
+    return deny(input, 'NOT_MEMBER');
+  }
+
+  const meetingId = input.resourceId;
+  if (!meetingId || typeof meetingId !== 'string') {
+    return deny(input, 'POLICY_NOT_IMPLEMENTED');
+  }
+
+  const invite = await prisma.placeMeetingInvite.findUnique({
+    where: { meetingPlaceId_inviteeId: { meetingPlaceId: meetingId, inviteeId: userId } },
+    select: { id: true },
+  });
+
+  if (!invite) {
+    return deny(input, 'NOT_MEMBER');
+  }
+
+  return { allow: true, matchedPolicy: 'place_meeting_invitee' };
+}
+
+async function authorizePlaceMeetingLinkCalendar(input: PolicyInput): Promise<PolicyDecision> {
+  return authorizePlaceMeetingRead(input);
 }
 
 export async function enforcePolicy(input: PolicyInput): Promise<PolicyDecision & { allow: true }> {

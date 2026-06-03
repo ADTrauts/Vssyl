@@ -1,13 +1,13 @@
 import { Request, Response } from 'express';
 import path from 'path';
 import fs from 'fs';
-import { z } from 'zod';
 import multer from 'multer';
-import { prisma } from '../lib/prisma';
 import { logger } from '../lib/logger';
 import { storageService } from '../services/storageService';
 import { getUserFromRequest } from '../middleware/auth';
-
+import { respondPlaceServiceError } from '../services/place/placeErrors';
+import * as placeVisibilityService from '../services/place/placeVisibilityService';
+import * as placeListingService from '../services/place/placeListingService';
 
 function logPlaceListingError(desc: string, operation: string, err: unknown): void {
   const e = err instanceof Error ? err : new Error(String(err));
@@ -19,15 +19,6 @@ function logPlaceListingError(desc: string, operation: string, err: unknown): vo
 function getUserId(req: Request): string | null {
   const user = getUserFromRequest(req);
   return user?.id ?? null;
-}
-
-async function verifyBusinessAdmin(userId: string, businessId: string) {
-  const member = await prisma.businessMember.findUnique({
-    where: { businessId_userId: { businessId, userId } },
-  });
-  if (!member || !member.isActive) return null;
-  if (member.role !== 'ADMIN' && member.role !== 'MANAGER') return null;
-  return member;
 }
 
 // Multer for cover image uploads
@@ -86,30 +77,6 @@ export function multerAvatarUpload(req: Request, res: Response, next: () => void
   });
 }
 
-// Validation schemas
-const PLACE_CATEGORIES = ['RESTAURANT', 'RETAIL', 'GROCERY', 'DIGITAL_SERVICE', 'DELIVERY', 'LOCAL_SERVICE', 'HEALTH_WELLNESS', 'ENTERTAINMENT', 'OTHER'] as const;
-const INTERACTION_LINK_TYPES = ['WEBSITE', 'DOORDASH', 'UBEREATS', 'INSTACART', 'OPENTABLE', 'RESY', 'FACEBOOK', 'INSTAGRAM', 'TWITTER', 'TIKTOK', 'YELP', 'GOOGLE_MAPS', 'CUSTOM'] as const;
-
-const upsertListingSchema = z.object({
-  displayName: z.string().max(200).optional().nullable(),
-  shortDescription: z.string().max(500).optional().nullable(),
-  coverImage: z.union([z.string().url(), z.literal(''), z.null()]).optional(),
-  avatarImage: z.union([z.string().url(), z.literal(''), z.null()]).optional(),
-  category: z.enum(PLACE_CATEGORIES).optional(),
-  tags: z.array(z.string().max(50)).optional(),
-  nodeColor: z.union([z.string().regex(/^#[0-9A-Fa-f]{6}([0-9A-Fa-f]{2})?$/), z.literal(''), z.null()]).optional(),
-  nodeShape: z.string().max(50).optional().nullable(),
-  isEnabled: z.boolean().optional(),
-  isPublished: z.boolean().optional(),
-}).strict();
-
-const addLinkSchema = z.object({
-  type: z.enum(INTERACTION_LINK_TYPES),
-  label: z.string().min(1).max(100),
-  url: z.string().min(1).transform(s => (s.match(/^https?:\/\//i) ? s : `https://${s}`)).pipe(z.string().url()),
-  sortOrder: z.number().int().min(0).optional(),
-}).strict();
-
 // ============================================================================
 // BUSINESS ADMIN - LISTING MANAGEMENT
 // ============================================================================
@@ -118,27 +85,25 @@ const addLinkSchema = z.object({
  * GET /api/place/listing/:businessId
  * Get the Place listing for a business (admin view, includes drafts)
  */
+/* <place-visibility-read-handlers> */
 export async function getListing(req: Request, res: Response): Promise<void> {
   try {
     const userId = getUserId(req);
     if (!userId) { res.status(401).json({ success: false, error: 'Authentication required' }); return; }
 
     const { businessId } = req.params;
-    const member = await verifyBusinessAdmin(userId, businessId);
-    if (!member) { res.status(403).json({ success: false, error: 'Admin access required' }); return; }
-
-    const listing = await prisma.businessPlaceListing.findUnique({
-      where: { businessId },
-      include: { interactionLinks: { orderBy: { sortOrder: 'asc' } } },
-    });
-
+    const listing = await placeVisibilityService.getListingForAdmin(userId, businessId);
     res.json({ success: true, data: listing });
   } catch (error: unknown) {
+    if (respondPlaceServiceError(res, error)) return;
     const err = error as Error;
     logPlaceListingError('Error fetching listing', 'place_listing_get', err);
     res.status(500).json({ success: false, error: 'Failed to fetch listing' });
   }
 }
+/* </place-visibility-read-handlers> */
+
+/* <place-listing-write-handlers> */
 
 /**
  * POST /api/place/listing/:businessId
@@ -150,72 +115,15 @@ export async function upsertListing(req: Request, res: Response): Promise<void> 
     if (!userId) { res.status(401).json({ success: false, error: 'Authentication required' }); return; }
 
     const { businessId } = req.params;
-    const member = await verifyBusinessAdmin(userId, businessId);
-    if (!member) { res.status(403).json({ success: false, error: 'Admin access required' }); return; }
-
-    const business = await prisma.business.findUnique({ where: { id: businessId } });
-    if (!business) { res.status(404).json({ success: false, error: 'Business not found' }); return; }
-
-    const parseResult = upsertListingSchema.safeParse(req.body);
-    if (!parseResult.success) {
-      res.status(400).json({ success: false, error: 'Invalid input', details: parseResult.error.flatten().fieldErrors });
-      return;
-    }
-    const { displayName, shortDescription, coverImage, avatarImage, category, tags, nodeColor, nodeShape, isEnabled, isPublished } = parseResult.data;
-
-    const listing = await prisma.businessPlaceListing.upsert({
-      where: { businessId },
-      update: {
-        ...(displayName !== undefined && { displayName }),
-        ...(shortDescription !== undefined && { shortDescription }),
-        ...(coverImage !== undefined && { coverImage: coverImage || null }),
-        ...(avatarImage !== undefined && { avatarImage: avatarImage || null }),
-        ...(category !== undefined && { category }),
-        ...(tags !== undefined && { tags }),
-        ...(nodeColor !== undefined && { nodeColor: nodeColor || null }),
-        ...(nodeShape !== undefined && { nodeShape }),
-        ...(isEnabled !== undefined && { isEnabled }),
-        ...(isPublished !== undefined && { isPublished }),
-      },
-      create: {
-        businessId,
-        displayName: displayName ?? business.name,
-        shortDescription: shortDescription ?? business.description ?? '',
-        coverImage: (coverImage && coverImage !== '') ? coverImage : null,
-        avatarImage: (avatarImage && avatarImage !== '') ? avatarImage : null,
-        category: category ?? 'OTHER',
-        tags: tags ?? [],
-        nodeColor: (nodeColor && nodeColor !== '') ? nodeColor : null,
-        nodeShape: nodeShape ?? null,
-        isEnabled: isEnabled ?? false,
-        isPublished: isPublished ?? false,
-      },
-      include: { interactionLinks: { orderBy: { sortOrder: 'asc' } } },
+    const result = await placeListingService.upsertListing({
+      userId,
+      businessId,
+      body: req.body,
     });
 
-    // Auto-flag suspicious content
-    const textToCheck = [displayName, shortDescription, ...(tags || [])].filter(Boolean).join(' ');
-    let flagged = false;
-    if (textToCheck && checkAutoFlag(textToCheck)) {
-      await prisma.businessPlaceListing.update({
-        where: { businessId },
-        data: { isPublished: false },
-      });
-      flagged = true;
-      await prisma.contentReport.create({
-        data: {
-          reporterId: userId,
-          contentId: businessId,
-          contentType: 'place_listing',
-          reason: 'auto_flagged',
-          details: 'Listing content matched auto-flag patterns',
-          status: 'pending',
-        },
-      });
-    }
-
-    res.json({ success: true, data: listing, flagged });
+    res.json({ success: true, data: result.listing, flagged: result.flagged });
   } catch (error: unknown) {
+    if (respondPlaceServiceError(res, error)) return;
     const err = error as Error;
     logPlaceListingError('Error upserting listing', 'place_listing_upsert', err);
     res.status(500).json({ success: false, error: 'Failed to save listing' });
@@ -232,31 +140,15 @@ export async function addInteractionLink(req: Request, res: Response): Promise<v
     if (!userId) { res.status(401).json({ success: false, error: 'Authentication required' }); return; }
 
     const { businessId } = req.params;
-    const member = await verifyBusinessAdmin(userId, businessId);
-    if (!member) { res.status(403).json({ success: false, error: 'Admin access required' }); return; }
-
-    const listing = await prisma.businessPlaceListing.findUnique({ where: { businessId } });
-    if (!listing) { res.status(404).json({ success: false, error: 'Create a Place listing first' }); return; }
-
-    const parseResult = addLinkSchema.safeParse(req.body);
-    if (!parseResult.success) {
-      res.status(400).json({ success: false, error: 'Invalid input', details: parseResult.error.flatten().fieldErrors });
-      return;
-    }
-    const { type, label, url, sortOrder } = parseResult.data;
-
-    const link = await prisma.businessInteractionLink.create({
-      data: {
-        listingId: listing.id,
-        type,
-        label,
-        url,
-        sortOrder: sortOrder ?? 0,
-      },
+    const link = await placeListingService.addInteractionLink({
+      userId,
+      businessId,
+      body: req.body,
     });
 
     res.status(201).json({ success: true, data: link });
   } catch (error: unknown) {
+    if (respondPlaceServiceError(res, error)) return;
     const err = error as Error;
     logPlaceListingError('Error adding interaction link', 'place_listing_link_add', err);
     res.status(500).json({ success: false, error: 'Failed to add link' });
@@ -273,35 +165,16 @@ export async function updateInteractionLink(req: Request, res: Response): Promis
     if (!userId) { res.status(401).json({ success: false, error: 'Authentication required' }); return; }
 
     const { businessId, linkId } = req.params;
-    const member = await verifyBusinessAdmin(userId, businessId);
-    if (!member) { res.status(403).json({ success: false, error: 'Admin access required' }); return; }
-
-    const existingLink = await prisma.businessInteractionLink.findFirst({
-      where: {
-        id: linkId,
-        listing: { businessId },
-      },
-    });
-    if (!existingLink) {
-      res.status(404).json({ success: false, error: 'Link not found' });
-      return;
-    }
-
-    const { type, label, url, sortOrder, isActive } = req.body;
-
-    const link = await prisma.businessInteractionLink.update({
-      where: { id: existingLink.id },
-      data: {
-        ...(type !== undefined && { type }),
-        ...(label !== undefined && { label }),
-        ...(url !== undefined && { url }),
-        ...(sortOrder !== undefined && { sortOrder }),
-        ...(isActive !== undefined && { isActive }),
-      },
+    const link = await placeListingService.updateInteractionLink({
+      userId,
+      businessId,
+      linkId,
+      body: req.body,
     });
 
     res.json({ success: true, data: link });
   } catch (error: unknown) {
+    if (respondPlaceServiceError(res, error)) return;
     const err = error as Error;
     logPlaceListingError('Error updating link', 'place_listing_link_update', err);
     res.status(500).json({ success: false, error: 'Failed to update link' });
@@ -318,24 +191,11 @@ export async function deleteInteractionLink(req: Request, res: Response): Promis
     if (!userId) { res.status(401).json({ success: false, error: 'Authentication required' }); return; }
 
     const { businessId, linkId } = req.params;
-    const member = await verifyBusinessAdmin(userId, businessId);
-    if (!member) { res.status(403).json({ success: false, error: 'Admin access required' }); return; }
-
-    const existingLink = await prisma.businessInteractionLink.findFirst({
-      where: {
-        id: linkId,
-        listing: { businessId },
-      },
-    });
-    if (!existingLink) {
-      res.status(404).json({ success: false, error: 'Link not found' });
-      return;
-    }
-
-    await prisma.businessInteractionLink.delete({ where: { id: existingLink.id } });
+    await placeListingService.deleteInteractionLink({ userId, businessId, linkId });
 
     res.json({ success: true, message: 'Link deleted' });
   } catch (error: unknown) {
+    if (respondPlaceServiceError(res, error)) return;
     const err = error as Error;
     logPlaceListingError('Error deleting link', 'place_listing_link_delete', err);
     res.status(500).json({ success: false, error: 'Failed to delete link' });
@@ -352,39 +212,14 @@ export async function uploadCoverImage(req: Request, res: Response): Promise<voi
     if (!userId) { res.status(401).json({ success: false, error: 'Authentication required' }); return; }
 
     const { businessId } = req.params;
-    const member = await verifyBusinessAdmin(userId, businessId);
-    if (!member) { res.status(403).json({ success: false, error: 'Admin access required' }); return; }
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const file = req.file;
     if (!file) { res.status(400).json({ success: false, error: 'No cover image uploaded' }); return; }
 
-    const business = await prisma.business.findUnique({ where: { id: businessId } });
-    if (!business) { res.status(404).json({ success: false, error: 'Business not found' }); return; }
+    const result = await placeListingService.uploadCoverImage({ userId, businessId, file });
 
-    const ext = path.extname(file.originalname) || '.jpg';
-    const destPath = `place-listings/${businessId}/cover-${Date.now()}${ext}`;
-
-    const uploadResult = await storageService.uploadFile(file, destPath, {
-      makePublic: true,
-      metadata: { businessId, kind: 'place-cover' },
-    });
-
-    await prisma.businessPlaceListing.upsert({
-      where: { businessId },
-      update: { coverImage: uploadResult.url },
-      create: {
-        businessId,
-        displayName: business.name,
-        shortDescription: business.description || '',
-        coverImage: uploadResult.url,
-        category: 'OTHER',
-        tags: [],
-      },
-    });
-
-    res.json({ success: true, data: { coverImage: uploadResult.url } });
+    res.json({ success: true, data: { coverImage: result.coverImage } });
   } catch (error: unknown) {
+    if (respondPlaceServiceError(res, error)) return;
     const err = error as Error;
     logPlaceListingError('Error uploading cover', 'place_listing_cover_upload', err);
     res.status(500).json({ success: false, error: 'Failed to upload cover image' });
@@ -401,16 +236,11 @@ export async function deleteCoverImage(req: Request, res: Response): Promise<voi
     if (!userId) { res.status(401).json({ success: false, error: 'Authentication required' }); return; }
 
     const { businessId } = req.params;
-    const member = await verifyBusinessAdmin(userId, businessId);
-    if (!member) { res.status(403).json({ success: false, error: 'Admin access required' }); return; }
+    const result = await placeListingService.deleteCoverImage({ userId, businessId });
 
-    await prisma.businessPlaceListing.update({
-      where: { businessId },
-      data: { coverImage: null },
-    });
-
-    res.json({ success: true, message: 'Cover image removed', data: { coverImage: null } });
+    res.json({ success: true, message: 'Cover image removed', data: result });
   } catch (error: unknown) {
+    if (respondPlaceServiceError(res, error)) return;
     const err = error as Error;
     logPlaceListingError('Error deleting cover', 'place_listing_cover_delete', err);
     res.status(500).json({ success: false, error: 'Failed to remove cover image' });
@@ -427,39 +257,14 @@ export async function uploadAvatarImage(req: Request, res: Response): Promise<vo
     if (!userId) { res.status(401).json({ success: false, error: 'Authentication required' }); return; }
 
     const { businessId } = req.params;
-    const member = await verifyBusinessAdmin(userId, businessId);
-    if (!member) { res.status(403).json({ success: false, error: 'Admin access required' }); return; }
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const file = req.file;
     if (!file) { res.status(400).json({ success: false, error: 'No avatar image uploaded' }); return; }
 
-    const business = await prisma.business.findUnique({ where: { id: businessId } });
-    if (!business) { res.status(404).json({ success: false, error: 'Business not found' }); return; }
+    const result = await placeListingService.uploadAvatarImage({ userId, businessId, file });
 
-    const ext = path.extname(file.originalname) || '.jpg';
-    const destPath = `place-listings/${businessId}/avatar-${Date.now()}${ext}`;
-
-    const uploadResult = await storageService.uploadFile(file, destPath, {
-      makePublic: true,
-      metadata: { businessId, kind: 'place-avatar' },
-    });
-
-    await prisma.businessPlaceListing.upsert({
-      where: { businessId },
-      update: { avatarImage: uploadResult.url },
-      create: {
-        businessId,
-        displayName: business.name,
-        shortDescription: business.description || '',
-        avatarImage: uploadResult.url,
-        category: 'OTHER',
-        tags: [],
-      },
-    });
-
-    res.json({ success: true, data: { avatarImage: uploadResult.url } });
+    res.json({ success: true, data: { avatarImage: result.avatarImage } });
   } catch (error: unknown) {
+    if (respondPlaceServiceError(res, error)) return;
     const err = error as Error;
     logPlaceListingError('Error uploading avatar', 'place_listing_avatar_upload', err);
     res.status(500).json({ success: false, error: 'Failed to upload avatar image' });
@@ -476,21 +281,46 @@ export async function deleteAvatarImage(req: Request, res: Response): Promise<vo
     if (!userId) { res.status(401).json({ success: false, error: 'Authentication required' }); return; }
 
     const { businessId } = req.params;
-    const member = await verifyBusinessAdmin(userId, businessId);
-    if (!member) { res.status(403).json({ success: false, error: 'Admin access required' }); return; }
+    const result = await placeListingService.deleteAvatarImage({ userId, businessId });
 
-    await prisma.businessPlaceListing.update({
-      where: { businessId },
-      data: { avatarImage: null },
-    });
-
-    res.json({ success: true, message: 'Avatar image removed', data: { avatarImage: null } });
+    res.json({ success: true, message: 'Avatar image removed', data: result });
   } catch (error: unknown) {
+    if (respondPlaceServiceError(res, error)) return;
     const err = error as Error;
     logPlaceListingError('Error deleting avatar', 'place_listing_avatar_delete', err);
     res.status(500).json({ success: false, error: 'Failed to remove avatar image' });
   }
 }
+
+/**
+ * POST /api/place/report/:businessId
+ * Report a business listing for review
+ */
+export async function reportListing(req: Request, res: Response): Promise<void> {
+  try {
+    const userId = getUserId(req);
+    if (!userId) { res.status(401).json({ success: false, error: 'Authentication required' }); return; }
+
+    const { businessId } = req.params;
+    const { reason, details } = req.body;
+
+    const result = await placeListingService.reportListing({
+      userId,
+      businessId,
+      reason,
+      details,
+    });
+
+    res.status(201).json({ success: true, data: result });
+  } catch (error: unknown) {
+    if (respondPlaceServiceError(res, error)) return;
+    const err = error as Error;
+    logPlaceListingError('Error reporting listing', 'place_listing_report', err);
+    res.status(500).json({ success: false, error: 'Failed to submit report' });
+  }
+}
+
+/* </place-listing-write-handlers> */
 
 // ============================================================================
 // PUBLIC ENDPOINTS - Browse / Explore / Profile
@@ -506,44 +336,16 @@ export async function explorePlaces(req: Request, res: Response): Promise<void> 
     if (!userId) { res.status(401).json({ success: false, error: 'Authentication required' }); return; }
 
     const { category, search, limit, offset } = req.query;
-    const take = Math.min(parseInt(limit as string) || 30, 100);
-    const skip = parseInt(offset as string) || 0;
+    const result = await placeVisibilityService.exploreListings(userId, {
+      category: typeof category === 'string' ? category : undefined,
+      search: typeof search === 'string' ? search : undefined,
+      limit: typeof limit === 'string' ? parseInt(limit, 10) : undefined,
+      offset: typeof offset === 'string' ? parseInt(offset, 10) : undefined,
+    });
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const where: any = {
-      isEnabled: true,
-      isPublished: true,
-      business: { einVerified: true },
-    };
-
-    if (category && typeof category === 'string') {
-      where.category = category;
-    }
-
-    if (search && typeof search === 'string') {
-      where.OR = [
-        { displayName: { contains: search, mode: 'insensitive' } },
-        { shortDescription: { contains: search, mode: 'insensitive' } },
-        { tags: { has: search.toLowerCase() } },
-      ];
-    }
-
-    const [listings, total] = await Promise.all([
-      prisma.businessPlaceListing.findMany({
-        where,
-        include: {
-          business: { select: { id: true, name: true, logo: true, einVerified: true, industry: true } },
-          interactionLinks: { where: { isActive: true }, orderBy: { sortOrder: 'asc' } },
-        },
-        orderBy: { createdAt: 'desc' },
-        take,
-        skip,
-      }),
-      prisma.businessPlaceListing.count({ where }),
-    ]);
-
-    res.json({ success: true, data: listings, pagination: { total, limit: take, offset: skip } });
+    res.json({ success: true, data: result.listings, pagination: result.pagination });
   } catch (error: unknown) {
+    if (respondPlaceServiceError(res, error)) return;
     const err = error as Error;
     logPlaceListingError('Error exploring places', 'place_listing_explore', err);
     res.status(500).json({ success: false, error: 'Failed to explore places' });
@@ -561,108 +363,15 @@ export async function getBusinessProfile(req: Request, res: Response): Promise<v
     if (!userId) { res.status(401).json({ success: false, error: 'Authentication required' }); return; }
 
     const { businessId } = req.params;
+    const listing = await placeVisibilityService.getBusinessProfile(userId, businessId);
 
-    const listing = await prisma.businessPlaceListing.findUnique({
-      where: { businessId },
-      include: {
-        business: { select: { id: true, name: true, logo: true, einVerified: true, industry: true, website: true, description: true } },
-        interactionLinks: { where: { isActive: true }, orderBy: { sortOrder: 'asc' } },
-      },
-    });
-
-    if (!listing || !listing.isEnabled || !listing.isPublished) {
-      res.status(404).json({ success: false, error: 'Business listing not found' });
-      return;
-    }
-
-    if (!listing.business.einVerified) {
-      res.status(403).json({ success: false, error: 'Business not yet verified' });
-      return;
-    }
-
-    // Follower count (visible to the business, but we return it for the profile too)
-    const followerCount = await prisma.placeNode.count({
-      where: { nodeType: 'BUSINESS', entityId: businessId },
-    });
-
-    res.json({
-      success: true,
-      data: {
-        ...listing,
-        followerCount,
-      },
-    });
+    res.json({ success: true, data: listing });
   } catch (error: unknown) {
+    if (respondPlaceServiceError(res, error)) return;
     const err = error as Error;
     logPlaceListingError('Error fetching business profile', 'place_listing_business_profile', err);
     res.status(500).json({ success: false, error: 'Failed to fetch profile' });
   }
-}
-
-// ============================================================================
-// CONTENT MODERATION
-// ============================================================================
-
-const AUTO_FLAG_PATTERNS = [
-  /\b(scam|fraud|fake|spam)\b/i,
-  /\b(xxx|porn|nsfw)\b/i,
-  /\b(hack|phish|malware)\b/i,
-];
-
-/**
- * POST /api/place/report/:businessId
- * Report a business listing for review
- */
-export async function reportListing(req: Request, res: Response): Promise<void> {
-  try {
-    const userId = getUserId(req);
-    if (!userId) { res.status(401).json({ success: false, error: 'Authentication required' }); return; }
-
-    const { businessId } = req.params;
-    const { reason, details } = req.body;
-
-    if (!reason || typeof reason !== 'string') {
-      res.status(400).json({ success: false, error: 'reason is required' });
-      return;
-    }
-
-    const report = await prisma.contentReport.create({
-      data: {
-        reporterId: userId,
-        contentId: businessId,
-        contentType: 'place_listing',
-        reason,
-        details: details || null,
-        status: 'pending',
-      },
-    });
-
-    // Auto-flag: if multiple reports, auto-hide the listing
-    const reportCount = await prisma.contentReport.count({
-      where: { contentId: businessId, contentType: 'place_listing', status: 'pending' },
-    });
-
-    if (reportCount >= 3) {
-      await prisma.businessPlaceListing.update({
-        where: { businessId },
-        data: { isPublished: false },
-      });
-    }
-
-    res.status(201).json({ success: true, data: { reportId: report.id } });
-  } catch (error: unknown) {
-    const err = error as Error;
-    logPlaceListingError('Error reporting listing', 'place_listing_report', err);
-    res.status(500).json({ success: false, error: 'Failed to submit report' });
-  }
-}
-
-/**
- * Auto-flag check for listing content (called from upsertListing)
- * Returns true if content appears suspicious
- */
-function checkAutoFlag(text: string): boolean {
-  return AUTO_FLAG_PATTERNS.some(pattern => pattern.test(text));
 }
 
 /**
@@ -670,16 +379,5 @@ function checkAutoFlag(text: string): boolean {
  * Get all available Place categories
  */
 export async function getCategories(_req: Request, res: Response): Promise<void> {
-  const categories = [
-    { value: 'RESTAURANT', label: 'Restaurants & Dining' },
-    { value: 'RETAIL', label: 'Retail & Shopping' },
-    { value: 'GROCERY', label: 'Grocery & Markets' },
-    { value: 'DIGITAL_SERVICE', label: 'Digital Services' },
-    { value: 'DELIVERY', label: 'Delivery Services' },
-    { value: 'LOCAL_SERVICE', label: 'Local Services' },
-    { value: 'HEALTH_WELLNESS', label: 'Health & Wellness' },
-    { value: 'ENTERTAINMENT', label: 'Entertainment' },
-    { value: 'OTHER', label: 'Other' },
-  ];
-  res.json({ success: true, data: categories });
+  res.json({ success: true, data: placeVisibilityService.getPlaceCategories() });
 }

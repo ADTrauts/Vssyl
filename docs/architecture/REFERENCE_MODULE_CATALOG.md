@@ -110,7 +110,7 @@
 | **Todo** | *(certified — see Reference #4 above)* | — | — |
 | **Notes** | *(paused 2026-06-01 — see Notebook initiative)* | — | Superseded by Notebook product track |
 | **Notebook** | Todo (#4), File Hub (#1), Calendar (#3) | Chat (#2) AI facade patterns | Composition + NotebookLink; Phase 7 audit complete — **not L3 certified** |
-| **Place** | File Hub (entities, V_Link), Chat (visibility) | Calendar (scheduling links) | **Reference Module #5 candidate** — location/meeting linkage |
+| **Place** | File Hub (entities, V_Link), Chat (visibility) | Calendar (scheduling links), Notebook (listing embed) | **Reference Module #5 candidate** — Wave 1F AI executor complete; [PLACE_DOMAIN_MODEL.md](./PLACE_DOMAIN_MODEL.md), [PLACE_SERVICE_EXTRACTION_PLAN.md](./PLACE_SERVICE_EXTRACTION_PLAN.md) |
 | **Dashboard** | File Hub (manifest, activity), Chat (realtime widgets) | — | Widget registry, composition (not full module CRUD) |
 | **Analytics** | File Hub (activity vs analytics separation) | — | Read-only / derived metrics; often N/A trash |
 | **Business Workspace** | All three (composition only) | — | Hub switch, module landing pattern; not a data module |
@@ -147,8 +147,9 @@ Before Phase 1 implementation, produce:
 
 1. `{MODULE}_CONSTITUTIONAL_AUDIT.md`
 2. `{MODULE}_OPERATION_MATRIX.md`
-3. `{MODULE}_SERVICE_EXTRACTION_PLAN.md`
-4. Ledger + roadmap index updates
+3. `{MODULE}_SERVICE_EXTRACTION_PLAN.md` — Place: [PLACE_SERVICE_EXTRACTION_PLAN.md](./PLACE_SERVICE_EXTRACTION_PLAN.md) ✅
+4. `{MODULE}_DOMAIN_MODEL.md` — Place: [PLACE_DOMAIN_MODEL.md](./PLACE_DOMAIN_MODEL.md) ✅ (Wave 1B gate)
+5. Ledger + roadmap index updates
 
 Use this catalog when filling **“reference module pattern to copy”** columns in the extraction plan.
 
@@ -166,4 +167,4 @@ Use this catalog when filling **“reference module pattern to copy”** columns
 
 ---
 
-*Last updated: 2026-06-02 (Notebook Level 3 Certified — composition, not Reference #5)*
+*Last updated: 2026-06-03 (Place Wave 1G satellite cleanup complete)*

@@ -823,7 +823,15 @@ export class ChatSocketService {
 
   public broadcastPlaceEvent(
     userId: string,
-    event: 'place:node:added' | 'place:node:removed' | 'place:connection:accepted' | 'place:connection:request',
+    event:
+      | 'place:node:added'
+      | 'place:node:removed'
+      | 'place:connection:accepted'
+      | 'place:connection:request'
+      | 'place:meeting:created'
+      | 'place:meeting:updated'
+      | 'place:meeting:cancelled'
+      | 'place:listing:updated',
     data: Record<string, unknown>
   ) {
     const payload = { ...data, timestamp: new Date().toISOString() };

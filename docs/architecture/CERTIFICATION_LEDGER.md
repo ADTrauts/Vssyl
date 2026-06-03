@@ -1,7 +1,7 @@
 # Platform Module Certification Ledger
 
 **Version:** 1.0.0  
-**Last updated:** 2026-05-31  
+**Last updated:** 2026-06-02  
 **Status:** Active — executive dashboard for platform architecture health  
 **Owner:** Platform Engineering / Architecture Governance
 
@@ -92,7 +92,7 @@ Vssyl certifies modules against **two authorities simultaneously**. A module is 
 | **Todo** | `todo` | **High** | **High** | **3 — Certified** | **Reference Module #4** (Level 3) | [TODO_LEVEL3_CERTIFICATION_REVIEW](./audits/TODO_LEVEL3_CERTIFICATION_REVIEW.md), [TODO_OPERATION_MATRIX](./audits/TODO_OPERATION_MATRIX.md) |
 | **Notebook** | `notebook` | **High** | **Partial** | **3 — Certified** | **Composition module** (2026-06-02) — not Reference #5 | [NOTEBOOK_LEVEL3_CERTIFICATION_REVIEW](./audits/NOTEBOOK_LEVEL3_CERTIFICATION_REVIEW.md), [NOTEBOOK_OPERATION_MATRIX](./audits/NOTEBOOK_OPERATION_MATRIX.md) |
 | **Notes** | `notes` | **Partial** | **Low** | **2 — Sub-domain** | **Dependency** of Notebook L3 — page storage; Global Trash handler | `notes*Service`; `notes:page` entity; no separate product L3 |
-| **Place** | `place` | **Low** | **Low** | **0 — Legacy** | **Reference Module #5 candidate** — not started (Wave 3) | Multi-controller; minimal manifest |
+| **Place** | `place` | **Low** | **Low** | **2 — candidacy** | **Reference Module #5 candidate** — Wave **1B–1G** complete (2026-06-03); not certified L2 | [PLACE_CONSTITUTIONAL_AUDIT](./audits/PLACE_CONSTITUTIONAL_AUDIT.md), [PLACE_OPERATION_MATRIX](./audits/PLACE_OPERATION_MATRIX.md), [PLACE_PRODUCT_ARCHITECTURE_REVIEW](./PLACE_PRODUCT_ARCHITECTURE_REVIEW.md), [PLACE_SERVICE_EXTRACTION_PLAN](./PLACE_SERVICE_EXTRACTION_PLAN.md), [PLACE_DOMAIN_MODEL](./PLACE_DOMAIN_MODEL.md) |
 | **Dashboard** | `dashboard` | **Partial** | **Partial** | **1 — Stabilizing** | Not started (Wave 3) | Dual widget registry; weak activity |
 | **Analytics** | `analytics` | **Partial** | **N/A** | **1 — Stabilizing** | Not started (Wave 3) | Pseudo-module; subscriber stubs |
 | **Business Workspace** | *(composition)* | **Partial** | **Partial** | **1 — Stabilizing** | Not started (Wave 3) | Switch rendering; lifecycle partial |
@@ -106,7 +106,7 @@ Track cross-cutting certification separately; modules depend on these.
 | Global Trash API | High | High (drive + chat + calendar + todo + **notes** handlers) | 2 | Notes handler shipped (Notebook Phase 2) |
 | NotificationService | High | High (drive adapter) | 2 | Consolidation — notebook manifest notification types optional |
 | V_Link | High | High (drive + chat + calendar + todo + **NOTE**) | 2 | `notebook:page` product entity registered; V_Link storage alias NOTE |
-| Policy Engine | Partial | High (drive + chat + calendar + todo + **notes/notebook link** dual) | 2 | Notes + notebook link PE shipped |
+| Policy Engine | Partial | High (drive + chat + calendar + todo + **notes/notebook link** + **place graph** dual) | 2 | Place graph PE Phase 1B |
 | Domain Event Bus | Partial | High (drive taxonomy) | 1 | Taxonomy thin beyond drive |
 | Module Activity | Partial | High (drive writes) | 1 | Legacy read paths platform-wide |
 | AI Tools / Actions | Low | Partial (drive tools compliant) | 0 | `toolExecutor` / `ActionExecutor` violations |
@@ -261,6 +261,18 @@ Waves align with [`PLATFORM_MODULE_MODERNIZATION_ROADMAP.md`](../plans/PLATFORM_
 
 **Todo Phase 3 (2026-06-02):** [`TODO_LEVEL3_CERTIFICATION_REVIEW.md`](./audits/TODO_LEVEL3_CERTIFICATION_REVIEW.md) — **Level 3 Certified**; **Reference Module #4**.
 
+**Place Phase 1B (2026-06-03):** Core graph write layer — `placePermissionService`, `placePolicyDual`, `placeService`, `placeRealtimeService`; graph PE actions; thin core graph controllers.
+
+**Place Phase 1C (2026-06-03):** `placeVisibilityService`; read PE actions; global search relocation; `validateAccessibleListingIds`; **Level 1 — Stabilizing**.
+
+**Place Phase 1D (2026-06-03):** `placeListingService`, `placeMeetingService`, `placeActivityService`, `placeDomainEventService`, `placeNotificationService`; listing/meeting write PE; **Calendar bypass removed** (`linkToCalendar` → `calendarEventService`); meeting notifications wired.
+
+**Place Phase 1E (2026-06-03):** Graph node activity/domain/realtime wired; `placeConnectionService` (interim); feed read adapter from platform module activity; location privacy in `placeMeetingService`; controller contract coverage. **Level 2 candidacy — not certified.**
+
+**Place Phase 1F (2026-06-03):** `placeAIActionService`; thin `placeAIController`; ActionExecutor + toolExecutor read-only ops.
+
+**Place Phase 1G (2026-06-03):** `placeCommunityService`; discovery dismiss in `placeService`; `getEnrichedPlaceGraph`; connection boundary documented; transactions deferred. **Wave 1 extraction complete — Phase 2A ready.**
+
 **Post–Level 3 punch-list (non-blocking):** matrix refresh; `TodoWorkspaceLanding.tsx`; optional `todo_due` cron; satellite PE/activity; Level 4 council review.
 
 **Sequencing note:** **Notes** modernization is next per roadmap; Calendar Level 4 / council review out of scope.
@@ -269,7 +281,7 @@ Waves align with [`PLATFORM_MODULE_MODERNIZATION_ROADMAP.md`](../plans/PLATFORM_
 
 | Module | not started | audit | service extraction | compliance | certification | Target level |
 |--------|-------------|-------|-------------------|------------|---------------|--------------|
-| Place | **●** | ○ | ○ | ○ | ○ | 2→3 |
+| Place | ○ | **●** | ○ | ○ | ○ | 2→3 |
 | Business Workspace | **●** | ○ | ○ | ○ | ○ | 2 |
 | Dashboard | **●** | ○ | ○ | ○ | ○ | 2 |
 | Analytics | **●** | ○ | ○ | ○ | ○ | 2 |

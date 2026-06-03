@@ -20,6 +20,9 @@ export type PolicyResourceType =
   | 'task'
   | 'note'
   | 'place'
+  | 'place_node'
+  | 'place_listing'
+  | 'place_meeting'
   | 'conversation'
   | 'message';
 

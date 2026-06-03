@@ -76,7 +76,25 @@
 
 **Relationship model:** **B — NotebookLink + V_Link** ([NOTEBOOK_RELATIONSHIP_MODEL.md](../architecture/NOTEBOOK_RELATIONSHIP_MODEL.md)).
 
-**Next:** **Place** (Reference Module #5 candidate) when product prioritizes Wave 3. Notebook **Level 3 Certified** — post-cert hygiene NB-H1–H7 optional.
+**Next:** **Place Wave 1** — service boundary extraction per [PLACE_CONSTITUTIONAL_AUDIT.md](../architecture/audits/PLACE_CONSTITUTIONAL_AUDIT.md) (Reference Module #5 candidate; Level 0 today). Notebook **Level 3 Certified** — post-cert hygiene NB-H1–H7 optional.
+
+**Place Wave 0 (2026-06-02):** Constitutional audit + operation matrix complete — [PLACE_CONSTITUTIONAL_AUDIT.md](../architecture/audits/PLACE_CONSTITUTIONAL_AUDIT.md), [PLACE_OPERATION_MATRIX.md](../architecture/audits/PLACE_OPERATION_MATRIX.md). **Level 0 — Legacy**; ~57 operations inventoried; 8 controllers / 62 endpoints / 17 Place-owned models; zero canonical services.
+
+**Place Wave 0.5 (2026-06-02):** Product architecture review complete — [PLACE_PRODUCT_ARCHITECTURE_REVIEW.md](../architecture/PLACE_PRODUCT_ARCHITECTURE_REVIEW.md). **Identity:** external relationship graph + directory + commerce routing + bounded community (not vendor management or facility intelligence). **Boundary:** Business Workspace/Notebook = internal; Place = external market graph. **Reference #5:** candidate — novel P1–P7 patterns; designation after Wave 1–2 + L3 only.
+
+**Place Wave 1A (2026-06-02):** Service extraction plan complete — [PLACE_SERVICE_EXTRACTION_PLAN.md](../architecture/PLACE_SERVICE_EXTRACTION_PLAN.md). **12 services** + companions (`placeMeetingService`, `placePermissionService`, …); **7–8 weeks** est. to Level 3.
+
+**Place Wave 1B-gate (2026-06-02):** Domain model locked — [PLACE_DOMAIN_MODEL.md](../architecture/PLACE_DOMAIN_MODEL.md). Aggregate roots, lifecycles, PE catalog, trash (listing+meeting in 2A), V_Link entities, Calendar delegation contract, platform activity canonical. **Phase 1B implementation may start** on ACT approval.
+
+**Place Wave 1C (2026-06-03):** `placeVisibilityService` — read/search/discovery/analytics/meetings/AI context; global search provider relocated; **Level 1 — Stabilizing**. **Next:** Wave 1E — notifications parity, graph activity wiring, connection service boundary.
+
+**Place Wave 1D (2026-06-03):** Listing/meeting write services + adapters; Calendar delegation fixed. **Next:** Wave 1E.
+
+**Place Wave 1E (2026-06-03):** Graph/connection side effects; `placeConnectionService`; feed read adapter; controller collapse. **Level 2 candidacy — not certified.**
+
+**Place Wave 1F (2026-06-03):** `placeAIActionService`; thin `placeAIController`; ActionExecutor + toolExecutor read-only twins; manifest `ai: true` reconciled.
+
+**Place Wave 1G (2026-06-03):** `placeCommunityService`; discovery dismiss; `getEnrichedPlaceGraph`; connection boundary closeout; transactions deferred. **Wave 1 extraction complete — Phase 2A ready.**
 
 ---
 
@@ -424,9 +442,9 @@ Copy per module during phase audits:
 | Platform Entity Registration | 🔴 | 🔴 | 🔴 |
 | V_Link | 🔴 | 🔴 | 🔴 |
 | Capability Matrix | 🟡 minimal manifest | 🔴 | 🟡 |
-| AI Compliance | 🟡 `placeAIController` | 🔴 | 🟡 |
+| AI Compliance | 🟢 `placeAIActionService` (1F) | 🔴 | 🟢 |
 | Scheduler Integration | 🔴 | 🔴 | 🔴 |
-| Documentation | 🔴 | 🔴 | 🔴 |
+| Documentation | 🟡 [PLACE_CONSTITUTIONAL_AUDIT](../architecture/audits/PLACE_CONSTITUTIONAL_AUDIT.md) | 🔴 | 🟡 |
 | Tests | 🟡 calendar link integration | 🔴 | 🟡 |
 
 ### Dashboard — Platform hub
@@ -793,37 +811,99 @@ The phases below remain **reference** for document-domain hygiene under **Notebo
 
 ### 5.5 Place (Priority 5)
 
+#### Wave 0 — Audit complete (2026-06-02)
+
+**Evidence:** [PLACE_CONSTITUTIONAL_AUDIT.md](../architecture/audits/PLACE_CONSTITUTIONAL_AUDIT.md), [PLACE_OPERATION_MATRIX.md](../architecture/audits/PLACE_OPERATION_MATRIX.md)
+
+| Metric | Value |
+|--------|-------|
+| Certification level (current) | **0 — Legacy** |
+| Controllers | 8 (~3,847 LOC) |
+| API endpoints | 62 (`/api/place`) |
+| Canonical services | **0** |
+| Operations inventoried | ~57 (0 C / 35 P / 22 N) |
+| Tests | 1 integration (`place-meeting-calendar-link`) |
+
+**Headline findings:** Direct Prisma in all controllers; no Policy Engine; no Global Trash; no `emitModuleActivityEvent`; `recordActivity` helper never wired; notification UI types without server emits; calendar link bypasses `calendarEventService`; partial realtime via `chatSocketService` (manifest truthfully omits); AI context providers registered but no ActionExecutor/toolExecutor twins.
+
+#### Wave 0.5 — Product architecture complete (2026-06-02)
+
+**Evidence:** [PLACE_PRODUCT_ARCHITECTURE_REVIEW.md](../architecture/PLACE_PRODUCT_ARCHITECTURE_REVIEW.md)
+
+| Decision | Outcome |
+|----------|---------|
+| Product identity | **Combination:** personal relationship graph (core) + discoverable directory + commerce **routing** + bounded community |
+| Not Place | Vendor management, facility intelligence, clinical/compliance cores, internal workspace |
+| Internal vs external | **Notebook + Business Workspace = inside**; **Place = outside/market graph** |
+| Healthcare | Place for **external** suppliers/contractors/discovery; Notebook/Todo/Calendar/HR for ops |
+| Reference #5 | **Candidate** — teaches external graph + listing + discovery + routing (P1–P7); not Reference until Wave 1–2 + L3 |
+
+#### Wave 1A — Service extraction plan complete (2026-06-02)
+
+**Evidence:** [PLACE_SERVICE_EXTRACTION_PLAN.md](../architecture/PLACE_SERVICE_EXTRACTION_PLAN.md)
+
+| Item | Detail |
+|------|--------|
+| Core services | `placeService`, `placeListingService`, `placeVisibilityService`, `placePolicyDual` |
+| Adapters | `placeActivityService`, `placeDomainEventService`, `placeNotificationService`, `placeRealtimeService` |
+| Phase 2 | `placeTrashService`, `placeVlinkAccessService`, `placeVlinkLifecycleService` |
+| AI | `placeAIActionService` (Phase 1F) |
+| Companions | `placeMeetingService`, `placePermissionService` (mandatory); communities/transactions deferred |
+| Est. to L3 | **~7–8 weeks** (1 FTE) |
+| **Next** | ~~`PLACE_DOMAIN_MODEL.md`~~ ✅ → **Phase 1B** (`placePolicyDual` + `placeService`) |
+
+#### Wave 1B-gate — Domain model locked (2026-06-02)
+
+**Evidence:** [PLACE_DOMAIN_MODEL.md](../architecture/PLACE_DOMAIN_MODEL.md)
+
+| Lock | Decision |
+|------|----------|
+| Aggregate roots | `Place`, `PlaceNode`, `BusinessPlaceListing`, `PlaceMeetingPlace`, `PlaceCommunity`, `PlaceTransaction` |
+| Trash 2A | **`listing`**, **`meeting`** only; node/community/transaction defer |
+| Activity | **Platform module activity canonical**; `PlaceActivityFeedItem` writes deprecated; dual-write forbidden |
+| V_Link 2A | **`place:listing`**, **`place:meeting`**; Notebook `PLACE_LISTING` gated on visibility checklist |
+| Calendar | **No direct Event Prisma in Place** — `calendarEventService` only |
+| AI 1F | Read-only executors; no auto writes |
+
+**Next:** Phase **1B** code — `placePermissionService`, `placePolicyDual`, `placeService` (graph scope per domain model §12)
+
 #### Current State
 
 - Multiple controllers: listing, community, discovery, meeting, transaction, analytics, AI.
-- Minimal manifest (no trash/vlink/notifications declared).
-- Business workspace case exists in `BusinessWorkspaceContent.tsx`.
+- Minimal manifest (no trash/vlink/notifications declared — mostly truthful omissions).
+- Business workspace case exists (`PlaceListingEditor`); **missing** `PlaceWorkspaceLanding.tsx` + `BrandedWorkDashboard` icon/name.
+- `coreModuleRegistry` includes `place`; no dashboard widget.
 
 #### Constitutional Gaps
 
-- §16 boundaries; capability truthfulness; §5 V_Link for listings/meetings.
+- §16 boundaries; capability truthfulness (`ai: true` without executor paths); §5 V_Link for listings/meetings; §7 trash; §8 domain events; module activity contract.
 
 #### File Hub Pattern Gaps
 
-- No unified delete/visibility/notification services.
+- No `placeVisibilityService`, `placeListingService`, `placeMeetingService`, `placeNotificationService`, `placePolicyDual`, trash handler, or platform entities.
 
 #### Modernization Phases
 
-1. Service boundary validation audit.
-2. V_Link validation for meeting/listing entities.
-3. Notification validation (if product-required).
-4. AI provider validation.
-5. Capability/manifest reconciliation.
-6. PE + visibility for public/private listing reads.
+0. ~~Constitutional audit.~~ ✅ **Done (Wave 0)**
+0.5. ~~Product architecture review.~~ ✅ **Done (Wave 0.5)** — [PLACE_PRODUCT_ARCHITECTURE_REVIEW.md](../architecture/PLACE_PRODUCT_ARCHITECTURE_REVIEW.md)
+1A. ~~Service extraction plan.~~ ✅ **Done (Wave 1A)** — [PLACE_SERVICE_EXTRACTION_PLAN.md](../architecture/PLACE_SERVICE_EXTRACTION_PLAN.md)
+1B-gate. ~~Domain model lock.~~ ✅ **Done (Wave 1B-gate)** — [PLACE_DOMAIN_MODEL.md](../architecture/PLACE_DOMAIN_MODEL.md)
+1B. **`placePolicyDual`** + **`placePermissionService`** + **`placeService`** — graph mutations (scope §12).
+1C. **`placeVisibilityService`** — explore, profile, search, AI context reads.
+2. **`placeListingService`** + **`placeMeetingService`** + side-effect adapters (activity, domain, notification, realtime).
+3. Controller collapse + **`placeAIActionService`** + executor twins.
+4. V_Link + **`placeTrashService`** + platform entities (`place:listing`, `place:meeting`).
+5. Manifest reconciliation + operation matrix refresh → L3 review.
 
 #### Acceptance Criteria
 
-- Manifest matches runtime; AI reads bounded; no unauthorized cross-tenant listing access.
+- Manifest matches runtime; AI reads bounded; no unauthorized cross-tenant listing access; operation matrix majority **C** before L2; Calendar delegation verified by tests.
 
 #### Deferred Work
 
 - **Marketplace expansion**
 - **Transaction systems** (`placeTransactionController` remains isolated until product priority)
+- **Reference Module #5 designation** — viable after Wave 1–2, not at Level 0
 
 ---
 

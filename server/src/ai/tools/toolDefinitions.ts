@@ -71,6 +71,51 @@ export const AI_TOOL_DEFINITIONS = [
   {
     type: 'function' as const,
     function: {
+      name: 'search_places',
+      description:
+        'Search published Place business listings the user can access (read-only). Returns matching businesses on Vssyl Place.',
+      parameters: {
+        type: 'object',
+        properties: {
+          query: { type: 'string', description: 'Search text (min 2 characters)' },
+        },
+        required: ['query'],
+      },
+    },
+  },
+  {
+    type: 'function' as const,
+    function: {
+      name: 'get_place_recommendations',
+      description:
+        'Get personalized Place recommendations based on interests and followed businesses (read-only).',
+      parameters: {
+        type: 'object',
+        properties: {
+          limit: { type: 'number', description: 'Max recommendations (default 10, max 20)' },
+        },
+      },
+    },
+  },
+  {
+    type: 'function' as const,
+    function: {
+      name: 'get_place_purchase_help',
+      description:
+        'Suggest external interaction links for ordering, delivery, or browsing (read-only). Does not create transactions or click links.',
+      parameters: {
+        type: 'object',
+        properties: {
+          query: { type: 'string', description: 'What the user wants to do (order, delivery, menu, etc.)' },
+          businessId: { type: 'string', description: 'Optional specific business id on Place' },
+        },
+        required: ['query'],
+      },
+    },
+  },
+  {
+    type: 'function' as const,
+    function: {
       name: 'create_todo',
       description: 'Create a new to-do task for the user.',
       parameters: {
@@ -91,4 +136,7 @@ export type AIToolName =
   | 'share_file'
   | 'summarize_notebook_page'
   | 'extract_notebook_action_items'
+  | 'search_places'
+  | 'get_place_recommendations'
+  | 'get_place_purchase_help'
   | 'create_todo';

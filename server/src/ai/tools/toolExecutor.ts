@@ -117,6 +117,62 @@ export async function executeTool(
         };
         break;
       }
+      case 'search_places': {
+        const query = (args.query as string)?.trim();
+        if (!query || query.length < 2) {
+          result = { success: false, message: 'query must be at least 2 characters.' };
+          break;
+        }
+        const { searchPlaces } = await import('../../services/place/placeAIActionService.js');
+        const outcome = await searchPlaces(userId, query);
+        if (!outcome.success) {
+          result = { success: false, message: outcome.error };
+          break;
+        }
+        const data = outcome.data as { results?: unknown[] };
+        result = {
+          success: true,
+          message: `Found ${data.results?.length ?? 0} place listing(s).`,
+          data: { query, results: data.results ?? [] },
+        };
+        break;
+      }
+      case 'get_place_recommendations': {
+        const limit = args.limit != null ? Number(args.limit) : undefined;
+        const { recommendPlaces } = await import('../../services/place/placeAIActionService.js');
+        const outcome = await recommendPlaces(userId, { limit });
+        if (!outcome.success) {
+          result = { success: false, message: outcome.error };
+          break;
+        }
+        const data = outcome.data as { recommendations?: unknown[] };
+        result = {
+          success: true,
+          message: `Returned ${data.recommendations?.length ?? 0} recommendation(s).`,
+          data: { recommendations: data.recommendations ?? [] },
+        };
+        break;
+      }
+      case 'get_place_purchase_help': {
+        const query = (args.query as string)?.trim();
+        if (!query) {
+          result = { success: false, message: 'query is required.' };
+          break;
+        }
+        const businessId = (args.businessId as string) || null;
+        const { purchaseHelp } = await import('../../services/place/placeAIActionService.js');
+        const outcome = await purchaseHelp(userId, { query, businessId });
+        if (!outcome.success) {
+          result = { success: false, message: outcome.error };
+          break;
+        }
+        result = {
+          success: true,
+          message: 'Purchase guidance returned (read-only — no transaction created).',
+          data: outcome.data as Record<string, unknown>,
+        };
+        break;
+      }
       case 'create_todo': {
         const title = (args.title as string)?.trim();
         if (!title) {

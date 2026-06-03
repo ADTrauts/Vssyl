@@ -203,6 +203,7 @@ export class ActionExecutor {
       dashboard: this.executeDashboardAction.bind(this),
       calendar: this.executeCalendarAction.bind(this),
       notebook: this.executeNotebookAction.bind(this),
+      place: this.executePlaceAction.bind(this),
       tasks: this.executeTasksAction.bind(this),
       todo: this.executeTasksAction.bind(this),
       notifications: this.executeNotificationsAction.bind(this),
@@ -1375,6 +1376,202 @@ export class ActionExecutor {
         startTime,
         operation,
         { success: false, error: err.message || 'Notebook action failed' },
+        action.affectedUsers || [],
+        false
+      );
+    }
+  }
+
+  private placeActionMetadata(
+    action: AIAction,
+    startTime: number,
+    operation: string,
+    affectedUsers: string[],
+    rollbackAvailable: boolean
+  ) {
+    return {
+      executionTime: Date.now() - startTime,
+      module: 'place' as const,
+      operation,
+      affectedUsers,
+      rollbackAvailable,
+    };
+  }
+
+  private placeActionResult(
+    action: AIAction,
+    startTime: number,
+    operation: string,
+    outcome: { success: true; data: unknown } | { success: false; error: string },
+    affectedUsers: string[],
+    rollbackAvailable: boolean
+  ): ActionExecutionResult {
+    if (!outcome.success) {
+      return {
+        actionId: action.id,
+        success: false,
+        error: outcome.error,
+        metadata: this.placeActionMetadata(action, startTime, operation, affectedUsers, rollbackAvailable),
+      };
+    }
+    return {
+      actionId: action.id,
+      success: true,
+      result: outcome.data,
+      metadata: this.placeActionMetadata(action, startTime, operation, affectedUsers, rollbackAvailable),
+    };
+  }
+
+  /**
+   * Place module action executor — read-only AI via placeAIActionService (Wave 1F).
+   * No writes: no tasks, calendar events, transactions, notifications, or links created.
+   */
+  private async executePlaceAction(
+    action: AIAction,
+    userContext: UserContext
+  ): Promise<ActionExecutionResult> {
+    const startTime = Date.now();
+    const { operation, parameters } = action;
+
+    const {
+      getPlaceContext,
+      recommendPlaces,
+      purchaseHelp,
+      reservationHelp,
+      searchPlaces,
+      isPlaceAIReadOperation,
+    } = await import('../../services/place/placeAIActionService.js');
+
+    const writeLike = [
+      'add_node',
+      'remove_node',
+      'create_meeting',
+      'send_connection_request',
+      'accept_connection',
+      'create_transaction',
+      'record_click',
+      'dismiss_suggestion',
+    ];
+    if (writeLike.includes(operation)) {
+      return this.placeActionResult(
+        action,
+        startTime,
+        operation,
+        {
+          success: false,
+          error: `Place AI v1 is read-only — ${operation} is not supported via ActionExecutor`,
+        },
+        action.affectedUsers || [],
+        false
+      );
+    }
+
+    if (!isPlaceAIReadOperation(operation)) {
+      return this.placeActionResult(
+        action,
+        startTime,
+        operation,
+        { success: false, error: `Unknown or unsupported Place operation: ${operation}` },
+        action.affectedUsers || [],
+        false
+      );
+    }
+
+    try {
+      switch (operation) {
+        case 'get_place_context': {
+          const scope =
+            parameters?.scope != null ? String(parameters.scope) : (parameters?.context as string) ?? 'all';
+          const outcome = await getPlaceContext(userContext.userId, scope);
+          return this.placeActionResult(
+            action,
+            startTime,
+            operation,
+            outcome,
+            action.affectedUsers || [],
+            false
+          );
+        }
+
+        case 'recommend_places': {
+          const limit =
+            parameters?.limit != null ? Number(parameters.limit) : undefined;
+          const outcome = await recommendPlaces(userContext.userId, { limit });
+          return this.placeActionResult(
+            action,
+            startTime,
+            operation,
+            outcome,
+            action.affectedUsers || [],
+            false
+          );
+        }
+
+        case 'purchase_help': {
+          const query = parameters?.query != null ? String(parameters.query) : '';
+          const businessId =
+            parameters?.businessId != null ? String(parameters.businessId) : null;
+          const outcome = await purchaseHelp(userContext.userId, { query, businessId });
+          return this.placeActionResult(
+            action,
+            startTime,
+            operation,
+            outcome,
+            action.affectedUsers || [],
+            false
+          );
+        }
+
+        case 'reservation_help': {
+          const businessId = parameters?.businessId != null ? String(parameters.businessId) : '';
+          const date = parameters?.date != null ? String(parameters.date) : null;
+          const partySize =
+            parameters?.partySize != null ? Number(parameters.partySize) : null;
+          const outcome = await reservationHelp(userContext.userId, {
+            businessId,
+            date,
+            partySize,
+          });
+          return this.placeActionResult(
+            action,
+            startTime,
+            operation,
+            outcome,
+            action.affectedUsers || [],
+            false
+          );
+        }
+
+        case 'search_places': {
+          const query = parameters?.query != null ? String(parameters.query) : '';
+          const outcome = await searchPlaces(userContext.userId, query);
+          return this.placeActionResult(
+            action,
+            startTime,
+            operation,
+            outcome,
+            action.affectedUsers || [],
+            false
+          );
+        }
+
+        default:
+          return this.placeActionResult(
+            action,
+            startTime,
+            operation,
+            { success: false, error: `Unknown Place operation: ${operation}` },
+            action.affectedUsers || [],
+            false
+          );
+      }
+    } catch (error: unknown) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      return this.placeActionResult(
+        action,
+        startTime,
+        operation,
+        { success: false, error: err.message || 'Place action failed' },
         action.affectedUsers || [],
         false
       );

@@ -3,6 +3,12 @@ import { prisma } from '../lib/prisma';
 import { logger } from '../lib/logger';
 import { getUserFromRequest } from '../middleware/auth';
 
+/**
+ * Commerce / transaction telemetry — **deferred Wave 1G** (Phase 2A+).
+ * Rationale: append-only telemetry; not required for Level 2 candidacy; Stripe integration TBD.
+ * Operation matrix marks rows as accepted partial/deferred; manifest does not claim commerce capability.
+ */
+
 
 function logPlaceTransactionError(desc: string, operation: string, err: unknown): void {
   const e = err instanceof Error ? err : new Error(String(err));

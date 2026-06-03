@@ -1101,6 +1101,199 @@ export function emitTodoTaskPermanentlyDeletedEvent(params: {
   );
 }
 
+export function emitPlaceNodeAddedEvent(params: {
+  actorUserId: string;
+  nodeId: string;
+  nodeType: string;
+  entityId: string;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.PLACE_NODE_ADDED, {
+      actorUserId: params.actorUserId,
+      entityId: params.nodeId,
+      metadata: { moduleId: 'place', nodeType: params.nodeType, entityId: params.entityId },
+    })
+  );
+}
+
+export function emitPlaceNodeRemovedEvent(params: {
+  actorUserId: string;
+  nodeId: string;
+  nodeType: string;
+  entityId: string;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.PLACE_NODE_REMOVED, {
+      actorUserId: params.actorUserId,
+      entityId: params.nodeId,
+      metadata: { moduleId: 'place', nodeType: params.nodeType, entityId: params.entityId },
+    })
+  );
+}
+
+export function emitPlaceListingUpdatedEvent(params: {
+  actorUserId: string;
+  listingId: string;
+  businessId: string;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.PLACE_LISTING_UPDATED, {
+      actorUserId: params.actorUserId,
+      entityId: params.listingId,
+      businessId: params.businessId,
+      metadata: { moduleId: 'place', businessId: params.businessId },
+    })
+  );
+}
+
+export function emitPlaceListingPublishedEvent(params: {
+  actorUserId: string;
+  listingId: string;
+  businessId: string;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.PLACE_LISTING_PUBLISHED, {
+      actorUserId: params.actorUserId,
+      entityId: params.listingId,
+      businessId: params.businessId,
+      metadata: { moduleId: 'place', businessId: params.businessId },
+    })
+  );
+}
+
+export function emitPlaceListingReportedEvent(params: {
+  actorUserId: string;
+  businessId: string;
+  reason: string;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.PLACE_LISTING_REPORTED, {
+      actorUserId: params.actorUserId,
+      entityId: params.businessId,
+      businessId: params.businessId,
+      metadata: { moduleId: 'place', businessId: params.businessId, reason: params.reason },
+    })
+  );
+}
+
+export function emitPlaceMeetingCreatedEvent(params: {
+  actorUserId: string;
+  meetingId: string;
+  locationName: string;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.PLACE_MEETING_CREATED, {
+      actorUserId: params.actorUserId,
+      entityId: params.meetingId,
+      metadata: { moduleId: 'place', locationName: params.locationName },
+    })
+  );
+}
+
+export function emitPlaceMeetingUpdatedEvent(params: {
+  actorUserId: string;
+  meetingId: string;
+  status?: string;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.PLACE_MEETING_UPDATED, {
+      actorUserId: params.actorUserId,
+      entityId: params.meetingId,
+      metadata: {
+        moduleId: 'place',
+        ...(params.status ? { status: params.status } : {}),
+      },
+    })
+  );
+}
+
+export function emitPlaceMeetingCancelledEvent(params: {
+  actorUserId: string;
+  meetingId: string;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.PLACE_MEETING_CANCELLED, {
+      actorUserId: params.actorUserId,
+      entityId: params.meetingId,
+      metadata: { moduleId: 'place' },
+    })
+  );
+}
+
+export function emitPlaceMeetingRsvpUpdatedEvent(params: {
+  actorUserId: string;
+  meetingId: string;
+  inviteId: string;
+  rsvpStatus: string;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.PLACE_MEETING_RSVP_UPDATED, {
+      actorUserId: params.actorUserId,
+      entityId: params.inviteId,
+      metadata: {
+        moduleId: 'place',
+        meetingId: params.meetingId,
+        rsvpStatus: params.rsvpStatus,
+      },
+    })
+  );
+}
+
+export function emitPlaceMeetingLinkedToCalendarEvent(params: {
+  actorUserId: string;
+  meetingId: string;
+  eventId: string;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.PLACE_MEETING_LINKED_TO_CALENDAR, {
+      actorUserId: params.actorUserId,
+      entityId: params.meetingId,
+      metadata: { moduleId: 'place', eventId: params.eventId },
+    })
+  );
+}
+
+export function emitPlaceConnectionRequestedEvent(params: {
+  actorUserId: string;
+  relationshipId: string;
+  targetUserId: string;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.PLACE_CONNECTION_REQUESTED, {
+      actorUserId: params.actorUserId,
+      entityId: params.relationshipId,
+      metadata: { moduleId: 'place', targetUserId: params.targetUserId },
+    })
+  );
+}
+
+export function emitPlaceConnectionAcceptedEvent(params: {
+  actorUserId: string;
+  relationshipId: string;
+  withUserId: string;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.PLACE_CONNECTION_ACCEPTED, {
+      actorUserId: params.actorUserId,
+      entityId: params.relationshipId,
+      metadata: { moduleId: 'place', withUserId: params.withUserId },
+    })
+  );
+}
+
+export function emitPlaceSetupCompletedEvent(params: {
+  actorUserId: string;
+  placeId: string;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.PLACE_SETUP_COMPLETED, {
+      actorUserId: params.actorUserId,
+      entityId: params.placeId,
+      metadata: { moduleId: 'place' },
+    })
+  );
+}
+
 export function emitNotesPageCreatedEvent(params: {
   actorUserId: string;
   pageId: string;
