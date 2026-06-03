@@ -8,6 +8,11 @@ import type { ConversationThreadHints } from '../utils/conversationContinuity';
 import { formatConversationTranscript } from '../utils/conversationContinuity';
 import { CONVERSATION_MOMENTUM_BLOCK } from './conversationMomentum';
 import {
+  buildConversationReasoningPromptBlock,
+  shouldSuppressRecommendationRichness,
+} from '../conversation/conversationReasoningLayer';
+import type { ConversationReasoningResult } from '../conversation/conversationTypes';
+import {
   buildRecommendationFramingHints,
   CONVERSATION_RECOMMENDATION_RICHNESS_BLOCK,
 } from './conversationRecommendationRichness';
@@ -84,18 +89,27 @@ export function buildProviderUserPrompt(input: {
 
   if (conversation) {
     const threadSection = buildThreadSection(data);
-    const framingHints = buildRecommendationFramingHints({
-      userQuery,
-      threadHints: data.conversationThread as ConversationThreadHints | undefined,
-    });
-    const richnessSection = threadSection.includes('RECOMMENDATION INTELLIGENCE')
-      ? ''
-      : `${CONVERSATION_RECOMMENDATION_RICHNESS_BLOCK}\n\n`;
+    const reasoning = data.conversationReasoning as ConversationReasoningResult | undefined;
+    const coachingBlock = reasoning ? buildConversationReasoningPromptBlock(reasoning) : '';
+    const suppressRichness = reasoning ? shouldSuppressRecommendationRichness(reasoning) : false;
+    const framingHints =
+      suppressRichness
+        ? ''
+        : buildRecommendationFramingHints({
+            userQuery,
+            threadHints: data.conversationThread as ConversationThreadHints | undefined,
+          });
+    const richnessSection =
+      suppressRichness || threadSection.includes('RECOMMENDATION INTELLIGENCE')
+        ? ''
+        : `${CONVERSATION_RECOMMENDATION_RICHNESS_BLOCK}\n\n`;
     const framingSection = framingHints ? `${framingHints}\n\n` : '';
     const continuityNote = threadSection
       ? 'Respond as a continuing conversation. Build on the thread above.'
-      : 'Respond as a smart conversational guide helping the user make a real decision.';
-    return `${threadSection}${richnessSection}${framingSection}${assembledSection}USER'S LATEST MESSAGE:\n${userQuery}
+      : suppressRichness
+        ? 'Respond as a thoughtful coach: understand before advising.'
+        : 'Respond as a smart conversational guide helping the user make a real decision.';
+    return `${coachingBlock}${threadSection}${richnessSection}${framingSection}${assembledSection}USER'S LATEST MESSAGE:\n${userQuery}
 
 ${continuityNote} Use private context only when it genuinely helps. Never mention productivity scores, work-life balance, dashboards, or internal analytics unless explicitly asked.`;
   }

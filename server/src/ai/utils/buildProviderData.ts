@@ -88,5 +88,9 @@ export function buildProviderData(input: BuildProviderDataInput): Record<string,
     providerData.resolvedEffectivePreferences = options.resolvedEffectivePreferences;
   }
 
+  if (options.conversationReasoning && typeof options.conversationReasoning === 'object') {
+    providerData.conversationReasoning = options.conversationReasoning;
+  }
+
   return providerData;
 }

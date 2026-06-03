@@ -1,12 +1,30 @@
 # Active Context - Vssyl Business Admin & AI Integration
 
+## AI Conversation Reasoning Layer (June 2026) ✅
+
+**Status:** **IMPLEMENTED** — deterministic pre-generation layer in `server/src/ai/conversation/`, wired into `DigitalLifeTwinCore` after query analysis.
+
+**Canonical doc:** [`docs/architecture/AI_CONVERSATION_REASONING.md`](../docs/architecture/AI_CONVERSATION_REASONING.md)
+
+**Behavior:** Detects objective (`explore` | `diagnose` | `decide` | `plan` | `execute` | `learn`), understanding confidence (0–100), premature-solution risk, and coaching policy. In explore/diagnose + low confidence, suppresses recommendation richness and injects coaching prompt blocks (reflect/probe vs generic advice).
+
+**Diagnostics:** `metadata.conversationReasoning` on twin responses; logged at `[AI_CONTEXT_ASSEMBLY]`.
+
+---
+
 ## Most recent completed project — Notebook Level 3 Certified (June 2026) ✅
 
 **Status:** **Level 3 — Certified** (composition module). **Not** Reference Module #5 — Place remains #5 candidate.
 
 **Evidence:** [`NOTEBOOK_LEVEL3_CERTIFICATION_REVIEW.md`](../docs/architecture/audits/NOTEBOOK_LEVEL3_CERTIFICATION_REVIEW.md), [`CERTIFICATION_LEDGER.md`](../docs/architecture/CERTIFICATION_LEDGER.md)
 
-**Next:** Optional post-cert hygiene (NB-H1–H7). **Place** when Wave 3 prioritized — do not start without product go-ahead.
+**Next:** Place Wave **2A** (Global Trash + V_Link + platform entities). Optional Notebook hygiene NB-H1–H7.
+
+**Place Wave 1G (2026-06-03):** `placeCommunityService`; dismiss in `placeService`; `getEnrichedPlaceGraph`; connection boundary; transactions deferred — **Wave 1 extraction complete**.
+
+**Place Wave 1F (2026-06-03):** `placeAIActionService`; ActionExecutor/toolExecutor read-only twins; thin `placeAIController`.
+
+**Place Wave 1D (2026-06-03):** Listing/meeting write services + Calendar fix.
 
 ---
 

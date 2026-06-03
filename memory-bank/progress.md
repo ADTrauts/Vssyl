@@ -1,5 +1,21 @@
 # Block-on-Block Platform - Progress
 
+## AI Conversation Reasoning Layer (June 2026) ✅
+
+**Status:** **SHIPPED** — Heuristic conversation objective, confidence scoring, premature-solution guard, coaching policy; wired into `DigitalLifeTwinCore` before provider generation.
+
+| Deliverable | Path |
+|-------------|------|
+| Runtime modules | `server/src/ai/conversation/*` |
+| Twin wiring | `DigitalLifeTwinCore.ts` — `runConversationReasoning` after query analysis |
+| Prompt steering | `providerUserPrompt.ts` — coaching block; suppress richness when probing |
+| Tests | `conversationReasoningLayer.test.ts` (burnout / strategies / job boundaries) |
+| Architecture | `docs/architecture/AI_CONVERSATION_REASONING.md` |
+
+**Diagnostics:** `metadata.conversationReasoning` (admin portal display/tuning deferred).
+
+---
+
 ## Notebook — Phase 1 MLVP + Phase 1.1 polish (June 2026) ✅
 
 **Status:** **SHIPPED** — Notebook is the user-facing facade over **Notes** (pages) + **Todo** (tasks). No Notebook Prisma models or domain services.
@@ -35,9 +51,22 @@
 
 **Phase 8 (2026-06-02):** **Level 3 Certified** — [NOTEBOOK_LEVEL3_CERTIFICATION_REVIEW.md](../docs/architecture/audits/NOTEBOOK_LEVEL3_CERTIFICATION_REVIEW.md). Not Reference #5.
 
-**Next:** **Place** (Reference #5 candidate) when prioritized; optional Notebook hygiene NB-H1–H7.
+**Next:** Place Wave **2A** (Global Trash + V_Link + entities).
 
-**Docs:** [NOTEBOOK_IMPLEMENTATION_PLAN.md](../docs/architecture/NOTEBOOK_IMPLEMENTATION_PLAN.md), [NOTEBOOK_PRODUCT_ARCHITECTURE_REVIEW.md](../docs/architecture/NOTEBOOK_PRODUCT_ARCHITECTURE_REVIEW.md)
+## Place — Wave 1B–1G (June 2026) ✅
+
+**Status:** **Level 2 candidacy** (not certified)
+
+| Wave | Outcome |
+|------|---------|
+| **1B** | `placeService`, permissions, policy dual, graph writes |
+| **1C** | `placeVisibilityService`; reads/search/AI context |
+| **1D** | Listing/meeting write services + Calendar delegation fix |
+| **1E** | Graph/connection side effects; `placeConnectionService`; feed read adapter |
+| **1F** | `placeAIActionService`; ActionExecutor/toolExecutor read-only twins; thin `placeAIController` |
+| **1G** | `placeCommunityService`; dismissSuggestion; getEnrichedPlaceGraph; connection boundary; transactions deferred |
+
+**Tests:** 100+ unit/contract tests (Phase 1B–1G).
 
 ---
 

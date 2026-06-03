@@ -52,6 +52,8 @@ import {
   type ConversationContinuityState,
   type ActiveTopicState,
 } from '../utils/conversationContinuity';
+import { runConversationReasoning } from '../conversation/conversationReasoningLayer';
+import type { ConversationReasoningResult } from '../conversation/conversationTypes';
 import { inferResponseMode, type AIResponseMode } from '../utils/responseMode';
 import { inferStructuredResponseMode } from '../utils/structuredResponseMode';
 import { buildProviderData } from '../utils/buildProviderData';
@@ -151,6 +153,8 @@ export interface DigitalLifeTwinResponse {
     responseInfluence?: ResponseInfluenceSummary;
     /** Admin pipeline diagnostics (additive). */
     pipelineTrace?: AIPipelineTrace;
+    /** Conversation reasoning layer (objective, confidence, coaching policy). */
+    conversationReasoning?: ConversationReasoningResult;
   };
 }
 
@@ -837,6 +841,14 @@ export class DigitalLifeTwinCore {
         previousTopic: query.activeTopic,
       });
 
+      const conversationReasoning = runConversationReasoning({
+        query: query.query,
+        conversationHistory: query.conversationHistory,
+        continuityState: continuityUpdate.continuity,
+        activeTopic: continuityUpdate.activeTopic,
+        responseMode,
+      });
+
       let effectivePreferences: ResolvedEffectivePreferences | undefined;
       let sessionPreferenceAdjustments: SessionSoftPreferenceOverrides | undefined;
       let businessWorkspaceBoundaries: BusinessWorkspaceBoundaryBlock | undefined;
@@ -937,7 +949,8 @@ export class DigitalLifeTwinCore {
         moduleContextsForAssembly,
         effectivePreferences,
         businessWorkspaceBoundaries,
-        crossModuleSynthesis
+        crossModuleSynthesis,
+        conversationReasoning
       );
       const t_provider_ms = Date.now() - t0_provider;
       const t_total_ms = Date.now() - startTime;
@@ -1208,6 +1221,7 @@ export class DigitalLifeTwinCore {
             ),
           }),
           ...(response.pipelineTrace && { pipelineTrace: response.pipelineTrace }),
+          conversationReasoning,
           // NEW: Smart context metadata
           smartContext: smartContext ? {
             queryAnalysis: {
@@ -1313,7 +1327,8 @@ export class DigitalLifeTwinCore {
     moduleContexts?: Record<string, unknown>,
     effectivePreferences?: ResolvedEffectivePreferences,
     businessWorkspaceBoundaries?: BusinessWorkspaceBoundaryBlock,
-    crossModuleSynthesis?: ContextSynthesisResult
+    crossModuleSynthesis?: ContextSynthesisResult,
+    conversationReasoning?: ConversationReasoningResult
   ) {
     const structuredInference = inferStructuredResponseMode({
       query: query.query,
@@ -1653,6 +1668,12 @@ export class DigitalLifeTwinCore {
       });
     }
 
+    if (conversationReasoning) {
+      options.conversationReasoning = conversationReasoning;
+      const ctxRecord = query.context as Record<string, unknown>;
+      ctxRecord.conversationReasoning = conversationReasoning;
+    }
+
     void logger.debug('[AI_CONTEXT_ASSEMBLY] assembled context', {
       scope: assembledContext.scope,
       intent: assembledContext.intent,
@@ -1661,6 +1682,12 @@ export class DigitalLifeTwinCore {
       evidenceCount: assembledContext.evidence.length,
       contextBlockCount: assembledContext.contextBlocks.length,
       missingContextCount: assembledContext.missingContext.length,
+      ...(conversationReasoning && {
+        conversationObjective: conversationReasoning.conversationObjective,
+        understandingConfidence: conversationReasoning.understandingConfidence,
+        prematureSolutionRisk: conversationReasoning.prematureSolutionRisk,
+        recommendedResponseAction: conversationReasoning.recommendedResponseAction,
+      }),
     });
 
     const providerDataPreview = buildProviderData({ options });
