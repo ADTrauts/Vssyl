@@ -1,56 +1,31 @@
 /**
- * Notes Module AI Context Controller
- * Provides context data about notes to the AI system
+ * Notes AI context — reads via notesVisibilityService (trashedAt excluded).
  */
 
 import { Request, Response } from 'express';
-import { prisma } from '../lib/prisma';
 import { AuthenticatedRequest } from '../middleware/auth';
 import { logger } from '../lib/logger';
+import * as notesVisibility from '../services/notes/notesVisibilityService';
 
-/**
- * GET /api/notes/ai/context/recent
- * Returns recent notes for AI context
- */
 export async function getRecentNotesContext(req: Request, res: Response): Promise<void> {
   try {
     const userId = (req as AuthenticatedRequest).user?.id;
     if (!userId) {
-      res.status(401).json({
-        success: false,
-        message: 'Authentication required',
-      });
+      res.status(401).json({ success: false, message: 'Authentication required' });
       return;
     }
 
     const { dashboardId, businessId } = req.query;
 
     if (!dashboardId || typeof dashboardId !== 'string') {
-      res.status(400).json({
-        success: false,
-        message: 'dashboardId is required',
-      });
+      res.status(400).json({ success: false, message: 'dashboardId is required' });
       return;
     }
 
-    const where = {
-      createdById: userId,
+    const notes = await notesVisibility.listRecentPagesForAi({
+      userId,
       dashboardId,
-      deletedAt: null,
-      ...(businessId && typeof businessId === 'string' ? { businessId } : { businessId: null }),
-    };
-
-    const notes = await prisma.note.findMany({
-      where,
-      orderBy: { updatedAt: 'desc' },
-      take: 15,
-      select: {
-        id: true,
-        title: true,
-        tags: true,
-        pinned: true,
-        updatedAt: true,
-      },
+      businessId: businessId && typeof businessId === 'string' ? businessId : null,
     });
 
     const context = {
@@ -95,50 +70,25 @@ export async function getRecentNotesContext(req: Request, res: Response): Promis
   }
 }
 
-/**
- * GET /api/notes/ai/context/pinned
- * Returns pinned notes for AI context
- */
 export async function getPinnedNotesContext(req: Request, res: Response): Promise<void> {
   try {
     const userId = (req as AuthenticatedRequest).user?.id;
     if (!userId) {
-      res.status(401).json({
-        success: false,
-        message: 'Authentication required',
-      });
+      res.status(401).json({ success: false, message: 'Authentication required' });
       return;
     }
 
     const { dashboardId, businessId } = req.query;
 
     if (!dashboardId || typeof dashboardId !== 'string') {
-      res.status(400).json({
-        success: false,
-        message: 'dashboardId is required',
-      });
+      res.status(400).json({ success: false, message: 'dashboardId is required' });
       return;
     }
 
-    const where = {
-      createdById: userId,
+    const notes = await notesVisibility.listPinnedPagesForAi({
+      userId,
       dashboardId,
-      pinned: true,
-      deletedAt: null,
-      ...(businessId && typeof businessId === 'string' ? { businessId } : { businessId: null }),
-    };
-
-    const notes = await prisma.note.findMany({
-      where,
-      orderBy: { updatedAt: 'desc' },
-      take: 20,
-      select: {
-        id: true,
-        title: true,
-        tags: true,
-        pinned: true,
-        updatedAt: true,
-      },
+      businessId: businessId && typeof businessId === 'string' ? businessId : null,
     });
 
     const context = {

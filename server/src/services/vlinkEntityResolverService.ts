@@ -109,7 +109,7 @@ async function resolveNonDriveEntityAccess(
         select: { id: true, title: true },
       });
       if (!note) return { access: 'restricted' };
-      return { access: 'full', title: note.title, url: `/notes?note=${entityId}` };
+      return { access: 'full', title: note.title, url: `/notebook/page/${entityId}` };
     }
     default:
       return { access: 'restricted' };

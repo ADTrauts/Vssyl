@@ -107,17 +107,22 @@
 | Target module | Primary references | Secondary | Unique teachable angle |
 |---------------|-------------------|-----------|------------------------|
 | **Todo** | *(certified — see Reference #4 above)* | — | — |
-| **Notes** | File Hub (trash, V_Link, visibility), Chat (AI context, thin controller) | Calendar (low) | Document entity, sharing, soft delete |
+| **Notes** | *(paused 2026-06-01 — see Notebook initiative)* | — | Superseded by Notebook product track |
+| **Notebook** (planned) | Todo (#4) for tasks, File Hub for document trash/V_Link, Chat for AI facade | Calendar (links) | Unified pages + tasks; facade-first migration |
 | **Place** | File Hub (entities, V_Link), Chat (visibility) | Calendar (scheduling links) | Location/meeting linkage, map context |
 | **Dashboard** | File Hub (manifest, activity), Chat (realtime widgets) | — | Widget registry, composition (not full module CRUD) |
 | **Analytics** | File Hub (activity vs analytics separation) | — | Read-only / derived metrics; often N/A trash |
 | **Business Workspace** | All three (composition only) | — | Hub switch, module landing pattern; not a data module |
 
-### Notes (next wave) — recommended copy order
+### Notes — paused; Notebook initiative (2026-06-01)
 
-1. **File Hub** — trash, V_Link, visibility, platform entity.
-2. **Chat** — thin controller, AI context, activity/domain adapters.
-3. **Todo** — satellite service extraction pattern (optional for note comments/versions).
+Standalone Notes modernization is **stopped**. Product direction: [**NOTEBOOK_PRODUCT_ARCHITECTURE_REVIEW.md**](./NOTEBOOK_PRODUCT_ARCHITECTURE_REVIEW.md).
+
+When Notebook implementation is approved, copy order for **document domain**:
+
+1. **File Hub** — trash, V_Link, visibility, platform entity (`notebook:page`).
+2. **Chat** — thin facade controller, AI context routing.
+3. **Todo (Reference #4)** — task lifecycle, links, AI actions — **do not merge task services into notes controllers**.
 
 ---
 
@@ -145,4 +150,4 @@ Use this catalog when filling **“reference module pattern to copy”** columns
 
 ---
 
-*Last updated: 2026-06-01*
+*Last updated: 2026-06-01 (Notebook initiative — Notes wave paused)*

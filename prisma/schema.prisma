@@ -6508,6 +6508,64 @@ model NoteShare {
 
 
 // ============================================================================
+// NOTEBOOK MODULE
+// ============================================================================
+
+// Notebook product — operational cross-entity links (NotebookLink)
+
+enum NotebookLinkEntityType {
+  PAGE
+  TASK
+  FILE
+  CALENDAR_EVENT
+  CHAT_CONVERSATION
+  PLACE_LISTING
+}
+
+enum NotebookLinkRelationshipType {
+  REFERENCE
+  ACTION_SOURCE
+  AGENDA
+  EVIDENCE
+  EMBED
+}
+
+enum NotebookLinkDirection {
+  OUTBOUND
+  INBOUND
+  BIDIRECTIONAL
+}
+
+model NotebookLink {
+  id               String                       @id @default(uuid())
+  dashboardId      String
+  businessId       String?
+
+  sourceType       NotebookLinkEntityType
+  sourceId         String
+  targetType       NotebookLinkEntityType
+  targetId         String
+
+  relationshipType NotebookLinkRelationshipType @default(REFERENCE)
+  direction        NotebookLinkDirection        @default(OUTBOUND)
+
+  createdById      String
+  metadata         Json?
+
+  createdAt        DateTime                     @default(now())
+  updatedAt        DateTime                     @updatedAt
+  archivedAt       DateTime?
+
+  @@unique([dashboardId, sourceType, sourceId, targetType, targetId, relationshipType])
+  @@index([dashboardId, sourceType, sourceId, archivedAt])
+  @@index([dashboardId, targetType, targetId, archivedAt])
+  @@index([dashboardId, sourceType, sourceId, targetType, archivedAt])
+  @@index([dashboardId, targetType, targetId, sourceType, archivedAt])
+  @@map("notebook_links")
+}
+
+
+// ============================================================================
 // PLACE MODULE
 // ============================================================================
 

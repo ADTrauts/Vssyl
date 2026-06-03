@@ -10,6 +10,7 @@ export const BUILT_IN_MODULE_IDS = [
   'scheduling',
   'todo',
   'notes',
+  'notebook',
   'vlink',
   'place',
   'dashboard',

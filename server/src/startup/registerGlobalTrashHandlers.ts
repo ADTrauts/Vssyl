@@ -29,6 +29,14 @@ import {
   softTrashTodoItem,
   type TodoTrashItemType,
 } from '../services/todoTrashService';
+import {
+  emptyNotesTrash,
+  listTrashedPagesForGlobalTrash,
+  permanentlyDeleteNotesItem,
+  restoreNotesItem,
+  softTrashNotesItem,
+  type NotesTrashItemType,
+} from '../services/notes/notesTrashService';
 import { logger } from '../lib/logger';
 
 export function registerGlobalTrashHandlers(): void {
@@ -156,8 +164,42 @@ export function registerGlobalTrashHandlers(): void {
     listTrashed: async ({ userId }) => listTrashedTasksForGlobalTrash(userId),
   });
 
+  registerGlobalTrashModuleHandler({
+    moduleId: 'notes',
+    moduleName: 'Notebook Pages',
+    supportedTypes: ['note'],
+    softTrash: async ({ userId, type, id }) => {
+      if (type !== 'note') {
+        throw new Error(`Unsupported notes trash type: ${type}`);
+      }
+      await softTrashNotesItem({
+        userId,
+        type: type as NotesTrashItemType,
+        id,
+      });
+    },
+    restore: async ({ userId, type, id }) => {
+      if (type !== 'note') return false;
+      return restoreNotesItem({
+        userId,
+        type: type as NotesTrashItemType,
+        id,
+      });
+    },
+    permanentDelete: async ({ userId, type, id }) => {
+      if (type !== 'note') return false;
+      return permanentlyDeleteNotesItem({
+        userId,
+        type: type as NotesTrashItemType,
+        id,
+      });
+    },
+    emptyModuleTrash: async ({ userId }) => emptyNotesTrash({ userId }),
+    listTrashed: async ({ userId }) => listTrashedPagesForGlobalTrash(userId),
+  });
+
   void logger.info('Registered Global Trash module handlers', {
     operation: 'global_trash_handlers_register',
-    modules: ['drive', 'chat', 'calendar', 'todo'],
+    modules: ['drive', 'chat', 'calendar', 'todo', 'notes'],
   });
 }

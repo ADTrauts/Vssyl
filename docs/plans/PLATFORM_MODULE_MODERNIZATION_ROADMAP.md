@@ -1,7 +1,7 @@
 # Platform Module Modernization Roadmap
 
-**Version:** 1.0.0  
-**Last updated:** 2026-05-31  
+**Version:** 1.0.3  
+**Last updated:** 2026-06-01  
 **Status:** Active — master execution roadmap  
 **Authority pairing:**
 
@@ -10,7 +10,71 @@
 | [`docs/architecture/VSSYL_PLATFORM_STANDARDS_AND_MODULE_CONTRACT.md`](../architecture/VSSYL_PLATFORM_STANDARDS_AND_MODULE_CONTRACT.md) | **Constitutional authority** — what the platform requires |
 | File Hub (`drive`) + [`FILE_HUB_REFERENCE_IMPLEMENTATION_REVIEW.md`](../architecture/audits/FILE_HUB_REFERENCE_IMPLEMENTATION_REVIEW.md) | **Implementation authority** — how compliant modules are built |
 
-**Related:** [`MODULE_INTEROPERABILITY_ALIGNMENT_PHASED_PLAN.md`](./MODULE_INTEROPERABILITY_ALIGNMENT_PHASED_PLAN.md) (complete), [`FILE_HUB_MATURITY_ASSESSMENT.md`](../architecture/audits/FILE_HUB_MATURITY_ASSESSMENT.md), [`CERTIFICATION_LEDGER.md`](../architecture/CERTIFICATION_LEDGER.md), [`MODULE_REFERENCE_PATTERNS_FROM_FILE_HUB.md`](../guides/MODULE_REFERENCE_PATTERNS_FROM_FILE_HUB.md), [`memory-bank/moduleSpecs.md`](../../memory-bank/moduleSpecs.md)
+**Related:** [`MODULE_INTEROPERABILITY_ALIGNMENT_PHASED_PLAN.md`](./MODULE_INTEROPERABILITY_ALIGNMENT_PHASED_PLAN.md) (complete), [`FILE_HUB_MATURITY_ASSESSMENT.md`](../architecture/audits/FILE_HUB_MATURITY_ASSESSMENT.md), [`CERTIFICATION_LEDGER.md`](../architecture/CERTIFICATION_LEDGER.md), [`MODULE_REFERENCE_PATTERNS_FROM_FILE_HUB.md`](../guides/MODULE_REFERENCE_PATTERNS_FROM_FILE_HUB.md), [`memory-bank/moduleSpecs.md`](../../memory-bank/moduleSpecs.md), [**Notebook initiative**](../architecture/NOTEBOOK_PRODUCT_ARCHITECTURE_REVIEW.md) (2026-06-01)
+
+---
+
+## Notebook Initiative (replaces Notes modernization)
+
+**Status (2026-06-01):** Phase **0.5 complete** — product definition + workspace architecture. **Phase 1 implementation not authorized** until explicit ACT.
+
+| Decision | Detail |
+|----------|--------|
+| **Stop** | Standalone **Notes modernization** (Phase 1B, `notes*Service` extraction, Notes Level 3 certification) |
+| **Active track** | **Notebook Initiative** — unified product for pages + tasks + checklists + linked work |
+| **Preserve** | Todo **Reference Module #4** — no `todo*Service` / controller architecture changes |
+| **Strategy** | Facade-first UI; `/api/notes` + `/api/todo` backends unchanged through Phase 1–2 |
+
+### Phase 0.5 deliverables (complete)
+
+| Document | Purpose |
+|----------|---------|
+| [NOTEBOOK_WORKSPACE_ARCHITECTURE.md](../architecture/NOTEBOOK_WORKSPACE_ARCHITECTURE.md) | Page definition, workflows, future-proofing, Place boundary |
+| [NOTEBOOK_PAGE_TYPES.md](../architecture/NOTEBOOK_PAGE_TYPES.md) | General, meeting, project, daily, SOP, template |
+| [NOTEBOOK_NAVIGATION_MODEL.md](../architecture/NOTEBOOK_NAVIGATION_MODEL.md) | Sidebar, routes, mobile |
+| [NOTEBOOK_RELATIONSHIP_MODEL.md](../architecture/NOTEBOOK_RELATIONSHIP_MODEL.md) | NotebookLink vs V_Link |
+| [NOTEBOOK_AI_STRATEGY.md](../architecture/NOTEBOOK_AI_STRATEGY.md) | Orchestration vs domain AI |
+| [NOTEBOOK_HEALTHCARE_USE_CASES.md](../architecture/NOTEBOOK_HEALTHCARE_USE_CASES.md) | LTC / dietary / EVS / ops scenarios |
+| [NOTEBOOK_IMPLEMENTATION_READINESS_REVIEW.md](../architecture/NOTEBOOK_IMPLEMENTATION_READINESS_REVIEW.md) | MLVP scope + gates |
+
+### Phase 0.75 deliverables (complete) — technical blueprint
+
+| Document | Purpose |
+|----------|---------|
+| [NOTEBOOK_TECHNICAL_ARCHITECTURE.md](../architecture/NOTEBOOK_TECHNICAL_ARCHITECTURE.md) | Master index, Notes survivability, ownership, Phase 1 scope |
+| [NOTEBOOK_BACKEND_ARCHITECTURE.md](../architecture/NOTEBOOK_BACKEND_ARCHITECTURE.md) | Services, APIs, Notes KEEP/WRAP table |
+| [NOTEBOOK_FRONTEND_ARCHITECTURE.md](../architecture/NOTEBOOK_FRONTEND_ARCHITECTURE.md) | Routes, components, folder structure |
+| [NOTEBOOK_WIDGET_ARCHITECTURE.md](../architecture/NOTEBOOK_WIDGET_ARCHITECTURE.md) | Dashboard + context rail widgets |
+| [NOTEBOOK_IMPLEMENTATION_PLAN.md](../architecture/NOTEBOOK_IMPLEMENTATION_PLAN.md) | Phases 1–7 checklists, PR boundaries |
+| [NOTEBOOK_CERTIFICATION_STRATEGY.md](../architecture/NOTEBOOK_CERTIFICATION_STRATEGY.md) | Level 3 without disrupting References #1–4 |
+
+**Prior reviews:** [NOTEBOOK_PRODUCT_ARCHITECTURE_REVIEW.md](../architecture/NOTEBOOK_PRODUCT_ARCHITECTURE_REVIEW.md), [NOTEBOOK_DOMAIN_MODEL.md](../architecture/NOTEBOOK_DOMAIN_MODEL.md), [NOTEBOOK_MIGRATION_STRATEGY.md](../architecture/NOTEBOOK_MIGRATION_STRATEGY.md)
+
+### Notebook Initiative — implementation phases
+
+| Phase | Name | Status | Summary |
+|-------|------|--------|---------|
+| **0** | Decision & freeze | ✅ Complete | Notes modernization stopped |
+| **0.5** | Product + workspace architecture | ✅ Complete | Product specs |
+| **0.75** | Technical architecture + plan | ✅ Complete | Blueprint docs above |
+| **1** | Shell + compose (MLVP) | ✅ Complete (2026-06-01) | Facade manifest; Notebook UI; wrap `NotesModule` + `TaskList`; promote-to-task; **no schema** |
+| **1.1** | Navigation + UX polish | ✅ Complete (2026-06-01) | Redirects; mobile nav; widget `notes`→`NotebookWidget`; smoke + vitest |
+| **2** | Notes domain hardening | ✅ Complete (2026-06-01) | `notes*Service` layer; Global Trash `note`; domain events; thin controllers |
+| **3A** | NotebookLink design | ✅ Complete (2026-06-01) | Schema/API/access/implementation docs — no code |
+| **3B** | NotebookLink implementation | ✅ Complete (2026-06-02) | `notebook_links`; `/api/notebook/pages/:pageId/links`; right rail + promote link |
+| **4** | Calendar meeting UX | ✅ Complete (2026-06-02) | Meeting template, event panel, Calendar EventDrawer → Notebook page |
+| **5** | File Hub integration | ✅ Complete (2026-06-02) | Linked files panel, Drive picker, visibility-safe FILE hydration |
+| **6** | AI orchestration | ✅ Complete (2026-06-02) | Summarize, extract/confirm tasks, meeting recap, suggest links |
+| **6.5** | Workspace intelligence | ✅ Complete (2026-06-02) | `getWorkspaceContext`; rule-based insights; intelligent Home |
+| **7** | Certification | Planned | L3 audit; manifest truth; optional `notes` picker hide |
+
+**Phase 3A docs:** [NOTEBOOK_LINK_SCHEMA_DESIGN.md](../architecture/NOTEBOOK_LINK_SCHEMA_DESIGN.md), [NOTEBOOK_LINK_API_DESIGN.md](../architecture/NOTEBOOK_LINK_API_DESIGN.md), [NOTEBOOK_LINK_ACCESS_RULES.md](../architecture/NOTEBOOK_LINK_ACCESS_RULES.md), [NOTEBOOK_LINK_IMPLEMENTATION_PLAN.md](../architecture/NOTEBOOK_LINK_IMPLEMENTATION_PLAN.md).
+
+**Phase 1 exact scope:** [NOTEBOOK_IMPLEMENTATION_PLAN.md](../architecture/NOTEBOOK_IMPLEMENTATION_PLAN.md) § Phase 1, [NOTEBOOK_TECHNICAL_ARCHITECTURE.md](../architecture/NOTEBOOK_TECHNICAL_ARCHITECTURE.md) § Part 10.
+
+**Relationship model:** **B — NotebookLink + V_Link** ([NOTEBOOK_RELATIONSHIP_MODEL.md](../architecture/NOTEBOOK_RELATIONSHIP_MODEL.md)).
+
+**Next:** Notebook **Phase 7** (certification). **Place** remains Reference #5 candidate after Notebook Phase 7 exit.
 
 ---
 
@@ -495,7 +559,7 @@ Each module follows the same document structure: **Current State → Constitutio
 - **Phase 5 (Level 3 closeout):** complete (2026-05-31) — [CHAT_LEVEL3_CERTIFICATION_REVIEW.md](../architecture/audits/CHAT_LEVEL3_CERTIFICATION_REVIEW.md); browse/list PE; ledger **Level 3 Certified**; **Reference Module #2**.
 - **Deferred:** `message`, `CHAT_THREAD` platform entities; Level 4 council review for full Reference Implementation parity with File Hub.
 - **Reference doc:** [CHAT_REFERENCE_IMPLEMENTATION_REVIEW.md](../architecture/CHAT_REFERENCE_IMPLEMENTATION_REVIEW.md) ✅
-- **Next module:** **Notes** (Wave 2 per roadmap) — **Todo Level 3 Certified** / **Reference Module #4** (2026-06-02). See [TODO_LEVEL3_CERTIFICATION_REVIEW.md](../architecture/audits/TODO_LEVEL3_CERTIFICATION_REVIEW.md).
+- **Next module (superseded 2026-06-01):** ~~Notes Wave 2~~ → **Notebook initiative** (planning). **Todo Level 3 Certified** / **Reference Module #4** (2026-06-02) — unchanged. See [TODO_LEVEL3_CERTIFICATION_REVIEW.md](../architecture/audits/TODO_LEVEL3_CERTIFICATION_REVIEW.md), [NOTEBOOK_PRODUCT_ARCHITECTURE_REVIEW.md](../architecture/NOTEBOOK_PRODUCT_ARCHITECTURE_REVIEW.md).
 
 **Todo Wave 1 — Phases 0–1G (2026-06-02):** audit → core writes → visibility → side-effect adapters → core collapse → AI migration → **satellite extraction**.
 
@@ -687,47 +751,41 @@ Controllers become thin HTTP adapters.
 
 ---
 
-### 5.4 Notes (Priority 4)
+### 5.4 Notes (Priority 4) — **PAUSED — Notebook initiative**
 
-#### Current State
+> **2026-06-01:** Standalone Notes modernization **stopped**. Do not start Phase 1B, service extraction, or Notes certification. Product direction: unified **Notebook** module (notes + tasks + checklists). See [NOTEBOOK_PRODUCT_ARCHITECTURE_REVIEW.md](../architecture/NOTEBOOK_PRODUCT_ARCHITECTURE_REVIEW.md).
+
+#### Current State (baseline unchanged)
 
 - `notesController.ts` ~429 lines; uses `trashedAt` (aligned with Global Trash field).
 - Share/folder subcontrollers separated modestly.
 - No Global Trash handler; no `notesPolicyDual`.
 - Manifest claims trash + notifications without full metadata.
+- **Classification:** Partial module (Level 1 Stabilizing) — not certification-ready.
 
-#### Constitutional Gaps
+#### Prior modernization plan (frozen)
 
-- §7 handler missing; §16 services; §5 V_Link; §8 events.
+The phases below remain **reference** for document-domain hygiene under **Notebook Phase 2**, not as an independent wave:
 
-#### File Hub Pattern Gaps
+1. ~~Audit~~ → defer to Notebook Phase 0 when implementation approved
+2. ~~Canonical services layer~~ → **frozen** as standalone Notes wave
+3. Global Trash handler (may ship as Notebook document-domain task)
+4. Visibility + `notesPolicyDual`
+5. V_Link + entity registration (`notebook:page`)
+6. Events + activity + notifications
+7. AI compliance (facade + `todoAIActionService` for task extraction)
+8. Tests + docs
 
-- No `notesDeleteService`, `notesVisibilityService`, `notesNotificationService`.
+#### Notebook replacement criteria
 
-#### Risks
-
-- **Medium:** Shared note leakage without visibility service.
-- **Medium:** Inconsistent trash UX vs File Hub.
-
-#### Modernization Phases
-
-1. Audit (folder/share/trash paths).
-2. Canonical services layer.
-3. Global Trash handler registration.
-4. Visibility + `notesPolicyDual`.
-5. V_Link + entity registration.
-6. Events + activity + notifications.
-7. AI compliance.
-8. Tests + docs.
-
-#### Acceptance Criteria
-
-- Notes trash flows through Global Trash API end-to-end; PE on share/write/delete.
+- **Notebook Phase 1:** Unified UI shell; existing `/api/notes` + `/api/todo` unchanged; Todo Reference #4 preserved.
+- **Notebook Phase 2:** `notebookLinkService`, AI action extraction, targeted Notes trash handler if needed for UX parity.
 
 #### Deferred Work
 
-- Rich collaborative editing (OT/CRDT).
-- Version history beyond activity feed.
+- Standalone Notes Level 3 certification
+- Rich collaborative editing (OT/CRDT) — Notebook long-term
+- Version history beyond activity feed
 
 ---
 
@@ -947,7 +1005,7 @@ Controllers become thin HTTP adapters.
 | 1 | **Chat** | High | High | Critical | High | **Critical** | Medium | Medium | **P0** |
 | 2 | **Calendar** | High | High | Critical | Medium | Medium | Medium | Medium | **P0** |
 | 3 | **Tasks (todo)** | High | **Critical** | **Critical** | High | Low | Medium | High (AI toolExecutor) | **P0** |
-| 4 | **Notes** | Medium | Medium | High | Medium | Low | Low | Low | **P1** |
+| 4 | **Notes** → **Notebook** | Medium | Medium | High | Medium | Low | Low | Low | **Paused** — Notebook planning (was P1) |
 | 5 | **Global Trash Expansion** | High | High | High | Low | Low | **Critical** | Low (blocks trash UX) | **P0** (parallel) |
 | 6 | **Notifications** | High | Medium | Medium | Low | Medium | Low | Medium | **P1** (continuous) |
 | 7 | **V_Link** | Medium | High | Medium | Medium | Low | Medium | High (calendar/chat) | **P1** |
@@ -1011,9 +1069,9 @@ Explicitly **out of scope** for this roadmap wave (do not block certification):
 
 ### Next
 
-- **Calendar** → **Tasks** → **Notes** (sequential module waves after Chat Phase 1 foundation).
-- **Global Trash Expansion** — register handlers as each module completes delete services.
-- **Notifications consolidation** — manifest metadata aligned per completed module.
+- **Notebook Phase 3B** ✅ — `notebook_links`, link API, right rail, promote-to-task links; [NOTEBOOK_LINK_IMPLEMENTATION_PLAN.md](../architecture/NOTEBOOK_LINK_IMPLEMENTATION_PLAN.md).
+- **Global Trash Expansion** — Notes handler under Notebook **Phase 1.5** (not standalone Notes cert).
+- **Notifications consolidation** — `notebook` manifest types when Phase 1 ships.
 
 ### Later
 
@@ -1055,6 +1113,7 @@ Explicitly **out of scope** for this roadmap wave (do not block certification):
 | Trigger | Action |
 |---------|--------|
 | Module certified | Update scorecard row to 🟢; link audit doc |
+| Notebook phase approved | Update §5.4 + Section 10; link NOTEBOOK_* docs |
 | Platform Standards version bump | Reconcile Section 3 tracks |
 | File Hub post-reference changes | Update Appendix A |
 | Quarterly | Refresh §0 inventory alignment per Platform Standards §0 intro |

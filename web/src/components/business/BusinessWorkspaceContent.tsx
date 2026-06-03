@@ -27,7 +27,7 @@ import AIWidget from '../widgets/AIWidget';
 import ChatModuleWrapper from '../chat/ChatModuleWrapper';
 import DriveModuleWrapper from '../drive/DriveModuleWrapper';
 import CalendarModuleWrapper from '../calendar/CalendarModuleWrapper';
-import { NotesModule } from '../notes/NotesModule';
+import { NotebookShell } from '../notebook/NotebookShell';
 import { TodoModule } from '../todo/TodoModule';
 import { PlaceListingEditor } from '../place/PlaceListingEditor';
 import { VLinkModule } from '../vlink/VLinkModule';
@@ -655,9 +655,10 @@ export default function BusinessWorkspaceContent({ business, currentModule, busi
             dashboardName={business.name}
           />
         );
+      case 'notebook':
       case 'notes':
         return (
-          <NotesModule
+          <NotebookShell
             dashboardId={businessDashboardId}
             businessId={business.id}
           />

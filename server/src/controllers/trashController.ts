@@ -6,6 +6,7 @@ import { DriveDeleteError } from '../services/driveDeleteService';
 import { ChatTrashError } from '../services/chatTrashService';
 import { CalendarTrashError } from '../services/calendarTrashService';
 import { TodoTrashError } from '../services/todoTrashService';
+import { NotesTrashError } from '../services/notes/notesTrashService';
 import {
   listAccessibleTrashedFiles,
   listAccessibleTrashedFolders,
@@ -20,7 +21,7 @@ function hasUserId(user: unknown): user is { id: string } | { sub: string } {
 interface TrashItemRequest {
   id: string;
   name: string;
-  type: 'file' | 'folder' | 'conversation' | 'dashboard_tab' | 'module' | 'message' | 'ai_conversation' | 'event' | 'profile_photo' | 'task';
+  type: 'file' | 'folder' | 'conversation' | 'dashboard_tab' | 'module' | 'message' | 'ai_conversation' | 'event' | 'profile_photo' | 'task' | 'note';
   moduleId: string;
   moduleName: string;
   metadata?: Record<string, unknown>;
@@ -175,6 +176,20 @@ function mapTodoTrashError(res: Response, error: unknown): boolean {
   return false;
 }
 
+function mapNotesTrashError(res: Response, error: unknown): boolean {
+  if (error instanceof NotesTrashError) {
+    if (error.code === 'forbidden') {
+      res.status(403).json({ message: 'Forbidden' });
+      return true;
+    }
+    if (error.code === 'not_found') {
+      res.status(404).json({ message: 'Item not found or already trashed' });
+      return true;
+    }
+  }
+  return false;
+}
+
 async function tryCalendarRestore(
   userId: string,
   id: string,
@@ -215,6 +230,26 @@ async function tryTodoRestore(
   return false;
 }
 
+async function tryNotesRestore(
+  userId: string,
+  id: string,
+  moduleId?: string,
+  type?: string
+): Promise<boolean> {
+  const handler = getGlobalTrashModuleHandler('notes');
+  if (!handler) return false;
+
+  if (moduleId === 'notes' && type === 'note') {
+    return handler.restore({ userId, type, id });
+  }
+
+  if (!moduleId && !type) {
+    if (await handler.restore({ userId, type: 'note', id })) return true;
+  }
+
+  return false;
+}
+
 async function tryTodoPermanentDelete(
   userId: string,
   id: string,
@@ -230,6 +265,26 @@ async function tryTodoPermanentDelete(
 
   if (!moduleId && !type) {
     if (await handler.permanentDelete({ userId, type: 'task', id })) return true;
+  }
+
+  return false;
+}
+
+async function tryNotesPermanentDelete(
+  userId: string,
+  id: string,
+  moduleId?: string,
+  type?: string
+): Promise<boolean> {
+  const handler = getGlobalTrashModuleHandler('notes');
+  if (!handler) return false;
+
+  if (moduleId === 'notes' && type === 'note') {
+    return handler.permanentDelete({ userId, type, id });
+  }
+
+  if (!moduleId && !type) {
+    if (await handler.permanentDelete({ userId, type: 'note', id })) return true;
   }
 
   return false;
@@ -323,6 +378,25 @@ async function loadTrashedTodoTasks(userId: string): Promise<TrashedListItem[]> 
   }
 }
 
+async function loadTrashedNotesPages(userId: string): Promise<TrashedListItem[]> {
+  const notesHandler = getGlobalTrashModuleHandler('notes');
+  if (!notesHandler?.listTrashed) {
+    return [];
+  }
+  try {
+    return (await notesHandler.listTrashed({ userId })) as TrashedListItem[];
+  } catch (error: unknown) {
+    const err = error instanceof Error ? error : new Error(String(error));
+    logger.warn('Trash: notes handler listTrashed failed', {
+      operation: 'list_trashed_items',
+      moduleId: 'notes',
+      userId,
+      error: { message: err.message },
+    });
+    return [];
+  }
+}
+
 async function loadTrashedChatItems(userId: string): Promise<TrashedListItem[]> {
   const chatHandler = getGlobalTrashModuleHandler('chat');
   if (!chatHandler?.listTrashed) {
@@ -355,6 +429,7 @@ export async function listTrashedItems(req: Request, res: Response) {
     const trashedChatConversations = await loadTrashedChatItems(userId);
     const trashedCalendarEvents = await loadTrashedCalendarEvents(userId);
     const trashedTodoTasks = await loadTrashedTodoTasks(userId);
+    const trashedNotesPages = await loadTrashedNotesPages(userId);
 
     // Get trashed dashboards
     const trashedDashboards = await prisma.dashboard.findMany({
@@ -463,6 +538,7 @@ export async function listTrashedItems(req: Request, res: Response) {
       })),
       ...trashedCalendarEvents,
       ...trashedTodoTasks,
+      ...trashedNotesPages,
       ...trashedProfilePhotos.map(photo => ({
         id: photo.id,
         name: 'Profile Photo',
@@ -642,6 +718,28 @@ export async function trashItem(req: Request, res: Response) {
         }
       }
 
+      case 'note': {
+        if (moduleId !== 'notes' && moduleId) {
+          return res.status(400).json({ message: 'Invalid module for notes trash' });
+        }
+        try {
+          const handler = getGlobalTrashModuleHandler('notes');
+          if (!handler?.softTrash) {
+            return res.status(500).json({ message: 'Notes trash handler not registered' });
+          }
+          await handler.softTrash({
+            userId,
+            type: 'note',
+            id,
+            metadata,
+          });
+          return res.json({ success: true, message: 'Item moved to trash' });
+        } catch (error: unknown) {
+          if (mapNotesTrashError(res, error)) return;
+          throw error;
+        }
+      }
+
       default:
         return res.status(400).json({ message: 'Invalid item type' });
     }
@@ -694,6 +792,15 @@ export async function restoreItem(req: Request, res: Response) {
       }
     } catch (error: unknown) {
       if (mapTodoTrashError(res, error)) return;
+      throw error;
+    }
+
+    try {
+      if (await tryNotesRestore(userId, id, moduleId, type)) {
+        return res.json({ success: true, message: 'Item restored' });
+      }
+    } catch (error: unknown) {
+      if (mapNotesTrashError(res, error)) return;
       throw error;
     }
 
@@ -765,6 +872,15 @@ export async function deleteItem(req: Request, res: Response) {
       }
     } catch (error: unknown) {
       if (mapTodoTrashError(res, error)) return;
+      throw error;
+    }
+
+    try {
+      if (await tryNotesPermanentDelete(userId, id, moduleId, type)) {
+        return res.json({ success: true, message: 'Item permanently deleted' });
+      }
+    } catch (error: unknown) {
+      if (mapNotesTrashError(res, error)) return;
       throw error;
     }
 
@@ -862,6 +978,19 @@ export async function emptyTrash(req: Request, res: Response) {
       });
     }
 
+    if (moduleId === 'notes') {
+      const handler = getGlobalTrashModuleHandler('notes');
+      if (!handler) {
+        return res.status(500).json({ message: 'Notes trash handler not registered' });
+      }
+      const deletedCount = await handler.emptyModuleTrash({ userId });
+      return res.json({
+        success: true,
+        message: 'Notebook pages trash emptied',
+        deletedCount,
+      });
+    }
+
     const driveHandler = getGlobalTrashModuleHandler('drive');
     if (driveHandler) {
       await driveHandler.emptyModuleTrash({ userId });
@@ -880,6 +1009,11 @@ export async function emptyTrash(req: Request, res: Response) {
     const todoHandler = getGlobalTrashModuleHandler('todo');
     if (todoHandler) {
       await todoHandler.emptyModuleTrash({ userId });
+    }
+
+    const notesHandler = getGlobalTrashModuleHandler('notes');
+    if (notesHandler) {
+      await notesHandler.emptyModuleTrash({ userId });
     }
 
     await Promise.all([

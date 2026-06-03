@@ -91,6 +91,20 @@ export function registerTodoPlatformEntities(): void {
   });
 }
 
+/** Notes page entity (Notebook product surface; storage model Note). */
+export function registerNotesPlatformEntities(): void {
+  registerPlatformEntity({
+    entityType: 'page',
+    moduleId: 'notes',
+    displayName: 'Page',
+    pluralName: 'Pages',
+    vlinkEntityType: 'NOTE',
+    supportsTrash: true,
+    supportsSearch: true,
+    activityTargetType: 'page',
+  });
+}
+
 /** Calendar event entity descriptor — Wave 2 Phase 2B (calendar/reminder/attendee deferred). */
 export function registerCalendarPlatformEntities(): void {
   registerPlatformEntity({

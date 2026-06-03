@@ -111,14 +111,14 @@ export const WIDGET_REGISTRY: Record<string, WidgetRegistryEntry> = {
     category: 'productivity',
     moduleId: 'todo',
   },
-  notes: {
-    id: 'notes',
-    name: 'Notes',
-    description: 'Notes with tags, search, and organization',
+  notebook: {
+    id: 'notebook',
+    name: 'Notebook',
+    description: 'Recent pages and open task count',
     icon: FileText,
     color: 'text-slate-600 bg-slate-100',
     category: 'productivity',
-    moduleId: 'notes',
+    moduleId: 'notebook',
   },
   ai: {
     id: 'ai',

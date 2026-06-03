@@ -29,6 +29,7 @@ import folderRouter from './routes/folder';
 import driveRouter from './routes/drive';
 import todoRouter from './routes/todo';
 import notesRouter from './routes/notes';
+import notebookRouter from './routes/notebook';
 import vlinksRouter from './routes/vlinks';
 import chatRouter from './routes/chat';
 import businessRouter from './routes/business';
@@ -67,6 +68,7 @@ import { registerPlatformEntities } from './startup/registerPlatformEntities';
 import { seedHRModuleOnStartup } from './startup/seedHRModule';
 import { seedTodoModuleOnStartup } from './startup/seedTodoModule';
 import { seedNotesModuleOnStartup } from './startup/seedNotesModule';
+import { seedNotebookModuleOnStartup } from './startup/seedNotebookModule';
 import { seedSchedulingModuleOnStartup } from './startup/seedSchedulingModule';
 import { registerPlatformCronJobs } from './jobs/platformCronJobs';
 import type { JwtPayload } from 'jsonwebtoken';
@@ -858,6 +860,7 @@ if (isDevRuntime) {
 app.use('/api/drive', driveRouter);
 app.use('/api/todo', todoRouter);
 app.use('/api/notes', notesRouter);
+app.use('/api/notebook', notebookRouter);
 app.use('/api/vlinks', vlinksRouter);
 app.use('/api/folder', folderRouter);
 app.use('/api/chat', authenticateJWT, chatRouter);
@@ -1220,6 +1223,7 @@ async function handleServerListening(): Promise<void> {
     await seedHRModuleOnStartup();
     await seedTodoModuleOnStartup();
     await seedNotesModuleOnStartup();
+    await seedNotebookModuleOnStartup();
     await seedSchedulingModuleOnStartup();
   } catch (e: unknown) {
     const err = e as Error;

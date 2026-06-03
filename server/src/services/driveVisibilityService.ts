@@ -340,6 +340,7 @@ const activeFileSelect = {
   url: true,
   type: true,
   createdAt: true,
+  updatedAt: true,
   dashboardId: true,
   folderId: true,
   userId: true,

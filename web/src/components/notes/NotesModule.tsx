@@ -9,80 +9,38 @@ import { toast } from 'react-hot-toast';
 import { useDashboard } from '@/contexts/DashboardContext';
 import * as notesAPI from '@/api/notes';
 import type { Note, NoteFolder, NoteShareEntry } from '@/api/notes';
+import { NOTEBOOK_PAGE_TEMPLATES } from '../notebook/notebookTemplates';
 
 interface NotesModuleProps {
   dashboardId?: string | null;
   businessId?: string | null;
+  /** Notebook: editor panel only (list nav is in Notebook shell). */
+  editorOnly?: boolean;
+  /** Load a specific page by id (Notes API). */
+  pageId?: string | null;
+  /** UI copy: Page / Section instead of Note / Folder. */
+  usePageLabels?: boolean;
+  /** Extra toolbar actions (e.g. Promote to task). */
+  editorToolbarExtra?: React.ReactNode;
 }
 
-const NOTE_TEMPLATES = [
-  {
-    id: 'meeting-notes',
-    name: 'Meeting notes',
-    title: 'Meeting notes',
-    content: `## Meeting
-**Date:** 
-**Attendees:** 
+const NOTE_TEMPLATES = NOTEBOOK_PAGE_TEMPLATES.map((t) => ({
+  id: t.id,
+  name: t.name,
+  title: t.title,
+  content: t.content,
+}));
 
-## Agenda
-- 
-
-## Notes
-- 
-
-## Action items
-- [ ] 
-- [ ] 
-`,
-  },
-  {
-    id: 'daily-standup',
-    name: 'Daily standup',
-    title: 'Daily standup',
-    content: `## Standup — [Date]
-
-### Yesterday
-- 
-
-### Today
-- 
-
-### Blockers
-- 
-`,
-  },
-  {
-    id: 'project-brief',
-    name: 'Project brief',
-    title: 'Project brief',
-    content: `## Project brief
-
-### Overview
- 
-
-### Goals
-- 
-
-### Scope
-- In scope: 
-- Out of scope: 
-
-### Timeline
-- 
-
-### Success criteria
-- 
-`,
-  },
-  {
-    id: 'blank',
-    name: 'Blank',
-    title: 'Untitled note',
-    content: '',
-  },
-] as const;
-
-export function NotesModule({ dashboardId, businessId }: NotesModuleProps) {
+export function NotesModule({
+  dashboardId,
+  businessId,
+  editorOnly = false,
+  pageId = null,
+  usePageLabels = false,
+  editorToolbarExtra,
+}: NotesModuleProps) {
+  const pageNoun = usePageLabels ? 'page' : 'note';
+  const sectionNoun = usePageLabels ? 'section' : 'folder';
   const { data: session } = useSession();
   const { currentDashboardId } = useDashboard();
   const effectiveDashboardId = dashboardId || currentDashboardId;
@@ -158,8 +116,31 @@ export function NotesModule({ dashboardId, businessId }: NotesModuleProps) {
   }, [loadFolders]);
 
   useEffect(() => {
-    loadNotes();
-  }, [loadNotes]);
+    if (!editorOnly) {
+      loadNotes();
+    }
+  }, [loadNotes, editorOnly]);
+
+  useEffect(() => {
+    if (!editorOnly || !pageId || !session?.accessToken) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const detail = await notesAPI.getNoteById(session.accessToken, pageId);
+        if (cancelled || !detail) return;
+        setSelectedNote(detail);
+        setEditTitle(detail.title);
+        setEditContent(detail.content);
+        setEditTags(detail.tags ?? []);
+        setEditFolderId(detail.folderId ?? null);
+      } catch {
+        if (!cancelled) toast.error(`Failed to load ${pageNoun}`);
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [editorOnly, pageId, session?.accessToken, pageNoun]);
 
   useEffect(() => {
     if (selectedNote) {
@@ -228,7 +209,7 @@ export function NotesModule({ dashboardId, businessId }: NotesModuleProps) {
       setEditTags(created.tags ?? []);
       setEditFolderId(created.folderId ?? null);
       setTemplateModalOpen(false);
-      toast.success('Note created from template');
+      toast.success(`${usePageLabels ? 'Page' : 'Note'} created from template`);
     } catch (err) {
       console.error('Failed to create note from template:', err);
       toast.error('Failed to create note');
@@ -239,7 +220,7 @@ export function NotesModule({ dashboardId, businessId }: NotesModuleProps) {
 
   const handleCreateFolder = async () => {
     if (!session?.accessToken || !effectiveDashboardId) return;
-    const name = typeof window !== 'undefined' ? window.prompt('Folder name') : null;
+    const name = typeof window !== 'undefined' ? window.prompt(`${sectionNoun.charAt(0).toUpperCase() + sectionNoun.slice(1)} name`) : null;
     if (!name?.trim()) return;
     setCreatingFolder(true);
     try {
@@ -249,7 +230,7 @@ export function NotesModule({ dashboardId, businessId }: NotesModuleProps) {
         businessId: businessId ?? undefined,
       });
       await loadFolders();
-      toast.success('Folder created');
+      toast.success(`${sectionNoun.charAt(0).toUpperCase() + sectionNoun.slice(1)} created`);
     } catch (err) {
       console.error('Failed to create folder:', err);
       toast.error('Failed to create folder');
@@ -382,124 +363,127 @@ export function NotesModule({ dashboardId, businessId }: NotesModuleProps) {
   if (!effectiveDashboardId) {
     return (
       <div className="p-6 text-gray-700 dark:text-gray-300">
-        <p>Select a dashboard to view notes.</p>
+        <p>Select a dashboard to view {pageNoun}s.</p>
       </div>
     );
   }
 
-  return (
-    <div className="flex h-full">
-      {/* Left: note list */}
-      <div className="w-72 border-r border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-900 flex flex-col shrink-0">
-        <div className="p-3 border-b border-gray-200 dark:border-slate-700">
-          <div className="relative">
-            <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 dark:text-gray-400" />
-            <input
-              type="text"
-              placeholder="Search notes..."
-              value={search}
-              onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-9 pr-3 py-2 border border-gray-300 dark:border-slate-600 rounded text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:text-gray-400 text-sm"
-            />
-          </div>
-          <div className="flex gap-1 mt-2">
-            <Button
-              type="button"
-              variant="primary"
-              size="sm"
-              className="flex-1"
-              onClick={handleCreate}
-              disabled={creating}
-            >
-              {creating ? <Spinner size={16} /> : <Plus className="w-4 h-4 inline mr-1" />}
-              New note
-            </Button>
-            <Button
-              type="button"
-              variant="secondary"
-              size="sm"
-              title="New from template"
-              onClick={() => setTemplateModalOpen(true)}
-              disabled={creatingFromTemplate}
-            >
-              {creatingFromTemplate ? <Spinner size={16} /> : <FileText className="w-4 h-4" />}
-            </Button>
-            <Button
-              type="button"
-              variant="secondary"
-              size="sm"
-              title="New folder"
-              onClick={handleCreateFolder}
-              disabled={creatingFolder}
-            >
-              {creatingFolder ? <Spinner size={16} /> : <FolderPlus className="w-4 h-4" />}
-            </Button>
-          </div>
-          <div className="mt-2">
-            <label className="text-xs text-gray-600 dark:text-gray-400 block mb-1">Folder</label>
-            <select
-              value={sharedWithMe ? 'shared' : selectedFolderId ?? 'all'}
-              onChange={(e) => {
-                const v = e.target.value;
-                if (v === 'shared') {
-                  setSharedWithMe(true);
-                  setSelectedFolderId(null);
-                } else {
-                  setSharedWithMe(false);
-                  setSelectedFolderId(v === 'all' ? null : v === 'none' ? '' : v);
-                }
-              }}
-              className="w-full py-1.5 px-2 border border-gray-300 dark:border-slate-600 rounded text-gray-900 dark:text-gray-100 text-sm"
-            >
-              <option value="all">All notes</option>
-              <option value="shared">Shared with me</option>
-              <option value="none">Unfiled</option>
-              {folders.map((f) => (
-                <option key={f.id} value={f.id}>
-                  {f.name} {f._count != null ? `(${f._count.notes})` : ''}
-                </option>
-              ))}
-            </select>
-          </div>
+  const listSidebar = !editorOnly ? (
+    <div className="w-72 border-r border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-900 flex flex-col shrink-0">
+      <div className="p-3 border-b border-gray-200 dark:border-slate-700">
+        <div className="relative">
+          <Search className="absolute left-2.5 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-500 dark:text-gray-400" />
+          <input
+            type="text"
+            placeholder={`Search ${pageNoun}s...`}
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+            className="w-full pl-9 pr-3 py-2 border border-gray-300 dark:border-slate-600 rounded text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:text-gray-400 text-sm"
+          />
         </div>
-
-        <div className="flex-1 overflow-y-auto">
-          {loading ? (
-            <div className="flex justify-center py-8">
-              <Spinner size={24} />
-            </div>
-          ) : notes.length === 0 ? (
-            <div className="p-4 text-center text-gray-700 dark:text-gray-300 text-sm">
-              No notes yet. Create one to get started.
-            </div>
-          ) : (
-            <ul className="py-2">
-              {notes.map((n) => (
-                <li key={n.id}>
-                  <button
-                    type="button"
-                    onClick={() => setSelectedNote(n)}
-                    className={`w-full text-left px-4 py-2.5 text-sm border-l-2 transition-colors ${
-                      selectedNote?.id === n.id
-                        ? 'border-blue-600 bg-blue-50 text-gray-900'
-                        : 'border-transparent hover:bg-gray-100 text-gray-700'
-                    }`}
-                  >
-                    <span className="font-medium truncate block">{n.title || 'Untitled note'}</span>
-                    {n.tags && n.tags.length > 0 && (
-                      <span className="text-xs text-gray-600 dark:text-gray-400 truncate block">
-                        {n.tags.join(', ')}
-                      </span>
-                    )}
-                  </button>
-                </li>
-              ))}
-            </ul>
-          )}
+        <div className="flex gap-1 mt-2">
+          <Button
+            type="button"
+            variant="primary"
+            size="sm"
+            className="flex-1"
+            onClick={handleCreate}
+            disabled={creating}
+          >
+            {creating ? <Spinner size={16} /> : <Plus className="w-4 h-4 inline mr-1" />}
+            New {pageNoun}
+          </Button>
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            title="New from template"
+            onClick={() => setTemplateModalOpen(true)}
+            disabled={creatingFromTemplate}
+          >
+            {creatingFromTemplate ? <Spinner size={16} /> : <FileText className="w-4 h-4" />}
+          </Button>
+          <Button
+            type="button"
+            variant="secondary"
+            size="sm"
+            title={`New ${sectionNoun}`}
+            onClick={handleCreateFolder}
+            disabled={creatingFolder}
+          >
+            {creatingFolder ? <Spinner size={16} /> : <FolderPlus className="w-4 h-4" />}
+          </Button>
+        </div>
+        <div className="mt-2">
+          <label className="text-xs text-gray-600 dark:text-gray-400 block mb-1">
+            {sectionNoun.charAt(0).toUpperCase() + sectionNoun.slice(1)}
+          </label>
+          <select
+            value={sharedWithMe ? 'shared' : selectedFolderId ?? 'all'}
+            onChange={(e) => {
+              const v = e.target.value;
+              if (v === 'shared') {
+                setSharedWithMe(true);
+                setSelectedFolderId(null);
+              } else {
+                setSharedWithMe(false);
+                setSelectedFolderId(v === 'all' ? null : v === 'none' ? '' : v);
+              }
+            }}
+            className="w-full py-1.5 px-2 border border-gray-300 dark:border-slate-600 rounded text-gray-900 dark:text-gray-100 text-sm"
+          >
+            <option value="all">All {pageNoun}s</option>
+            <option value="shared">Shared with me</option>
+            <option value="none">Unfiled</option>
+            {folders.map((f) => (
+              <option key={f.id} value={f.id}>
+                {f.name} {f._count != null ? `(${f._count.notes})` : ''}
+              </option>
+            ))}
+          </select>
         </div>
       </div>
 
-      {/* Right: editor / empty state */}
+      <div className="flex-1 overflow-y-auto">
+        {loading ? (
+          <div className="flex justify-center py-8">
+            <Spinner size={24} />
+          </div>
+        ) : notes.length === 0 ? (
+          <div className="p-4 text-center text-gray-700 dark:text-gray-300 text-sm">
+            No {pageNoun}s yet. Create one to get started.
+          </div>
+        ) : (
+          <ul className="py-2">
+            {notes.map((n) => (
+              <li key={n.id}>
+                <button
+                  type="button"
+                  onClick={() => setSelectedNote(n)}
+                  className={`w-full text-left px-4 py-2.5 text-sm border-l-2 transition-colors ${
+                    selectedNote?.id === n.id
+                      ? 'border-blue-600 bg-blue-50 text-gray-900'
+                      : 'border-transparent hover:bg-gray-100 text-gray-700'
+                  }`}
+                >
+                  <span className="font-medium truncate block">{n.title || `Untitled ${pageNoun}`}</span>
+                  {n.tags && n.tags.length > 0 && (
+                    <span className="text-xs text-gray-600 dark:text-gray-400 truncate block">
+                      {n.tags.join(', ')}
+                    </span>
+                  )}
+                </button>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+    </div>
+  ) : null;
+
+  return (
+    <div className="flex h-full">
+      {listSidebar}
       <div className="flex-1 flex flex-col min-w-0 bg-white dark:bg-slate-800">
         {selectedNote ? (
           <>
@@ -508,7 +492,7 @@ export function NotesModule({ dashboardId, businessId }: NotesModuleProps) {
                 value={editTitle}
                 onChange={(e) => setEditTitle(e.target.value)}
                 onBlur={handleSave}
-                placeholder="Note title"
+                placeholder={`${usePageLabels ? 'Page' : 'Note'} title`}
                 className="flex-1 min-w-0 text-lg font-medium border-0 border-b border-transparent focus:border-gray-300 dark:focus:border-slate-500 rounded-none"
                 readOnly={noteDetail?.canEdit === false}
               />
@@ -520,9 +504,9 @@ export function NotesModule({ dashboardId, businessId }: NotesModuleProps) {
                     handleNoteFolderChange(v === 'none' ? null : v);
                   }}
                   className="py-1.5 px-2 border border-gray-300 dark:border-slate-600 rounded text-gray-700 dark:text-gray-300 bg-white dark:bg-slate-900 text-sm"
-                  title="Move to folder"
+                  title={`Move to ${sectionNoun}`}
                 >
-                  <option value="none">No folder</option>
+                  <option value="none">No {sectionNoun}</option>
                   {folders.map((f) => (
                     <option key={f.id} value={f.id}>
                       {f.name}
@@ -530,7 +514,8 @@ export function NotesModule({ dashboardId, businessId }: NotesModuleProps) {
                   ))}
                 </select>
               </div>
-              <div className="flex items-center gap-1">
+              <div className="flex items-center gap-1 flex-wrap">
+                {editorToolbarExtra}
                 {(noteDetail?.isOwner ?? selectedNote?.isOwner) && (
                   <Button type="button" variant="ghost" size="sm" onClick={() => setShareModalOpen(true)} title="Share">
                     <Share2 className="w-4 h-4 text-gray-700 dark:text-gray-300" />
@@ -595,7 +580,7 @@ export function NotesModule({ dashboardId, businessId }: NotesModuleProps) {
                   value={editContent}
                   onChange={(e) => setEditContent(e.target.value)}
                   onBlur={handleSave}
-                  placeholder="Write your note... Markdown supported: **bold**, *italic*, lists, [links](url)"
+                  placeholder={`Write your ${pageNoun}... Markdown supported: **bold**, *italic*, lists, [links](url)`}
                   className="min-h-[200px] w-full resize-y text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:text-gray-400 font-mono text-sm"
                   rows={12}
                 />
@@ -631,12 +616,18 @@ export function NotesModule({ dashboardId, businessId }: NotesModuleProps) {
         ) : (
           <div className="flex-1 flex items-center justify-center text-gray-700 dark:text-gray-300 p-8">
             <div className="text-center">
-              <p className="text-lg font-medium mb-1">Select a note or create one</p>
-              <p className="text-sm mb-4">Use the list on the left to open a note, or click New note.</p>
-              <Button type="button" variant="primary" onClick={handleCreate} disabled={creating}>
-                <Plus className="w-4 h-4 inline mr-1" />
-                New note
-              </Button>
+              <p className="text-lg font-medium mb-1">Select a {pageNoun} or create one</p>
+              <p className="text-sm mb-4">
+                {editorOnly
+                  ? 'Open a page from Notebook home or create one there.'
+                  : `Use the list on the left to open a ${pageNoun}, or click New ${pageNoun}.`}
+              </p>
+              {!editorOnly && (
+                <Button type="button" variant="primary" onClick={handleCreate} disabled={creating}>
+                  <Plus className="w-4 h-4 inline mr-1" />
+                  New {pageNoun}
+                </Button>
+              )}
             </div>
           </div>
         )}
@@ -644,7 +635,9 @@ export function NotesModule({ dashboardId, businessId }: NotesModuleProps) {
 
       <Modal open={templateModalOpen} onClose={() => setTemplateModalOpen(false)} title="New from template" size="medium">
         <div className="space-y-2">
-          <p className="text-sm text-gray-700 dark:text-gray-300">Choose a template to create a new note.</p>
+          <p className="text-sm text-gray-700 dark:text-gray-300">
+            Choose a template to create a new {pageNoun}.
+          </p>
           <ul className="space-y-1">
             {NOTE_TEMPLATES.map((t) => (
               <li key={t.id}>
@@ -662,7 +655,12 @@ export function NotesModule({ dashboardId, businessId }: NotesModuleProps) {
         </div>
       </Modal>
 
-      <Modal open={shareModalOpen} onClose={() => setShareModalOpen(false)} title="Share note" size="medium">
+      <Modal
+        open={shareModalOpen}
+        onClose={() => setShareModalOpen(false)}
+        title={usePageLabels ? 'Share page' : 'Share note'}
+        size="medium"
+      >
         <div className="space-y-4">
           <p className="text-sm text-gray-700 dark:text-gray-300">People with access</p>
           <ul className="space-y-2 max-h-32 overflow-y-auto">

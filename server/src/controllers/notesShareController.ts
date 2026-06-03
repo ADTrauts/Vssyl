@@ -1,18 +1,21 @@
 /**
- * Notes Share Controller
- * Share note with user, revoke share, list shares; sends notes_shared notification
+ * Notes share controller — thin adapter over notesShareService.
  */
 
 import { Request, Response } from 'express';
-import { prisma } from '../lib/prisma';
 import { AuthenticatedRequest } from '../middleware/auth';
-import { NotificationService } from '../services/notificationService';
 import { logger } from '../lib/logger';
+import { NotesServiceError } from '../services/notes/notesErrors';
+import * as notesShare from '../services/notes/notesShareService';
 
-/**
- * POST /api/notes/:id/share
- * Share note with a user (viewer or editor). Creates or updates share; notifies recipient.
- */
+function mapNotesError(res: Response, error: unknown): boolean {
+  if (error instanceof NotesServiceError) {
+    res.status(error.httpStatus).json({ error: error.message });
+    return true;
+  }
+  return false;
+}
+
 export async function shareNote(req: Request, res: Response): Promise<void> {
   try {
     const userId = (req as AuthenticatedRequest).user?.id;
@@ -32,77 +35,18 @@ export async function shareNote(req: Request, res: Response): Promise<void> {
       res.status(400).json({ error: 'sharedWithUserId is required' });
       return;
     }
+
     const shareRole = role === 'editor' ? 'editor' : 'viewer';
-
-    const note = await prisma.note.findFirst({
-      where: {
-        id: noteId,
-        createdById: userId,
-        deletedAt: null,
-      },
-      select: { id: true, title: true },
+    const share = await notesShare.sharePage({
+      ownerUserId: userId,
+      pageId: noteId,
+      sharedWithUserId,
+      role: shareRole,
     });
-
-    if (!note) {
-      res.status(404).json({ error: 'Note not found' });
-      return;
-    }
-
-    if (sharedWithUserId === userId) {
-      res.status(400).json({ error: 'Cannot share with yourself' });
-      return;
-    }
-
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any -- Prisma client includes NoteShare after generate; types may lag in IDE
-    const share = await (prisma as any).noteShare.upsert({
-      where: {
-        noteId_sharedWithUserId: { noteId, sharedWithUserId },
-      },
-      create: {
-        noteId,
-        sharedWithUserId,
-        sharedById: userId,
-        role: shareRole,
-      },
-      update: { role: shareRole },
-      select: {
-        id: true,
-        noteId: true,
-        sharedWithUserId: true,
-        role: true,
-        createdAt: true,
-      },
-    });
-
-    try {
-      const sharer = await prisma.user.findUnique({
-        where: { id: userId },
-        select: { name: true },
-      });
-      const sharerName = sharer?.name ?? 'Someone';
-      await NotificationService.createNotification({
-        type: 'notes_shared',
-        title: 'Note shared with you',
-        body: `${sharerName} shared "${note.title}" with you as ${shareRole}.`,
-        userId: sharedWithUserId,
-        data: {
-          noteId,
-          sharedById: userId,
-          role: shareRole,
-          noteTitle: note.title,
-          actionUrl: '/notes',
-        },
-      });
-    } catch (notificationError) {
-      const err = notificationError instanceof Error ? notificationError : new Error('Unknown error');
-      logger.warn('Failed to send notes_shared notification', {
-        operation: 'notes_share_notification',
-        error: { message: err.message, stack: err.stack },
-      });
-    }
 
     res.status(201).json(share);
   } catch (error: unknown) {
+    if (mapNotesError(res, error)) return;
     const err = error instanceof Error ? error : new Error(String(error));
     void logger.error('Error in shareNote', {
       operation: 'notes_share',
@@ -112,10 +56,6 @@ export async function shareNote(req: Request, res: Response): Promise<void> {
   }
 }
 
-/**
- * DELETE /api/notes/:id/share/:userId
- * Revoke share for a user (owner only).
- */
 export async function revokeShare(req: Request, res: Response): Promise<void> {
   try {
     const userId = (req as AuthenticatedRequest).user?.id;
@@ -131,28 +71,15 @@ export async function revokeShare(req: Request, res: Response): Promise<void> {
       return;
     }
 
-    const note = await prisma.note.findFirst({
-      where: {
-        id: noteId,
-        createdById: userId,
-        deletedAt: null,
-      },
-    });
-
-    if (!note) {
-      res.status(404).json({ error: 'Note not found' });
-      return;
-    }
-
-    await (prisma as any).noteShare.deleteMany({
-      where: {
-        noteId,
-        sharedWithUserId: targetUserId,
-      },
+    await notesShare.revokePageShare({
+      ownerUserId: userId,
+      pageId: noteId,
+      targetUserId,
     });
 
     res.status(204).send();
   } catch (error: unknown) {
+    if (mapNotesError(res, error)) return;
     const err = error instanceof Error ? error : new Error(String(error));
     void logger.error('Error in revokeShare', {
       operation: 'notes_revoke_share',
@@ -162,10 +89,6 @@ export async function revokeShare(req: Request, res: Response): Promise<void> {
   }
 }
 
-/**
- * GET /api/notes/:id/shares
- * List users this note is shared with (owner only).
- */
 export async function getNoteShares(req: Request, res: Response): Promise<void> {
   try {
     const userId = (req as AuthenticatedRequest).user?.id;
@@ -181,34 +104,10 @@ export async function getNoteShares(req: Request, res: Response): Promise<void> 
       return;
     }
 
-    const note = await prisma.note.findFirst({
-      where: {
-        id: noteId,
-        createdById: userId,
-        deletedAt: null,
-      },
-    });
-
-    if (!note) {
-      res.status(404).json({ error: 'Note not found' });
-      return;
-    }
-
-    const shares = await (prisma as any).noteShare.findMany({
-      where: { noteId },
-      select: {
-        id: true,
-        sharedWithUserId: true,
-        role: true,
-        createdAt: true,
-        sharedWith: {
-          select: { id: true, name: true, email: true },
-        },
-      },
-    });
-
+    const shares = await notesShare.listPageShares({ ownerUserId: userId, pageId: noteId });
     res.json({ shares });
   } catch (error: unknown) {
+    if (mapNotesError(res, error)) return;
     const err = error instanceof Error ? error : new Error(String(error));
     void logger.error('Error in getNoteShares', {
       operation: 'notes_list_shares',

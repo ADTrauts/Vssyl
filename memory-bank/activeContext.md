@@ -1,6 +1,18 @@
 # Active Context - Vssyl Business Admin & AI Integration
 
-## Most recent completed project — Platform Standards Migration Batches 1–4 (May 2026) ✅
+## Most recent completed project — Notebook Phase 6.5 Workspace intelligence (June 2026) ✅
+
+**Status:** **SHIPPED** — `notebookWorkspaceContextService`; `GET /api/notebook/workspace/context`; rule-based insights (no LLM); intelligent Notebook Home panels.
+
+**Prior:** Phase 6 AI orchestration; Phase 5.5 page context; File Hub + Calendar links.
+
+**Next:** Notebook **Phase 7** — certification (audit, manifest truth, ledger). Do **not** start until explicitly planned.
+
+**Docs:** [`NOTEBOOK_IMPLEMENTATION_PLAN.md`](../docs/architecture/NOTEBOOK_IMPLEMENTATION_PLAN.md), [`progress.md`](progress.md) Notebook section.
+
+---
+
+## Platform Standards Migration Batches 1–4 (May 2026) ✅
 
 **Status:** **IMPLEMENTED** — Constitutional framework published **and** core migration batches executed in code (manifest/provisioning, workspace gaps, trash, events, V_Link resolvers, job registry).
 

@@ -1,12 +1,15 @@
 /**
- * Notes Module Controller
- * Handles CRUD operations for notes with multi-tenant scoping
+ * Notes / Notebook Pages Controller — thin HTTP adapter over notes services.
  */
 
 import { Request, Response } from 'express';
-import { prisma } from '../lib/prisma';
 import { logger } from '../lib/logger';
 import { AuthenticatedRequest } from '../middleware/auth';
+import { NotesServiceError } from '../services/notes/notesErrors';
+import { NotesTrashError } from '../services/notes/notesErrors';
+import * as notesVisibility from '../services/notes/notesVisibilityService';
+import * as notesPage from '../services/notes/notesPageService';
+import * as notesTrash from '../services/notes/notesTrashService';
 
 function logNotesError(message: string, operation: string, err: unknown): void {
   const e = err instanceof Error ? err : new Error(String(err));
@@ -15,16 +18,25 @@ function logNotesError(message: string, operation: string, err: unknown): void {
     error: { message: e.message, stack: e.stack },
   });
 }
-import { Prisma } from '@prisma/client';
-import { assertUserOwnedDashboardBusinessAlignment } from '../services/taskDashboardBinding';
-import { emitModuleActivityEvent } from '../services/moduleActivityService';
-import { evaluateModuleMutationPolicyDual } from '../auth/moduleMutationPolicyDual';
-import { POLICY_ACTIONS } from '../auth/policyActions';
 
-/**
- * GET /api/notes
- * List notes with filtering (search, tag, pinned)
- */
+function mapNotesError(res: Response, error: unknown): boolean {
+  if (error instanceof NotesServiceError) {
+    res.status(error.httpStatus).json({ error: error.message });
+    return true;
+  }
+  if (error instanceof NotesTrashError) {
+    if (error.code === 'forbidden') {
+      res.status(403).json({ error: 'Not authorized' });
+      return true;
+    }
+    if (error.code === 'not_found') {
+      res.status(404).json({ error: 'Page not found' });
+      return true;
+    }
+  }
+  return false;
+}
+
 export async function getNotes(req: Request, res: Response): Promise<void> {
   try {
     const userId = (req as AuthenticatedRequest).user?.id;
@@ -40,83 +52,34 @@ export async function getNotes(req: Request, res: Response): Promise<void> {
       return;
     }
 
-    // NoteWhereInput may lag in generated types (shares, folderId)
-    const where: Record<string, unknown> = {
+    const notes = await notesVisibility.listPages({
+      userId,
       dashboardId,
-      trashedAt: null,
-    };
-
-    if (String(sharedWithMe) === 'true') {
-      where.shares = { some: { sharedWithUserId: userId } };
-    } else {
-      where.createdById = userId;
-    }
-
-    if (businessId && typeof businessId === 'string') {
-      where.businessId = businessId;
-    } else {
-      where.businessId = null;
-    }
-
-    if (folderId !== undefined && folderId !== '') {
-      if (folderId === 'none' || folderId === '') {
-        where.folderId = null;
-      } else if (typeof folderId === 'string') {
-        where.folderId = folderId;
-      }
-    }
-
-    if (search && typeof search === 'string' && search.trim()) {
-      where.OR = [
-        { title: { contains: search.trim(), mode: 'insensitive' } },
-        { content: { contains: search.trim(), mode: 'insensitive' } },
-      ];
-    }
-
-    if (tag && typeof tag === 'string') {
-      where.tags = { has: tag };
-    }
-
-    if (pinned !== undefined && pinned !== '') {
-      const pinnedBool = String(pinned) === 'true';
-      where.pinned = pinnedBool;
-    }
-
-    const notes = await prisma.note.findMany({
-      where: where as Prisma.NoteWhereInput,
-      orderBy: [{ pinned: 'desc' }, { updatedAt: 'desc' }],
-      select: {
-        id: true,
-        title: true,
-        content: true,
-        tags: true,
-        pinned: true,
-        dashboardId: true,
-        businessId: true,
-        folderId: true,
-        createdById: true,
-        createdAt: true,
-        updatedAt: true,
-      } as Prisma.NoteSelect,
+      businessId: businessId && typeof businessId === 'string' ? businessId : null,
+      search: search && typeof search === 'string' ? search : undefined,
+      tag: tag && typeof tag === 'string' ? tag : undefined,
+      pinned: pinned !== undefined && pinned !== '' ? String(pinned) === 'true' : undefined,
+      folderId:
+        !sharedWithMe || String(sharedWithMe) !== 'true'
+          ? folderId !== undefined && folderId !== ''
+            ? folderId === 'none' || folderId === ''
+              ? ''
+              : typeof folderId === 'string'
+                ? folderId
+                : undefined
+            : undefined
+          : undefined,
+      sharedWithMe: String(sharedWithMe) === 'true',
     });
 
-    const notesWithOwner = notes.map((n) => {
-      const { createdById, ...rest } = n;
-      return { ...rest, isOwner: createdById === userId };
-    });
-
-    res.json({ notes: notesWithOwner });
+    res.json({ notes });
   } catch (error: unknown) {
-    const err = error as Error;
-    logNotesError('Error in getNotes', 'notes_list', err);
+    if (mapNotesError(res, error)) return;
+    logNotesError('Error in getNotes', 'notes_list', error);
     res.status(500).json({ error: 'Failed to fetch notes' });
   }
 }
 
-/**
- * GET /api/notes/:id
- * Get a single note by ID
- */
 export async function getNoteById(req: Request, res: Response): Promise<void> {
   try {
     const userId = (req as AuthenticatedRequest).user?.id;
@@ -131,57 +94,20 @@ export async function getNoteById(req: Request, res: Response): Promise<void> {
       return;
     }
 
-    const note = await prisma.note.findFirst({
-      where: {
-        id,
-        trashedAt: null,
-        OR: [
-          { createdById: userId },
-          { shares: { some: { sharedWithUserId: userId } } },
-        ],
-      } as Prisma.NoteWhereInput,
-      select: {
-        id: true,
-        title: true,
-        content: true,
-        tags: true,
-        pinned: true,
-        dashboardId: true,
-        businessId: true,
-        folderId: true,
-        createdById: true,
-        createdAt: true,
-        updatedAt: true,
-        shares: {
-          where: { sharedWithUserId: userId },
-          select: { role: true },
-          take: 1,
-        },
-      } as Prisma.NoteSelect,
-    });
-
-    if (!note) {
+    const page = await notesVisibility.getPageById(id, userId);
+    if (!page) {
       res.status(404).json({ error: 'Note not found' });
       return;
     }
 
-    const noteWithShares = note as { shares?: Array<{ role: string }>; createdById: string; [k: string]: unknown };
-    const shareWithMe = noteWithShares.shares?.[0];
-    const canEdit = note.createdById === userId || shareWithMe?.role === 'editor';
-    const isOwner = note.createdById === userId;
-    const { shares: _s, ...noteData } = noteWithShares;
-    res.json({ ...noteData, canEdit, isOwner });
+    res.json(page);
   } catch (error: unknown) {
-    const err = error as Error;
-    logNotesError('Error in getNoteById', 'notes_get', err);
+    if (mapNotesError(res, error)) return;
+    logNotesError('Error in getNoteById', 'notes_get', error);
     res.status(500).json({ error: 'Failed to fetch note' });
   }
 }
 
-/**
- * POST /api/notes
- * Create a new note
- */
 export async function createNote(req: Request, res: Response): Promise<void> {
   try {
     const userId = (req as AuthenticatedRequest).user?.id;
@@ -192,7 +118,7 @@ export async function createNote(req: Request, res: Response): Promise<void> {
 
     const { title, content, dashboardId, businessId, tags, pinned, folderId } = req.body;
 
-    if (!title || typeof title !== 'string' || !title.trim()) {
+    if (!title || typeof title !== 'string') {
       res.status(400).json({ error: 'Title is required' });
       return;
     }
@@ -202,94 +128,25 @@ export async function createNote(req: Request, res: Response): Promise<void> {
       return;
     }
 
-    const normalizedBusinessId =
-      businessId && typeof businessId === 'string' ? businessId : null;
-
-    try {
-      await assertUserOwnedDashboardBusinessAlignment(
-        prisma,
-        userId,
-        dashboardId,
-        normalizedBusinessId
-      );
-    } catch (e: unknown) {
-      const msg = (e as Error).message;
-      if (msg === 'Task dashboard not found') {
-        res.status(404).json({ error: 'Dashboard not found' });
-        return;
-      }
-      if (msg === 'Task dashboard context mismatch') {
-        res.status(400).json({ error: 'Dashboard does not match business context' });
-        return;
-      }
-      throw e;
-    }
-
-    if (folderId && typeof folderId === 'string') {
-      const folder = await prisma.noteFolder.findFirst({
-        where: {
-          id: folderId,
-          createdById: userId,
-          dashboardId,
-          businessId: normalizedBusinessId,
-        },
-      });
-      if (!folder) {
-        res.status(400).json({ error: 'Folder not found or not in this dashboard' });
-        return;
-      }
-    }
-
-    const policyBlock = await evaluateModuleMutationPolicyDual({
+    const note = await notesPage.createPage({
       userId,
-      moduleId: 'notes',
-      action: POLICY_ACTIONS.NOTE_CREATE,
-      resourceType: 'note',
-      resourceId: 'new',
-      scope: { dashboardId, businessId: normalizedBusinessId ?? undefined },
-    });
-    if (policyBlock.blocked) {
-      res.status(403).json({ error: 'Not authorized to create note' });
-      return;
-    }
-
-    const note = await prisma.note.create({
-      data: {
-        title: title.trim(),
-        content: typeof content === 'string' ? content : '',
-        dashboardId,
-        businessId: normalizedBusinessId,
-        folderId: folderId && typeof folderId === 'string' ? folderId : null,
-        tags: Array.isArray(tags) ? tags.filter((t: unknown) => typeof t === 'string') : [],
-        pinned: Boolean(pinned),
-        createdById: userId,
-        updatedById: userId,
-      } as unknown as Prisma.NoteCreateInput,
-    });
-
-    await emitModuleActivityEvent({
-      actorUserId: userId,
-      moduleId: 'notes',
-      action: 'create',
-      targetType: 'note',
-      targetId: note.id,
-      dashboardId: note.dashboardId,
-      businessId: note.businessId,
-      metadata: { title: note.title },
+      title,
+      content,
+      dashboardId,
+      businessId: businessId && typeof businessId === 'string' ? businessId : null,
+      tags,
+      pinned,
+      folderId: folderId && typeof folderId === 'string' ? folderId : null,
     });
 
     res.status(201).json(note);
   } catch (error: unknown) {
-    const err = error as Error;
-    logNotesError('Error in createNote', 'notes_create', err);
+    if (mapNotesError(res, error)) return;
+    logNotesError('Error in createNote', 'notes_create', error);
     res.status(500).json({ error: 'Failed to create note' });
   }
 }
 
-/**
- * PUT /api/notes/:id
- * Update an existing note
- */
 export async function updateNote(req: Request, res: Response): Promise<void> {
   try {
     const userId = (req as AuthenticatedRequest).user?.id;
@@ -306,59 +163,24 @@ export async function updateNote(req: Request, res: Response): Promise<void> {
 
     const { title, content, tags, pinned, folderId } = req.body;
 
-    const existing = await prisma.note.findFirst({
-      where: {
-        id,
-        trashedAt: null,
-        OR: [
-          { createdById: userId },
-          { shares: { some: { sharedWithUserId: userId, role: 'editor' } } },
-        ],
-      } as Prisma.NoteWhereInput,
-    });
-
-    if (!existing) {
-      res.status(404).json({ error: 'Note not found' });
-      return;
-    }
-
-    const data: Record<string, unknown> = {
-      updatedBy: { connect: { id: userId } },
-    };
-
-    if (title !== undefined && typeof title === 'string') {
-      data.title = title.trim();
-    }
-    if (content !== undefined) {
-      data.content = typeof content === 'string' ? content : '';
-    }
-    if (Array.isArray(tags)) {
-      data.tags = tags.filter((t: unknown) => typeof t === 'string');
-    }
-    if (pinned !== undefined) {
-      data.pinned = Boolean(pinned);
-    }
-    if (folderId !== undefined) {
-      data.folder = folderId && typeof folderId === 'string' ? { connect: { id: folderId } } : { disconnect: true };
-    }
-
-    const note = await prisma.note.update({
-      where: { id },
-      data: data as Prisma.NoteUpdateInput,
+    const note = await notesPage.updatePage({
+      userId,
+      pageId: id,
+      title,
+      content,
+      tags,
+      pinned,
+      folderId,
     });
 
     res.json(note);
   } catch (error: unknown) {
-    const err = error as Error;
-    logNotesError('Error in updateNote', 'notes_update', err);
+    if (mapNotesError(res, error)) return;
+    logNotesError('Error in updateNote', 'notes_update', error);
     res.status(500).json({ error: 'Failed to update note' });
   }
 }
 
-/**
- * DELETE /api/notes/:id
- * Soft delete a note
- */
 export async function deleteNote(req: Request, res: Response): Promise<void> {
   try {
     const userId = (req as AuthenticatedRequest).user?.id;
@@ -373,57 +195,11 @@ export async function deleteNote(req: Request, res: Response): Promise<void> {
       return;
     }
 
-    const existing = await prisma.note.findFirst({
-      where: {
-        id,
-        createdById: userId,
-        trashedAt: null,
-      },
-    });
-
-    if (!existing) {
-      res.status(404).json({ error: 'Note not found' });
-      return;
-    }
-
-    const policyBlock = await evaluateModuleMutationPolicyDual({
-      userId,
-      moduleId: 'notes',
-      action: POLICY_ACTIONS.NOTE_DELETE,
-      resourceType: 'note',
-      resourceId: id,
-      scope: {
-        dashboardId: existing.dashboardId,
-        businessId: existing.businessId ?? undefined,
-      },
-    });
-    if (policyBlock.blocked) {
-      res.status(403).json({ error: 'Not authorized to delete note' });
-      return;
-    }
-
-    await prisma.note.update({
-      where: { id },
-      data: {
-        trashedAt: new Date(),
-      },
-    });
-
-    await emitModuleActivityEvent({
-      actorUserId: userId,
-      moduleId: 'notes',
-      action: 'delete',
-      targetType: 'note',
-      targetId: id,
-      dashboardId: existing.dashboardId,
-      businessId: existing.businessId,
-      metadata: { softDelete: true },
-    });
-
+    await notesTrash.softTrashPage(userId, id);
     res.status(204).send();
   } catch (error: unknown) {
-    const err = error as Error;
-    logNotesError('Error in deleteNote', 'notes_delete', err);
+    if (mapNotesError(res, error)) return;
+    logNotesError('Error in deleteNote', 'notes_delete', error);
     res.status(500).json({ error: 'Failed to delete note' });
   }
 }

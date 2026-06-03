@@ -1,15 +1,21 @@
 'use client';
 
-import React from 'react';
-import { NotesModule } from '@/components/notes/NotesModule';
-import { useDashboard } from '@/contexts/DashboardContext';
+import { useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { Spinner } from 'shared/components';
 
-export default function NotesPage() {
-  const { currentDashboardId } = useDashboard();
+/** Legacy Notes URL — redirects to Notebook (facade). */
+export default function NotesRedirectPage() {
+  const router = useRouter();
+
+  useEffect(() => {
+    router.replace('/notebook');
+  }, [router]);
 
   return (
-    <div className="flex flex-col h-full">
-      <NotesModule dashboardId={currentDashboardId} />
+    <div className="flex h-full items-center justify-center">
+      <Spinner size={24} />
+      <p className="ml-2 text-sm text-gray-600 dark:text-gray-400">Opening Notebook…</p>
     </div>
   );
 }

@@ -2,7 +2,13 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { useSession } from 'next-auth/react';
 import { Button } from 'shared/components';
-import { Link2 } from 'lucide-react';
+import { BookOpen, Link2 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import {
+  findMeetingPageIdForEvent,
+  openOrCreateMeetingPageForEvent,
+} from '@/lib/notebookMeetingPage';
+import { getNotebookBasePath, notebookPagePath } from '@/components/notebook/notebookPaths';
 import { calendarAPI, Calendar, EventItem, Attendee, EventComment } from '../../api/calendar';
 import { getVLinksForEntity, type EntityVLinkRef } from '@/api/vlinks';
 import { useVLinkDrag } from '@/contexts/VLinkDragContext';
@@ -57,6 +63,8 @@ interface ICSEventData {
 
 export default function EventDrawer({ isOpen, onClose, onCreated, onUpdated, contextType, contextId, defaultStart, defaultEnd, eventToEdit }: EventDrawerProps) {
   const { data: session } = useSession();
+  const router = useRouter();
+  const [notebookPageLoading, setNotebookPageLoading] = useState(false);
   const { openConnectModal } = useVLinkDrag();
   const { currentDashboard, currentDashboardId } = useDashboard();
   const businessId =
@@ -610,6 +618,75 @@ export default function EventDrawer({ isOpen, onClose, onCreated, onUpdated, con
             <button onClick={onClose} className="px-3 py-1 border rounded">Cancel</button>
             <button onClick={handleSave} disabled={saving || !title} className="px-3 py-1 bg-blue-600 text-white rounded disabled:opacity-50">{saving ? 'Saving…' : (eventToEdit ? 'Save' : 'Create')}</button>
           </div>
+          {eventToEdit?.id && session?.accessToken && currentDashboardId && (
+            <div className="pt-3 border-t space-y-2">
+              <div className="text-sm font-medium flex items-center gap-2">
+                <BookOpen className="w-4 h-4 text-gray-600" />
+                Notebook
+              </div>
+              <p className="text-xs text-gray-600 dark:text-gray-400">
+                Open a meeting page linked to this event, or create one from the meeting template.
+              </p>
+              <div className="flex flex-col gap-2">
+                <Button
+                  type="button"
+                  variant="secondary"
+                  size="sm"
+                  className="w-full justify-center"
+                  disabled={notebookPageLoading}
+                  onClick={async () => {
+                    if (!session.accessToken || !eventToEdit) return;
+                    setNotebookPageLoading(true);
+                    try {
+                      const pageId = await findMeetingPageIdForEvent(session.accessToken, eventToEdit.id);
+                      if (!pageId) {
+                        toast.error('No Notebook page linked yet. Create one first.');
+                        return;
+                      }
+                      const base = getNotebookBasePath(businessId);
+                      router.push(notebookPagePath(base, pageId));
+                      onClose();
+                    } catch (err: unknown) {
+                      toast.error(err instanceof Error ? err.message : 'Failed to open meeting page');
+                    } finally {
+                      setNotebookPageLoading(false);
+                    }
+                  }}
+                >
+                  Open Notebook Page
+                </Button>
+                <Button
+                  type="button"
+                  variant="primary"
+                  size="sm"
+                  className="w-full justify-center"
+                  disabled={notebookPageLoading}
+                  onClick={async () => {
+                    if (!session.accessToken || !eventToEdit) return;
+                    setNotebookPageLoading(true);
+                    try {
+                      const pageId = await openOrCreateMeetingPageForEvent({
+                        token: session.accessToken,
+                        event: eventToEdit,
+                        dashboardId: currentDashboardId,
+                        businessId,
+                      });
+                      const base = getNotebookBasePath(businessId);
+                      router.push(notebookPagePath(base, pageId));
+                      toast.success('Meeting page ready');
+                      onClose();
+                    } catch (err: unknown) {
+                      toast.error(err instanceof Error ? err.message : 'Failed to create meeting page');
+                    } finally {
+                      setNotebookPageLoading(false);
+                    }
+                  }}
+                >
+                  {notebookPageLoading ? 'Working…' : 'Create / open meeting page'}
+                </Button>
+              </div>
+            </div>
+          )}
           {eventToEdit?.id && (
             <div className="pt-3 border-t space-y-2">
               <div className="text-sm font-medium flex items-center gap-2">

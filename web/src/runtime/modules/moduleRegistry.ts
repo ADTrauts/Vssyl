@@ -29,6 +29,7 @@ export function normalizeModuleId(rawId: string): string {
   if (id === 'activityfeed' || id === 'activity-feed') return 'activityfeed';
   if (id === 'quickstats' || id === 'quick-stats') return 'quickstats';
   if (id === 'quicknotes' || id === 'quick-notes') return 'quicknotes';
+  if (id === 'notes') return 'notebook';
   return id;
 }
 

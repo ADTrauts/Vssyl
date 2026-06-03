@@ -90,7 +90,7 @@ Vssyl certifies modules against **two authorities simultaneously**. A module is 
 | **Chat** | `chat` | **High** | **High** | **3 — Certified** | **Reference Module #2** (Level 3) | [CHAT_LEVEL3_CERTIFICATION_REVIEW](./audits/CHAT_LEVEL3_CERTIFICATION_REVIEW.md), [CHAT_OPERATION_MATRIX](./audits/CHAT_OPERATION_MATRIX.md) |
 | **Calendar** | `calendar` | **High** | **High** | **3 — Certified** | **Reference Module #3** (Level 3) | [CALENDAR_LEVEL3_CERTIFICATION_REVIEW](./audits/CALENDAR_LEVEL3_CERTIFICATION_REVIEW.md) |
 | **Todo** | `todo` | **High** | **High** | **3 — Certified** | **Reference Module #4** (Level 3) | [TODO_LEVEL3_CERTIFICATION_REVIEW](./audits/TODO_LEVEL3_CERTIFICATION_REVIEW.md), [TODO_OPERATION_MATRIX](./audits/TODO_OPERATION_MATRIX.md) |
-| **Notes** | `notes` | **Low** | **Low** | **1 — Stabilizing** | Not started (Wave 2) | `trashedAt` aligned; no services/handlers |
+| **Notes** | `notes` | **Low** | **Low** | **1 — Stabilizing** | **Paused** — Notebook initiative; Notes Phase 2 + Notebook Phase 3B `notebook_links` (2026-06-02) | `notes*Service`; Notebook `operationalLinks` (not vlink/trash); cert deferred to Notebook Phase 7 |
 | **Place** | `place` | **Low** | **Low** | **0 — Legacy** | Not started (Wave 3) | Multi-controller; minimal manifest |
 | **Dashboard** | `dashboard` | **Partial** | **Partial** | **1 — Stabilizing** | Not started (Wave 3) | Dual widget registry; weak activity |
 | **Analytics** | `analytics` | **Partial** | **N/A** | **1 — Stabilizing** | Not started (Wave 3) | Pseudo-module; subscriber stubs |

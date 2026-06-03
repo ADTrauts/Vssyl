@@ -222,6 +222,7 @@ function buildSchema() {
     'scheduling',
     'todo',
     'notes',
+    'notebook',
     'place'
   ];
   

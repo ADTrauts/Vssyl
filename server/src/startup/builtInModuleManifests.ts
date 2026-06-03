@@ -12,6 +12,8 @@ export interface BuiltInManifestCapabilities {
   preview?: boolean;
   businessWorkspace?: boolean;
   globalActivity?: boolean;
+  /** Phase 3B: persisted NotebookLink operational edges (not V_Link). */
+  operationalLinks?: boolean;
 }
 
 export interface BuiltInManifestEntity {
@@ -312,7 +314,49 @@ export function buildBuiltInModuleManifest(moduleId: BuiltInModuleId): BuiltInMo
           notifications: true,
           businessWorkspace: true,
         }),
-        routes: [{ path: '/notes', label: 'Notes' }],
+        routes: [{ path: '/notebook', label: 'Notebook' }],
+        entities: [
+          {
+            type: 'page',
+            displayName: 'Page',
+            pluralName: 'Pages',
+            vlinkEntityType: 'NOTE',
+            supportsTrash: true,
+            supportsSearch: true,
+          },
+        ],
+        notifications: [
+          {
+            type: 'notes_shared',
+            name: 'Page shared',
+            description: 'Sent when a page is shared with you',
+            category: 'notes',
+            defaultChannels: { inApp: true, email: false, push: true },
+            priority: 'normal',
+            requiresAction: false,
+          },
+        ],
+      };
+    case 'notebook':
+      return {
+        ...base(
+          [
+            'notes:read',
+            'notes:write',
+            'todo:read',
+            'todo:write',
+            'notebook:link:read',
+            'notebook:link:write',
+          ],
+          {
+            read: true,
+            write: true,
+            ai: true,
+            businessWorkspace: true,
+            operationalLinks: true,
+          }
+        ),
+        routes: [{ path: '/notebook', label: 'Notebook' }],
       };
     case 'vlink':
       return base(['vlink:read', 'vlink:write'], {

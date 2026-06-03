@@ -30,6 +30,7 @@ export const MODULE_ICONS: Record<string, LucideIcon> = {
   ai: Brain,
   calendar: CalendarIcon,
   todo: CheckSquare,
+  notebook: FileText,
   notes: FileText,
   vlink: Link2,
   place: MapPin,

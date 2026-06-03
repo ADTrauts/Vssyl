@@ -107,6 +107,16 @@ const BUILT_IN_MODULE_DEFINITIONS: BuiltInModuleDefinition[] = [
     pricingTier: 'free',
   },
   {
+    id: 'notebook',
+    name: 'Notebook',
+    description: 'Meeting pages and tasks in one hub (facade over Notes and To-Do)',
+    version: '1.0.0',
+    category: 'PRODUCTIVITY',
+    tags: ['notebook', 'pages', 'meeting notes', 'tasks'],
+    icon: 'book-open',
+    pricingTier: 'free',
+  },
+  {
     id: 'vlink',
     name: 'V_Link',
     description: 'Platform contextual relationship layer connecting files, events, and more',
@@ -727,6 +737,65 @@ const BUILT_IN_MODULES: Array<{ moduleId: string; moduleName: string; aiContext:
           description: 'Get user\'s pinned notes',
           endpoint: '/api/notes/ai/context/pinned',
           cacheDuration: 300000, // 5 minutes
+        },
+      ],
+    },
+  },
+  {
+    moduleId: 'notebook',
+    moduleName: 'Notebook',
+    aiContext: {
+      purpose:
+        'Unified workspace for pages (stored as notes) and tasks — conduct meetings and follow-ups without switching modules',
+      category: 'PRODUCTIVITY',
+      keywords: [
+        'notebook',
+        'page',
+        'pages',
+        'meeting notes',
+        'meeting page',
+        'project brief',
+        'tasks',
+        'promote to task',
+        'templates',
+      ],
+      patterns: [
+        'open notebook',
+        'my pages',
+        'recent pages',
+        'meeting notes',
+        'create a page',
+        'notebook tasks',
+      ],
+      concepts: ['meeting notes', 'pages', 'sections', 'task promotion', 'templates'],
+      entities: [
+        { name: 'Page', pluralName: 'Pages', description: 'A note presented as a Notebook page' },
+        { name: 'Task', pluralName: 'Tasks', description: 'A to-do item shown in Notebook task panels' },
+      ],
+      actions: [
+        { name: 'create_page', description: 'Create a new page (note)', permissions: ['notes:write'] },
+        { name: 'list_pages', description: 'List pages', permissions: ['notes:read'] },
+        { name: 'create_task', description: 'Create a task from Notebook', permissions: ['todo:write'] },
+        { name: 'list_tasks', description: 'List open tasks', permissions: ['todo:read'] },
+      ],
+      contextProviders: [
+        {
+          name: 'recent_pages',
+          description: 'Recent Notebook pages (notes API)',
+          endpoint: '/api/notes/ai/context/recent',
+          cacheDuration: 300000,
+        },
+        {
+          name: 'pinned_pages',
+          description: 'Pinned pages (notes API)',
+          endpoint: '/api/notes/ai/context/pinned',
+          cacheDuration: 300000,
+        },
+        {
+          name: 'task_overview',
+          description: 'Task overview (todo API)',
+          endpoint: '/api/todo/ai/context/overview',
+          cacheDuration: 300000,
         },
       ],
     },

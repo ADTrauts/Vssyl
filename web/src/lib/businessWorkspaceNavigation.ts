@@ -41,5 +41,8 @@ export function buildBusinessWorkspaceModuleHref(businessId: string, moduleId: s
   if (id === 'members') {
     return `/business/${businessId}/workspace/members`;
   }
+  if (id === 'notebook' || id === 'notes') {
+    return `/business/${businessId}/workspace/notebook`;
+  }
   return `/business/${businessId}/workspace?module=${encodeURIComponent(moduleId)}`;
 }

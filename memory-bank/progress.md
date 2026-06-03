@@ -1,5 +1,40 @@
 # Block-on-Block Platform - Progress
 
+## Notebook — Phase 1 MLVP + Phase 1.1 polish (June 2026) ✅
+
+**Status:** **SHIPPED** — Notebook is the user-facing facade over **Notes** (pages) + **Todo** (tasks). No Notebook Prisma models or domain services.
+
+| Phase | Outcome |
+|-------|---------|
+| **1 MLVP** | `NotebookShell`, routes (`/notebook`, business `/workspace/notebook`), `NotebookWidget`, manifest seed, AI context delegates to notes/todo providers |
+| **1.1** | `/notes` redirects; mobile nav drawer; responsive home/page layouts; promote-to-task refreshes task panel; vitest path/registry tests |
+
+**Key paths:** `web/src/components/notebook/*`, `server/src/startup/seedNotebookModule.ts`, `web/src/runtime/modules/coreModuleRegistry.ts` (`notes` disabled, `notebook` active)
+
+**Smoke (2026-06-01):** Browser confirmed `/notes` → `/notebook` client redirect. Full create/edit/promote flows require local `JWT_SECRET` + DB (backend did not start in agent dev session).
+
+**Phase 2 (2026-06-01):** Notes/Page services (`server/src/services/notes/*`), Global Trash handler (`moduleId: notes`, `type: note`), domain events `notes.page.*`, platform entity `notes:page`, thin controllers.
+
+**Phase 3B (2026-06-02):** `notebook_links` schema; `server/src/services/notebook/notebookLink*`; `/api/notebook` link API; UI `NotebookPageLinksRail`; domain events `notebook.link.created|archived`; manifest `operationalLinks: true`. No Todo/Notes/V_Link changes.
+
+**Phase 3C (2026-06-02):** Validation pass — 23 link tests; restore archived link on re-create; controller maps `NotesServiceError`; optional DB test `RUN_NOTEBOOK_LINK_DB_TESTS=1`. Local migrate blocked until Postgres up.
+
+**Phase 4 (2026-06-02):** Meeting template; `NotebookLinkedEventsPanel` + calendar search; entity backlinks API; `EventDrawer` Notebook buttons; `web/src/lib/notebookMeetingPage.ts`.
+
+**Phase 5 (2026-06-02):** `NotebookLinkedFilesPanel` + `DriveFilePicker`; FILE hydration (size, dates, owner); tests for cross-dashboard deny, restricted list, visibility hydration.
+
+**Phase 5.5 (2026-06-02):** `notebookContextService` + `GET /api/notebook/pages/:pageId/context`; canonical page context DTO for future AI/search.
+
+**Phase 6 (2026-06-02):** `notebookAIActionService` (summarize, extract/confirm tasks, meeting recap, suggest links); `NotebookAIPanel`; grounded on page context; Todo/File/Calendar architecture unchanged.
+
+**Phase 6.5 (2026-06-02):** `notebookWorkspaceContextService` + intelligent Home; rule-based workspace insights; aggregation via Notes/Todo/Calendar/Drive visibility.
+
+**Next:** **Phase 7** — certification; still not certified in ledger.
+
+**Docs:** [NOTEBOOK_IMPLEMENTATION_PLAN.md](../docs/architecture/NOTEBOOK_IMPLEMENTATION_PLAN.md), [NOTEBOOK_PRODUCT_ARCHITECTURE_REVIEW.md](../docs/architecture/NOTEBOOK_PRODUCT_ARCHITECTURE_REVIEW.md)
+
+---
+
 ## File Hub — Reference Implementation (May 2026) ✅
 
 **Status:** **ARCHITECTURE COMPLETE** — File Hub (`drive`) is the canonical Vssyl module reference implementation. Maturity **87/100**.

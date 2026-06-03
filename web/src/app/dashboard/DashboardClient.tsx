@@ -24,7 +24,7 @@ import DriveWidget from '../../components/widgets/DriveWidget';
 import ChatWidget from '../../components/widgets/ChatWidget';
 import CalendarWidget from '../../components/widgets/CalendarWidget';
 import TodoWidget from '../../components/widgets/TodoWidget';
-import NotesWidget from '../../components/widgets/NotesWidget';
+import NotebookWidget from '../../components/widgets/NotebookWidget';
 import QuickStatsWidget from '../../components/widgets/QuickStatsWidget';
 import AIWidget from '../../components/widgets/AIWidget';
 import NotificationsWidget from '../../components/widgets/NotificationsWidget';
@@ -117,13 +117,15 @@ function WidgetContentRenderer({
           {...dashboardContext}
         />
       );
+    case 'notebook':
     case 'notes':
       return (
-        <NotesWidget
+        <NotebookWidget
           id={widget.id}
-          config={widgetConfig}
-          onConfigChange={onConfigChange}
-          {...dashboardContext}
+          dashboardId={dashboardContext.dashboardId}
+          dashboardType={dashboardContext.dashboardType}
+          dashboardName={dashboardContext.dashboardName}
+          businessId={dashboardContext.businessId}
         />
       );
     case 'quickstats':

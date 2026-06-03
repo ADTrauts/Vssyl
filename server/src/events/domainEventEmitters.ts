@@ -1100,3 +1100,181 @@ export function emitTodoTaskPermanentlyDeletedEvent(params: {
     })
   );
 }
+
+export function emitNotesPageCreatedEvent(params: {
+  actorUserId: string;
+  pageId: string;
+  dashboardId: string;
+  businessId?: string | null;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.NOTES_PAGE_CREATED, {
+      actorUserId: params.actorUserId,
+      entityId: params.pageId,
+      dashboardId: params.dashboardId,
+      businessId: params.businessId ?? null,
+      metadata: { moduleId: 'notes' },
+    })
+  );
+}
+
+export function emitNotesPageUpdatedEvent(params: {
+  actorUserId: string;
+  pageId: string;
+  dashboardId: string;
+  businessId?: string | null;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.NOTES_PAGE_UPDATED, {
+      actorUserId: params.actorUserId,
+      entityId: params.pageId,
+      dashboardId: params.dashboardId,
+      businessId: params.businessId ?? null,
+      metadata: { moduleId: 'notes' },
+    })
+  );
+}
+
+export function emitNotesPageTrashedEvent(params: {
+  actorUserId: string;
+  pageId: string;
+  dashboardId: string;
+  businessId?: string | null;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.NOTES_PAGE_TRASHED, {
+      actorUserId: params.actorUserId,
+      entityId: params.pageId,
+      dashboardId: params.dashboardId,
+      businessId: params.businessId ?? null,
+      metadata: { moduleId: 'notes', softDelete: true },
+    })
+  );
+}
+
+export function emitNotesPageRestoredEvent(params: {
+  actorUserId: string;
+  pageId: string;
+  dashboardId: string;
+  businessId?: string | null;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.NOTES_PAGE_RESTORED, {
+      actorUserId: params.actorUserId,
+      entityId: params.pageId,
+      dashboardId: params.dashboardId,
+      businessId: params.businessId ?? null,
+      metadata: { moduleId: 'notes' },
+    })
+  );
+}
+
+export function emitNotesPagePermanentlyDeletedEvent(params: {
+  actorUserId: string;
+  pageId: string;
+  dashboardId: string;
+  businessId?: string | null;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.NOTES_PAGE_PERMANENTLY_DELETED, {
+      actorUserId: params.actorUserId,
+      entityId: params.pageId,
+      dashboardId: params.dashboardId,
+      businessId: params.businessId ?? null,
+      metadata: { moduleId: 'notes' },
+    })
+  );
+}
+
+export function emitNotesPageSharedEvent(params: {
+  actorUserId: string;
+  pageId: string;
+  dashboardId: string;
+  businessId?: string | null;
+  sharedWithUserId: string;
+  role: string;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.NOTES_PAGE_SHARED, {
+      actorUserId: params.actorUserId,
+      entityId: params.pageId,
+      dashboardId: params.dashboardId,
+      businessId: params.businessId ?? null,
+      metadata: {
+        moduleId: 'notes',
+        sharedWithUserId: params.sharedWithUserId,
+        role: params.role,
+      },
+    })
+  );
+}
+
+export function emitNotesPageUnsharedEvent(params: {
+  actorUserId: string;
+  pageId: string;
+  dashboardId: string;
+  businessId?: string | null;
+  sharedWithUserId: string;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.NOTES_PAGE_UNSHARED, {
+      actorUserId: params.actorUserId,
+      entityId: params.pageId,
+      dashboardId: params.dashboardId,
+      businessId: params.businessId ?? null,
+      metadata: { moduleId: 'notes', sharedWithUserId: params.sharedWithUserId },
+    })
+  );
+}
+
+export function emitNotebookLinkCreatedEvent(params: {
+  actorUserId: string;
+  linkId: string;
+  pageId: string;
+  targetType: string;
+  targetId: string;
+  relationshipType: string;
+  dashboardId: string;
+  businessId?: string | null;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.NOTEBOOK_LINK_CREATED, {
+      actorUserId: params.actorUserId,
+      entityId: params.linkId,
+      dashboardId: params.dashboardId,
+      businessId: params.businessId ?? null,
+      metadata: {
+        moduleId: 'notebook',
+        pageId: params.pageId,
+        targetType: params.targetType,
+        targetId: params.targetId,
+        relationshipType: params.relationshipType,
+      },
+    })
+  );
+}
+
+export function emitNotebookLinkArchivedEvent(params: {
+  actorUserId: string;
+  linkId: string;
+  pageId: string;
+  targetType: string;
+  targetId: string;
+  dashboardId: string;
+  businessId?: string | null;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.NOTEBOOK_LINK_ARCHIVED, {
+      actorUserId: params.actorUserId,
+      entityId: params.linkId,
+      dashboardId: params.dashboardId,
+      businessId: params.businessId ?? null,
+      metadata: {
+        moduleId: 'notebook',
+        pageId: params.pageId,
+        targetType: params.targetType,
+        targetId: params.targetId,
+      },
+    })
+  );
+}

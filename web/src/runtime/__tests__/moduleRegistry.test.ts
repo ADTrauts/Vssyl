@@ -45,4 +45,14 @@ describe('moduleRegistry', () => {
     expect(drive?.source).toBe('core');
     expect(drive?.status).toBe('active');
   });
+
+  it('exposes notebook as active facade and hides legacy notes from lists', () => {
+    const notebook = getModuleDefinition('notebook');
+    expect(notebook?.status).toBe('active');
+    expect(notebook?.widgets).toContain('notebook');
+
+    const personal = getModulesForContext('personal');
+    expect(personal.map((m) => m.id)).toContain('notebook');
+    expect(personal.map((m) => m.id)).not.toContain('notes');
+  });
 });
