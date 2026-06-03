@@ -108,21 +108,34 @@
 |---------------|-------------------|-----------|------------------------|
 | **Todo** | *(certified — see Reference #4 above)* | — | — |
 | **Notes** | *(paused 2026-06-01 — see Notebook initiative)* | — | Superseded by Notebook product track |
-| **Notebook** (planned) | Todo (#4) for tasks, File Hub for document trash/V_Link, Chat for AI facade | Calendar (links) | Unified pages + tasks; facade-first migration |
-| **Place** | File Hub (entities, V_Link), Chat (visibility) | Calendar (scheduling links) | Location/meeting linkage, map context |
+| **Notebook** | Todo (#4), File Hub (#1), Calendar (#3) | Chat (#2) AI facade patterns | Composition + NotebookLink; Phase 7 audit complete — **not L3 certified** |
+| **Place** | File Hub (entities, V_Link), Chat (visibility) | Calendar (scheduling links) | **Reference Module #5 candidate** — location/meeting linkage |
 | **Dashboard** | File Hub (manifest, activity), Chat (realtime widgets) | — | Widget registry, composition (not full module CRUD) |
 | **Analytics** | File Hub (activity vs analytics separation) | — | Read-only / derived metrics; often N/A trash |
 | **Business Workspace** | All three (composition only) | — | Hub switch, module landing pattern; not a data module |
 
-### Notes — paused; Notebook initiative (2026-06-01)
+### Notebook — composition module (Phases 1–6.5 shipped; Phase 7 audit 2026-06-02)
 
-Standalone Notes modernization is **stopped**. Product direction: [**NOTEBOOK_PRODUCT_ARCHITECTURE_REVIEW.md**](./NOTEBOOK_PRODUCT_ARCHITECTURE_REVIEW.md).
+Product module **`notebook`** composes Notes pages, Todo tasks, Calendar events, and File Hub files via **NotebookLink** (operational links, not V_Link replacement).
 
-When Notebook implementation is approved, copy order for **document domain**:
+| Pattern | Status | Key artifacts |
+|---------|--------|----------------|
+| Composition reads | ✅ | `notebookContextService`, `notebookWorkspaceContextService` |
+| Operational links | ✅ | `notebookLinkService`, PE `notebook:link:*` |
+| AI orchestration | 🟡 | `notebookAIActionService` — HTTP ✅; ActionExecutor twins pending |
+| Page domain | Delegated | `notes*Service`, Global Trash `moduleId: notes` |
+| Manifest truth | ✅ | `operationalLinks: true`; no false `trash`/`vlink` on `notebook` |
+| Certification | **Ready for L3 review** — not certified | [NOTEBOOK_CERTIFICATION_READINESS_REVIEW.md](./audits/NOTEBOOK_CERTIFICATION_READINESS_REVIEW.md) |
 
-1. **File Hub** — trash, V_Link, visibility, platform entity (`notebook:page`).
-2. **Chat** — thin facade controller, AI context routing.
-3. **Todo (Reference #4)** — task lifecycle, links, AI actions — **do not merge task services into notes controllers**.
+**Reference #5:** **Place** remains the primary Reference Module #5 candidate. Notebook may add a **composition appendix** after L3 sign-off; not required for certification.
+
+### Notes — sub-domain (dependency)
+
+Standalone Notes product cert is **superseded** by Notebook. **`notes`** remains installed for page persistence and trash handler. Copy order for remaining page-domain gaps:
+
+1. **File Hub** — `notebook:page` entity registration (NB-P0-1).
+2. **Chat** — ActionExecutor registration pattern for notebook AI.
+3. **Todo (#4)** — task writes stay in `todoAIActionService` — never merge into notebook controllers.
 
 ---
 
@@ -146,8 +159,9 @@ Use this catalog when filling **“reference module pattern to copy”** columns
 | File Hub | [FILE_HUB_MATURITY_ASSESSMENT.md](./audits/FILE_HUB_MATURITY_ASSESSMENT.md) | [FILE_HUB_OPERATION_MATRIX.md](./audits/FILE_HUB_OPERATION_MATRIX.md) |
 | Chat | [CHAT_LEVEL3_CERTIFICATION_REVIEW.md](./audits/CHAT_LEVEL3_CERTIFICATION_REVIEW.md) | [CHAT_SERVICE_EXTRACTION_PLAN.md](./audits/CHAT_SERVICE_EXTRACTION_PLAN.md) |
 | Calendar | [CALENDAR_LEVEL3_CERTIFICATION_REVIEW.md](./audits/CALENDAR_LEVEL3_CERTIFICATION_REVIEW.md) | [CALENDAR_SERVICE_EXTRACTION_PLAN.md](./audits/CALENDAR_SERVICE_EXTRACTION_PLAN.md) |
-| Todo (Phase 0) | — | [TODO_CONSTITUTIONAL_AUDIT.md](./audits/TODO_CONSTITUTIONAL_AUDIT.md) |
+| Todo (Phase 0) | [TODO_LEVEL3_CERTIFICATION_REVIEW.md](./audits/TODO_LEVEL3_CERTIFICATION_REVIEW.md) | [TODO_CONSTITUTIONAL_AUDIT.md](./audits/TODO_CONSTITUTIONAL_AUDIT.md) |
+| Notebook (Phase 7) | [NOTEBOOK_CERTIFICATION_READINESS_REVIEW.md](./audits/NOTEBOOK_CERTIFICATION_READINESS_REVIEW.md) | [NOTEBOOK_CONSTITUTIONAL_AUDIT.md](./audits/NOTEBOOK_CONSTITUTIONAL_AUDIT.md), [NOTEBOOK_OPERATION_MATRIX.md](./audits/NOTEBOOK_OPERATION_MATRIX.md) |
 
 ---
 
-*Last updated: 2026-06-01 (Notebook initiative — Notes wave paused)*
+*Last updated: 2026-06-02 (Notebook Phase 7 audit — not certified)*

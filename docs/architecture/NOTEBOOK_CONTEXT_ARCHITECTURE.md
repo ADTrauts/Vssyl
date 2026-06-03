@@ -1,8 +1,9 @@
 # Notebook Context Architecture
 
-**Phase:** 5.5  
+**Phase:** 5.5 (+ 6.5 workspace)  
 **Date:** 2026-06-02  
 **Status:** Implemented  
+**Certification audit:** [NOTEBOOK_CONSTITUTIONAL_AUDIT.md](./audits/NOTEBOOK_CONSTITUTIONAL_AUDIT.md), [NOTEBOOK_OPERATION_MATRIX.md](./audits/NOTEBOOK_OPERATION_MATRIX.md) (Phase 7 — not certified)
 
 **Purpose:** Define the canonical **read-only** aggregation layer for Notebook pages — the single object future AI, search, backlinks, and dashboard experiences consume without duplicating permission logic.
 

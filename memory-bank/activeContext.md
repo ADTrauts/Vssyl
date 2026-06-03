@@ -1,14 +1,16 @@
 # Active Context - Vssyl Business Admin & AI Integration
 
-## Most recent completed project — Notebook Phase 6.5 Workspace intelligence (June 2026) ✅
+## Most recent completed project — Notebook Phase 7 Certification audit (June 2026) ✅
 
-**Status:** **SHIPPED** — `notebookWorkspaceContextService`; `GET /api/notebook/workspace/context`; rule-based insights (no LLM); intelligent Notebook Home panels.
+**Status:** **AUDIT COMPLETE** — Constitutional audit + operation matrix + readiness review. **Not certified.** Ledger: Notebook **Ready for Level 3 review**.
 
-**Prior:** Phase 6 AI orchestration; Phase 5.5 page context; File Hub + Calendar links.
+**Prior:** Phase 6.5 workspace intelligence; Phases 1–6 composition (links, AI, Notes services).
 
-**Next:** Notebook **Phase 7** — certification (audit, manifest truth, ledger). Do **not** start until explicitly planned.
+**P0 before sign-off:** `notebook:page` platform entity (NB-P0-1); ActionExecutor/toolExecutor AI twins (NB-P0-2).
 
-**Docs:** [`NOTEBOOK_IMPLEMENTATION_PLAN.md`](../docs/architecture/NOTEBOOK_IMPLEMENTATION_PLAN.md), [`progress.md`](progress.md) Notebook section.
+**Next:** Phase 7+ implementation for blockers → `NOTEBOOK_LEVEL3_CERTIFICATION_REVIEW.md`. **Do not certify without review.** **Do not start Place** unless product prioritizes.
+
+**Docs:** [`NOTEBOOK_CONSTITUTIONAL_AUDIT.md`](../docs/architecture/audits/NOTEBOOK_CONSTITUTIONAL_AUDIT.md), [`NOTEBOOK_CERTIFICATION_READINESS_REVIEW.md`](../docs/architecture/audits/NOTEBOOK_CERTIFICATION_READINESS_REVIEW.md), [`CERTIFICATION_LEDGER.md`](../docs/architecture/CERTIFICATION_LEDGER.md)
 
 ---
 

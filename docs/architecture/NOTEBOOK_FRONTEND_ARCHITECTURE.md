@@ -1,8 +1,9 @@
 # Notebook Frontend Architecture
 
-**Phase:** 0.75  
+**Phase:** 0.75 (implementation through 6.5)  
 **Parent:** [NOTEBOOK_TECHNICAL_ARCHITECTURE.md](./NOTEBOOK_TECHNICAL_ARCHITECTURE.md)  
-**Date:** 2026-06-01
+**Date:** 2026-06-01  
+**Certification audit (Phase 7):** [NOTEBOOK_OPERATION_MATRIX.md](./audits/NOTEBOOK_OPERATION_MATRIX.md) — Home/workspace ops inventoried
 
 ---
 

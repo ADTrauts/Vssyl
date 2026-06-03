@@ -66,7 +66,8 @@
 | **5** | File Hub integration | ✅ Complete (2026-06-02) | Linked files panel, Drive picker, visibility-safe FILE hydration |
 | **6** | AI orchestration | ✅ Complete (2026-06-02) | Summarize, extract/confirm tasks, meeting recap, suggest links |
 | **6.5** | Workspace intelligence | ✅ Complete (2026-06-02) | `getWorkspaceContext`; rule-based insights; intelligent Home |
-| **7** | Certification | Planned | L3 audit; manifest truth; optional `notes` picker hide |
+| **7** | Certification audit | ✅ Complete (2026-06-02) | Constitutional audit + operation matrix; readiness review; **not certified** |
+| **7+** | Certification sign-off | Planned | NB-P0-1 entity + NB-P0-2 AI executor; `NOTEBOOK_LEVEL3_CERTIFICATION_REVIEW` |
 
 **Phase 3A docs:** [NOTEBOOK_LINK_SCHEMA_DESIGN.md](../architecture/NOTEBOOK_LINK_SCHEMA_DESIGN.md), [NOTEBOOK_LINK_API_DESIGN.md](../architecture/NOTEBOOK_LINK_API_DESIGN.md), [NOTEBOOK_LINK_ACCESS_RULES.md](../architecture/NOTEBOOK_LINK_ACCESS_RULES.md), [NOTEBOOK_LINK_IMPLEMENTATION_PLAN.md](../architecture/NOTEBOOK_LINK_IMPLEMENTATION_PLAN.md).
 
@@ -74,7 +75,7 @@
 
 **Relationship model:** **B — NotebookLink + V_Link** ([NOTEBOOK_RELATIONSHIP_MODEL.md](../architecture/NOTEBOOK_RELATIONSHIP_MODEL.md)).
 
-**Next:** Notebook **Phase 7** (certification). **Place** remains Reference #5 candidate after Notebook Phase 7 exit.
+**Next:** Notebook **Phase 7+** (blocker burn-down + L3 sign-off — do not certify without review). **Place** remains **Reference Module #5** candidate.
 
 ---
 

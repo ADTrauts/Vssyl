@@ -29,7 +29,9 @@
 
 **Phase 6.5 (2026-06-02):** `notebookWorkspaceContextService` + intelligent Home; rule-based workspace insights; aggregation via Notes/Todo/Calendar/Drive visibility.
 
-**Next:** **Phase 7** — certification; still not certified in ledger.
+**Phase 7 audit (2026-06-02):** [NOTEBOOK_CONSTITUTIONAL_AUDIT.md](../docs/architecture/audits/NOTEBOOK_CONSTITUTIONAL_AUDIT.md), [NOTEBOOK_OPERATION_MATRIX.md](../docs/architecture/audits/NOTEBOOK_OPERATION_MATRIX.md), [NOTEBOOK_CERTIFICATION_READINESS_REVIEW.md](../docs/architecture/audits/NOTEBOOK_CERTIFICATION_READINESS_REVIEW.md). Ledger: **Ready for Level 3 review** — **not certified**. P0: `notebook:page` entity, ActionExecutor twins.
+
+**Next:** **Phase 7+** — blocker burn-down + L3 sign-off. **Place** remains Reference #5 candidate. Do **not** start Place unless prioritized.
 
 **Docs:** [NOTEBOOK_IMPLEMENTATION_PLAN.md](../docs/architecture/NOTEBOOK_IMPLEMENTATION_PLAN.md), [NOTEBOOK_PRODUCT_ARCHITECTURE_REVIEW.md](../docs/architecture/NOTEBOOK_PRODUCT_ARCHITECTURE_REVIEW.md)
 

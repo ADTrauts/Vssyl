@@ -2,7 +2,7 @@
 
 **Phase:** 0.75  
 **Date:** 2026-06-01  
-**Status:** Phase 6.5 workspace intelligence complete (2026-06-02) — Phase 7 certification pending  
+**Status:** Phase 7 audit complete (2026-06-02) — Level 3 **review ready**, **not certified**  
 **Authorities:** [NOTEBOOK_TECHNICAL_ARCHITECTURE.md](./NOTEBOOK_TECHNICAL_ARCHITECTURE.md), product specs Phase 0.5  
 
 **Hard constraints (all phases):** No Todo `todo*Service` / controller changes. No schema without explicit schema ACT. Notes domain extraction is **Notebook track hygiene**, not standalone Notes certification wave.
@@ -210,16 +210,24 @@ First **Notebook-owned** persistence: operational page-centric links (not V_Link
 
 ---
 
-## Phase 7 — Certification & consolidation
+## Phase 7 — Certification audit ✅ (2026-06-02)
 
 See [NOTEBOOK_CERTIFICATION_STRATEGY.md](./NOTEBOOK_CERTIFICATION_STRATEGY.md).
 
-- [ ] `NOTEBOOK_CONSTITUTIONAL_AUDIT.md`
-- [ ] `NOTEBOOK_OPERATION_MATRIX.md`
+- [x] [NOTEBOOK_CONSTITUTIONAL_AUDIT.md](./audits/NOTEBOOK_CONSTITUTIONAL_AUDIT.md)
+- [x] [NOTEBOOK_OPERATION_MATRIX.md](./audits/NOTEBOOK_OPERATION_MATRIX.md)
+- [x] [NOTEBOOK_CERTIFICATION_READINESS_REVIEW.md](./audits/NOTEBOOK_CERTIFICATION_READINESS_REVIEW.md)
+- [x] Manifest truth reviewed (no false trash/vlink on `notebook`)
+- [x] Ledger: Notebook row **Ready for Level 3 review** (not certified)
+
+## Phase 7+ — Certification sign-off (planned)
+
 - [ ] Manifest: `entities: [{ id: 'page', type: 'notebook:page' }]`
-- [ ] `registerNotebookPlatformEntities`
+- [ ] `registerNotebookPlatformEntities` (NB-P0-1)
+- [ ] ActionExecutor / toolExecutor notebook AI twins (NB-P0-2)
+- [ ] `NOTEBOOK_LEVEL3_CERTIFICATION_REVIEW.md` sign-off
 - [ ] Optional: deprecate standalone `notes` in module picker
-- [ ] Ledger: Notebook row Level 3
+- [ ] Ledger: Notebook Level 3 Certified
 
 ---
 
