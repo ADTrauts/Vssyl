@@ -28,8 +28,10 @@ describe('placeService', () => {
     vi.spyOn(placeActivity, 'recordNodeRemoved').mockResolvedValue(undefined);
     vi.spyOn(placeActivity, 'recordSetupCompleted').mockResolvedValue(undefined);
     vi.spyOn(placeActivity, 'recordInterestsUpdated').mockResolvedValue(undefined);
+    vi.spyOn(placeActivity, 'recordNodeUpdated').mockResolvedValue(undefined);
     vi.spyOn(placeDomain, 'recordNodeAddedDomainEvent').mockImplementation(() => undefined);
     vi.spyOn(placeDomain, 'recordNodeRemovedDomainEvent').mockImplementation(() => undefined);
+    vi.spyOn(placeDomain, 'recordNodeUpdatedDomainEvent').mockImplementation(() => undefined);
     vi.spyOn(placeDomain, 'recordSetupCompletedDomainEvent').mockImplementation(() => undefined);
     vi.spyOn(placeRealtime, 'broadcastPlaceNodeAdded').mockImplementation(() => undefined);
     vi.spyOn(placeRealtime, 'broadcastPlaceNodeRemoved').mockImplementation(() => undefined);
@@ -178,6 +180,11 @@ describe('placeService', () => {
       id: 'node-1',
       place: { id: 'place-1', userId: 'u1' },
     } as never);
+    vi.spyOn(prisma.placeNode, 'findUnique').mockResolvedValue({
+      id: 'node-1',
+      nodeType: 'BUSINESS',
+      entityId: 'biz-1',
+    } as never);
     vi.spyOn(prisma.placeNode, 'update').mockResolvedValue({
       id: 'node-1',
       positionX: 10,
@@ -192,6 +199,8 @@ describe('placeService', () => {
     });
 
     expect(updated.positionX).toBe(10);
+    expect(placeActivity.recordNodeUpdated).toHaveBeenCalled();
+    expect(placeDomain.recordNodeUpdatedDomainEvent).toHaveBeenCalled();
   });
 
   it('denied node update fails when policy blocks', async () => {
