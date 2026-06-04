@@ -70,11 +70,18 @@ This identifies Drive as the **strongest candidate for future UX-L3 / Reference 
 
 ---
 
-## Wave 1 — Token foundation
+## Wave 1 — Token foundation (2026-06-03) ✅
 
-- Adopt `v.*` Tailwind and `--v-*` CSS in **shared primitives** (Button, Input, Card) after visual review
-- Document migration playbook per module
-- **No** full-app class replacement
+- **Done:** `Spinner`, `EmptyState`, `Card`, `Input`, `Button`, `LoadingOverlay` → `v.*` tokens
+- **Deferred:** `LoadingSkeleton` → Wave 1.5
+- **No** module page migrations
+
+## Wave 1.5 — Skeleton tokens (2026-06-03) ✅
+
+- **Done:** `--v-skeleton-*` in `tokens.css`; `@keyframes skeleton-loading` + `.v-skeleton` in `ux.css`
+- **Done:** `LoadingSkeleton.tsx` uses `.v-skeleton` (API unchanged)
+- **Done:** Family 6 documented in `DESIGN_TOKENS.md`
+- **No** module page changes
 
 ---
 

@@ -159,6 +159,48 @@ Example values (light): card `0 1px 3px rgba(0,0,0,0.1)`; modal `0 25px 50px -12
 
 ---
 
+## Family 6 — Skeleton (`--v-skeleton-*`)
+
+**Implementation:** `web/src/styles/tokens.css` (vars), `web/src/styles/ux.css` (`.v-skeleton`, `@keyframes skeleton-loading`).  
+**Component:** `shared/src/components/LoadingSkeleton.tsx`.
+
+### Color stops
+
+| Token | Light | Dark (`.dark`) |
+|-------|-------|----------------|
+| `--v-skeleton-base` | `#e5e7eb` | `#334155` |
+| `--v-skeleton-highlight` | `#f3f4f6` | `#475569` |
+
+Visually equivalent to legacy `#eee` / `#f5f5f5` shimmer in light mode.
+
+### Motion
+
+| Token | Value |
+|-------|-------|
+| `--v-skeleton-duration` | `1.2s` |
+| `--v-skeleton-easing` | `ease-in-out` |
+| `--v-skeleton-gradient-size` | `200% 100%` |
+| `--v-skeleton-radius` | `var(--v-radius-sm)` (4px) |
+
+### Usage standard
+
+- Use **`LoadingSkeleton`** or class **`.v-skeleton`** only — no inline `linear-gradient(..., #eee, ...)` in modules ([`UX_CONSTITUTION.md`](./UX_CONSTITUTION.md) Rule 11).
+- Do not override `background` in `style` unless intentional (static placeholder).
+- **`prefers-reduced-motion`:** shimmer disabled; flat `--v-skeleton-base` fill (see `ux.css`).
+
+### Animation
+
+```css
+@keyframes skeleton-loading {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+```
+
+Shimmer runs on `.v-skeleton` via `animation: skeleton-loading var(--v-skeleton-duration) var(--v-skeleton-easing) infinite`.
+
+---
+
 ## Theming and scalability
 
 ### White labeling / enterprise
@@ -183,8 +225,9 @@ Future: persist user theme preference; map to `.dark` or `data-theme` without fo
 
 | Wave | Action |
 |------|--------|
-| 0 (now) | Document + additive `tokens.css` |
-| 1 | Shared primitives adopt `v.*` |
+| 0 | Document + additive `tokens.css` |
+| 1 | Shared primitives adopt `v.*` (except skeleton) |
+| 1.5 | Skeleton tokens + `LoadingSkeleton` + keyframe in `ux.css` |
 | 2+ | Module-by-module replace raw hex/Tailwind one-offs |
 
 **New code:** prefer `var(--v-color-*)` and `bg-v-*`.  
@@ -198,4 +241,4 @@ Future: persist user theme preference; map to `.dark` or `data-theme` without fo
 - `web/src/styles/tokens.css`
 - `web/tailwind.config.js`
 
-**Last updated:** 2026-06-03
+**Last updated:** 2026-06-03 (Family 6 skeleton — Wave 1.5)

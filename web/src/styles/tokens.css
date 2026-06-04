@@ -1,6 +1,6 @@
 /**
  * Vssyl UX design tokens (Wave 0)
- * Five families: colors, typography, spacing, radius, shadows.
+ * Six families: colors, typography, spacing, radius, shadows, skeleton.
  * Aliases existing globals.css :root vars — additive only.
  * See docs/ux/DESIGN_TOKENS.md
  */
@@ -70,6 +70,14 @@
   --v-shadow-panel: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
   --v-shadow-overlay: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
   --v-shadow-modal: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+
+  /* --- Family 6: Skeleton --- */
+  --v-skeleton-base: #e5e7eb;
+  --v-skeleton-highlight: #f3f4f6;
+  --v-skeleton-duration: 1.2s;
+  --v-skeleton-easing: ease-in-out;
+  --v-skeleton-gradient-size: 200% 100%;
+  --v-skeleton-radius: var(--v-radius-sm);
 }
 
 .dark {
@@ -81,6 +89,8 @@
   --v-shadow-panel: 0 4px 6px -1px rgba(0, 0, 0, 0.4);
   --v-shadow-overlay: 0 10px 15px -3px rgba(0, 0, 0, 0.45);
   --v-shadow-modal: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+  --v-skeleton-base: #334155;
+  --v-skeleton-highlight: #475569;
 }
 
 /*

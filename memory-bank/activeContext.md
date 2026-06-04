@@ -1,14 +1,22 @@
 # Active Context - Vssyl Business Admin & AI Integration
 
+## UX Modernization — Wave 1.5 Skeleton Tokens (June 2026) ✅
+
+**Status:** **SHIPPED** — Family 6 `--v-skeleton-*`, `.v-skeleton` + `skeleton-loading` in `ux.css`, `LoadingSkeleton` migrated. Zero module consumers today.
+
+**Next:** Manual light/dark QA for Wave 1 primitives; Wave 2 shared components when scheduled.
+
+## UX Modernization — Wave 1 Token Foundation (June 2026) ✅
+
+**Status:** **SHIPPED** — `Spinner`, `EmptyState`, `Card`, `Input`, `Button`, `LoadingOverlay` on `v.*` tokens.
+
 ## UX Modernization — Wave 0 Foundation (June 2026) ✅
 
-**Status:** **SHIPPED** — UX governance docs (`docs/ux/`), `ux-standards.mdc`, additive `--v-*` tokens in `web/src/styles/tokens.css` + Tailwind `v.*` namespace. No module redesigns or UX certification yet.
+**Status:** **SHIPPED** — UX governance docs (`docs/ux/`), `ux-standards.mdc`, additive `--v-*` tokens in `web/src/styles/tokens.css` + Tailwind `v.*` namespace.
 
 **Canonical:** [`docs/ux/UX_CONSTITUTION.md`](../docs/ux/UX_CONSTITUTION.md), [`UX_MODERNIZATION_ROADMAP.md`](../docs/ux/UX_MODERNIZATION_ROADMAP.md)
 
 **Reference UX candidate (not certified):** Drive / File Hub
-
-**Next:** Wave 1 — adopt tokens in shared primitives after visual review; Wave 0 inventory table completion before module audits.
 
 ---
 

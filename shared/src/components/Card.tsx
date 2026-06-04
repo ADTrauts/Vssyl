@@ -7,8 +7,8 @@ type CardProps = {
 
 export const Card: React.FC<CardProps> = ({ children, className = '' }) => {
   return (
-    <div className={`bg-white dark:bg-gray-800 shadow rounded p-4 border border-gray-200 dark:border-gray-700 ${className}`}>
+    <div className={`bg-v-surface shadow-v-card rounded-v-card p-v-4 border border-v-border ${className}`}>
       {children}
     </div>
   );
-}; 
+};

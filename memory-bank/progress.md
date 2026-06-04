@@ -1,16 +1,24 @@
 # Block-on-Block Platform - Progress
 
+## UX Modernization — Wave 1.5 Skeleton Tokens (June 2026) ✅
+
+**Status:** **SHIPPED** — `--v-skeleton-*`, `.v-skeleton`, `LoadingSkeleton.tsx`. See `docs/ux/DESIGN_TOKENS.md` Family 6.
+
+**Next:** Wave 2 shared components (Modal, remaining blue primitives) when scheduled.
+
+## UX Modernization — Wave 1 Token Foundation (June 2026) ✅
+
+**Status:** **SHIPPED** — Six shared primitives on `v.*` tokens. `pnpm type-check` + `build:shared` pass.
+
 ## UX Modernization — Wave 0 Foundation (June 2026) ✅
 
-**Status:** **SHIPPED** — `docs/ux/` (constitution, tokens, layouts, components, interactions, a11y, scorecard, audit template, roadmap); `.cursor/rules/ux-standards.mdc`; `web/src/styles/tokens.css` + `ux.css`; Tailwind `v.*` extend. No module UX certification.
+**Status:** **SHIPPED** — `docs/ux/` + `tokens.css` + Tailwind `v.*` extend.
 
 | Deliverable | Path |
 |-------------|------|
 | UX constitution | `docs/ux/UX_CONSTITUTION.md` |
 | Design tokens | `docs/ux/DESIGN_TOKENS.md`, `web/src/styles/tokens.css` |
 | Reference UX candidate | Drive / File Hub (uncertified) — `docs/ux/UX_MODERNIZATION_ROADMAP.md` |
-
-**Next:** Wave 1 token adoption in shared primitives; module inventory before Wave 4 audits.
 
 ---
 

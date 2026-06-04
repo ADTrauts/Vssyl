@@ -15,7 +15,7 @@ export const Button: React.FC<ButtonProps> = ({
   className = '',
   ...props 
 }) => {
-  const base = 'font-semibold focus:outline-none focus:ring focus:ring-blue-400 rounded';
+  const base = 'font-semibold v-focus-ring focus:outline-none focus:ring-2 focus:ring-v-primary rounded-v-button';
   
   // Size styles
   const sizeStyles = {
@@ -26,9 +26,9 @@ export const Button: React.FC<ButtonProps> = ({
   
   // Variant styles
   const variantStyles = {
-    primary: 'bg-blue-600 text-white hover:bg-blue-700',
-    secondary: 'bg-gray-200 text-gray-900 hover:bg-gray-300',
-    ghost: 'bg-transparent text-gray-700 hover:bg-gray-100'
+    primary: 'bg-v-primary text-white hover:bg-v-primary-hover',
+    secondary: 'bg-v-surface-muted text-v-text-primary hover:bg-v-border-strong',
+    ghost: 'bg-transparent text-v-text-secondary hover:bg-v-surface-muted'
   };
   
   const styles = `${base} ${sizeStyles[size]} ${variantStyles[variant]} ${className}`;
@@ -38,4 +38,4 @@ export const Button: React.FC<ButtonProps> = ({
       {children}
     </button>
   );
-}; 
+};

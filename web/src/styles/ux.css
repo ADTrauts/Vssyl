@@ -8,11 +8,37 @@
   outline-offset: 2px;
 }
 
+@keyframes skeleton-loading {
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+.v-skeleton {
+  background: linear-gradient(
+    90deg,
+    var(--v-skeleton-base) 25%,
+    var(--v-skeleton-highlight) 50%,
+    var(--v-skeleton-base) 75%
+  );
+  background-size: var(--v-skeleton-gradient-size);
+  border-radius: var(--v-skeleton-radius);
+  animation: skeleton-loading var(--v-skeleton-duration) var(--v-skeleton-easing) infinite;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .v-motion-safe,
   .v-motion-safe * {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
+  }
+
+  .v-skeleton {
+    animation: none;
+    background: var(--v-skeleton-base);
   }
 }
