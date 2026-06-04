@@ -37,7 +37,7 @@ Where to put new docs and rules. **Agent placement policy** also lives in `.curs
 
 - `docs/guides/README.md`
 - `docs/architecture/README.md` (architecture only)
-- `docs/ux/README.md` (UX only)
+- `docs/ux/README.md` (UX only; audits under `docs/ux/audits/`)
 - `docs/README.md`
 - `.cursor/rules/RULES_SUMMARY.md`
 

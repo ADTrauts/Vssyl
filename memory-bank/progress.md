@@ -1,5 +1,58 @@
 # Block-on-Block Platform - Progress
 
+## AI Platform — Wave G0 Constitutional Framework (June 2026) ✅
+
+**Status:** **COMPLETE** — governance framework; ledger/catalog/roadmap updated. **No code changes.**
+
+| Deliverable | Path |
+|-------------|------|
+| Constitution | `docs/architecture/AI_PLATFORM_CONSTITUTION.md` |
+| Boundary model | `docs/architecture/AI_PLATFORM_BOUNDARY_MODEL.md` |
+| Operation matrix (C/P/N) | `docs/architecture/AI_PLATFORM_OPERATION_MATRIX.md` |
+| Certification strategy (L0–L4) | `docs/architecture/AI_PLATFORM_CERTIFICATION_STRATEGY.md` |
+
+**Wave 0 audits (inputs):** `docs/architecture/audits/AI_PLATFORM_CONSTITUTIONAL_AUDIT.md` + tool/context/admin/legacy matrices.
+
+**Matrix snapshot:** 89 operation classes — 62 C / 21 P / 6 N (G0 baseline).
+
+**Next:** Wave **1A** — canonical pipeline map + legacy route retirement plan (docs/plan; runtime only on explicit ACT for 1B+).
+
+---
+
+## AI Platform — Wave 0 Audit (June 2026) ✅
+
+**Status:** **COMPLETE** — discovery evidence; see G0 for governing docs.
+
+---
+
+## Business Workspace — Wave 0 Audit (June 2026) ✅
+
+**Status:** **COMPLETE** — constitutional audit + operation matrix; ledger/catalog/roadmap updated.
+
+| Deliverable | Path |
+|-------------|------|
+| Constitutional audit | `docs/architecture/audits/BUSINESS_WORKSPACE_CONSTITUTIONAL_AUDIT.md` |
+| Operation matrix | `docs/architecture/audits/BUSINESS_WORKSPACE_OPERATION_MATRIX.md` |
+
+**Findings:** 0 shell controllers; 1 seeder service; 16 switch cases; 4 stub widgets; Reference #6 **not recommended**. Adjacent: `businessController` (Business domain), Front Page, Business AI.
+
+**Next:** Wave 1A hub/boundary cleanup → 2B stub widget retirement.
+
+---
+
+## UX Modernization — Wave 2B-3 ConfirmModal Batch 1 (June 2026) ✅
+
+**Status:** **CLOSED** — **PASS WITH FINDINGS** — [`docs/ux/audits/CONFIRMMODAL_BATCH1_CLOSEOUT.md`](../docs/ux/audits/CONFIRMMODAL_BATCH1_CLOSEOUT.md)
+
+| Metric | Value |
+|--------|------:|
+| Migrations | 8 files / 8 `confirm()` call sites |
+| Pattern | Pending entity + sibling `ConfirmModal` (no `useConfirm`) |
+| `web/` confirms remaining | **60** (grep 2026-06-03) |
+| Manual QA | **PENDING** (not recorded in-repo) |
+
+**Next:** Batch 2 **PLAN mode only** — `TaskDetail`, Drive trash, etc.; no implementation until QA sign-off or accepted risk.
+
 ## UX Modernization — Wave 1.5 Skeleton Tokens (June 2026) ✅
 
 **Status:** **SHIPPED** — `--v-skeleton-*`, `.v-skeleton`, `LoadingSkeleton.tsx`. See `docs/ux/DESIGN_TOKENS.md` Family 6.
@@ -73,7 +126,7 @@
 
 **Phase 8 (2026-06-02):** **Level 3 Certified** — [NOTEBOOK_LEVEL3_CERTIFICATION_REVIEW.md](../docs/architecture/audits/NOTEBOOK_LEVEL3_CERTIFICATION_REVIEW.md). Not Reference #5.
 
-**Next:** Dashboard / Analytics / Business Workspace modernization. Optional Place PL-H1–H7 hygiene.
+**Next:** Business Workspace Wave 1A+; Dashboard / Analytics modernization. Optional Place PL-H1–H7 hygiene.
 
 ## Place — Wave 4B (June 2026) ✅
 

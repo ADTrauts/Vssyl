@@ -23,7 +23,7 @@ import {
   Zap,
   MapPin
 } from 'lucide-react';
-import { Avatar, Button, Badge } from 'shared/components';
+import { Avatar, Button, Badge, ConfirmModal } from 'shared/components';
 import { useSafeSession } from '../../lib/useSafeSession';
 import { useRouter } from 'next/navigation';
 import { getNotifications, markAsRead, markAllAsRead, getModuleNotificationTypes, archiveNotification, archiveMultipleNotifications, deleteNotification, deleteMultipleNotifications, getGroupedNotifications, markGroupAsRead, snoozeNotification, unsnoozeNotification, type Notification, type NotificationGroup } from '../../api/notifications';
@@ -1461,6 +1461,8 @@ interface NotificationActionsMenuProps {
 function NotificationActionsMenu({ notification, onArchive, onDelete, onMarkAsRead, onSnooze, onUnsnooze }: NotificationActionsMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
   const [showSnoozeOptions, setShowSnoozeOptions] = useState(false);
+  const [pendingNotificationToDelete, setPendingNotificationToDelete] = useState<string | null>(null);
+  const [isDeletingNotification, setIsDeletingNotification] = useState(false);
   const menuRef = React.useRef<HTMLDivElement>(null);
   
   const isSnoozed = notification.snoozedUntil && new Date(notification.snoozedUntil) > new Date();
@@ -1481,7 +1483,24 @@ function NotificationActionsMenu({ notification, onArchive, onDelete, onMarkAsRe
     };
   }, [isOpen]);
 
+  const closeMenu = () => {
+    setIsOpen(false);
+    setShowSnoozeOptions(false);
+  };
+
+  const executeDeleteNotification = async () => {
+    if (pendingNotificationToDelete !== notification.id) return;
+    setIsDeletingNotification(true);
+    try {
+      await onDelete();
+      setPendingNotificationToDelete(null);
+    } finally {
+      setIsDeletingNotification(false);
+    }
+  };
+
   return (
+    <>
     <div className="relative" ref={menuRef}>
       <button
         className="p-1 hover:bg-gray-100 dark:hover:bg-slate-700 rounded"
@@ -1585,10 +1604,8 @@ function NotificationActionsMenu({ notification, onArchive, onDelete, onMarkAsRe
               className="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-slate-700 flex items-center space-x-2"
               onClick={(e) => {
                 e.stopPropagation();
-                if (confirm('Are you sure you want to delete this notification?')) {
-                  onDelete();
-                }
-                setIsOpen(false);
+                closeMenu();
+                setPendingNotificationToDelete(notification.id);
               }}
             >
               <span>Delete</span>
@@ -1597,6 +1614,18 @@ function NotificationActionsMenu({ notification, onArchive, onDelete, onMarkAsRe
         </div>
       )}
     </div>
+
+    <ConfirmModal
+      open={pendingNotificationToDelete === notification.id}
+      onClose={() => setPendingNotificationToDelete(null)}
+      onConfirm={executeDeleteNotification}
+      title="Delete notification?"
+      description="Are you sure you want to delete this notification?"
+      variant="destructive"
+      confirmLabel="Delete"
+      loading={pendingNotificationToDelete === notification.id && isDeletingNotification}
+    />
+    </>
   );
 }
 

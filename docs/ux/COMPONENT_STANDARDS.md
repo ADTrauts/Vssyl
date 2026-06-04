@@ -124,8 +124,50 @@ Use `Section` or module layout; elevation `--v-shadow-panel`.
 | Attribute | Standard |
 |-----------|----------|
 | States | open/close animation; loading body |
-| A11y | Focus trap; Escape closes; return focus to trigger |
+| A11y | Escape closes; return focus to trigger; focus trap on **ConfirmModal** only (base Modal: no trap yet) |
 | Radius | `--v-radius-modal` |
+
+**Canonical shell:** `shared/src/components/Modal.tsx` (Wave 2A certified).
+
+---
+
+## ConfirmModal (Wave 2B-1)
+
+**Purpose:** Replace `window.confirm()` / `confirm()` for destructive and standard confirmations. Composes **`Modal`** + **`Button`** — no separate overlay.
+
+**Location:** `shared/src/components/ConfirmModal.tsx`  
+**Hook (migration):** `shared/src/hooks/useConfirm.tsx` — mount `<ConfirmDialog />` once; `await confirm({ title, variant })`.
+
+### API
+
+| Prop | Required | Notes |
+|------|----------|-------|
+| `open` | Yes | Controlled visibility |
+| `onClose` | Yes | Cancel, Escape, backdrop, header X |
+| `onConfirm` | Yes | Primary action; may return `Promise` |
+| `title` | Yes | `aria-labelledby` via Modal |
+| `description` | No | `aria-describedby` when set |
+| `variant` | No | `standard` \| `destructive` \| `informational` (default `standard`) |
+| `confirmLabel` / `cancelLabel` | No | Defaults: Confirm/Delete/Continue + Cancel |
+| `loading` / `confirmDisabled` | No | Disables footer buttons |
+| `trapFocus` | No | Default `true` |
+
+### Variant behavior
+
+| Variant | Primary label default | Primary style | Initial focus |
+|---------|----------------------|---------------|---------------|
+| `standard` | Confirm | `v-primary` | Confirm button |
+| `destructive` | Delete | `v-danger` + warning note | **Cancel** (accidental confirm guard) |
+| `informational` | Continue | `v-primary` | Continue button |
+
+### Accessibility (mandatory on ConfirmModal)
+
+- Focus trap within modal panel (`shared/src/utils/focusTrap.ts`)
+- Focus return via underlying `Modal`
+- Escape / backdrop → `onClose`
+- `aria-labelledby` + `aria-describedby` (when description present)
+
+**Do not** use `confirm()` in new code; migrate per [`CONFIRMMODAL_STANDARDIZATION_PLAN.md`](./CONFIRMMODAL_STANDARDIZATION_PLAN.md).
 
 ---
 

@@ -1,7 +1,7 @@
 # Platform Module Modernization Roadmap
 
 **Version:** 1.0.3  
-**Last updated:** 2026-06-01  
+**Last updated:** 2026-06-04  
 **Status:** Active — master execution roadmap  
 **Authority pairing:**
 
@@ -76,7 +76,13 @@
 
 **Relationship model:** **B — NotebookLink + V_Link** ([NOTEBOOK_RELATIONSHIP_MODEL.md](../architecture/NOTEBOOK_RELATIONSHIP_MODEL.md)).
 
-**Next:** Dashboard / Analytics / Business Workspace modernization (Wave 3). Optional Place post-Reference hygiene PL-H1–H7. Notebook post-cert hygiene NB-H1–H7 optional.
+**Next:** Business Workspace Wave 1A+ (shell hardening) → Dashboard / Analytics modernization. Optional Place post-Reference hygiene PL-H1–H7. Notebook post-cert hygiene NB-H1–H7 optional.
+
+**AI Platform Wave G0 (2026-06-04):** Constitutional framework complete — governance only; no runtime changes. **Deliverables:** [AI_PLATFORM_CONSTITUTION.md](../architecture/AI_PLATFORM_CONSTITUTION.md), [AI_PLATFORM_BOUNDARY_MODEL.md](../architecture/AI_PLATFORM_BOUNDARY_MODEL.md), [AI_PLATFORM_OPERATION_MATRIX.md](../architecture/AI_PLATFORM_OPERATION_MATRIX.md), [AI_PLATFORM_CERTIFICATION_STRATEGY.md](../architecture/AI_PLATFORM_CERTIFICATION_STRATEGY.md). **Inputs:** Wave 0 audits under `audits/AI_*`. **Ledger:** Level 0 — G0 constitution. **Next:** Wave **1A** (canonical pipeline map + legacy route retirement plan) — **authorized to begin**; no further constitutional docs required before 1A.
+
+**AI Platform Wave 0 (2026-06-04):** Discovery audit complete — [AI_PLATFORM_CONSTITUTIONAL_AUDIT.md](../architecture/audits/AI_PLATFORM_CONSTITUTIONAL_AUDIT.md), compliance matrices, [AI_LEGACY_DUPLICATION_REGISTER.md](../architecture/audits/AI_LEGACY_DUPLICATION_REGISTER.md). **Do not re-audit** L3 module AI paths.
+
+**Business Workspace Wave 0 (2026-06-04):** Constitutional audit complete — [BUSINESS_WORKSPACE_CONSTITUTIONAL_AUDIT.md](../architecture/audits/BUSINESS_WORKSPACE_CONSTITUTIONAL_AUDIT.md), [BUSINESS_WORKSPACE_OPERATION_MATRIX.md](../architecture/audits/BUSINESS_WORKSPACE_OPERATION_MATRIX.md). **Identity:** platform shell + runtime (**Hybrid D**); **not** L3 product module; **Reference #6: No**.
 
 **Place Wave 0 (2026-06-02):** Constitutional audit + operation matrix complete — [PLACE_CONSTITUTIONAL_AUDIT.md](../architecture/audits/PLACE_CONSTITUTIONAL_AUDIT.md), [PLACE_OPERATION_MATRIX.md](../architecture/audits/PLACE_OPERATION_MATRIX.md). **Level 0 — Legacy**; ~57 operations inventoried; 8 controllers / 62 endpoints / 17 Place-owned models; zero canonical services.
 
@@ -988,32 +994,55 @@ The phases below remain **reference** for document-domain hygiene under **Notebo
 
 ### 5.8 Business Workspace
 
-#### Current State
+#### Current State (Wave 0 — 2026-06-04)
 
-- Switch-based module rendering; several modules use `*ModuleWrapper` / layouts.
-- Module install/uninstall emits some domain events.
+- **No `moduleId`** — shell at `/business/:id/workspace/*`; mounts 16 switch cases.
+- **0** shell controllers; **1** shell-adjacent service (`businessWorkspaceSeeder`).
+- **4** inline stub widgets (dashboard, analytics, members; calendar stub unused).
+- **Dead** `HRWorkspaceLanding`, `SchedulingWorkspaceLanding`, `NotebookWorkspaceLanding` (unwired).
+- Dual dashboard bootstrap (`workspace/page.tsx` + `DashboardLayoutWrapper`).
+- Product modules with `capabilities.businessWorkspace: true` mostly wired (Drive, Chat, Calendar, Todo, Notebook, Place).
+- **Adjacent:** Business domain (`businessController`), Front Page (`businessFrontPageService`), Business AI — **not** shell-owned.
+
+**Audit:** [BUSINESS_WORKSPACE_CONSTITUTIONAL_AUDIT.md](../architecture/audits/BUSINESS_WORKSPACE_CONSTITUTIONAL_AUDIT.md), [BUSINESS_WORKSPACE_OPERATION_MATRIX.md](../architecture/audits/BUSINESS_WORKSPACE_OPERATION_MATRIX.md).
 
 #### Focus
 
-- Module lifecycle (install, enable, disable) via PE.
-- Permission snapshots for workspace runtime.
-- Workspace synchronization with manifest capabilities.
-- Capability visibility in branded dashboard.
+- Clarify shell vs Business domain vs Front Page boundaries.
+- Hub pattern standardization (Wrapper vs Landing).
+- Retire stub widgets; delegate to Dashboard / Analytics / Business APIs.
+- Single dashboard ensure path; navigation segment URL parity.
+- Registry/switch/manifest drift CI.
+- Module install visibility vs `businessWorkspace` capability (platform track).
 
-#### Modernization Phases
+#### Modernization Phases (definition only)
 
-1. Lifecycle audit (`moduleProvisionController`, `registerBuiltInModules`).
-2. PE for install/uninstall (extend existing tests).
-3. Capability visibility UI vs manifest reconcile.
-4. Hub pattern standardization doc.
+| Phase | Deliverable |
+|-------|-------------|
+| **0** | ✅ Constitutional audit + operation matrix |
+| **1A** | Boundary doc + wire or delete dead `*WorkspaceLanding` files |
+| **1B** | Hub pattern standard (per `module-development.mdc`) |
+| **1C** | `businessWorkspaceNavigation` contract tests; segment URLs for all modules |
+| **2A** | Unified dashboard bootstrap (remove duplicate ensure) |
+| **2B** | Replace stub dashboard/analytics/members with module or API-backed UI |
+| **2C** | Switch ⊆ `coreModuleRegistry` drift check in CI |
+| **3A** | Install UI vs manifest `businessWorkspace` reconcile |
+| **3B** | Real-time `BusinessConfigurationContext` sync (WebSocket) |
+| **4** | Optional **Workspace Shell Guide** (platform doc — not Reference Module) |
+
+**Target maturity:** **Level 2 — Platform shell** (new ledger interpretation — **not** Level 3 product certification).
 
 #### Acceptance Criteria
 
-- Every built-in product module renders in business context when enabled; capabilities shown match manifest.
+- Every enabled built-in with `businessWorkspace: true` renders via documented hub pattern (no stub for product surfaces).
+- No mock `setTimeout` data in shell for members/analytics/overview.
+- One code path ensures `businessDashboardId` before module mount.
+- Switch cases match `coreModuleRegistry` routes.
 
 #### Deferred Work
 
 - **Org chart expansion** (HR domain — separate from workspace shell).
+- **Reference Module #6** designation — **declined** in Wave 0 (shell ≠ domain reference).
 
 ---
 

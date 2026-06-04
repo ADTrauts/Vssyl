@@ -21,6 +21,24 @@
 
 ---
 
+## AI Platform — cross-cutting (Wave G0, 2026-06-04)
+
+**Not** a reference module slot. Module AI compliance copies **from** References #1–2 below; the platform layer is governed by **constitutional docs** (not module Level 3 gates).
+
+| Pattern | Copy from | Platform artifact |
+|---------|-----------|-------------------|
+| AI writes → canonical service | Chat #2, Todo #4 | `*AIActionService` + `ActionExecutor` / `toolExecutor` |
+| AI reads → visibility service | File Hub #1 | Context provider HTTP → thin controller |
+| Read-only external AI | Place #5 | `placeAIActionService` |
+| Composition AI | Notebook (L3) | Reuse notes/todo providers |
+| Twin pipeline / diagnostics | Platform constitution | `DigitalLifeTwinCore`, [AI_PLATFORM_OPERATION_MATRIX.md](./AI_PLATFORM_OPERATION_MATRIX.md) |
+
+**Constitutional authority:** [AI_PLATFORM_CONSTITUTION.md](./AI_PLATFORM_CONSTITUTION.md), [AI_PLATFORM_BOUNDARY_MODEL.md](./AI_PLATFORM_BOUNDARY_MODEL.md), [AI_PLATFORM_CERTIFICATION_STRATEGY.md](./AI_PLATFORM_CERTIFICATION_STRATEGY.md) (levels 0–4).
+
+**Evidence / audits:** [AI_PLATFORM_CONSTITUTIONAL_AUDIT.md](./audits/AI_PLATFORM_CONSTITUTIONAL_AUDIT.md), [AI_TOOL_ACTION_COMPLIANCE_MATRIX.md](./audits/AI_TOOL_ACTION_COMPLIANCE_MATRIX.md), [AI_CONTEXT_PROVIDER_MATRIX.md](./audits/AI_CONTEXT_PROVIDER_MATRIX.md). **Do not duplicate** certified module extraction work in platform waves.
+
+---
+
 ## File Hub — Reference Module #1 (Level 4)
 
 **Copy for:** Any module with user data, deletes, sharing, search, or cross-module links.
@@ -135,7 +153,7 @@
 | **Place** | File Hub (entities, V_Link), Chat (visibility) | Calendar (scheduling links), Notebook (listing embed) | **Reference Module #5** — external graph, directory, routing (2026-06-02) |
 | **Dashboard** | File Hub (manifest, activity), Chat (realtime widgets) | — | Widget registry, composition (not full module CRUD) |
 | **Analytics** | File Hub (activity vs analytics separation) | — | Read-only / derived metrics; often N/A trash |
-| **Business Workspace** | All three (composition only) | — | Hub switch, module landing pattern; not a data module |
+| **Business Workspace** | Notebook (composition), File Hub (manifest) | [WORKSPACE_RUNTIME_AND_MODULE_CONTRACTS.md](./WORKSPACE_RUNTIME_AND_MODULE_CONTRACTS.md) | **Platform shell** — hub switch, navigation, runtime bridge; **not** Reference #6 ([Wave 0 audit](./audits/BUSINESS_WORKSPACE_CONSTITUTIONAL_AUDIT.md)) |
 
 ### Notebook — composition module (Phases 1–6.5 shipped; Phase 7 audit 2026-06-02)
 
@@ -187,7 +205,25 @@ Use this catalog when filling **“reference module pattern to copy”** columns
 | Todo (Phase 0) | [TODO_LEVEL3_CERTIFICATION_REVIEW.md](./audits/TODO_LEVEL3_CERTIFICATION_REVIEW.md) | [TODO_CONSTITUTIONAL_AUDIT.md](./audits/TODO_CONSTITUTIONAL_AUDIT.md) |
 | Notebook (L3) | [NOTEBOOK_LEVEL3_CERTIFICATION_REVIEW.md](./audits/NOTEBOOK_LEVEL3_CERTIFICATION_REVIEW.md) | [NOTEBOOK_CONSTITUTIONAL_AUDIT.md](./audits/NOTEBOOK_CONSTITUTIONAL_AUDIT.md), [NOTEBOOK_OPERATION_MATRIX.md](./audits/NOTEBOOK_OPERATION_MATRIX.md) |
 | Place (Reference #5) | [PLACE_REFERENCE_COUNCIL_REVIEW.md](./audits/PLACE_REFERENCE_COUNCIL_REVIEW.md) | [PLACE_PATTERN_GUIDE.md](./PLACE_PATTERN_GUIDE.md), [PLACE_COMMERCE_BOUNDARY.md](./PLACE_COMMERCE_BOUNDARY.md), [PLACE_REFERENCE_IMPLEMENTATION_REVIEW.md](./audits/PLACE_REFERENCE_IMPLEMENTATION_REVIEW.md) |
+| AI Platform (cross-cutting) | [AI_PLATFORM_CERTIFICATION_STRATEGY.md](./AI_PLATFORM_CERTIFICATION_STRATEGY.md) | [AI_PLATFORM_CONSTITUTION.md](./AI_PLATFORM_CONSTITUTION.md), [AI_PLATFORM_OPERATION_MATRIX.md](./AI_PLATFORM_OPERATION_MATRIX.md), [audits/AI_PLATFORM_CONSTITUTIONAL_AUDIT.md](./audits/AI_PLATFORM_CONSTITUTIONAL_AUDIT.md) |
 
 ---
 
-*Last updated: 2026-06-02 (Place designated Reference Module #5 — Wave 4B council)*
+### Business Workspace — platform shell (Wave 0, 2026-06-04)
+
+**Not** a reference module candidate for slot **#6**. Copy orchestration patterns from platform docs, not from File Hub trash/V_Link stacks.
+
+| Pattern | Status | Key artifacts |
+|---------|--------|----------------|
+| Module mount switch | ✅ | `BusinessWorkspaceContent.tsx` (authoritative) |
+| Navigation single source | ✅ | `businessWorkspaceNavigation.ts` |
+| Runtime scope | 🟡 | `BusinessLayoutRuntimeShell`, `WorkspaceRuntimeScopeBridge` |
+| Installed-module filter | 🟡 | `BusinessConfigurationContext`, `DashboardLayoutWrapper` |
+| Hub standardization | 🔴 | Dead `*WorkspaceLanding` for HR/Scheduling/Notebook; Place wired |
+| Stub product UI | 🔴 | dashboard/analytics/members widgets — wrong layer |
+
+**Evidence:** [BUSINESS_WORKSPACE_CONSTITUTIONAL_AUDIT.md](./audits/BUSINESS_WORKSPACE_CONSTITUTIONAL_AUDIT.md), [BUSINESS_WORKSPACE_OPERATION_MATRIX.md](./audits/BUSINESS_WORKSPACE_OPERATION_MATRIX.md). **Reference #6:** **No** — Dashboard or future product module is a better sixth-slot candidate than the shell.
+
+---
+
+*Last updated: 2026-06-04 (AI Platform Wave G0 + Business Workspace Wave 0)*

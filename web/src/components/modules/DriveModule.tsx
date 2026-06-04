@@ -21,7 +21,6 @@ import {
   MessageSquare,
   Brain,
   HelpCircle,
-  X as XIcon,
   Keyboard,
   CheckSquare,
   Square,
@@ -31,7 +30,7 @@ import {
 import { toast } from 'react-hot-toast';
 import { useDashboard } from '../../contexts/DashboardContext';
 import { useGlobalSearch } from '../../contexts/GlobalSearchContext';
-import { ShareModal, ShareLinkModal } from 'shared/components';
+import { ShareModal, ShareLinkModal, Modal } from 'shared/components';
 import { useGlobalTrash } from '../../contexts/GlobalTrashContext';
 import DriveDetailsPanel from '../drive/DriveDetailsPanel';
 import { useDriveWebSocket } from '../../hooks/useDriveWebSocket';
@@ -2696,97 +2695,75 @@ export default function DriveModule({ dashboardId, className = '', refreshTrigge
       )}
 
       {/* Keyboard Shortcuts Help Modal */}
-      {showKeyboardShortcutsHelp && (
-        <div
-          className="fixed inset-0 bg-black bg-opacity-50 z-50 flex items-center justify-center"
-          onClick={() => setShowKeyboardShortcutsHelp(false)}
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="keyboard-shortcuts-title"
-        >
-          <div
-            className="bg-white dark:bg-slate-900 rounded-lg shadow-xl p-6 max-w-md w-full mx-4"
-            onClick={(e) => e.stopPropagation()}
-          >
-            <div className="flex items-center justify-between mb-4">
-              <div className="flex items-center space-x-2">
-                <Keyboard className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-                <h2 id="keyboard-shortcuts-title" className="text-xl font-semibold text-gray-900 dark:text-gray-100">
-                  Keyboard Shortcuts
-                </h2>
+      <Modal
+        open={showKeyboardShortcutsHelp}
+        onClose={() => setShowKeyboardShortcutsHelp(false)}
+        title="Keyboard Shortcuts"
+        size="medium"
+      >
+        <Keyboard className="w-5 h-5 text-gray-600 dark:text-gray-400 mb-2" aria-hidden="true" />
+
+        <div className="space-y-4">
+          <div>
+            <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-2">Navigation</h3>
+            <div className="space-y-1 text-sm text-gray-700 dark:text-gray-300">
+              <div className="flex justify-between">
+                <span>Arrow Keys</span>
+                <kbd className="px-2 py-1 bg-gray-100 dark:bg-slate-700 rounded text-xs">↑ ↓</kbd>
               </div>
-              <button
-                onClick={() => setShowKeyboardShortcutsHelp(false)}
-                className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-400 focus:outline-none focus:ring-2 focus:ring-blue-500 rounded"
-                aria-label="Close keyboard shortcuts help"
-              >
-                <XIcon className="w-5 h-5" />
-              </button>
+              <p className="text-xs text-gray-500 dark:text-gray-400 ml-4">Navigate through files and folders</p>
+
+              <div className="flex justify-between mt-2">
+                <span>Right Arrow / Enter</span>
+                <kbd className="px-2 py-1 bg-gray-100 dark:bg-slate-700 rounded text-xs">→ / Enter</kbd>
+              </div>
+              <p className="text-xs text-gray-500 dark:text-gray-400 ml-4">Open folder or file</p>
+
+              <div className="flex justify-between mt-2">
+                <span>Home / End</span>
+                <kbd className="px-2 py-1 bg-gray-100 dark:bg-slate-700 rounded text-xs">Home / End</kbd>
+              </div>
+              <p className="text-xs text-gray-500 dark:text-gray-400 ml-4">Jump to first or last item</p>
             </div>
-            
-            <div className="space-y-4">
-              <div>
-                <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-2">Navigation</h3>
-                <div className="space-y-1 text-sm text-gray-700 dark:text-gray-300">
-                  <div className="flex justify-between">
-                    <span>Arrow Keys</span>
-                    <kbd className="px-2 py-1 bg-gray-100 dark:bg-slate-700 rounded text-xs">↑ ↓</kbd>
-                  </div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 ml-4">Navigate through files and folders</p>
-                  
-                  <div className="flex justify-between mt-2">
-                    <span>Right Arrow / Enter</span>
-                    <kbd className="px-2 py-1 bg-gray-100 dark:bg-slate-700 rounded text-xs">→ / Enter</kbd>
-                  </div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 ml-4">Open folder or file</p>
-                  
-                  <div className="flex justify-between mt-2">
-                    <span>Home / End</span>
-                    <kbd className="px-2 py-1 bg-gray-100 dark:bg-slate-700 rounded text-xs">Home / End</kbd>
-                  </div>
-                  <p className="text-xs text-gray-500 dark:text-gray-400 ml-4">Jump to first or last item</p>
-                </div>
+          </div>
+
+          <div className="border-t pt-4">
+            <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-2">Actions</h3>
+            <div className="space-y-1 text-sm text-gray-700 dark:text-gray-300">
+              <div className="flex justify-between">
+                <span>New Folder</span>
+                <kbd className="px-2 py-1 bg-gray-100 dark:bg-slate-700 rounded text-xs">Ctrl+N</kbd>
               </div>
-              
-              <div className="border-t pt-4">
-                <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-2">Actions</h3>
-                <div className="space-y-1 text-sm text-gray-700 dark:text-gray-300">
-                  <div className="flex justify-between">
-                    <span>New Folder</span>
-                    <kbd className="px-2 py-1 bg-gray-100 dark:bg-slate-700 rounded text-xs">Ctrl+N</kbd>
-                  </div>
-                  
-                  <div className="flex justify-between mt-2">
-                    <span>Search</span>
-                    <kbd className="px-2 py-1 bg-gray-100 dark:bg-slate-700 rounded text-xs">Ctrl+K</kbd>
-                  </div>
-                  
-                  <div className="flex justify-between mt-2">
-                    <span>Delete / Trash</span>
-                    <kbd className="px-2 py-1 bg-gray-100 dark:bg-slate-700 rounded text-xs">Delete</kbd>
-                  </div>
-                  
-                  <div className="flex justify-between mt-2">
-                    <span>Close / Cancel</span>
-                    <kbd className="px-2 py-1 bg-gray-100 dark:bg-slate-700 rounded text-xs">Esc</kbd>
-                  </div>
-                </div>
+
+              <div className="flex justify-between mt-2">
+                <span>Search</span>
+                <kbd className="px-2 py-1 bg-gray-100 dark:bg-slate-700 rounded text-xs">Ctrl+K</kbd>
               </div>
-            </div>
-            
-            <div className="mt-6 pt-4 border-t">
-              <Button
-                variant="primary"
-                size="sm"
-                onClick={() => setShowKeyboardShortcutsHelp(false)}
-                className="w-full"
-              >
-                Close
-              </Button>
+
+              <div className="flex justify-between mt-2">
+                <span>Delete / Trash</span>
+                <kbd className="px-2 py-1 bg-gray-100 dark:bg-slate-700 rounded text-xs">Delete</kbd>
+              </div>
+
+              <div className="flex justify-between mt-2">
+                <span>Close / Cancel</span>
+                <kbd className="px-2 py-1 bg-gray-100 dark:bg-slate-700 rounded text-xs">Esc</kbd>
+              </div>
             </div>
           </div>
         </div>
-      )}
+
+        <div className="mt-6 pt-4 border-t border-gray-200 dark:border-slate-700">
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={() => setShowKeyboardShortcutsHelp(false)}
+            className="w-full"
+          >
+            Close
+          </Button>
+        </div>
+      </Modal>
     </div>
   );
 }

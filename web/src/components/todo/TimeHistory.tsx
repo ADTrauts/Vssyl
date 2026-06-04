@@ -2,7 +2,7 @@
 
 import React, { useState } from 'react';
 import { useSession } from 'next-auth/react';
-import { Card, Button, Badge } from 'shared/components';
+import { Card, Button, Badge, ConfirmModal } from 'shared/components';
 import { Clock, Edit, Trash2, Plus } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import type { TaskTimeLog, TimeLogsResponse } from '@/api/todo';
@@ -20,6 +20,8 @@ export function TimeHistory({ taskId, timeData, onRefresh, onUpdate }: TimeHisto
   const { data: session } = useSession();
   const [showManualEntry, setShowManualEntry] = useState(false);
   const [editingLogId, setEditingLogId] = useState<string | null>(null);
+  const [pendingTimeLogToDelete, setPendingTimeLogToDelete] = useState<string | null>(null);
+  const [isDeletingTimeLog, setIsDeletingTimeLog] = useState<string | null>(null);
 
   const formatDuration = (minutes: number | null | undefined): string => {
     if (!minutes) return '0m';
@@ -42,28 +44,35 @@ export function TimeHistory({ taskId, timeData, onRefresh, onUpdate }: TimeHisto
     });
   };
 
-  const handleDelete = async (logId: string) => {
+  const handleDelete = (logId: string) => {
     if (!session?.accessToken) {
       toast.error('Authentication required');
       return;
     }
+    setPendingTimeLogToDelete(logId);
+  };
 
-    if (!confirm('Are you sure you want to delete this time log?')) {
-      return;
-    }
+  const executeDeleteTimeLog = async () => {
+    const logId = pendingTimeLogToDelete;
+    if (!session?.accessToken || !logId) return;
 
+    setIsDeletingTimeLog(logId);
     try {
       const result = await todoAPI.deleteTimeLog(taskId, logId, session.accessToken);
       onUpdate(result.totalTimeSpent);
       onRefresh();
       toast.success('Time log deleted');
+      setPendingTimeLogToDelete(null);
     } catch (error) {
       const message = error instanceof Error ? error.message : 'Failed to delete time log';
       toast.error(message);
+    } finally {
+      setIsDeletingTimeLog(null);
     }
   };
 
   return (
+    <>
     <div className="space-y-4">
       {/* Summary */}
       <div className="flex items-center justify-between">
@@ -169,6 +178,20 @@ export function TimeHistory({ taskId, timeData, onRefresh, onUpdate }: TimeHisto
         </Card>
       )}
     </div>
+
+    <ConfirmModal
+      open={pendingTimeLogToDelete !== null}
+      onClose={() => setPendingTimeLogToDelete(null)}
+      onConfirm={executeDeleteTimeLog}
+      title="Delete time log?"
+      description="Are you sure you want to delete this time log?"
+      variant="destructive"
+      confirmLabel="Delete"
+      loading={
+        pendingTimeLogToDelete !== null && isDeletingTimeLog === pendingTimeLogToDelete
+      }
+    />
+    </>
   );
 }
 

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useMemo } from 'react';
 import { useSession } from 'next-auth/react';
-import { Card, Button, Badge, Spinner, Alert } from 'shared/components';
+import { Card, Button, Badge, Spinner, Alert, ConfirmModal } from 'shared/components';
 import { authenticatedApiCall } from '../../lib/apiUtils';
 import { getInstalledModules } from '../../api/modules';
 import { 
@@ -68,6 +68,8 @@ export default function CustomContext() {
   const [selectedModuleId, setSelectedModuleId] = useState<string | null>(null);
   const [selectedBusinessId, setSelectedBusinessId] = useState<string | null>(null);
   const [dismissedSuggestions, setDismissedSuggestions] = useState<Set<string>>(new Set());
+  const [pendingContextToDelete, setPendingContextToDelete] = useState<string | null>(null);
+  const [isDeletingContext, setIsDeletingContext] = useState<string | null>(null);
 
   useEffect(() => {
     // Load dismissed suggestions from localStorage
@@ -157,11 +159,16 @@ export default function CustomContext() {
     setExpandedSections(newExpanded);
   };
 
-  const handleDelete = async (id: string) => {
-    if (!session?.accessToken || !confirm('Are you sure you want to delete this context entry?')) {
-      return;
-    }
+  const handleDelete = (id: string) => {
+    if (!session?.accessToken) return;
+    setPendingContextToDelete(id);
+  };
 
+  const executeDeleteContext = async () => {
+    const id = pendingContextToDelete;
+    if (!session?.accessToken || !id) return;
+
+    setIsDeletingContext(id);
     try {
       await authenticatedApiCall(
         `/api/ai/context/${id}`,
@@ -169,9 +176,12 @@ export default function CustomContext() {
         session.accessToken
       );
       await loadData();
+      setPendingContextToDelete(null);
     } catch (err) {
       console.error('Error deleting context:', err);
       setError('Failed to delete context entry.');
+    } finally {
+      setIsDeletingContext(null);
     }
   };
 
@@ -286,6 +296,7 @@ export default function CustomContext() {
   }
 
   return (
+    <>
     <div className="space-y-6">
       {error && (
         <Alert type="error" onClose={() => setError(null)}>
@@ -683,6 +694,20 @@ export default function CustomContext() {
         />
       )}
     </div>
+
+    <ConfirmModal
+      open={pendingContextToDelete !== null}
+      onClose={() => setPendingContextToDelete(null)}
+      onConfirm={executeDeleteContext}
+      title="Delete context entry?"
+      description="Are you sure you want to delete this context entry?"
+      variant="destructive"
+      confirmLabel="Delete"
+      loading={
+        pendingContextToDelete !== null && isDeletingContext === pendingContextToDelete
+      }
+    />
+    </>
   );
 }
 

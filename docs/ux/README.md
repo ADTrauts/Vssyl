@@ -21,6 +21,14 @@ Cross-cutting **visual and interaction standards** for Vssyl. Complements archit
 | [UX_CERTIFICATION_SCORECARD.md](./UX_CERTIFICATION_SCORECARD.md) | 0–5 rubric and UX-L0–L3 levels |
 | [UX_AUDIT_TEMPLATE.md](./UX_AUDIT_TEMPLATE.md) | Module review worksheet (aligned to scorecard) |
 | [UX_MODERNIZATION_ROADMAP.md](./UX_MODERNIZATION_ROADMAP.md) | Waves 0–5; reference UX candidate |
+| [COMPONENT_INVENTORY.md](./COMPONENT_INVENTORY.md) | Shared primitive inventory; Wave 2 scope |
+| [audits/WAVE1_QA_CLOSEOUT.md](./audits/WAVE1_QA_CLOSEOUT.md) | Wave 1 / 1.5 formal QA closeout |
+| [audits/MODAL_STANDARDIZATION_CLOSEOUT.md](./audits/MODAL_STANDARDIZATION_CLOSEOUT.md) | Wave 2A modal certification (PASS WITH FINDINGS) |
+| [CONFIRMMODAL_STANDARDIZATION_PLAN.md](./CONFIRMMODAL_STANDARDIZATION_PLAN.md) | Wave 2B ConfirmModal planning + rollout |
+| [audits/CONFIRMMODAL_PILOT_CLOSEOUT.md](./audits/CONFIRMMODAL_PILOT_CLOSEOUT.md) | Wave 2B-2 pilot certification |
+| [CONFIRMMODAL_BATCH1_PLAN.md](./CONFIRMMODAL_BATCH1_PLAN.md) | Wave 2B-3 Batch 1 rollout (8 sites) |
+| [MODAL_STANDARDIZATION_REVIEW.md](./MODAL_STANDARDIZATION_REVIEW.md) | Wave 2A Modal planning (inventory + migration order) |
+| [WAVE2A2_CUSTOM_MODAL_MIGRATION_PLAN.md](./WAVE2A2_CUSTOM_MODAL_MIGRATION_PLAN.md) | Wave 2A-2 custom shell migration plan (per-candidate) |
 
 ---
 
@@ -43,4 +51,5 @@ Cross-cutting **visual and interaction standards** for Vssyl. Complements archit
 | New UI in any module | `UX_CONSTITUTION.md` → `DESIGN_TOKENS.md` → `COMPONENT_STANDARDS.md` |
 | New page or layout | `LAYOUT_PATTERNS.md` |
 | Module UX review | `UX_AUDIT_TEMPLATE.md` + `UX_CERTIFICATION_SCORECARD.md` |
-| Modernization planning | `UX_MODERNIZATION_ROADMAP.md` |
+| Modernization planning | `UX_MODERNIZATION_ROADMAP.md`, `COMPONENT_INVENTORY.md` |
+| Wave 2 planning | `COMPONENT_INVENTORY.md` (after `audits/WAVE1_QA_CLOSEOUT.md`) |

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import { Button, Badge, Input, Textarea, Modal } from 'shared/components';
+import { Button, Badge, Input, Textarea, Modal, ConfirmModal } from 'shared/components';
 import { Plus, X, Edit, Trash2, Folder, Palette } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import * as todoAPI from '@/api/todo';
@@ -48,6 +48,8 @@ export function ProjectManager({
     description: '',
     color: PROJECT_COLORS[0],
   });
+  const [pendingProjectToDelete, setPendingProjectToDelete] = useState<TaskProject | null>(null);
+  const [isDeletingProject, setIsDeletingProject] = useState<string | null>(null);
 
   useEffect(() => {
     if (isOpen && session?.accessToken) {
@@ -117,9 +119,16 @@ export function ProjectManager({
     }
   };
 
-  const handleDelete = async (project: TaskProject) => {
+  const handleDelete = (project: TaskProject) => {
     if (!session?.accessToken) return;
-    if (!confirm(`Delete project "${project.name}"? Tasks will be unassigned from this project.`)) return;
+    setPendingProjectToDelete(project);
+  };
+
+  const executeDeleteProject = async () => {
+    const project = pendingProjectToDelete;
+    if (!session?.accessToken || !project) return;
+
+    setIsDeletingProject(project.id);
     try {
       await todoAPI.deleteProject(session.accessToken, project.id);
       toast.success('Project deleted');
@@ -130,9 +139,12 @@ export function ProjectManager({
       if (selectedProjectId === project.id && onProjectSelect) {
         onProjectSelect(null);
       }
+      setPendingProjectToDelete(null);
     } catch (error) {
       console.error('Failed to delete project:', error);
       toast.error('Failed to delete project');
+    } finally {
+      setIsDeletingProject(null);
     }
   };
 
@@ -321,6 +333,24 @@ export function ProjectManager({
           </div>
         </Modal>
       )}
+
+      <ConfirmModal
+        open={pendingProjectToDelete !== null}
+        onClose={() => setPendingProjectToDelete(null)}
+        onConfirm={executeDeleteProject}
+        title="Delete project?"
+        description={
+          pendingProjectToDelete
+            ? `Delete project "${pendingProjectToDelete.name}"? Tasks will be unassigned from this project.`
+            : ''
+        }
+        variant="destructive"
+        confirmLabel="Delete"
+        loading={
+          pendingProjectToDelete !== null &&
+          isDeletingProject === pendingProjectToDelete.id
+        }
+      />
     </>
   );
 }

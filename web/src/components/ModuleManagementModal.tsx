@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { X, Plus, Trash2, Settings, Search, Check } from 'lucide-react';
-import { Button, Card } from 'shared/components';
+import { Plus, Trash2, Settings, Search, Check } from 'lucide-react';
+import { Button, Card, Modal, ConfirmModal } from 'shared/components';
 import { Module } from '../api/modules';
 import { getInstalledModules, getMarketplaceModules } from '../api/modules';
 import { createWidget, deleteWidget } from '../api/widget';
@@ -48,6 +48,7 @@ export default function ModuleManagementModal({
   const [loading, setLoading] = useState(false);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [moduleToRemove, setModuleToRemove] = useState<ModuleWithStatus | null>(null);
 
   // Load available modules and check installation status
   useEffect(() => {
@@ -305,31 +306,31 @@ export default function ModuleManagementModal({
     }
   };
 
-  const handleUninstallModule = async (module: ModuleWithStatus) => {
+  const handleUninstallModule = (module: ModuleWithStatus) => {
     if (!session?.accessToken || !module.widgetId) return;
-    
-    if (!window.confirm(`Are you sure you want to remove the ${module.name} module from this dashboard?`)) {
-      return;
-    }
-    
+    setModuleToRemove(module);
+  };
+
+  const executeUninstallModule = async () => {
+    const module = moduleToRemove;
+    if (!module || !session?.accessToken || !module.widgetId) return;
+
     setActionLoading(module.id);
     try {
       await deleteWidget(session.accessToken, module.widgetId);
-      
-      // Update local state
-      setModules(prev => prev.map(m => 
-        m.id === module.id 
-          ? { ...m, isInstalled: false, widgetId: undefined }
-          : m
-      ));
-      
-      // Update dashboard
+
+      setModules((prev) =>
+        prev.map((m) =>
+          m.id === module.id ? { ...m, isInstalled: false, widgetId: undefined } : m
+        )
+      );
+
       const updatedDashboard = {
         ...dashboard,
-        widgets: dashboard.widgets.filter(w => w.id !== module.widgetId)
+        widgets: dashboard.widgets.filter((w) => w.id !== module.widgetId),
       };
       onDashboardUpdate(updatedDashboard);
-      
+      setModuleToRemove(null);
     } catch (err) {
       console.error('Error uninstalling module:', err);
       setError(`Failed to remove ${module.name} module`);
@@ -347,31 +348,19 @@ export default function ModuleManagementModal({
   const installedModules = filteredModules.filter(m => m.isInstalled);
   const availableModules = filteredModules.filter(m => !m.isInstalled);
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-slate-900 rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
-        {/* Header */}
-        <div className="px-6 py-4 border-b border-gray-200 dark:border-slate-700 flex items-center justify-between">
-          <div>
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
-              Manage Dashboard Modules
-            </h2>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-              Add or remove modules for "{dashboard.name}"
-            </p>
-          </div>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-gray-100 dark:hover:bg-slate-800 dark:bg-slate-700 rounded-lg transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
+    <>
+    <Modal
+      open={isOpen}
+      onClose={onClose}
+      title="Manage Dashboard Modules"
+      size="xlarge"
+    >
+      <p className="text-sm text-gray-600 dark:text-gray-400 -mt-v-2 mb-v-4">
+        Add or remove modules for &quot;{dashboard.name}&quot;
+      </p>
 
-        {/* Content */}
-        <div className="p-6 overflow-y-auto max-h-[calc(90vh-140px)]">
+      <div className="overflow-y-auto max-h-[min(60vh,32rem)] -mx-v-6 px-v-6">
           {/* Search */}
           <div className="mb-6">
             <div className="relative">
@@ -518,18 +507,32 @@ export default function ModuleManagementModal({
               </div>
             </div>
           )}
-        </div>
-
-        {/* Footer */}
-        <div className="px-6 py-4 border-t border-gray-200 dark:border-slate-700 flex items-center justify-between">
-          <div className="text-sm text-gray-600 dark:text-gray-400">
-            {installedModules.length} module{installedModules.length !== 1 ? 's' : ''} installed
-          </div>
-          <Button onClick={onClose}>
-            Done
-          </Button>
-        </div>
       </div>
-    </div>
+
+      <div className="flex items-center justify-between border-t border-gray-200 dark:border-slate-700 -mx-v-6 px-v-6 py-v-4 mt-v-4 -mb-v-6">
+        <div className="text-sm text-gray-600 dark:text-gray-400">
+          {installedModules.length} module{installedModules.length !== 1 ? 's' : ''} installed
+        </div>
+        <Button onClick={onClose}>
+          Done
+        </Button>
+      </div>
+    </Modal>
+
+    <ConfirmModal
+      open={moduleToRemove !== null}
+      onClose={() => setModuleToRemove(null)}
+      onConfirm={executeUninstallModule}
+      title="Remove module?"
+      description={
+        moduleToRemove
+          ? `Are you sure you want to remove the ${moduleToRemove.name} module from this dashboard?`
+          : undefined
+      }
+      variant="destructive"
+      confirmLabel="Remove"
+      loading={moduleToRemove !== null && actionLoading === moduleToRemove.id}
+    />
+    </>
   );
 }

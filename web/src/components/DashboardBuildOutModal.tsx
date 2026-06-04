@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { X, Puzzle, Check, Search, Zap, Users, FileText, BarChart, MessageSquare, Settings } from 'lucide-react';
-import { Button, Card } from 'shared/components';
+import { Puzzle, Check, Search, Zap, Users, FileText, BarChart, MessageSquare, Settings } from 'lucide-react';
+import { Button, Card, Modal } from 'shared/components';
 import { Module } from '../api/modules';
 import { getInstalledModules, getMarketplaceModules } from '../api/modules';
 import { useSession } from 'next-auth/react';
@@ -278,31 +278,18 @@ export default function DashboardBuildOutModal({
     module.description.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  if (!isOpen) return null;
-
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
-      <div className="bg-white dark:bg-slate-900 rounded-lg shadow-xl max-w-4xl w-full max-h-[90vh] overflow-hidden">
-        {/* Header */}
-        <div className="px-6 py-4 border-b border-gray-200 dark:border-slate-700 flex items-center justify-between">
-          <div>
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
-              Build Out Your Dashboard
-            </h2>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-              Choose modules for "{dashboardName}"
-            </p>
-          </div>
-          <button
-            onClick={onClose}
-            className="p-2 hover:bg-gray-100 dark:hover:bg-slate-800 dark:bg-slate-700 rounded-lg transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
+    <Modal
+      open={isOpen}
+      onClose={onClose}
+      title="Build Out Your Dashboard"
+      size="xlarge"
+    >
+      <p className="text-sm text-gray-600 dark:text-gray-400 -mt-v-2 mb-v-4">
+        Choose modules for &quot;{dashboardName}&quot;
+      </p>
 
-        {/* Content */}
-        <div className="p-6 overflow-y-auto max-h-[calc(90vh-140px)]">
+      <div className="overflow-y-auto max-h-[min(60vh,32rem)] -mx-v-6 px-v-6">
           {/* View Toggle */}
           <div className="flex bg-gray-100 dark:bg-slate-700 rounded-lg p-1 mb-6">
             <button
@@ -484,35 +471,33 @@ export default function DashboardBuildOutModal({
               )}
             </div>
           )}
-        </div>
+      </div>
 
-        {/* Footer */}
-        <div className="px-6 py-4 border-t border-gray-200 dark:border-slate-700 flex items-center justify-between">
-          <div className="text-sm text-gray-600 dark:text-gray-400">
-            {view === 'custom' && selectedModules.size > 0 && (
-              <span>{selectedModules.size} module{selectedModules.size !== 1 ? 's' : ''} selected</span>
-            )}
-          </div>
-          <div className="flex space-x-3">
-            <Button variant="secondary" onClick={onClose}>
-              Cancel
+      <div className="flex items-center justify-between border-t border-gray-200 dark:border-slate-700 -mx-v-6 px-v-6 py-v-4 mt-v-4 -mb-v-6">
+        <div className="text-sm text-gray-600 dark:text-gray-400">
+          {view === 'custom' && selectedModules.size > 0 && (
+            <span>{selectedModules.size} module{selectedModules.size !== 1 ? 's' : ''} selected</span>
+          )}
+        </div>
+        <div className="flex space-x-3">
+          <Button variant="secondary" onClick={onClose}>
+            Cancel
+          </Button>
+          {view === 'custom' && (
+            <Button
+              onClick={handleCustomSetup}
+              disabled={selectedModules.size === 0}
+            >
+              Continue with Selected Modules
             </Button>
-            {view === 'custom' && (
-              <Button
-                onClick={handleCustomSetup}
-                disabled={selectedModules.size === 0}
-              >
-                Continue with Selected Modules
-              </Button>
-            )}
-            {view === 'quick-setup' && (
-              <Button onClick={() => onComplete([])}>
-                Skip Module Selection
-              </Button>
-            )}
-          </div>
+          )}
+          {view === 'quick-setup' && (
+            <Button onClick={() => onComplete([])}>
+              Skip Module Selection
+            </Button>
+          )}
         </div>
       </div>
-    </div>
+    </Modal>
   );
 }

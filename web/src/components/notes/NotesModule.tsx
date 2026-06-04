@@ -3,7 +3,7 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import ReactMarkdown from 'react-markdown';
-import { Button, Card, Input, Textarea, Spinner, Modal } from 'shared/components';
+import { Button, Card, Input, Textarea, Spinner, Modal, ConfirmModal } from 'shared/components';
 import { Plus, Pin, PinOff, Search, FileEdit, Eye, FolderPlus, Share2, FileText } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { useDashboard } from '@/contexts/DashboardContext';
@@ -69,6 +69,8 @@ export function NotesModule({
   const [editTags, setEditTags] = useState<string[]>([]);
   const [editFolderId, setEditFolderId] = useState<string | null>(null);
   const [viewMode, setViewMode] = useState<'edit' | 'preview'>('edit');
+  const [noteToDelete, setNoteToDelete] = useState<Note | null>(null);
+  const [deletingNote, setDeletingNote] = useState(false);
 
   const loadFolders = useCallback(async () => {
     if (!session?.accessToken || !effectiveDashboardId) return;
@@ -330,18 +332,27 @@ export function NotesModule({
     }
   };
 
-  const handleDelete = async () => {
+  const handleDelete = () => {
     if (!session?.accessToken || !selectedNote) return;
-    if (!confirm('Delete this note?')) return;
+    setNoteToDelete(selectedNote);
+  };
 
+  const executeDeleteNote = async () => {
+    const note = noteToDelete;
+    if (!session?.accessToken || !note) return;
+
+    setDeletingNote(true);
     try {
-      await notesAPI.deleteNote(session.accessToken, selectedNote.id);
-      setNotes((prev) => prev.filter((n) => n.id !== selectedNote.id));
+      await notesAPI.deleteNote(session.accessToken, note.id);
+      setNotes((prev) => prev.filter((n) => n.id !== note.id));
       setSelectedNote(null);
       toast.success('Note deleted');
+      setNoteToDelete(null);
     } catch (err) {
       console.error('Failed to delete note:', err);
       toast.error('Failed to delete note');
+    } finally {
+      setDeletingNote(false);
     }
   };
 
@@ -712,6 +723,17 @@ export function NotesModule({
           </div>
         </div>
       </Modal>
+
+      <ConfirmModal
+        open={noteToDelete !== null}
+        onClose={() => setNoteToDelete(null)}
+        onConfirm={executeDeleteNote}
+        title="Delete note?"
+        description="Delete this note?"
+        variant="destructive"
+        confirmLabel="Delete"
+        loading={noteToDelete !== null && deletingNote}
+      />
     </div>
   );
 }

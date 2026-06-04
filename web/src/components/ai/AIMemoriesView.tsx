@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
 import { useSession } from 'next-auth/react';
-import { Card, Button, Spinner, Badge, Input, Textarea } from 'shared/components';
+import { Card, Button, Spinner, Badge, Input, Textarea, ConfirmModal } from 'shared/components';
 import { authenticatedApiCall } from '../../lib/apiUtils';
 import {
   listMemoryFacts,
@@ -125,6 +125,10 @@ export default function AIMemoriesView({ onNavigateToTab }: AIMemoriesViewProps)
   const [filterCategory, setFilterCategory] = useState<MemoryFactCategory | ''>('');
   const [filterSource, setFilterSource] = useState<MemoryFactSourceType | ''>('');
   const [filterScope, setFilterScope] = useState<'personal' | 'business' | ''>('');
+  const [pendingMemoryToForget, setPendingMemoryToForget] = useState<{
+    id: string;
+    subject: string;
+  } | null>(null);
 
   const buildListOptions = () => {
     const options: Parameters<typeof listMemoryFacts>[1] = {};
@@ -212,21 +216,23 @@ export default function AIMemoriesView({ onNavigateToTab }: AIMemoriesViewProps)
     }
   };
 
-  const handleForgetMemoryFact = async (id: string, subject: string) => {
+  const handleForgetMemoryFact = (id: string, subject: string) => {
     if (!session?.accessToken) return;
-    if (
-      !window.confirm(
-        `Forget “${subject}”? Your twin will stop using this in future replies.`
-      )
-    ) {
-      return;
-    }
+    setPendingMemoryToForget({ id, subject });
+  };
+
+  const executeForgetMemoryFact = async () => {
+    const pending = pendingMemoryToForget;
+    if (!session?.accessToken || !pending) return;
+
+    const { id } = pending;
     setDeletingId(id);
     try {
       await deleteMemoryFact(session.accessToken, id);
       setMemoryFacts((prev) => prev.filter((f) => f.id !== id));
       if (editingFactId === id) setEditingFactId(null);
       if (expandedFactId === id) setExpandedFactId(null);
+      setPendingMemoryToForget(null);
     } catch (err) {
       console.error('Failed to forget memory fact:', err);
     } finally {
@@ -344,6 +350,7 @@ export default function AIMemoriesView({ onNavigateToTab }: AIMemoriesViewProps)
   }
 
   return (
+    <>
     <div className="space-y-6">
       <div>
         <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
@@ -765,5 +772,24 @@ export default function AIMemoriesView({ onNavigateToTab }: AIMemoriesViewProps)
         )}
       </Card>
     </div>
+
+    <ConfirmModal
+      open={pendingMemoryToForget !== null}
+      onClose={() => setPendingMemoryToForget(null)}
+      onConfirm={executeForgetMemoryFact}
+      title="Forget memory?"
+      description={
+        pendingMemoryToForget
+          ? `Forget “${pendingMemoryToForget.subject}”? Your twin will stop using this in future replies.`
+          : ''
+      }
+      variant="destructive"
+      confirmLabel="Forget"
+      loading={
+        pendingMemoryToForget !== null &&
+        deletingId === pendingMemoryToForget.id
+      }
+    />
+    </>
   );
 }

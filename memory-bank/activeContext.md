@@ -1,10 +1,44 @@
 # Active Context - Vssyl Business Admin & AI Integration
 
+## AI Platform — Wave G0 Constitutional Framework (June 2026) ✅
+
+**Status:** **GOVERNANCE COMPLETE** — no runtime changes.
+
+**Constitutional authority:** [`AI_PLATFORM_CONSTITUTION.md`](../docs/architecture/AI_PLATFORM_CONSTITUTION.md), [`AI_PLATFORM_BOUNDARY_MODEL.md`](../docs/architecture/AI_PLATFORM_BOUNDARY_MODEL.md), [`AI_PLATFORM_OPERATION_MATRIX.md`](../docs/architecture/AI_PLATFORM_OPERATION_MATRIX.md), [`AI_PLATFORM_CERTIFICATION_STRATEGY.md`](../docs/architecture/AI_PLATFORM_CERTIFICATION_STRATEGY.md)
+
+**Wave 0 audits (evidence):** [`audits/AI_PLATFORM_CONSTITUTIONAL_AUDIT.md`](../docs/architecture/audits/AI_PLATFORM_CONSTITUTIONAL_AUDIT.md) + tool/context/admin/legacy matrices.
+
+**Maturity:** **Level 0 — G0 constitution** (ledger). Operation matrix: 62 C / 21 P / 6 N.
+
+**Next:** Wave **1A** authorized — pipeline map + legacy route retirement **plan**. No further constitutional work required before 1A.
+
+---
+
+## AI Platform — Wave 0 Audit (June 2026) ✅
+
+**Status:** **DISCOVERY COMPLETE** — superseded for governance by G0 docs; audits remain evidence baseline.
+
+---
+
+## Business Workspace — Wave 0 Constitutional Audit (June 2026) ✅
+
+**Status:** **DISCOVERY COMPLETE** — governance only; no runtime changes.
+
+**Identity:** **Platform shell + workspace runtime** (Hybrid **D**) — **not** a product `moduleId`, **not** L3 certifiable as Drive/Todo, **not** Reference Module #6.
+
+**Evidence:** [`BUSINESS_WORKSPACE_CONSTITUTIONAL_AUDIT.md`](../docs/architecture/audits/BUSINESS_WORKSPACE_CONSTITUTIONAL_AUDIT.md), [`BUSINESS_WORKSPACE_OPERATION_MATRIX.md`](../docs/architecture/audits/BUSINESS_WORKSPACE_OPERATION_MATRIX.md)
+
+**Maturity:** **Level 1 — Stabilizing** (ledger). Wave 3 target: **Level 2 platform shell** after 1A–2C.
+
+**Next:** Wave **1A** — boundary doc + wire/delete dead `*WorkspaceLanding`; **1B** hub standard; **2B** retire stub dashboard/analytics/members widgets.
+
+---
+
 ## UX Modernization — Wave 1.5 Skeleton Tokens (June 2026) ✅
 
 **Status:** **SHIPPED** — Family 6 `--v-skeleton-*`, `.v-skeleton` + `skeleton-loading` in `ux.css`, `LoadingSkeleton` migrated. Zero module consumers today.
 
-**Next:** Manual light/dark QA for Wave 1 primitives; Wave 2 shared components when scheduled.
+**Closeout:** [`docs/ux/audits/WAVE1_QA_CLOSEOUT.md`](../docs/ux/audits/WAVE1_QA_CLOSEOUT.md) — PASS. **Wave 2B-3 Batch 1:** **closed** — [`CONFIRMMODAL_BATCH1_CLOSEOUT.md`](../docs/ux/audits/CONFIRMMODAL_BATCH1_CLOSEOUT.md) (**PASS WITH FINDINGS**); 8/8 migrations; **60** `web/` `confirm()` remaining. **Next:** Batch 2 **PLAN mode only** (no implementation until QA sign-off or accepted risk).
 
 ## UX Modernization — Wave 1 Token Foundation (June 2026) ✅
 
@@ -38,7 +72,7 @@
 
 **Evidence:** [`NOTEBOOK_LEVEL3_CERTIFICATION_REVIEW.md`](../docs/architecture/audits/NOTEBOOK_LEVEL3_CERTIFICATION_REVIEW.md), [`CERTIFICATION_LEDGER.md`](../docs/architecture/CERTIFICATION_LEDGER.md)
 
-**Next:** Dashboard / Analytics / Business Workspace modernization. Optional Place post-Reference hygiene PL-H1–H7.
+**Next:** Business Workspace Wave 1A+ shell hardening, then Dashboard / Analytics modernization. Optional Place post-Reference hygiene PL-H1–H7.
 
 **Place Wave 4B (2026-06-02):** **Reference Module #5 designated** — [PLACE_REFERENCE_COUNCIL_REVIEW.md](../docs/architecture/audits/PLACE_REFERENCE_COUNCIL_REVIEW.md). Council vote: **Approve**.
 

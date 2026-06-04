@@ -1,7 +1,7 @@
 # Platform Module Certification Ledger
 
 **Version:** 1.0.0  
-**Last updated:** 2026-06-02  
+**Last updated:** 2026-06-04  
 **Status:** Active — executive dashboard for platform architecture health  
 **Owner:** Platform Engineering / Architecture Governance
 
@@ -95,7 +95,7 @@ Vssyl certifies modules against **two authorities simultaneously**. A module is 
 | **Place** | `place` | **Partial** | **Partial** | **3 — Certified** | **Reference Module #5** (Level 3) — Wave **4B** council 2026-06-02 | [PLACE_REFERENCE_COUNCIL_REVIEW](./audits/PLACE_REFERENCE_COUNCIL_REVIEW.md), [PLACE_PATTERN_GUIDE](./PLACE_PATTERN_GUIDE.md), [PLACE_COMMERCE_BOUNDARY](./PLACE_COMMERCE_BOUNDARY.md), [PLACE_LEVEL3_CERTIFICATION_REVIEW](./audits/PLACE_LEVEL3_CERTIFICATION_REVIEW.md) |
 | **Dashboard** | `dashboard` | **Partial** | **Partial** | **1 — Stabilizing** | Not started (Wave 3) | Dual widget registry; weak activity |
 | **Analytics** | `analytics` | **Partial** | **N/A** | **1 — Stabilizing** | Not started (Wave 3) | Pseudo-module; subscriber stubs |
-| **Business Workspace** | *(composition)* | **Partial** | **Partial** | **1 — Stabilizing** | Not started (Wave 3) | Switch rendering; lifecycle partial |
+| **Business Workspace** | *(platform shell)* | **Partial** | **Partial** | **1 — Stabilizing** | **Wave 0 audit complete** (2026-06-04) | [BUSINESS_WORKSPACE_CONSTITUTIONAL_AUDIT](./audits/BUSINESS_WORKSPACE_CONSTITUTIONAL_AUDIT.md), [BUSINESS_WORKSPACE_OPERATION_MATRIX](./audits/BUSINESS_WORKSPACE_OPERATION_MATRIX.md) — not L3 product; Reference #6 **not recommended** |
 
 ### Platform systems (non-module rows)
 
@@ -109,7 +109,8 @@ Track cross-cutting certification separately; modules depend on these.
 | Policy Engine | Partial | High (drive + chat + calendar + todo + **notes/notebook link** + **place** writes) | 2 | Place connection + transaction PE Wave 2C |
 | Domain Event Bus | Partial | High (drive taxonomy) | 1 | Taxonomy thin beyond drive |
 | Module Activity | Partial | High (drive writes) | 1 | Legacy read paths platform-wide |
-| AI Tools / Actions | Low | Partial (drive tools compliant) | 0 | `toolExecutor` / `ActionExecutor` violations |
+| **AI Platform** (twin, pipeline, tools) | Partial | Partial | **0 — G0 constitution** | [AI_PLATFORM_CONSTITUTION](./AI_PLATFORM_CONSTITUTION.md), [AI_PLATFORM_CERTIFICATION_STRATEGY](./AI_PLATFORM_CERTIFICATION_STRATEGY.md), [AI_PLATFORM_OPERATION_MATRIX](./AI_PLATFORM_OPERATION_MATRIX.md); audit [AI_PLATFORM_CONSTITUTIONAL_AUDIT](./audits/AI_PLATFORM_CONSTITUTIONAL_AUDIT.md); promote to L1 after Wave 1A plan |
+| AI Tools / Actions | Low | Partial (L3 module services; drive/HR/scheduling mocks remain) | 0 | [AI_TOOL_ACTION_COMPLIANCE_MATRIX](./audits/AI_TOOL_ACTION_COMPLIANCE_MATRIX.md) |
 | Platform Scheduler | Partial | Partial | 1 | Inventory-first per §22 |
 | Manifest / Capability governance | Partial | High (drive manifest) | 1 | Reconcile-on-startup incomplete for all built-ins |
 
@@ -300,7 +301,7 @@ Waves align with [`PLATFORM_MODULE_MODERNIZATION_ROADMAP.md`](../plans/PLATFORM_
 | Module | not started | audit | service extraction | compliance | certification | Target level |
 |--------|-------------|-------|-------------------|------------|---------------|--------------|
 | Place | ○ | **●** | **●** | **●** | **●** | 3 |
-| Business Workspace | **●** | ○ | ○ | ○ | ○ | 2 |
+| Business Workspace | **●** | **●** | ○ | ○ | ○ | 2 (platform shell) |
 | Dashboard | **●** | ○ | ○ | ○ | ○ | 2 |
 | Analytics | **●** | ○ | ○ | ○ | ○ | 2 |
 

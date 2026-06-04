@@ -19,7 +19,7 @@ import {
   arrayMove,
 } from '@dnd-kit/sortable';
 import { Plus, Folder, LayoutDashboard, MessageSquare, Users, BarChart3, Brain, Calendar as CalendarIcon, CheckSquare } from 'lucide-react';
-import { Button } from 'shared/components';
+import { Button, ConfirmModal } from 'shared/components';
 import { FolderItem } from './FolderItem';
 import { ModuleItem } from './ModuleItem';
 import { useSidebarCustomization } from '../../contexts/SidebarCustomizationContext';
@@ -59,6 +59,7 @@ export function LeftSidebarCustomizer({
   const [draggingId, setDraggingId] = useState<string | null>(null);
   const [newFolderName, setNewFolderName] = useState('');
   const [showNewFolderInput, setShowNewFolderInput] = useState(false);
+  const [pendingFolderToDelete, setPendingFolderToDelete] = useState<string | null>(null);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -466,9 +467,12 @@ export function LeftSidebarCustomizer({
   };
 
   const handleDeleteFolder = (folderId: string) => {
-    if (!confirm('Delete this folder? Modules inside will be moved to loose modules.')) {
-      return;
-    }
+    setPendingFolderToDelete(folderId);
+  };
+
+  const executeDeleteFolder = () => {
+    const folderId = pendingFolderToDelete;
+    if (!folderId) return;
 
     updateConfig((current) => {
       const tabConfig = current.leftSidebar[dashboardTabId] || {
@@ -500,6 +504,7 @@ export function LeftSidebarCustomizer({
         },
       };
     });
+    setPendingFolderToDelete(null);
   };
 
   // Get module details for display
@@ -600,6 +605,7 @@ export function LeftSidebarCustomizer({
   // For now, we'll render folders first, then loose modules, but allow dragging between them
 
   return (
+    <>
     <DndContext
       sensors={sensors}
       collisionDetection={closestCenter}
@@ -829,6 +835,17 @@ export function LeftSidebarCustomizer({
         ) : null}
       </DragOverlay>
     </DndContext>
+
+    <ConfirmModal
+      open={pendingFolderToDelete !== null}
+      onClose={() => setPendingFolderToDelete(null)}
+      onConfirm={executeDeleteFolder}
+      title="Delete folder?"
+      description="Delete this folder? Modules inside will be moved to loose modules."
+      variant="destructive"
+      confirmLabel="Delete"
+    />
+    </>
   );
 }
 

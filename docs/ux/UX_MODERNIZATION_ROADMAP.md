@@ -85,16 +85,46 @@ This identifies Drive as the **strongest candidate for future UX-L3 / Reference 
 
 ---
 
-## Wave 2 — Shared components
+## Wave 2A — Modal (2026-06-03) ✅
 
-Priority primitives:
+- **2A-1:** `Modal.tsx` tokenized shell  
+- **2A-2:** Five custom-shell migrations (`ShareLinkModal`, `VLinkShareModal`, Drive shortcuts, `ModuleManagementModal`, `DashboardBuildOutModal`)  
+- **2A-3:** Certification **PASS WITH FINDINGS** — [`audits/MODAL_STANDARDIZATION_CLOSEOUT.md`](./audits/MODAL_STANDARDIZATION_CLOSEOUT.md)
 
-- Button, Input, Card, Panel, Modal, Dropdown, ContextMenu
-- EmptyState (+ optional action prop)
-- LoadingState, ErrorState (dedicated)
-- Select, IconButton (new shared)
+## Wave 2B — ConfirmModal
 
-Eliminate duplicate `Checkbox 2.tsx` / index duplicates.
+| Phase | Status |
+|-------|--------|
+| **2B plan** | Done — [`CONFIRMMODAL_STANDARDIZATION_PLAN.md`](./CONFIRMMODAL_STANDARDIZATION_PLAN.md) |
+| **2B-1 primitive** | Done — `ConfirmModal.tsx`, `useConfirm.ts`, focus trap utility |
+| **2B-2 pilot** | Done — `ModuleManagementModal` — [`audits/CONFIRMMODAL_PILOT_CLOSEOUT.md`](./audits/CONFIRMMODAL_PILOT_CLOSEOUT.md) |
+| **2B-3 Batch 1** | **Done** — 8 sites — [`audits/CONFIRMMODAL_BATCH1_CLOSEOUT.md`](./audits/CONFIRMMODAL_BATCH1_CLOSEOUT.md) (**PASS WITH FINDINGS**) |
+| **2B-4+ rollout** | **Plan only** — **60** `web/` `confirm()` sites remaining (grep 2026-06-03); implementation gated on QA / Batch 2 plan |
+
+## Wave 2 — Shared components (remaining)
+
+**Planning:** [`COMPONENT_INVENTORY.md`](./COMPONENT_INVENTORY.md)
+
+### Tier 1 (remaining)
+
+1. ContextMenu  
+2. Popover (dropdown primitive)
+
+### Tier 2
+
+Switch, Tabs, Textarea, Checkbox/Radio, Toast (+ `react-hot-toast` policy)
+
+### Tier 3 (architectural review)
+
+BrandButton, ErrorState, Drawer/BottomSheet, SearchBox consolidation
+
+### Hygiene (parallel doc-only / small PR)
+
+- Deprecate `Checkbox 2.tsx`, `index 2.ts`, `index.d 2.ts`  
+- EmptyState optional `action` prop  
+- Export `LoadingOverlay` / `LoadingSkeleton` from `index.ts` (additive)
+
+Wave 1 primitives (Button, Input, Card, etc.) **already migrated** — not repeated in Wave 2 scope.
 
 ---
 

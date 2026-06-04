@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useCallback } from 'react';
+import React, { useEffect, useCallback, useRef } from 'react';
 import ReactDOM from 'react-dom';
 
 interface ModalProps {
@@ -12,6 +12,10 @@ interface ModalProps {
   closeOnEscape?: boolean;
   closeOnOverlayClick?: boolean;
   headerActions?: React.ReactNode;
+  /** Links dialog to description copy (ConfirmModal) */
+  ariaDescribedBy?: string;
+  /** Ref on panel for focus trap targeting (ConfirmModal) */
+  panelRef?: React.Ref<HTMLDivElement>;
 }
 
 const sizeClasses = {
@@ -21,16 +25,21 @@ const sizeClasses = {
   xlarge: 'max-w-5xl',
 } as const;
 
-export const Modal: React.FC<ModalProps> = ({ 
-  open, 
-  onClose, 
-  children, 
+export const Modal: React.FC<ModalProps> = ({
+  open,
+  onClose,
+  children,
   title,
   size = 'medium',
   closeOnEscape = true,
   closeOnOverlayClick = true,
   headerActions,
+  ariaDescribedBy,
+  panelRef,
 }) => {
+  const closeButtonRef = useRef<HTMLButtonElement>(null);
+  const previousFocusRef = useRef<HTMLElement | null>(null);
+
   const handleEscape = useCallback((event: KeyboardEvent) => {
     if (event.key === 'Escape' && closeOnEscape) {
       onClose();
@@ -55,91 +64,89 @@ export const Modal: React.FC<ModalProps> = ({
     };
   }, [open, handleEscape]);
 
+  useEffect(() => {
+    if (!open) return;
+
+    previousFocusRef.current =
+      document.activeElement instanceof HTMLElement
+        ? document.activeElement
+        : null;
+
+    const frameId = requestAnimationFrame(() => {
+      closeButtonRef.current?.focus();
+    });
+
+    return () => {
+      cancelAnimationFrame(frameId);
+      const previous = previousFocusRef.current;
+      if (
+        previous &&
+        typeof previous.focus === 'function' &&
+        document.contains(previous)
+      ) {
+        previous.focus();
+      }
+    };
+  }, [open]);
+
   if (!open) return null;
 
   const modalContent = (
-    <div 
-      className="fixed inset-0 z-[9999] flex items-start justify-center overflow-y-auto"
-      style={{
-        backgroundColor: 'rgba(0, 0, 0, 0.5)',
-        position: 'fixed',
-        top: 0,
-        left: 0,
-        right: 0,
-        bottom: 0,
-        zIndex: 9999,
-        overflowY: 'auto',
-        padding: '20px 0',
-      }}
+    <div
+      className="fixed inset-0 z-[9999] flex items-start justify-center overflow-y-auto bg-black/50 py-v-5"
       onClick={handleOverlayClick}
       role="dialog"
       aria-modal="true"
       aria-labelledby={title ? 'modal-title' : undefined}
+      aria-describedby={ariaDescribedBy}
     >
-      <div 
-        className={`bg-white rounded-lg shadow-2xl p-6 relative ${sizeClasses[size]} w-full mx-4 my-8`}
-        style={{
-          backgroundColor: 'white',
-          borderRadius: '8px',
-          boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
-          padding: '24px',
-          position: 'relative',
-          zIndex: 10000,
-          maxWidth: size === 'small' ? '384px' : size === 'medium' ? '448px' : size === 'large' ? '512px' : '1024px',
-          width: '100%',
-          margin: '32px 16px',
-          maxHeight: 'calc(100vh - 64px)',
-          overflowY: 'auto',
-        }}
-        role="document"
+      <div
+        ref={panelRef}
+        className={`bg-v-surface border border-v-border rounded-v-modal shadow-v-modal p-v-6 relative z-[10000] w-full mx-v-4 my-v-8 max-h-[calc(100vh-4rem)] overflow-y-auto ${sizeClasses[size]}`}
       >
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex items-center justify-between mb-v-4">
           <div className="flex-1">
             {title && (
-              <h2 
+              <h2
                 id="modal-title"
-                className="text-lg font-semibold text-gray-900 dark:text-gray-100"
-                style={{ color: '#111827' }}
+                className="text-lg font-semibold text-v-text-primary"
               >
                 {title}
               </h2>
             )}
           </div>
-          <div className="flex items-center space-x-2">
+          <div className="flex items-center gap-v-2">
             {headerActions}
             <button
-              className="text-gray-400 hover:text-gray-500 dark:hover:text-gray-400 focus:outline-none"
-              style={{
-                color: '#9CA3AF',
-                cursor: 'pointer',
-              }}
+              ref={closeButtonRef}
+              type="button"
+              className="text-v-text-secondary hover:text-v-text-primary v-focus-ring focus:outline-none rounded-v-button p-v-1"
               onClick={onClose}
               aria-label="Close modal"
             >
               <span className="sr-only">Close</span>
-              <svg 
-                className="h-6 w-6" 
-                fill="none" 
-                viewBox="0 0 24 24" 
+              <svg
+                className="h-6 w-6"
+                fill="none"
+                viewBox="0 0 24 24"
                 stroke="currentColor"
+                aria-hidden="true"
               >
-                <path 
-                  strokeLinecap="round" 
-                  strokeLinejoin="round" 
-                  strokeWidth={2} 
-                  d="M6 18L18 6M6 6l12 12" 
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
                 />
               </svg>
             </button>
           </div>
         </div>
-        <div className="mt-2">
-          {children}
-        </div>
+        <div className="mt-v-2">{children}</div>
       </div>
     </div>
   );
 
   if (typeof window === 'undefined') return null;
   return ReactDOM.createPortal(modalContent, document.body);
-}; 
+};
