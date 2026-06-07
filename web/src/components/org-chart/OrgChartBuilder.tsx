@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import { Card, Button, Input, Textarea, Spinner, Badge } from 'shared/components';
+import { Card, Button, Input, Textarea, Spinner, Badge, ConfirmModal } from 'shared/components';
 import { 
   getOrganizationalTiers,
   getDepartments,
@@ -48,6 +48,7 @@ interface OrgChartBuilderProps {
 }
 
 type EditMode = 'none' | 'tier' | 'department' | 'position';
+type DeletableOrgMode = Exclude<EditMode, 'none'>;
 type EditAction = 'create' | 'edit';
 
 type EditingItem = OrganizationalTier | Department | Position | null;
@@ -62,6 +63,7 @@ export function OrgChartBuilder({ orgChartData, businessId, onUpdate }: OrgChart
   const [editAction, setEditAction] = useState<EditAction>('create');
   const [editingItem, setEditingItem] = useState<EditingItem>(null);
   const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['tiers', 'departments', 'positions']));
+  const [pendingOrgItemToDelete, setPendingOrgItemToDelete] = useState<{ mode: DeletableOrgMode; id: string } | null>(null);
 
   // Form states
   const [tierForm, setTierForm] = useState({
@@ -229,9 +231,16 @@ export function OrgChartBuilder({ orgChartData, businessId, onUpdate }: OrgChart
     }
   };
 
-  const handleDelete = async (mode: EditMode, id: string) => {
-    if (!session?.accessToken || !confirm('Are you sure you want to delete this item?')) return;
+  const requestDelete = (mode: DeletableOrgMode, id: string) => {
+    if (!session?.accessToken) return;
+    setPendingOrgItemToDelete({ mode, id });
+  };
 
+  const executeDelete = async () => {
+    const pending = pendingOrgItemToDelete;
+    if (!pending || !session?.accessToken) return;
+
+    const { mode, id } = pending;
     setLoading(true);
     try {
       if (mode === 'tier') {
@@ -241,8 +250,9 @@ export function OrgChartBuilder({ orgChartData, businessId, onUpdate }: OrgChart
       } else if (mode === 'position') {
         await deletePosition(id, session.accessToken);
       }
-      
+
       onUpdate();
+      setPendingOrgItemToDelete(null);
     } catch (error) {
       console.error('Error deleting item:', error);
     } finally {
@@ -263,6 +273,7 @@ export function OrgChartBuilder({ orgChartData, businessId, onUpdate }: OrgChart
   };
 
   return (
+    <>
     <div className="space-y-6">
       {/* Header */}
       <div className="flex items-center justify-between">
@@ -357,7 +368,7 @@ export function OrgChartBuilder({ orgChartData, businessId, onUpdate }: OrgChart
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => handleDelete('tier', tier.id)}
+                          onClick={() => requestDelete('tier', tier.id)}
                           className="text-red-600 hover:text-red-700"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -435,7 +446,7 @@ export function OrgChartBuilder({ orgChartData, businessId, onUpdate }: OrgChart
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => handleDelete('department', dept.id)}
+                          onClick={() => requestDelete('department', dept.id)}
                           className="text-red-600 hover:text-red-700"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -514,7 +525,7 @@ export function OrgChartBuilder({ orgChartData, businessId, onUpdate }: OrgChart
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => handleDelete('position', position.id)}
+                          onClick={() => requestDelete('position', position.id)}
                           className="text-red-600 hover:text-red-700"
                         >
                           <Trash2 className="w-4 h-4" />
@@ -735,5 +746,17 @@ export function OrgChartBuilder({ orgChartData, businessId, onUpdate }: OrgChart
         </div>
       )}
     </div>
+
+    <ConfirmModal
+      open={pendingOrgItemToDelete !== null}
+      onClose={() => setPendingOrgItemToDelete(null)}
+      onConfirm={executeDelete}
+      title="Delete item?"
+      description="Are you sure you want to delete this item?"
+      variant="destructive"
+      confirmLabel="Delete"
+      loading={loading}
+    />
+    </>
   );
 }

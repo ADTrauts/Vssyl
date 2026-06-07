@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Card, Button, Input, Textarea } from 'shared/components';
+import { Card, Button, Input, Textarea, ConfirmModal } from 'shared/components';
 import { MessageSquare, Image as ImageIcon, Plus, Trash2, Save, X, AlertCircle } from 'lucide-react';
 
 // ============================================================================
@@ -177,6 +177,7 @@ export default function FrontPageContentEditor({
 }: FrontPageContentEditorProps) {
   const [editingAnnouncement, setEditingAnnouncement] = useState<Announcement | null>(null);
   const [isAddingNew, setIsAddingNew] = useState(false);
+  const [pendingAnnouncementToDelete, setPendingAnnouncementToDelete] = useState<string | null>(null);
 
   const handleSaveAnnouncement = (announcement: Announcement) => {
     const announcements = content.companyAnnouncements || [];
@@ -204,11 +205,16 @@ export default function FrontPageContentEditor({
     setIsAddingNew(false);
   };
 
-  const handleDeleteAnnouncement = (id: string) => {
-    if (confirm('Are you sure you want to delete this announcement?')) {
-      const updated = (content.companyAnnouncements || []).filter((a) => a.id !== id);
-      onChange({ ...content, companyAnnouncements: updated });
-    }
+  const requestDeleteAnnouncement = (id: string) => {
+    setPendingAnnouncementToDelete(id);
+  };
+
+  const executeDeleteAnnouncement = () => {
+    const id = pendingAnnouncementToDelete;
+    if (!id) return;
+    const updated = (content.companyAnnouncements || []).filter((a) => a.id !== id);
+    onChange({ ...content, companyAnnouncements: updated });
+    setPendingAnnouncementToDelete(null);
   };
 
   const handleEditAnnouncement = (announcement: Announcement) => {
@@ -217,6 +223,7 @@ export default function FrontPageContentEditor({
   };
 
   return (
+    <>
     <div className={className}>
       <div className="space-y-6">
         {/* Welcome Message */}
@@ -348,7 +355,7 @@ export default function FrontPageContentEditor({
                         <MessageSquare className="w-4 h-4" />
                       </button>
                       <button
-                        onClick={() => handleDeleteAnnouncement(announcement.id!)}
+                        onClick={() => requestDeleteAnnouncement(announcement.id!)}
                         className="p-2 hover:bg-red-50 text-red-600 rounded transition-colors"
                         title="Delete"
                       >
@@ -369,6 +376,17 @@ export default function FrontPageContentEditor({
         </Card>
       </div>
     </div>
+
+    <ConfirmModal
+      open={pendingAnnouncementToDelete !== null}
+      onClose={() => setPendingAnnouncementToDelete(null)}
+      onConfirm={executeDeleteAnnouncement}
+      title="Delete announcement?"
+      description="Are you sure you want to delete this announcement?"
+      variant="destructive"
+      confirmLabel="Delete"
+    />
+    </>
   );
 }
 

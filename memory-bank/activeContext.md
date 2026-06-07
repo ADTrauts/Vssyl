@@ -38,7 +38,7 @@
 
 **Status:** **SHIPPED** — Family 6 `--v-skeleton-*`, `.v-skeleton` + `skeleton-loading` in `ux.css`, `LoadingSkeleton` migrated. Zero module consumers today.
 
-**Closeout:** [`docs/ux/audits/WAVE1_QA_CLOSEOUT.md`](../docs/ux/audits/WAVE1_QA_CLOSEOUT.md) — PASS. **Wave 2B-3 Batch 1:** **closed** — [`CONFIRMMODAL_BATCH1_CLOSEOUT.md`](../docs/ux/audits/CONFIRMMODAL_BATCH1_CLOSEOUT.md) (**PASS WITH FINDINGS**); 8/8 migrations; **60** `web/` `confirm()` remaining. **Next:** Batch 2 **PLAN mode only** (no implementation until QA sign-off or accepted risk).
+**Closeout:** [`docs/ux/audits/WAVE1_QA_CLOSEOUT.md`](../docs/ux/audits/WAVE1_QA_CLOSEOUT.md) — PASS. **Wave 2B-3 Batch 1:** **closed** — [`CONFIRMMODAL_BATCH1_CLOSEOUT.md`](../docs/ux/audits/CONFIRMMODAL_BATCH1_CLOSEOUT.md) (**PASS WITH FINDINGS**). **Batch 2 closed** — [`CONFIRMMODAL_BATCH2_CLOSEOUT.md`](../docs/ux/audits/CONFIRMMODAL_BATCH2_CLOSEOUT.md); **43** confirms remaining. **Wave 3A-0–2:** **done** — menu primitives hardened — [`CONTEXTMENU_POPOVER_STANDARDIZATION_REVIEW.md`](../docs/ux/CONTEXTMENU_POPOVER_STANDARDIZATION_REVIEW.md). **Wave 3A-3:** **in progress** — [`DRIVE_MENU_REFERENCE_ROLLOUT_PLAN.md`](../docs/ux/DRIVE_MENU_REFERENCE_ROLLOUT_PLAN.md): **3A-3.1a–3A-3.3 + 3A-3.1b done** — context/sidebar/filter surfaces migrated (`ContextMenu`, `DropdownMenu`, `Popover`); `pnpm type-check` PASS. **Next:** **3A-3.6** delete `FileContextMenu.tsx` (ready); manual QA pending for 3A-3.1a–3A-3.1b.
 
 ## UX Modernization — Wave 1 Token Foundation (June 2026) ✅
 

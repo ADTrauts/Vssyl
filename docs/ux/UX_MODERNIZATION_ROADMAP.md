@@ -99,16 +99,28 @@ This identifies Drive as the **strongest candidate for future UX-L3 / Reference 
 | **2B-1 primitive** | Done — `ConfirmModal.tsx`, `useConfirm.ts`, focus trap utility |
 | **2B-2 pilot** | Done — `ModuleManagementModal` — [`audits/CONFIRMMODAL_PILOT_CLOSEOUT.md`](./audits/CONFIRMMODAL_PILOT_CLOSEOUT.md) |
 | **2B-3 Batch 1** | **Done** — 8 sites — [`audits/CONFIRMMODAL_BATCH1_CLOSEOUT.md`](./audits/CONFIRMMODAL_BATCH1_CLOSEOUT.md) (**PASS WITH FINDINGS**) |
-| **2B-4+ rollout** | **Plan only** — **60** `web/` `confirm()` sites remaining (grep 2026-06-03); implementation gated on QA / Batch 2 plan |
+| **2B-4 Batch 2** | **Closed** — 2A + 2B + 2C (17 sites, 11 files) — [`audits/CONFIRMMODAL_BATCH2_CLOSEOUT.md`](./audits/CONFIRMMODAL_BATCH2_CLOSEOUT.md) (**PASS WITH FINDINGS**) |
+| **2B-5 Batch 3** | **PLAN pending** — recommend **3A Drive permanent purge** (2 sites); **43** `web/` confirms remaining |
+| **2B-6+ rollout** | Deferred — calendar binary, admin/governance, scheduling, HR, retention, billing |
 
 ## Wave 2 — Shared components (remaining)
 
 **Planning:** [`COMPONENT_INVENTORY.md`](./COMPONENT_INVENTORY.md)
 
-### Tier 1 (remaining)
+### Tier 1 (remaining) — Wave 3A
 
-1. ContextMenu  
-2. Popover (dropdown primitive)
+| Phase | Status |
+|-------|--------|
+| **3A-0 Inventory** | **Done** — [`CONTEXTMENU_POPOVER_STANDARDIZATION_REVIEW.md`](./CONTEXTMENU_POPOVER_STANDARDIZATION_REVIEW.md) |
+| **3A-1 Shell + tokens** | **Done** — `ContextMenu` + `Popover` tokenized; `destructive` / `heading` item flags; Storybook |
+| **3A-2 Primitive hardening** | **Done** — `menuShared`; `DropdownMenu` scaffold; Popover portal/dismiss; baseline a11y |
+| **3A-3 Drive reference rollout** | **In progress** — [`DRIVE_MENU_REFERENCE_ROLLOUT_PLAN.md`](./DRIVE_MENU_REFERENCE_ROLLOUT_PLAN.md); **3A-3.1a–3A-3.3 + 3A-3.1b done**; **3A-3.6 FileContextMenu deletion ready** |
+| **3A-4 Platform rollout** | Pending |
+| **3A-5 Certification** | Pending |
+
+1. ContextMenu (retain; pointer-position menus)  
+2. Popover (low-level floating shell; 3A-2 portal/placement)  
+3. DropdownMenu (trigger-anchored action menus; **Option A** — see [`CONTEXTMENU_POPOVER_STANDARDIZATION_REVIEW.md`](./CONTEXTMENU_POPOVER_STANDARDIZATION_REVIEW.md) §11)
 
 ### Tier 2
 
@@ -128,7 +140,25 @@ Wave 1 primitives (Button, Input, Card, etc.) **already migrated** — not repea
 
 ---
 
-## Wave 3 — Layout shells
+## Wave 3 — Split tracks (per [`UX_PROGRAM_REVIEW.md`](./UX_PROGRAM_REVIEW.md))
+
+### Wave 3A — ContextMenu + Popover / DropdownMenu
+
+- **3A-0:** Inventory — [`CONTEXTMENU_POPOVER_STANDARDIZATION_REVIEW.md`](./CONTEXTMENU_POPOVER_STANDARDIZATION_REVIEW.md) (**done**)
+- **3A-1:** Shared shell tokenization (`ContextMenu`, `Popover`) — **done**
+- **3A-2:** Primitive hardening (`menuShared`, `DropdownMenu` scaffold, Popover portal/dismiss) — **done**
+- **3A-3:** Drive / File Hub reference rollout
+- **3A-4:** AI, Chat, Notifications, Todo, Scheduling migrations
+- **3A-5:** Certification closeout
+
+**Findings (3A-0):** 2 shared primitives; ~28 app-layer menu implementations; 2 shared `ContextMenu` consumers; 0 `Popover` consumers in `web/`; `FileContextMenu` orphan.
+
+### Wave 3B — Drive interaction completion
+
+- ConfirmModal permanent purge (2 sites)
+- Drag-to-trash parity
+
+### Wave 3C — Layout shells
 
 - Standardize Dashboard, Workspace, Management, Detail shells
 - Extract repeated workspace chrome where safe
@@ -171,4 +201,4 @@ Order suggestion: Drive (baseline) → Chat → Calendar → Dashboard → Place
 - [`UX_CONSTITUTION.md`](./UX_CONSTITUTION.md)
 - [`docs/plans/PLATFORM_MODULE_MODERNIZATION_ROADMAP.md`](../plans/PLATFORM_MODULE_MODERNIZATION_ROADMAP.md) (architecture track)
 
-**Last updated:** 2026-06-03
+**Last updated:** 2026-06-03 (Wave 3A-3 Drive menu rollout plan complete)

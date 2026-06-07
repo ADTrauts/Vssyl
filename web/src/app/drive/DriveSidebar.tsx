@@ -1,5 +1,5 @@
 'use client';
-import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { 
   HomeIcon, 
   FolderIcon, 
@@ -19,6 +19,7 @@ import FolderTree from '../../components/drive/FolderTree';
 import { useDroppable } from '@dnd-kit/core';
 import { useDriveWebSocket } from '../../hooks/useDriveWebSocket';
 import { useTheme } from '../../hooks/useTheme';
+import { DropdownMenu, ContextMenuItem } from 'shared/components';
 
 interface DriveSidebarProps {
   onNewFolder: () => void;
@@ -60,13 +61,6 @@ interface UtilityFolder {
   isTrash?: boolean;
 }
 
-interface DropdownItemProps {
-  icon: React.ComponentType<{ style?: React.CSSProperties }>;
-  label: string;
-  onClick?: () => void;
-  disabled?: boolean;
-}
-
 interface StyleProps {
   [key: string]: React.CSSProperties;
 }
@@ -77,12 +71,6 @@ const utilityFolders: UtilityFolder[] = [
   { icon: ClockIcon, label: 'Recent', href: '/drive/recent' },
   { icon: Pin, label: 'Pinned', href: '/drive/starred' },
   { icon: TrashIcon, label: 'Trash', href: '/drive/trash', isTrash: true },
-];
-
-const dropdownItems: DropdownItemProps[] = [
-  { icon: FolderIcon, label: 'New folder' },
-  { icon: ArrowUpTrayIcon, label: 'File upload' },
-  { icon: ArrowUpTrayIcon, label: 'Folder upload' },
 ];
 
 // Helper functions
@@ -143,33 +131,6 @@ const styles: StyleProps = {
     cursor: 'pointer',
     transition: 'background-color 0.2s',
   },
-  dropdown: {
-    position: 'absolute',
-    top: 44,
-    left: 0,
-    width: '100%',
-    background: '#fff',
-    borderRadius: 8,
-    boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-    border: '1px solid #e5e7eb',
-    zIndex: 100,
-    maxHeight: 320,
-    overflowY: 'auto',
-  },
-  dropdownItem: {
-    width: '100%',
-    background: 'none',
-    border: 'none',
-    padding: '8px 12px',
-    textAlign: 'left',
-    fontSize: 15,
-    color: '#222',
-    display: 'flex',
-    alignItems: 'center',
-    gap: 8,
-    cursor: 'pointer',
-    transition: 'background-color 0.2s',
-  },
   sectionHeader: {
     fontSize: 12,
     fontWeight: 600,
@@ -225,8 +186,25 @@ export default function DriveSidebar({
 }: DriveSidebarProps) {
   const { isDark } = useTheme();
   const [dropdownOpen, setDropdownOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
-  const buttonRef = useRef<HTMLButtonElement>(null);
+
+  const newMenuItems = useMemo((): ContextMenuItem[] => [
+    {
+      icon: <FolderIcon className="w-5 h-5" />,
+      label: 'New folder',
+      onClick: onNewFolder,
+    },
+    {
+      icon: <ArrowUpTrayIcon className="w-5 h-5" />,
+      label: 'File upload',
+      onClick: onFileUpload,
+    },
+    {
+      icon: <ArrowUpTrayIcon className="w-5 h-5" />,
+      label: 'Folder upload',
+      onClick: onFolderUpload,
+    },
+  ], [onNewFolder, onFileUpload, onFolderUpload]);
+
   
   // Folder tree state
   const [folderTrees, setFolderTrees] = useState<Record<string, FolderNode[]>>({});
@@ -588,33 +566,6 @@ export default function DriveSidebar({
     },
   });
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node) &&
-          buttonRef.current && !buttonRef.current.contains(event.target as Node)) {
-        setDropdownOpen(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, []);
-
-  const handleDropdownItemClick = (index: number) => {
-    setDropdownOpen(false);
-    switch (index) {
-      case 0:
-        onNewFolder();
-        break;
-      case 1:
-        onFileUpload();
-        break;
-      case 2:
-        onFolderUpload();
-        break;
-    }
-  };
-
   const handleDriveClick = (drive: ContextDrive, event: React.MouseEvent) => {
     event.preventDefault();
 
@@ -642,39 +593,26 @@ export default function DriveSidebar({
   return (
     <aside style={{ ...styles.sidebar, background: isDark ? '#0f172a' : styles.sidebar.background, borderRight: isDark ? '1px solid #334155' : styles.sidebar.borderRight }}>
       {/* New Button */}
-      <div style={{ marginBottom: 4, position: 'relative' }}>
-        <button
-          ref={buttonRef}
-          style={{ ...styles.newButton, background: newButtonBg, color: newButtonText }}
-          onMouseEnter={e => e.currentTarget.style.backgroundColor = newButtonHoverBg}
-          onMouseLeave={e => e.currentTarget.style.backgroundColor = newButtonBg}
-          onClick={() => setDropdownOpen(v => !v)}
+      <div style={{ marginBottom: 4, display: 'grid', width: '100%' }}>
+        <DropdownMenu
+          open={dropdownOpen}
+          onOpenChange={setDropdownOpen}
+          items={newMenuItems}
+          menuLabel="Create new"
+          align="start"
+          side="bottom"
         >
-          <PlusIcon style={{ width: 20, height: 20, flexShrink: 0 }} />
-          <span>New</span>
-        </button>
-        {dropdownOpen && (
-          <div ref={dropdownRef} style={{ ...styles.dropdown, background: isDark ? '#1e293b' : styles.dropdown.background, border: isDark ? '1px solid #334155' : styles.dropdown.border }}>
-            {dropdownItems.map((item, index) => (
-              <button
-                key={item.label}
-                style={{
-                  ...styles.dropdownItem,
-                  color: isDark ? '#e2e8f0' : styles.dropdownItem.color,
-                  opacity: item.disabled ? 0.5 : 1,
-                  cursor: item.disabled ? 'not-allowed' : 'pointer',
-                }}
-                onClick={() => !item.disabled && handleDropdownItemClick(index)}
-                disabled={item.disabled}
-                onMouseEnter={e => !item.disabled && (e.currentTarget.style.backgroundColor = hoverBg)}
-                onMouseLeave={e => e.currentTarget.style.backgroundColor = 'transparent'}
-              >
-                <item.icon style={{ width: 20, height: 20 }} />
-                {item.label}
-              </button>
-            ))}
-          </div>
-        )}
+          <button
+            type="button"
+            style={{ ...styles.newButton, background: newButtonBg, color: newButtonText }}
+            onMouseEnter={(e) => { e.currentTarget.style.backgroundColor = newButtonHoverBg; }}
+            onMouseLeave={(e) => { e.currentTarget.style.backgroundColor = newButtonBg; }}
+            onClick={() => setDropdownOpen((v) => !v)}
+          >
+            <PlusIcon style={{ width: 20, height: 20, flexShrink: 0 }} />
+            <span>New</span>
+          </button>
+        </DropdownMenu>
       </div>
 
       {/* Context Drives Section */}

@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Avatar, Badge, Button, Card, Spinner, Checkbox } from 'shared/components';
+import { Avatar, Badge, Button, Card, Spinner, Checkbox, ConfirmModal } from 'shared/components';
 import { getPendingRequests, updateConnectionRequest, bulkUpdateConnectionRequests, PendingRequest } from '../../api/member';
 import { BulkActionBar, BulkAction } from './BulkActionBar';
 import { Check, X, Shield } from 'lucide-react';
@@ -22,6 +22,29 @@ export const PendingRequestsList: React.FC<PendingRequestsListProps> = ({
   const [processingRequest, setProcessingRequest] = useState<string | null>(null);
   const [selectedRequests, setSelectedRequests] = useState<Set<string>>(new Set());
   const [bulkLoading, setBulkLoading] = useState(false);
+  const [pendingBulkRequestAction, setPendingBulkRequestAction] = useState<{
+    action: 'accept' | 'decline' | 'block';
+    requestIds: string[];
+  } | null>(null);
+
+  const getBulkRequestConfirmCopy = (
+    action: 'accept' | 'decline' | 'block',
+    count: number
+  ) => {
+    const actionText = action === 'accept' ? 'accept' : action === 'decline' ? 'decline' : 'block';
+    const capitalized = actionText.charAt(0).toUpperCase() + actionText.slice(1);
+    const description =
+      count === 1
+        ? `${capitalized} this connection request?`
+        : `${capitalized} ${count} connection requests?`;
+    const title =
+      count === 1 ? `${capitalized} connection request?` : `${capitalized} connection requests?`;
+    return { title, description, confirmLabel: capitalized };
+  };
+
+  const getBulkRequestConfirmVariant = (action: 'accept' | 'decline' | 'block') => {
+    return action === 'accept' ? 'standard' as const : 'destructive' as const;
+  };
 
   const loadPendingRequests = async () => {
     try {
@@ -57,23 +80,26 @@ export const PendingRequestsList: React.FC<PendingRequestsListProps> = ({
     }
   };
 
-  const handleBulkRequestAction = async (action: 'accept' | 'decline' | 'block') => {
+  const requestBulkRequestAction = (action: 'accept' | 'decline' | 'block') => {
     if (selectedRequests.size === 0) return;
-    
-    const actionText = action === 'accept' ? 'accept' : action === 'decline' ? 'decline' : 'block';
-    const confirmMessage = selectedRequests.size === 1 
-      ? `${actionText.charAt(0).toUpperCase() + actionText.slice(1)} this connection request?`
-      : `${actionText.charAt(0).toUpperCase() + actionText.slice(1)} ${selectedRequests.size} connection requests?`;
-    
-    if (!window.confirm(confirmMessage)) return;
-    
+    setPendingBulkRequestAction({
+      action,
+      requestIds: Array.from(selectedRequests),
+    });
+  };
+
+  const executeBulkRequestAction = async () => {
+    const pending = pendingBulkRequestAction;
+    if (!pending) return;
+
+    const { action, requestIds } = pending;
     setBulkLoading(true);
     try {
-      const response = await bulkUpdateConnectionRequests(Array.from(selectedRequests), action);
-      
+      const response = await bulkUpdateConnectionRequests(requestIds, action);
+
       const successCount = response.results.filter(r => r.success).length;
       const failureCount = response.results.filter(r => !r.success).length;
-      
+
       if (successCount > 0) {
         const actionText = action === 'accept' ? 'accepted' : action === 'decline' ? 'declined' : 'blocked';
         toast.success(`Successfully ${actionText} ${successCount} request${successCount > 1 ? 's' : ''}`);
@@ -81,8 +107,9 @@ export const PendingRequestsList: React.FC<PendingRequestsListProps> = ({
       if (failureCount > 0) {
         toast.error(`Failed to process ${failureCount} request${failureCount > 1 ? 's' : ''}`);
       }
-      
+
       setSelectedRequests(new Set());
+      setPendingBulkRequestAction(null);
       loadPendingRequests();
     } catch (err) {
       console.error('Error processing requests:', err);
@@ -91,6 +118,11 @@ export const PendingRequestsList: React.FC<PendingRequestsListProps> = ({
       setBulkLoading(false);
     }
   };
+
+  const pendingBulkRequestCount = pendingBulkRequestAction?.requestIds.length ?? 0;
+  const pendingBulkRequestConfirm = pendingBulkRequestAction
+    ? getBulkRequestConfirmCopy(pendingBulkRequestAction.action, pendingBulkRequestCount)
+    : null;
 
   const handleSelectRequest = (requestId: string, checked: boolean) => {
     const newSelected = new Set(selectedRequests);
@@ -153,7 +185,7 @@ export const PendingRequestsList: React.FC<PendingRequestsListProps> = ({
             label: `Accept (${selectedRequests.size})`,
             icon: Check,
             variant: 'primary' as const,
-            onClick: () => handleBulkRequestAction('accept'),
+            onClick: () => requestBulkRequestAction('accept'),
             disabled: bulkLoading,
           },
           {
@@ -161,7 +193,7 @@ export const PendingRequestsList: React.FC<PendingRequestsListProps> = ({
             label: `Decline (${selectedRequests.size})`,
             icon: X,
             variant: 'secondary' as const,
-            onClick: () => handleBulkRequestAction('decline'),
+            onClick: () => requestBulkRequestAction('decline'),
             disabled: bulkLoading,
           },
         ]}
@@ -272,6 +304,21 @@ export const PendingRequestsList: React.FC<PendingRequestsListProps> = ({
           ))}
         </div>
       )}
+
+      <ConfirmModal
+        open={pendingBulkRequestAction !== null}
+        onClose={() => setPendingBulkRequestAction(null)}
+        onConfirm={executeBulkRequestAction}
+        title={pendingBulkRequestConfirm?.title ?? ''}
+        description={pendingBulkRequestConfirm?.description ?? ''}
+        variant={
+          pendingBulkRequestAction
+            ? getBulkRequestConfirmVariant(pendingBulkRequestAction.action)
+            : 'standard'
+        }
+        confirmLabel={pendingBulkRequestConfirm?.confirmLabel ?? 'Confirm'}
+        loading={bulkLoading}
+      />
     </div>
   );
 }; 

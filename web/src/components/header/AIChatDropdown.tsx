@@ -8,7 +8,7 @@ import { useSession } from 'next-auth/react';
 import { authenticatedApiCall } from '../../lib/apiUtils';
 import { buildAIConversationItemFromTwinData, buildAddMessagePayloadFromTwinData, buildErrorConversationItem, normalizeStoredAIMessage } from '../../lib/aiResponseHandler';
 import type { FileIssue } from '../../lib/aiResponseHandler';
-import { Button, Spinner } from 'shared/components';
+import { Button, Spinner, ConfirmModal } from 'shared/components';
 import { generateAISchedule } from '../../api/scheduling';
 import * as todoAPI from '../../api/todo';
 import type { SchedulingSuggestion } from '../../api/todo';
@@ -140,6 +140,8 @@ export default function AIChatDropdown({
   const [aiModels, setAiModels] = useState<ChatModelDefinition[]>([]);
   const [hoveredConversationId, setHoveredConversationId] = useState<string | null>(null);
   const [conversationMenuOpen, setConversationMenuOpen] = useState<string | null>(null);
+  const [pendingConversationToTrash, setPendingConversationToTrash] = useState<string | null>(null);
+  const [isMovingConversationToTrash, setIsMovingConversationToTrash] = useState(false);
   const [renamingConversationId, setRenamingConversationId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState('');
   const [attachedFiles, setAttachedFiles] = useState<AIAttachedFile[]>([]);
@@ -181,6 +183,12 @@ export default function AIChatDropdown({
   useEffect(() => {
     if (isOpen) {
       inputRef.current?.focus();
+    }
+  }, [isOpen]);
+
+  useEffect(() => {
+    if (!isOpen) {
+      setPendingConversationToTrash(null);
     }
   }, [isOpen]);
 
@@ -849,14 +857,27 @@ export default function AIChatDropdown({
   };
 
   // Handle conversation actions
-  const handleDeleteConversation = async (conversationId: string) => {
+  const requestDeleteConversation = (conversationId: string) => {
     if (!session?.accessToken) return;
-    
+
     const conversation = conversations.find(c => c.id === conversationId);
     if (!conversation) return;
-    
-    if (!confirm(`Are you sure you want to move "${conversation.title || 'this conversation'}" to trash?`)) return;
 
+    setConversationMenuOpen(null);
+    setPendingConversationToTrash(conversationId);
+  };
+
+  const executeMoveConversationToTrash = async () => {
+    const conversationId = pendingConversationToTrash;
+    if (!conversationId || !session?.accessToken) return;
+
+    const conversation = conversations.find(c => c.id === conversationId);
+    if (!conversation) {
+      setPendingConversationToTrash(null);
+      return;
+    }
+
+    setIsMovingConversationToTrash(true);
     try {
       await trashItem({
         id: conversation.id,
@@ -876,11 +897,18 @@ export default function AIChatDropdown({
         setConversation([]);
       }
       setConversationMenuOpen(null);
+      setPendingConversationToTrash(null);
     } catch (error) {
       console.error('Failed to move conversation to trash:', error);
       toast.error('Failed to move conversation to trash');
+    } finally {
+      setIsMovingConversationToTrash(false);
     }
   };
+
+  const pendingTrashConversation = pendingConversationToTrash
+    ? conversations.find(c => c.id === pendingConversationToTrash)
+    : undefined;
 
   const handleRenameConversation = async (conversationId: string, newTitle: string) => {
     if (!session?.accessToken || !newTitle.trim()) return;
@@ -1065,6 +1093,7 @@ export default function AIChatDropdown({
   if (!isOpen || !isMounted) return null;
 
   return createPortal(
+    <>
     <div
       ref={dropdownRef}
       className="fixed z-50 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg shadow-xl overflow-hidden flex flex-col"
@@ -1626,7 +1655,7 @@ export default function AIChatDropdown({
                                   <button
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      handleDeleteConversation(conv.id);
+                                      requestDeleteConversation(conv.id);
                                     }}
                                     className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center space-x-2"
                                   >
@@ -1647,7 +1676,23 @@ export default function AIChatDropdown({
           </div>
         )}
       </div>
-    </div>,
+    </div>
+
+    <ConfirmModal
+      open={pendingConversationToTrash !== null}
+      onClose={() => setPendingConversationToTrash(null)}
+      onConfirm={executeMoveConversationToTrash}
+      title="Move to trash?"
+      description={
+        pendingTrashConversation
+          ? `Are you sure you want to move "${pendingTrashConversation.title || 'this conversation'}" to trash?`
+          : ''
+      }
+      variant="destructive"
+      confirmLabel="Move to trash"
+      loading={isMovingConversationToTrash}
+    />
+    </>,
     document.body
   );
 }

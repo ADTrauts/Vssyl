@@ -22,8 +22,10 @@ Before creating new shared components, search `shared/src/components/` and `web/
 | Panel | Partial | `Section.tsx`, app panels | |
 | Modal | Yes | `shared/src/components/Modal.tsx` | |
 | Drawer | Yes | `shared/src/components/Drawer.tsx` | |
-| Dropdown | Partial | `Popover.tsx` | |
-| ContextMenu | Yes | `shared/src/components/ContextMenu.tsx` | Drive reference patterns |
+| DropdownMenu | Yes | `shared/src/components/DropdownMenu.tsx` | Trigger-anchored action menus (3A-2 scaffold); shares `menuShared` item renderer |
+| Popover | Yes | `shared/src/components/Popover.tsx` | Low-level floating shell — portal + dismiss; not action menus |
+| ContextMenu | Yes | `shared/src/components/ContextMenu.tsx` | Right-click / pointer-position menus; shares `menuShared` |
+| Menu item contract | Yes | `shared/src/components/menuShared.tsx` | `ContextMenuItem` type + `renderMenuItem` (internal) |
 | Tabs | Yes | `shared/src/components/Tabs.tsx` | |
 | Breadcrumbs | Yes | `shared/src/components/Breadcrumbs.tsx` | |
 | Table | Yes | `shared/src/components/Table.tsx` | |
@@ -171,13 +173,20 @@ Use `Section` or module layout; elevation `--v-shadow-panel`.
 
 ---
 
-## ContextMenu / Dropdown
+## ContextMenu / DropdownMenu / Popover (menus)
 
-**Purpose:** Contextual actions (Drive reference).
+**Purpose:** Contextual actions — **Drive is Reference UX** for rollout ([`DRIVE_MENU_REFERENCE_ROLLOUT_PLAN.md`](./DRIVE_MENU_REFERENCE_ROLLOUT_PLAN.md)).
+
+| Primitive | Use when |
+|-----------|----------|
+| **ContextMenu** | Right-click; pointer `{ x, y }` anchor (file/folder canvas) |
+| **DropdownMenu** | Trigger button / `MoreVertical` action lists (“New”, overflow) |
+| **Popover** | Filter forms, search/autocomplete panels — **not** action menus |
 
 | Attribute | Standard |
 |-----------|----------|
-| A11y | Keyboard arrows; Escape dismiss; first item focus on open |
+| Item contract | `ContextMenuItem` — `destructive`, `heading`, `divider`, `disabled` |
+| A11y (baseline) | `role="menu"` / `menuitem`; Escape + outside-click via shared primitives |
 
 ---
 

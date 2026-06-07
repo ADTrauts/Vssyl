@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useRef } from 'react';
 import { useSession } from 'next-auth/react';
-import { Card, Button, Badge, Avatar, Textarea, Spinner } from 'shared/components';
+import { Card, Button, Badge, Avatar, Textarea, Spinner, ConfirmModal } from 'shared/components';
 import { 
   X, 
   Calendar, 
@@ -68,6 +68,11 @@ export function TaskDetail({ task, onClose, onUpdate, onDelete, onComplete, onRe
   const [linkedFileDetails, setLinkedFileDetails] = useState<Array<{ id: string; name: string; url: string; type: string }>>([]);
   const [isLoadingLinkedFiles, setIsLoadingLinkedFiles] = useState(false);
   const [showDriveFilePicker, setShowDriveFilePicker] = useState(false);
+  const [pendingDependencyToRemove, setPendingDependencyToRemove] = useState<string | null>(null);
+  const [pendingCommentToDelete, setPendingCommentToDelete] = useState<string | null>(null);
+  const [pendingSubtaskToDelete, setPendingSubtaskToDelete] = useState<string | null>(null);
+  const [pendingAttachmentToDelete, setPendingAttachmentToDelete] = useState<string | null>(null);
+  const [isRemovingDependency, setIsRemovingDependency] = useState(false);
 
   useEffect(() => {
     if (task && session?.accessToken) {
@@ -221,9 +226,16 @@ export function TaskDetail({ task, onClose, onUpdate, onDelete, onComplete, onRe
     }
   };
 
-  const handleRemoveDependency = async (dependsOnTaskId: string) => {
+  const handleRemoveDependency = (dependsOnTaskId: string) => {
     if (!session?.accessToken) return;
-    if (!confirm('Remove this dependency?')) return;
+    setPendingDependencyToRemove(dependsOnTaskId);
+  };
+
+  const executeRemoveDependency = async () => {
+    const dependsOnTaskId = pendingDependencyToRemove;
+    if (!session?.accessToken || !dependsOnTaskId) return;
+
+    setIsRemovingDependency(true);
     try {
       await todoAPI.removeTaskDependency(session.accessToken, task.id, dependsOnTaskId);
       toast.success('Dependency removed');
@@ -231,9 +243,12 @@ export function TaskDetail({ task, onClose, onUpdate, onDelete, onComplete, onRe
       if (onRefresh) {
         await onRefresh();
       }
+      setPendingDependencyToRemove(null);
     } catch (error) {
       console.error('Failed to remove dependency:', error);
       toast.error('Failed to remove dependency');
+    } finally {
+      setIsRemovingDependency(false);
     }
   };
 
@@ -386,25 +401,25 @@ export function TaskDetail({ task, onClose, onUpdate, onDelete, onComplete, onRe
     }
   };
 
-  const handleDeleteComment = async (commentId: string) => {
+  const handleDeleteComment = (commentId: string) => {
     if (!session?.accessToken || isSubmittingComment) return;
+    setPendingCommentToDelete(commentId);
+  };
 
-    if (!confirm('Are you sure you want to delete this comment?')) {
-      return;
-    }
+  const executeDeleteComment = async () => {
+    const commentId = pendingCommentToDelete;
+    if (!session?.accessToken || !commentId || isSubmittingComment) return;
 
     setIsSubmittingComment(true);
     try {
       await todoAPI.deleteTaskComment(session.accessToken, task.id, commentId);
       toast.success('Comment deleted');
-      // Refresh task to get updated comments
       if (onRefresh) {
         await onRefresh();
       }
-      // Also refresh the current task data
       if (session?.accessToken) {
         const updatedTask = await todoAPI.getTaskById(session.accessToken, task.id);
-        onUpdate({ 
+        onUpdate({
           title: updatedTask.title,
           description: updatedTask.description || undefined,
           status: updatedTask.status,
@@ -419,11 +434,80 @@ export function TaskDetail({ task, onClose, onUpdate, onDelete, onComplete, onRe
           actualTimeSpent: updatedTask.actualTimeSpent || undefined,
         });
       }
+      setPendingCommentToDelete(null);
     } catch (error) {
       console.error('Failed to delete comment:', error);
       toast.error('Failed to delete comment');
     } finally {
       setIsSubmittingComment(false);
+    }
+  };
+
+  const executeDeleteSubtask = async () => {
+    const subtaskId = pendingSubtaskToDelete;
+    if (!session?.accessToken || !subtaskId || isSubmittingSubtask) return;
+
+    setIsSubmittingSubtask(true);
+    try {
+      await todoAPI.deleteSubtask(session.accessToken, task.id, subtaskId);
+      toast.success('Subtask deleted');
+      if (session?.accessToken) {
+        const updatedTask = await todoAPI.getTaskById(session.accessToken, task.id);
+        onUpdate({
+          title: updatedTask.title,
+          description: updatedTask.description || undefined,
+          status: updatedTask.status,
+          priority: updatedTask.priority,
+          dueDate: updatedTask.dueDate || undefined,
+          startDate: updatedTask.startDate || undefined,
+          completedAt: updatedTask.completedAt || undefined,
+          category: updatedTask.category || undefined,
+          timeEstimate: updatedTask.timeEstimate || undefined,
+          assignedToId: updatedTask.assignedToId || undefined,
+          projectId: updatedTask.projectId || undefined,
+          actualTimeSpent: updatedTask.actualTimeSpent || undefined,
+        });
+      }
+      setPendingSubtaskToDelete(null);
+    } catch (error) {
+      console.error('Failed to delete subtask:', error);
+      toast.error('Failed to delete subtask');
+    } finally {
+      setIsSubmittingSubtask(false);
+    }
+  };
+
+  const executeDeleteAttachment = async () => {
+    const attachmentId = pendingAttachmentToDelete;
+    if (!session?.accessToken || !attachmentId || isUploadingAttachment) return;
+
+    setIsUploadingAttachment(true);
+    try {
+      await todoAPI.deleteTaskAttachment(session.accessToken, task.id, attachmentId);
+      toast.success('Attachment deleted');
+      if (session?.accessToken) {
+        const updatedTask = await todoAPI.getTaskById(session.accessToken, task.id);
+        onUpdate({
+          title: updatedTask.title,
+          description: updatedTask.description || undefined,
+          status: updatedTask.status,
+          priority: updatedTask.priority,
+          dueDate: updatedTask.dueDate || undefined,
+          startDate: updatedTask.startDate || undefined,
+          completedAt: updatedTask.completedAt || undefined,
+          category: updatedTask.category || undefined,
+          timeEstimate: updatedTask.timeEstimate || undefined,
+          assignedToId: updatedTask.assignedToId || undefined,
+          projectId: updatedTask.projectId || undefined,
+          actualTimeSpent: updatedTask.actualTimeSpent || undefined,
+        });
+      }
+      setPendingAttachmentToDelete(null);
+    } catch (error) {
+      console.error('Failed to delete attachment:', error);
+      toast.error('Failed to delete attachment');
+    } finally {
+      setIsUploadingAttachment(false);
     }
   };
 
@@ -435,6 +519,7 @@ export function TaskDetail({ task, onClose, onUpdate, onDelete, onComplete, onRe
   }
 
   return (
+    <>
     <div className="w-full h-full bg-white dark:bg-slate-900 flex flex-col">
       {/* Header */}
       <div className="p-4 border-b flex items-center justify-between bg-gray-50 dark:bg-slate-800">
@@ -726,37 +811,9 @@ export function TaskDetail({ task, onClose, onUpdate, onDelete, onComplete, onRe
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={async () => {
+                          onClick={() => {
                             if (!session?.accessToken || isSubmittingSubtask) return;
-                            if (!confirm('Are you sure you want to delete this subtask?')) return;
-                            setIsSubmittingSubtask(true);
-                            try {
-                              await todoAPI.deleteSubtask(session.accessToken, task.id, subtask.id);
-                              toast.success('Subtask deleted');
-                              // Refresh task
-                              if (session?.accessToken) {
-                                const updatedTask = await todoAPI.getTaskById(session.accessToken, task.id);
-                                onUpdate({ 
-                      title: updatedTask.title,
-                      description: updatedTask.description || undefined,
-                      status: updatedTask.status,
-                      priority: updatedTask.priority,
-                      dueDate: updatedTask.dueDate || undefined,
-                      startDate: updatedTask.startDate || undefined,
-                      completedAt: updatedTask.completedAt || undefined,
-                      category: updatedTask.category || undefined,
-                      timeEstimate: updatedTask.timeEstimate || undefined,
-                      assignedToId: updatedTask.assignedToId || undefined,
-                      projectId: updatedTask.projectId || undefined,
-                      actualTimeSpent: updatedTask.actualTimeSpent || undefined,
-                    });
-                              }
-                            } catch (error) {
-                              console.error('Failed to delete subtask:', error);
-                              toast.error('Failed to delete subtask');
-                            } finally {
-                              setIsSubmittingSubtask(false);
-                            }
+                            setPendingSubtaskToDelete(subtask.id);
                           }}
                           className="h-6 px-2 text-red-600 hover:text-red-700"
                           disabled={isSubmittingSubtask}
@@ -865,37 +922,9 @@ export function TaskDetail({ task, onClose, onUpdate, onDelete, onComplete, onRe
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={async () => {
+                      onClick={() => {
                         if (!session?.accessToken || isUploadingAttachment) return;
-                        if (!confirm('Are you sure you want to delete this attachment?')) return;
-                        setIsUploadingAttachment(true);
-                        try {
-                          await todoAPI.deleteTaskAttachment(session.accessToken, task.id, attachment.id);
-                          toast.success('Attachment deleted');
-                          // Refresh task
-                          if (session?.accessToken) {
-                            const updatedTask = await todoAPI.getTaskById(session.accessToken, task.id);
-                            onUpdate({ 
-                      title: updatedTask.title,
-                      description: updatedTask.description || undefined,
-                      status: updatedTask.status,
-                      priority: updatedTask.priority,
-                      dueDate: updatedTask.dueDate || undefined,
-                      startDate: updatedTask.startDate || undefined,
-                      completedAt: updatedTask.completedAt || undefined,
-                      category: updatedTask.category || undefined,
-                      timeEstimate: updatedTask.timeEstimate || undefined,
-                      assignedToId: updatedTask.assignedToId || undefined,
-                      projectId: updatedTask.projectId || undefined,
-                      actualTimeSpent: updatedTask.actualTimeSpent || undefined,
-                    });
-                          }
-                        } catch (error) {
-                          console.error('Failed to delete attachment:', error);
-                          toast.error('Failed to delete attachment');
-                        } finally {
-                          setIsUploadingAttachment(false);
-                        }
+                        setPendingAttachmentToDelete(attachment.id);
                       }}
                       className="h-6 px-2 text-red-600 hover:text-red-700"
                       disabled={isUploadingAttachment}
@@ -1340,6 +1369,50 @@ export function TaskDetail({ task, onClose, onUpdate, onDelete, onComplete, onRe
         />
       )}
     </div>
+
+    <ConfirmModal
+      open={pendingDependencyToRemove !== null}
+      onClose={() => setPendingDependencyToRemove(null)}
+      onConfirm={executeRemoveDependency}
+      title="Remove dependency?"
+      description="Remove this dependency?"
+      variant="destructive"
+      confirmLabel="Remove"
+      loading={pendingDependencyToRemove !== null && isRemovingDependency}
+    />
+    <ConfirmModal
+      open={pendingCommentToDelete !== null}
+      onClose={() => setPendingCommentToDelete(null)}
+      onConfirm={executeDeleteComment}
+      title="Delete comment?"
+      description="Are you sure you want to delete this comment?"
+      variant="destructive"
+      confirmLabel="Delete"
+      loading={pendingCommentToDelete !== null && isSubmittingComment}
+    />
+    <ConfirmModal
+      open={pendingSubtaskToDelete !== null}
+      onClose={() => setPendingSubtaskToDelete(null)}
+      onConfirm={executeDeleteSubtask}
+      title="Delete subtask?"
+      description="Are you sure you want to delete this subtask?"
+      variant="destructive"
+      confirmLabel="Delete"
+      loading={pendingSubtaskToDelete !== null && isSubmittingSubtask}
+    />
+    <ConfirmModal
+      open={pendingAttachmentToDelete !== null}
+      onClose={() => setPendingAttachmentToDelete(null)}
+      onConfirm={executeDeleteAttachment}
+      title="Delete attachment?"
+      description="Are you sure you want to delete this attachment?"
+      variant="destructive"
+      confirmLabel="Delete"
+      loading={
+        pendingAttachmentToDelete !== null && isUploadingAttachment
+      }
+    />
+    </>
   );
 }
 

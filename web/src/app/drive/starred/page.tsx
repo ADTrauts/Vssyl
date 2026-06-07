@@ -9,7 +9,7 @@ import { useDashboard } from '@/contexts/DashboardContext';
 import { listFiles, listFolders, toggleFileStarred, toggleFolderStarred, downloadFile, File as DriveFile, Folder as DriveFolder } from '@/api/drive';
 import { LoadingOverlay } from 'shared/components/LoadingOverlay';
 import { Alert } from 'shared/components/Alert';
-import { ShareModal, ShareLinkModal } from 'shared/components';
+import { ShareModal, ShareLinkModal, ConfirmModal, ContextMenu, ContextMenuItem } from 'shared/components';
 import { useGlobalTrash } from '@/contexts/GlobalTrashContext';
 import DriveDetailsPanel from '@/components/drive/DriveDetailsPanel';
 import DriveSidebar from '../DriveSidebar';
@@ -249,6 +249,8 @@ const PinnedPage = () => {
   const [detailsPanelCollapsed, setDetailsPanelCollapsed] = useState(false);
   const [selectedItemForDetails, setSelectedItemForDetails] = useState<DriveItem | null>(null);
   const [selectedFolder, setSelectedFolder] = useState<{ id: string; name: string } | null>(null);
+  const [pendingItemToTrash, setPendingItemToTrash] = useState<string | null>(null);
+  const [isMovingToTrash, setIsMovingToTrash] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -377,19 +379,25 @@ const PinnedPage = () => {
     }
   };
 
-  const handleDelete = async (itemId: string) => {
+  const requestMoveToTrash = (itemId: string) => {
     const item = items.find(i => i.id === itemId);
     if (!item) return;
+    setPendingItemToTrash(itemId);
+    setContextMenu(null);
+  };
 
-    if (!confirm(`Are you sure you want to move "${item.name}" to trash?`)) {
-      return;
-    }
+  const executeMoveToTrash = async () => {
+    const itemId = pendingItemToTrash;
+    if (!itemId) return;
+    const item = items.find(i => i.id === itemId);
+    if (!item) return;
 
     if (!session?.accessToken) {
       toast.error('Please log in to delete items');
       return;
     }
 
+    setIsMovingToTrash(true);
     try {
       await trashItem({
         id: item.id,
@@ -404,11 +412,18 @@ const PinnedPage = () => {
 
       toast.success(`${item.name} moved to trash`);
       await loadPinnedItems();
+      setPendingItemToTrash(null);
     } catch (error) {
       console.error('Failed to move item to trash:', error);
       toast.error(`Failed to move ${item.name} to trash`);
+    } finally {
+      setIsMovingToTrash(false);
     }
   };
+
+  const pendingTrashItem = pendingItemToTrash
+    ? items.find(i => i.id === pendingItemToTrash)
+    : null;
 
   const handleShare = (itemId: string) => {
     const item = items.find(i => i.id === itemId);
@@ -481,6 +496,55 @@ const PinnedPage = () => {
     setContextMenu({ x: e.clientX, y: e.clientY, item });
   };
 
+  const buildStarredContextMenuItems = useCallback(
+    (item: DriveItem): ContextMenuItem[] => {
+      const menuItems: ContextMenuItem[] = [
+        {
+          icon: <Pin className="w-4 h-4" />,
+          label: item.starred ? 'Unpin' : 'Pin',
+          onClick: () => {
+            void handleStar(item.id);
+          },
+        },
+        {
+          icon: <Share className="w-4 h-4" />,
+          label: 'Share',
+          onClick: () => handleShare(item.id),
+        },
+      ];
+
+      if (item.type === 'file') {
+        menuItems.push(
+          {
+            icon: <Download className="w-4 h-4" />,
+            label: 'Download',
+            onClick: () => {
+              void handleDownload(item.id);
+            },
+          },
+          {
+            icon: <Brain className="w-4 h-4" />,
+            label: 'Ask AI about this file',
+            onClick: () => handleAskAIAboutFile(item.id, item.name),
+          }
+        );
+      }
+
+      menuItems.push(
+        { divider: true },
+        {
+          icon: <Trash2 className="w-4 h-4" />,
+          label: 'Delete',
+          destructive: true,
+          onClick: () => requestMoveToTrash(item.id),
+        }
+      );
+
+      return menuItems;
+    },
+    [handleStar, handleShare, handleDownload, handleAskAIAboutFile, requestMoveToTrash]
+  );
+
   const handleDragStart = (event: DragStartEvent) => {
     const activeId = event.active.id as string;
     setDraggingId(activeId);
@@ -501,7 +565,7 @@ const PinnedPage = () => {
 
     // Handle trash drop
     if (over.id === 'global-trash-bin') {
-      await handleDelete(draggedItem.id);
+      requestMoveToTrash(draggedItem.id);
       return;
     }
 
@@ -761,7 +825,7 @@ const PinnedPage = () => {
                 setSelectedItemForDetails(null);
               }}
               onToggleCollapse={() => setDetailsPanelCollapsed(!detailsPanelCollapsed)}
-              onDelete={handleDelete}
+              onDelete={requestMoveToTrash}
               onShare={handleShare}
               onDownload={handleDownload}
               onAskAI={handleAskAIAboutFile}
@@ -772,68 +836,14 @@ const PinnedPage = () => {
           )}
         </div>
 
-        {/* Context Menu */}
         {contextMenu && (
-          <div
-            className="fixed bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg shadow-lg z-50 py-1 min-w-[150px]"
-            style={{ left: contextMenu.x, top: contextMenu.y }}
-            onMouseLeave={() => setContextMenu(null)}
-          >
-            <button
-              onClick={() => {
-                handleStar(contextMenu.item.id);
-                setContextMenu(null);
-              }}
-              className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 flex items-center gap-2"
-            >
-              <Pin className="w-4 h-4" />
-              {contextMenu.item.starred ? 'Unpin' : 'Pin'}
-            </button>
-            <button
-              onClick={() => {
-                handleShare(contextMenu.item.id);
-                setContextMenu(null);
-              }}
-              className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 flex items-center gap-2"
-            >
-              <Share className="w-4 h-4" />
-              Share
-            </button>
-            {contextMenu.item.type === 'file' && (
-              <>
-                <button
-                  onClick={() => {
-                    handleDownload(contextMenu.item.id);
-                    setContextMenu(null);
-                  }}
-                  className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 flex items-center gap-2"
-                >
-                  <Download className="w-4 h-4" />
-                  Download
-                </button>
-                <button
-                  onClick={() => {
-                    handleAskAIAboutFile(contextMenu.item.id, contextMenu.item.name);
-                    setContextMenu(null);
-                  }}
-                  className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 flex items-center gap-2"
-                >
-                  <Brain className="w-4 h-4" />
-                  Ask AI about this file
-                </button>
-              </>
-            )}
-            <button
-              onClick={() => {
-                handleDelete(contextMenu.item.id);
-                setContextMenu(null);
-              }}
-              className="w-full text-left px-4 py-2 text-sm hover:bg-gray-100 dark:hover:bg-slate-700 flex items-center gap-2 text-red-600 dark:text-red-400"
-            >
-              <Trash2 className="w-4 h-4" />
-              Delete
-            </button>
-          </div>
+          <ContextMenu
+            open
+            onClose={() => setContextMenu(null)}
+            anchorPoint={{ x: contextMenu.x, y: contextMenu.y }}
+            menuLabel={`Context menu for ${contextMenu.item.name}`}
+            items={buildStarredContextMenuItems(contextMenu.item)}
+          />
         )}
 
         {/* Share Modal - TODO: Implement proper ShareModal with correct API */}
@@ -866,6 +876,21 @@ const PinnedPage = () => {
             itemType={shareLinkModal.itemType}
           />
         )}
+
+        <ConfirmModal
+          open={pendingItemToTrash !== null}
+          onClose={() => setPendingItemToTrash(null)}
+          onConfirm={executeMoveToTrash}
+          title="Move to trash?"
+          description={
+            pendingTrashItem
+              ? `Are you sure you want to move "${pendingTrashItem.name}" to trash?`
+              : ''
+          }
+          variant="destructive"
+          confirmLabel="Move to trash"
+          loading={isMovingToTrash}
+        />
       </div>
     </DndContext>
   );

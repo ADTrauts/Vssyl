@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Modal, Button, Tabs, Spinner, Alert } from 'shared/components';
+import { Modal, Button, Tabs, Spinner, Alert, ConfirmModal } from 'shared/components';
 import { useSession } from 'next-auth/react';
 import { useDashboard } from '../../contexts/DashboardContext';
 import { useSidebarCustomization } from '../../contexts/SidebarCustomizationContext';
@@ -30,6 +30,8 @@ export function SidebarCustomizationModal({
   const [saving, setSaving] = useState(false);
   const [saveError, setSaveError] = useState<string | null>(null);
   const [resetting, setResetting] = useState(false);
+  const [pendingCloseAction, setPendingCloseAction] = useState(false);
+  const [pendingResetAction, setPendingResetAction] = useState<'tab' | 'sidebar' | 'global' | null>(null);
 
   const availableModules = getFilteredModules();
   const context = isWorkAuthenticated ? 'business' : 'personal';
@@ -43,6 +45,13 @@ export function SidebarCustomizationModal({
       }
     }
   }, [open, currentDashboardId, loadConfig]);
+
+  useEffect(() => {
+    if (!open) {
+      setPendingCloseAction(false);
+      setPendingResetAction(null);
+    }
+  }, [open]);
 
   // Get personal dashboards for tab selector
   const personalDashboards = allDashboards.filter(
@@ -73,21 +82,29 @@ export function SidebarCustomizationModal({
 
   const handleCancel = () => {
     if (isDirty) {
-      if (!confirm('You have unsaved changes. Are you sure you want to close?')) {
-        return;
-      }
+      setPendingCloseAction(true);
+      return;
     }
     onClose();
   };
 
-  const handleReset = async (scope?: 'tab' | 'sidebar' | 'global') => {
+  const executeCloseWithDiscard = () => {
+    setPendingCloseAction(false);
+    onClose();
+  };
+
+  const requestReset = (scope: 'tab' | 'sidebar' | 'global') => {
     if (!currentDashboardId || !session?.accessToken) {
       setSaveError('Dashboard ID or session missing');
       return;
     }
+    setPendingResetAction(scope);
+  };
 
-    const scopeLabel = scope === 'tab' ? 'this tab' : scope === 'sidebar' ? 'this sidebar' : 'all customizations';
-    if (!confirm(`Reset ${scopeLabel} to defaults? This cannot be undone.`)) {
+  const executeReset = async () => {
+    const scope = pendingResetAction;
+    if (!scope || !currentDashboardId || !session?.accessToken) {
+      setPendingResetAction(null);
       return;
     }
 
@@ -100,8 +117,8 @@ export function SidebarCustomizationModal({
         dashboardTabId: scope === 'tab' ? selectedDashboardTab || undefined : undefined,
         context: scope === 'sidebar' ? (isWorkAuthenticated && currentBusinessId ? currentBusinessId : 'personal') : undefined,
       });
-      // Reload config after reset
       await loadConfig(currentDashboardId);
+      setPendingResetAction(null);
     } catch (err) {
       setSaveError(err instanceof Error ? err.message : 'Failed to reset configuration');
     } finally {
@@ -109,9 +126,19 @@ export function SidebarCustomizationModal({
     }
   };
 
+  const pendingResetScopeLabel =
+    pendingResetAction === 'tab'
+      ? 'this tab'
+      : pendingResetAction === 'sidebar'
+        ? 'this sidebar'
+        : pendingResetAction === 'global'
+          ? 'all customizations'
+          : '';
+
   if (!open) return null;
 
   return (
+    <>
     <Modal
       open={open}
       onClose={handleCancel}
@@ -127,9 +154,9 @@ export function SidebarCustomizationModal({
             size="sm"
             onClick={() => {
               if (activeTab === 'left') {
-                handleReset('tab');
+                requestReset('tab');
               } else {
-                handleReset('sidebar');
+                requestReset('sidebar');
               }
             }}
             disabled={saving || resetting}
@@ -256,6 +283,32 @@ export function SidebarCustomizationModal({
         )}
       </div>
     </Modal>
+
+    <ConfirmModal
+      open={pendingCloseAction}
+      onClose={() => setPendingCloseAction(false)}
+      onConfirm={executeCloseWithDiscard}
+      title="Unsaved changes"
+      description="You have unsaved changes. Are you sure you want to close?"
+      variant="informational"
+      confirmLabel="Close"
+    />
+
+    <ConfirmModal
+      open={pendingResetAction !== null}
+      onClose={() => setPendingResetAction(null)}
+      onConfirm={executeReset}
+      title="Reset to defaults?"
+      description={
+        pendingResetScopeLabel
+          ? `Reset ${pendingResetScopeLabel} to defaults? This cannot be undone.`
+          : ''
+      }
+      variant="destructive"
+      confirmLabel="Reset"
+      loading={resetting}
+    />
+  </>
   );
 }
 

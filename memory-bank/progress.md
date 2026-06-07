@@ -40,6 +40,68 @@
 
 ---
 
+## UX Modernization — Wave 3A-3 Drive Menu Rollout Plan (June 2026) ✅
+
+**Status:** **PLAN complete** — no migrations.
+
+| Deliverable | Path |
+|-------------|------|
+| Drive menu inventory (7 surfaces) | [`docs/ux/DRIVE_MENU_REFERENCE_ROLLOUT_PLAN.md`](../docs/ux/DRIVE_MENU_REFERENCE_ROLLOUT_PLAN.md) |
+| First ACT target | **3A-3.1a** — `DriveModule.tsx` → `ContextMenu` |
+| Orphan disposition | `FileContextMenu.tsx` — delete in 3A-3.6 |
+
+**Next:** **3A-3.1a ACT** — DriveModule context menu migration.
+
+---
+
+## UX Modernization — Wave 3A-2 Menu Primitive Hardening (June 2026) ✅
+
+**Status:** **SHIPPED** — shared primitives only; no `web/` consumer migrations.
+
+| Deliverable | Path |
+|-------------|------|
+| Menu item contract + renderer | `shared/src/components/menuShared.tsx` |
+| ContextMenu hardening | `shared/src/components/ContextMenu.tsx` |
+| Popover portal + dismiss | `shared/src/components/Popover.tsx` |
+| DropdownMenu scaffold | `shared/src/components/DropdownMenu.tsx` |
+| Evidence | [`docs/ux/CONTEXTMENU_POPOVER_STANDARDIZATION_REVIEW.md`](../docs/ux/CONTEXTMENU_POPOVER_STANDARDIZATION_REVIEW.md) §3A-2 |
+
+**Next:** Wave **3A-3** — Drive reference rollout (`DriveModule`, starred, sidebar).
+
+---
+
+## UX Modernization — Wave 2B-4 ConfirmModal Batch 2 (June 2026) ✅
+
+**Status:** **CLOSED** — **PASS WITH FINDINGS** — [`docs/ux/audits/CONFIRMMODAL_BATCH2_CLOSEOUT.md`](../docs/ux/audits/CONFIRMMODAL_BATCH2_CLOSEOUT.md)
+
+| Metric | Value |
+|--------|------:|
+| Sub-waves | 2A TaskDetail (4) + 2B Drive soft-delete (4) + 2C mixed (9) |
+| Files | **11** |
+| Pattern | Pattern A/B + `informational`/`destructive`/`standard` variants (no `useConfirm`) |
+| `web/` confirms | **60 → 43** (Batch 2 net **−17**) |
+| Manual QA | **PENDING** (not recorded in-repo) |
+| Deferred | 2C.8 branding widget; calendar/admin/HR/scheduling/billing/governance |
+
+**Next:** Batch **3A PLAN** — Drive permanent purge (recommendation in closeout §9).
+
+---
+
+## UX Modernization — Wave 2B-4 ConfirmModal Batch 2B Drive Soft-Delete (June 2026) ✅
+
+**Status:** **CLOSED** — **PASS WITH FINDINGS** — [`docs/ux/audits/CONFIRMMODAL_BATCH2B_CLOSEOUT.md`](../docs/ux/audits/CONFIRMMODAL_BATCH2B_CLOSEOUT.md)
+
+| Metric | Value |
+|--------|------:|
+| Migrations | 3 files / 4 `confirm()` call sites (starred single, DriveModule single+bulk, Enhanced bulk) |
+| Pattern | `pendingItemToTrash` / `pendingBulkItemsToTrash` + sibling `ConfirmModal` (no `useConfirm`) |
+| `web/` confirms remaining | **52** (grep 2026-06-03) |
+| Manual QA | **PENDING** (not recorded in-repo) |
+
+**Next:** Batch 2C **PLAN mode only** — mixed low-risk; Batch 3 permanent Drive purge deferred.
+
+---
+
 ## UX Modernization — Wave 2B-3 ConfirmModal Batch 1 (June 2026) ✅
 
 **Status:** **CLOSED** — **PASS WITH FINDINGS** — [`docs/ux/audits/CONFIRMMODAL_BATCH1_CLOSEOUT.md`](../docs/ux/audits/CONFIRMMODAL_BATCH1_CLOSEOUT.md)
@@ -48,10 +110,8 @@
 |--------|------:|
 | Migrations | 8 files / 8 `confirm()` call sites |
 | Pattern | Pending entity + sibling `ConfirmModal` (no `useConfirm`) |
-| `web/` confirms remaining | **60** (grep 2026-06-03) |
+| `web/` confirms remaining (post–Batch 1) | **60** (grep 2026-06-03) |
 | Manual QA | **PENDING** (not recorded in-repo) |
-
-**Next:** Batch 2 **PLAN mode only** — `TaskDetail`, Drive trash, etc.; no implementation until QA sign-off or accepted risk.
 
 ## UX Modernization — Wave 1.5 Skeleton Tokens (June 2026) ✅
 

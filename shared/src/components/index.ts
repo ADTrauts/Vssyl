@@ -24,6 +24,7 @@ export * from './FilePreview';
 export * from './FilePreviewPanel';
 export * from './UploadButton';
 export * from './ContextMenu';
+export * from './DropdownMenu';
 export * from './Breadcrumbs';
 export * from './StatCard';
 export * from './DateRangePicker';

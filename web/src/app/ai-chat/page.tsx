@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Brain, Send, Plus, Archive, Pin, Trash2, MessageSquare, Sparkles, Bot, User, Search, MoreVertical, Check, X, Share2, Edit, Folder, Paperclip, ImageIcon, Mic, Square, Volume2, HelpCircle, Building2 } from 'lucide-react';
-import { Button, Spinner } from 'shared/components';
+import { Button, Spinner, ConfirmModal } from 'shared/components';
 import AIMessageContent from '../../components/ai/AIMessageContent';
 import AIAssistantMessageBody from '../../components/ai/AIAssistantMessageBody';
 import { type StructuredAIResponse } from '../../components/ai/AIResponseRenderer';
@@ -170,6 +170,8 @@ export default function AIChat() {
   const [aiModels, setAiModels] = useState<ChatModelDefinition[]>([]);
   const [hoveredConversationId, setHoveredConversationId] = useState<string | null>(null);
   const [conversationMenuOpen, setConversationMenuOpen] = useState<string | null>(null);
+  const [pendingConversationToTrash, setPendingConversationToTrash] = useState<string | null>(null);
+  const [isMovingConversationToTrash, setIsMovingConversationToTrash] = useState(false);
   const [renamingConversationId, setRenamingConversationId] = useState<string | null>(null);
   const [renameValue, setRenameValue] = useState('');
   const [attachedFiles, setAttachedFiles] = useState<AIAttachedFile[]>([]);
@@ -1247,17 +1249,29 @@ export default function AIChat() {
   };
 
 
-  const handleDeleteConversation = async (conversationId?: string) => {
+  const requestDeleteConversation = (conversationId?: string) => {
     const targetId = conversationId || currentConversationId;
     if (!targetId || !session?.accessToken) return;
-    
+
     const conversation = conversations.find(c => c.id === targetId);
     if (!conversation) return;
-    
-    if (!confirm(`Are you sure you want to move "${conversation.title || 'this conversation'}" to trash?`)) return;
 
+    setConversationMenuOpen(null);
+    setPendingConversationToTrash(targetId);
+  };
+
+  const executeMoveConversationToTrash = async () => {
+    const targetId = pendingConversationToTrash;
+    if (!targetId || !session?.accessToken) return;
+
+    const conversation = conversations.find(c => c.id === targetId);
+    if (!conversation) {
+      setPendingConversationToTrash(null);
+      return;
+    }
+
+    setIsMovingConversationToTrash(true);
     try {
-      // Use global trash API
       await trashItem({
         id: conversation.id,
         name: conversation.title || 'Untitled Conversation',
@@ -1276,11 +1290,18 @@ export default function AIChat() {
       }
       setShowMoreMenu(false);
       setConversationMenuOpen(null);
+      setPendingConversationToTrash(null);
     } catch (error) {
       console.error('Failed to move conversation to trash:', error);
       toast.error('Failed to move conversation to trash');
+    } finally {
+      setIsMovingConversationToTrash(false);
     }
   };
+
+  const pendingTrashConversation = pendingConversationToTrash
+    ? conversations.find(c => c.id === pendingConversationToTrash)
+    : undefined;
 
   const handleRenameConversation = async (conversationId: string, newTitle: string) => {
     if (!session?.accessToken || !newTitle.trim()) return;
@@ -1407,6 +1428,7 @@ export default function AIChat() {
   const regularConversations = filteredConversations.filter(c => !c.isPinned);
 
   return (
+    <>
     <div className="h-full flex bg-gray-50 dark:bg-slate-800">
       {/* Sidebar - Conversations List */}
       <div className="w-80 bg-white dark:bg-slate-900 border-r border-gray-200 dark:border-slate-700 flex flex-col">
@@ -1682,7 +1704,7 @@ export default function AIChat() {
                                   <button
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      handleDeleteConversation(conv.id);
+                                      requestDeleteConversation(conv.id);
                                     }}
                                     className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center space-x-2"
                                   >
@@ -1836,7 +1858,7 @@ export default function AIChat() {
                                   <button
                                     onClick={(e) => {
                                       e.stopPropagation();
-                                      handleDeleteConversation(conv.id);
+                                      requestDeleteConversation(conv.id);
                                     }}
                                     className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center space-x-2"
                                   >
@@ -1934,7 +1956,7 @@ export default function AIChat() {
                     <span>{selectedConversation.isArchived ? 'Unarchive' : 'Archive'}</span>
                   </button>
                   <button
-                    onClick={() => handleDeleteConversation()}
+                    onClick={() => requestDeleteConversation()}
                     className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center space-x-2"
                   >
                     <Trash2 className="h-4 w-4" />
@@ -2519,5 +2541,21 @@ export default function AIChat() {
       </div>
       </div>
     </div>
+
+    <ConfirmModal
+      open={pendingConversationToTrash !== null}
+      onClose={() => setPendingConversationToTrash(null)}
+      onConfirm={executeMoveConversationToTrash}
+      title="Move to trash?"
+      description={
+        pendingTrashConversation
+          ? `Are you sure you want to move "${pendingTrashConversation.title || 'this conversation'}" to trash?`
+          : ''
+      }
+      variant="destructive"
+      confirmLabel="Move to trash"
+      loading={isMovingConversationToTrash}
+    />
+    </>
   );
 }

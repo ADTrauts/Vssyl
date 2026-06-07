@@ -2,13 +2,12 @@
 
 import React, { useState, useEffect, useCallback, useRef, useMemo } from 'react';
 import { useSession } from 'next-auth/react';
-import { Card, Button, Avatar, Badge, Spinner } from 'shared/components';
+import { Card, Button, Avatar, Badge, Spinner, ContextMenu, ContextMenuItem, Popover } from 'shared/components';
 import { 
   Folder, 
   File, 
   Upload, 
   Search, 
-  MoreVertical, 
   Grid, 
   List,
   Download,
@@ -30,7 +29,7 @@ import {
 import { toast } from 'react-hot-toast';
 import { useDashboard } from '../../contexts/DashboardContext';
 import { useGlobalSearch } from '../../contexts/GlobalSearchContext';
-import { ShareModal, ShareLinkModal, Modal } from 'shared/components';
+import { ShareModal, ShareLinkModal, Modal, ConfirmModal } from 'shared/components';
 import { useGlobalTrash } from '../../contexts/GlobalTrashContext';
 import DriveDetailsPanel from '../drive/DriveDetailsPanel';
 import { useDriveWebSocket } from '../../hooks/useDriveWebSocket';
@@ -506,7 +505,6 @@ export default function DriveModule({ dashboardId, className = '', refreshTrigge
   const [pinnedOnly, setPinnedOnly] = useState(false);
   const [dateRangeFilter, setDateRangeFilter] = useState<'all' | '7d' | '30d' | 'year'>('all');
   const [showFilterMenu, setShowFilterMenu] = useState(false);
-  const filterMenuRef = useRef<HTMLDivElement | null>(null);
   const [contextMenu, setContextMenu] = useState<{ x: number; y: number; item: DriveItem } | null>(null);
   const [previewFile, setPreviewFile] = useState<DriveItem | null>(null);
   const [previewUrl, setPreviewUrl] = useState<string | null>(null);
@@ -520,6 +518,10 @@ export default function DriveModule({ dashboardId, className = '', refreshTrigge
   const selectedDetailsIdRef = useRef<string | null>(null);
   const [focusedItemIndex, setFocusedItemIndex] = useState<number | null>(null);
   const [showKeyboardShortcutsHelp, setShowKeyboardShortcutsHelp] = useState(false);
+  const [pendingItemToTrash, setPendingItemToTrash] = useState<string | null>(null);
+  const [pendingBulkItemsToTrash, setPendingBulkItemsToTrash] = useState<string[] | null>(null);
+  const [isMovingItemToTrash, setIsMovingItemToTrash] = useState(false);
+  const [isBulkMovingToTrash, setIsBulkMovingToTrash] = useState(false);
   const itemsListRef = useRef<HTMLDivElement>(null);
 
   const effectiveDashboardId = dashboardId || currentDashboard?.id || null;
@@ -530,27 +532,6 @@ export default function DriveModule({ dashboardId, className = '', refreshTrigge
     currentDashboard && 'business' in currentDashboard ? currentDashboard.business?.id ?? null : null;
   const householdId =
     currentDashboard && 'household' in currentDashboard ? currentDashboard.household?.id ?? null : null;
-
-  // Close filter menu when clicking outside
-  useEffect(() => {
-    if (!showFilterMenu) {
-      return;
-    }
-
-    const handleClickOutside = (event: MouseEvent) => {
-      if (!filterMenuRef.current) {
-        return;
-      }
-      if (!filterMenuRef.current.contains(event.target as Node)) {
-        setShowFilterMenu(false);
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [showFilterMenu]);
 
   // Track pending operations to detect conflicts
   const pendingOperationsRef = useRef<Set<string>>(new Set());
@@ -910,15 +891,6 @@ export default function DriveModule({ dashboardId, className = '', refreshTrigge
     };
   }, [selectedFileId, session?.accessToken, currentFolder, onFolderSelect]);
 
-  // Close context menu when clicking outside
-  useEffect(() => {
-    const handleClick = () => setContextMenu(null);
-    if (contextMenu) {
-      document.addEventListener('click', handleClick);
-      return () => document.removeEventListener('click', handleClick);
-    }
-  }, [contextMenu]);
-
   // File upload handler
   const handleFileUpload = () => {
     const input = document.createElement('input');
@@ -1183,28 +1155,31 @@ export default function DriveModule({ dashboardId, className = '', refreshTrigge
     }
   }, [onFolderSelect, selectedItems, handleItemSelect]);
 
-  const handleDelete = useCallback(async (itemId: string) => {
+  const requestMoveToTrash = useCallback((itemId: string) => {
     const item = items.find(i => i.id === itemId);
     if (!item) return;
+    setPendingItemToTrash(itemId);
+    setContextMenu(null);
+  }, [items]);
 
-    if (!confirm(`Are you sure you want to move "${item.name}" to trash?`)) {
-      return;
-    }
+  const executeMoveItemToTrash = useCallback(async () => {
+    const itemId = pendingItemToTrash;
+    if (!itemId) return;
+    const item = items.find(i => i.id === itemId);
+    if (!item) return;
 
     if (!session?.accessToken) {
       toast.error('Please log in to delete items');
       return;
     }
 
-    // Track pending operation for conflict detection
+    setIsMovingItemToTrash(true);
     pendingOperationsRef.current.add(itemId);
 
-    // Optimistic update: remove item immediately
     const previousItems = [...items];
     setItems(prev => prev.filter(i => i.id !== itemId));
 
     try {
-      // Use global trash API
       await trashItem({
         id: item.id,
         name: item.name,
@@ -1217,19 +1192,18 @@ export default function DriveModule({ dashboardId, className = '', refreshTrigge
       });
 
       toast.success(`${item.name} moved to trash`);
-      // Note: WebSocket will trigger refresh, but we already updated optimistically
+      setPendingItemToTrash(null);
     } catch (error) {
       console.error('Failed to move item to trash:', error);
-      // Rollback optimistic update on error
       setItems(previousItems);
       toast.error(`Failed to move ${item.name} to trash`);
     } finally {
-      // Remove from pending operations after a delay to allow WebSocket event to process
+      setIsMovingItemToTrash(false);
       setTimeout(() => {
         pendingOperationsRef.current.delete(itemId);
       }, 1000);
     }
-  }, [session, items, effectiveDashboardId, trashItem]);
+  }, [session, items, pendingItemToTrash, effectiveDashboardId, trashItem]);
 
   const handleShare = useCallback((itemId: string) => {
     const item = items.find(i => i.id === itemId);
@@ -1376,20 +1350,24 @@ export default function DriveModule({ dashboardId, className = '', refreshTrigge
     setLastSelectedIndex(null);
   }, []);
 
-  const handleBulkDelete = useCallback(async () => {
+  const requestBulkMoveToTrash = useCallback(() => {
     if (!session?.accessToken || selectedItems.size === 0) return;
+    setPendingBulkItemsToTrash(Array.from(selectedItems));
+  }, [session, selectedItems]);
 
-      const selectedItemsArray = Array.from(selectedItems);
+  const executeBulkMoveToTrash = useCallback(async () => {
+    const selectedItemsArray = pendingBulkItemsToTrash;
+    if (!session?.accessToken || !selectedItemsArray || selectedItemsArray.length === 0) return;
+
     const itemsToDelete = items.filter(item => selectedItemsArray.includes(item.id));
-    
-    if (!confirm(`Are you sure you want to move ${itemsToDelete.length} item(s) to trash?`)) {
+    if (itemsToDelete.length === 0) {
+      setPendingBulkItemsToTrash(null);
       return;
     }
 
-    // Track pending operations
+    setIsBulkMovingToTrash(true);
     selectedItemsArray.forEach(id => pendingOperationsRef.current.add(id));
 
-    // Optimistic update
     const previousItems = [...items];
     setItems(prev => prev.filter(i => !selectedItemsArray.includes(i.id)));
 
@@ -1411,18 +1389,25 @@ export default function DriveModule({ dashboardId, className = '', refreshTrigge
       toast.success(`${itemsToDelete.length} item(s) moved to trash`);
       setSelectedItems(new Set());
       setLastSelectedIndex(null);
+      setPendingBulkItemsToTrash(null);
     } catch (error) {
       console.error('Failed to move items to trash:', error);
       setItems(previousItems);
       toast.error('Failed to move items to trash');
     } finally {
+      setIsBulkMovingToTrash(false);
       selectedItemsArray.forEach(id => {
         setTimeout(() => {
           pendingOperationsRef.current.delete(id);
         }, 1000);
       });
     }
-  }, [session, selectedItems, items, effectiveDashboardId, trashItem]);
+  }, [session, pendingBulkItemsToTrash, items, effectiveDashboardId, trashItem]);
+
+  const pendingTrashItem = pendingItemToTrash
+    ? items.find(i => i.id === pendingItemToTrash)
+    : null;
+  const pendingBulkTrashCount = pendingBulkItemsToTrash?.length ?? 0;
 
   const handleBulkDownload = useCallback(async () => {
     if (!session?.accessToken || selectedItems.size === 0) return;
@@ -1810,6 +1795,111 @@ export default function DriveModule({ dashboardId, className = '', refreshTrigge
   const folders = useMemo(() => filteredItems.filter(item => item.type === 'folder'), [filteredItems]);
   const files = useMemo(() => filteredItems.filter(item => item.type === 'file'), [filteredItems]);
 
+  const buildDriveContextMenuItems = useCallback(
+    (item: DriveItem): ContextMenuItem[] => {
+      const allItems = [...folders, ...files];
+      const itemIndex = allItems.findIndex((i) => i.id === item.id);
+
+      const menuItems: ContextMenuItem[] = [
+        {
+          icon: <Eye className="w-4 h-4" />,
+          label: item.type === 'folder' ? 'Open' : 'Preview',
+          onClick: () => {
+            void (async () => {
+              if (item.type === 'folder') {
+                handleItemClick(item, itemIndex >= 0 ? itemIndex : undefined, allItems);
+              } else {
+                await handleItemClick(item, itemIndex >= 0 ? itemIndex : undefined, allItems);
+              }
+            })();
+          },
+        },
+        {
+          icon: <Pin className="w-4 h-4" />,
+          label: item.starred ? 'Unpin' : 'Pin',
+          onClick: () => {
+            void handleStar(item.id);
+          },
+        },
+        {
+          icon: <Link2 className="w-4 h-4" />,
+          label: 'Add to V_Link',
+          onClick: () => {
+            openConnectModal(
+              driveItemToVLinkEntity(item, effectiveDashboardId, businessId, householdId)
+            );
+          },
+        },
+        {
+          icon: <Link2 className="w-4 h-4 opacity-70" />,
+          label: 'View linked vlinks',
+          onClick: () => {
+            void handleViewLinkedVLinks(item);
+          },
+        },
+      ];
+
+      if (item.type === 'file') {
+        menuItems.push(
+          {
+            icon: <Share className="w-4 h-4" />,
+            label: 'Share',
+            onClick: () => handleShare(item.id),
+          },
+          {
+            icon: <Download className="w-4 h-4" />,
+            label: 'Download',
+            onClick: () => {
+              void handleDownload(item.id);
+            },
+          }
+        );
+      }
+
+      menuItems.push({
+        icon: <MessageSquare className="w-4 h-4" />,
+        label: 'Discuss in chat',
+        onClick: () => handleDiscussInChat(item),
+      });
+
+      if (item.type === 'file') {
+        menuItems.push({
+          icon: <Brain className="w-4 h-4" />,
+          label: 'Ask AI about this file',
+          onClick: () => handleAskAIAboutFile(item),
+        });
+      }
+
+      menuItems.push(
+        { divider: true },
+        {
+          icon: <Trash2 className="w-4 h-4" />,
+          label: 'Delete',
+          destructive: true,
+          onClick: () => requestMoveToTrash(item.id),
+        }
+      );
+
+      return menuItems;
+    },
+    [
+      folders,
+      files,
+      handleItemClick,
+      handleStar,
+      openConnectModal,
+      effectiveDashboardId,
+      businessId,
+      householdId,
+      handleViewLinkedVLinks,
+      handleShare,
+      handleDownload,
+      handleDiscussInChat,
+      handleAskAIAboutFile,
+      requestMoveToTrash,
+    ]
+  );
+
   // Reset focused index when items change
   useEffect(() => {
     if (focusedItemIndex !== null) {
@@ -1940,7 +2030,7 @@ export default function DriveModule({ dashboardId, className = '', refreshTrigge
               <Button
                 variant="secondary"
                 size="sm"
-                onClick={handleBulkDelete}
+                onClick={requestBulkMoveToTrash}
                 title="Move selected items to trash"
               >
                 <Trash2 className="w-4 h-4 mr-2" />
@@ -2023,71 +2113,67 @@ export default function DriveModule({ dashboardId, className = '', refreshTrigge
           </button>
         </div>
 
-        <div className="flex items-center space-x-2 relative" ref={filterMenuRef}>
-          {/* Filter dropdown trigger */}
-          <Button
-            variant="secondary"
-            size="sm"
-            onClick={() => setShowFilterMenu((prev) => !prev)}
-            title="Filters"
-            aria-label="Show filters"
-            aria-expanded={showFilterMenu}
-            aria-haspopup="true"
+        <div className="flex items-center space-x-2">
+          <Popover
+            open={showFilterMenu}
+            onOpenChange={setShowFilterMenu}
+            panelLabel="Drive filters"
+            content={
+              <div className="w-64 space-y-3">
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+                    Type
+                  </label>
+                  <select
+                    value={fileTypeFilter}
+                    onChange={(e) => setFileTypeFilter(e.target.value)}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                  >
+                    <option value="">All types</option>
+                    <option value="documents">Documents</option>
+                    <option value="spreadsheets">Spreadsheets</option>
+                    <option value="images">Images</option>
+                    <option value="videos">Videos</option>
+                  </select>
+                </div>
+
+                <div>
+                  <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
+                    Date
+                  </label>
+                  <select
+                    value={dateRangeFilter}
+                    onChange={(e) => setDateRangeFilter(e.target.value as 'all' | '7d' | '30d' | 'year')}
+                    className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                  >
+                    <option value="all">Any time</option>
+                    <option value="7d">Last 7 days</option>
+                    <option value="30d">Last 30 days</option>
+                    <option value="year">Last year</option>
+                  </select>
+                </div>
+
+                <label className="flex items-center space-x-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer select-none">
+                  <input
+                    type="checkbox"
+                    className="rounded border-gray-300 dark:border-slate-600"
+                    checked={pinnedOnly}
+                    onChange={(e) => setPinnedOnly(e.target.checked)}
+                  />
+                  <span>Pinned only</span>
+                </label>
+              </div>
+            }
           >
-            <SlidersHorizontal className="w-4 h-4" />
-          </Button>
-
-          {/* Filter dropdown menu */}
-          {showFilterMenu && (
-            <div 
-              className="absolute right-0 top-10 z-20 w-64 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg shadow-lg p-3 space-y-3"
-              role="menu"
-              aria-label="Filter options"
+            <Button
+              variant="secondary"
+              size="sm"
+              title="Filters"
+              aria-label="Show filters"
             >
-              <div>
-                <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
-                  Type
-                </label>
-                <select
-                  value={fileTypeFilter}
-                  onChange={(e) => setFileTypeFilter(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                >
-                  <option value="">All types</option>
-                  <option value="documents">Documents</option>
-                  <option value="spreadsheets">Spreadsheets</option>
-                  <option value="images">Images</option>
-                  <option value="videos">Videos</option>
-                </select>
-              </div>
-
-              <div>
-                <label className="block text-xs font-medium text-gray-500 dark:text-gray-400 mb-1">
-                  Date
-                </label>
-                <select
-                  value={dateRangeFilter}
-                  onChange={(e) => setDateRangeFilter(e.target.value as 'all' | '7d' | '30d' | 'year')}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
-                >
-                  <option value="all">Any time</option>
-                  <option value="7d">Last 7 days</option>
-                  <option value="30d">Last 30 days</option>
-                  <option value="year">Last year</option>
-                </select>
-              </div>
-
-              <label className="flex items-center space-x-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer select-none">
-                <input
-                  type="checkbox"
-                  className="rounded border-gray-300 dark:border-slate-600"
-                  checked={pinnedOnly}
-                  onChange={(e) => setPinnedOnly(e.target.checked)}
-                />
-                <span>Pinned only</span>
-              </label>
-            </div>
-          )}
+              <SlidersHorizontal className="w-4 h-4" />
+            </Button>
+          </Popover>
 
           {/* View mode toggles */}
           <Button
@@ -2324,7 +2410,7 @@ export default function DriveModule({ dashboardId, className = '', refreshTrigge
           onToggleCollapse={() => setDetailsPanelCollapsed(!detailsPanelCollapsed)}
           onDownload={handleDownload}
           onShare={handleShare}
-          onDelete={handleDelete}
+          onDelete={requestMoveToTrash}
           onAskAI={handleAskAIAboutFile}
           getFileIcon={getFileIcon}
           formatFileSize={formatFileSize}
@@ -2332,144 +2418,14 @@ export default function DriveModule({ dashboardId, className = '', refreshTrigge
         />
       )}
 
-      {/* Context Menu */}
       {contextMenu && (
-        <div
-          className="fixed z-50 bg-white dark:bg-slate-900 rounded-lg shadow-lg border border-gray-200 dark:border-slate-700 py-1 min-w-48"
-          style={{ left: contextMenu.x, top: contextMenu.y }}
-          onClick={(e) => e.stopPropagation()}
-          role="menu"
-          aria-label={`Context menu for ${contextMenu.item.name}`}
-        >
-          <button
-            className="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-slate-800 dark:bg-slate-700 flex items-center space-x-2 focus:outline-none focus:bg-gray-100"
-            onClick={async () => {
-              const allItems = [...folders, ...files];
-              const itemIndex = allItems.findIndex(i => i.id === contextMenu.item.id);
-              if (contextMenu.item.type === 'folder') {
-                handleItemClick(contextMenu.item, itemIndex >= 0 ? itemIndex : undefined, allItems);
-              } else {
-                await handleItemClick(contextMenu.item, itemIndex >= 0 ? itemIndex : undefined, allItems);
-              }
-              setContextMenu(null);
-            }}
-            role="menuitem"
-            aria-label={contextMenu.item.type === 'folder' ? `Open folder ${contextMenu.item.name}` : `Preview file ${contextMenu.item.name}`}
-          >
-            <Eye className="w-4 h-4" />
-            <span>{contextMenu.item.type === 'folder' ? 'Open' : 'Preview'}</span>
-          </button>
-          <button
-            className="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-slate-800 dark:bg-slate-700 flex items-center space-x-2 focus:outline-none focus:bg-gray-100"
-            onClick={() => {
-              handleStar(contextMenu.item.id);
-              setContextMenu(null);
-            }}
-            role="menuitem"
-            aria-label={contextMenu.item.starred ? `Unpin ${contextMenu.item.name}` : `Pin ${contextMenu.item.name}`}
-          >
-            <Pin className="w-4 h-4" />
-            <span>{contextMenu.item.starred ? 'Unpin' : 'Pin'}</span>
-          </button>
-          <button
-            className="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-slate-800 dark:bg-slate-700 flex items-center space-x-2 focus:outline-none focus:bg-gray-100"
-            onClick={() => {
-              openConnectModal(
-                driveItemToVLinkEntity(
-                  contextMenu.item,
-                  effectiveDashboardId,
-                  businessId,
-                  householdId,
-                ),
-              );
-              setContextMenu(null);
-            }}
-            role="menuitem"
-            aria-label={`Add ${contextMenu.item.name} to V_Link`}
-          >
-            <Link2 className="w-4 h-4" />
-            <span>Add to V_Link</span>
-          </button>
-          <button
-            className="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-slate-800 dark:bg-slate-700 flex items-center space-x-2 focus:outline-none focus:bg-gray-100"
-            onClick={() => {
-              void handleViewLinkedVLinks(contextMenu.item);
-              setContextMenu(null);
-            }}
-            role="menuitem"
-            aria-label={`View V_Links linked to ${contextMenu.item.name}`}
-          >
-            <Link2 className="w-4 h-4 opacity-70" />
-            <span>View linked vlinks</span>
-          </button>
-          {contextMenu.item.type === 'file' && (
-            <>
-              <button
-                className="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-slate-800 dark:bg-slate-700 flex items-center space-x-2 focus:outline-none focus:bg-gray-100"
-                onClick={() => {
-                  handleShare(contextMenu.item.id);
-                  setContextMenu(null);
-                }}
-                role="menuitem"
-                aria-label={`Share ${contextMenu.item.name}`}
-              >
-                <Share className="w-4 h-4" />
-                <span>Share</span>
-              </button>
-              <button
-                className="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-slate-800 dark:bg-slate-700 flex items-center space-x-2 focus:outline-none focus:bg-gray-100"
-                onClick={() => {
-                  handleDownload(contextMenu.item.id);
-                  setContextMenu(null);
-                }}
-                role="menuitem"
-                aria-label={`Download ${contextMenu.item.name}`}
-              >
-                <Download className="w-4 h-4" />
-                <span>Download</span>
-              </button>
-            </>
-          )}
-          <button
-            className="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-slate-800 dark:bg-slate-700 flex items-center space-x-2 focus:outline-none focus:bg-gray-100"
-            onClick={() => {
-              handleDiscussInChat(contextMenu.item);
-              setContextMenu(null);
-            }}
-            role="menuitem"
-            aria-label={`Discuss ${contextMenu.item.name} in chat`}
-          >
-            <MessageSquare className="w-4 h-4" />
-            <span>Discuss in chat</span>
-          </button>
-          {contextMenu.item.type === 'file' && (
-            <button
-              className="w-full text-left px-4 py-2 hover:bg-gray-100 dark:hover:bg-slate-800 dark:bg-slate-700 flex items-center space-x-2 focus:outline-none focus:bg-gray-100"
-              onClick={() => {
-                handleAskAIAboutFile(contextMenu.item);
-                setContextMenu(null);
-              }}
-              role="menuitem"
-              aria-label={`Ask AI about ${contextMenu.item.name}`}
-            >
-              <Brain className="w-4 h-4" />
-              <span>Ask AI about this file</span>
-            </button>
-          )}
-          <div className="border-t border-gray-200 dark:border-slate-700 my-1" role="separator"></div>
-          <button
-            className="w-full text-left px-4 py-2 hover:bg-red-50 text-red-600 flex items-center space-x-2 focus:outline-none focus:bg-red-50"
-            onClick={() => {
-              handleDelete(contextMenu.item.id);
-              setContextMenu(null);
-            }}
-            role="menuitem"
-            aria-label={`Delete ${contextMenu.item.name}`}
-          >
-            <Trash2 className="w-4 h-4" />
-            <span>Delete</span>
-          </button>
-        </div>
+        <ContextMenu
+          open
+          onClose={() => setContextMenu(null)}
+          anchorPoint={{ x: contextMenu.x, y: contextMenu.y }}
+          menuLabel={`Context menu for ${contextMenu.item.name}`}
+          items={buildDriveContextMenuItems(contextMenu.item)}
+        />
       )}
 
       {/* Share Modal */}
@@ -2764,6 +2720,35 @@ export default function DriveModule({ dashboardId, className = '', refreshTrigge
           </Button>
         </div>
       </Modal>
+
+      <ConfirmModal
+        open={pendingItemToTrash !== null}
+        onClose={() => setPendingItemToTrash(null)}
+        onConfirm={executeMoveItemToTrash}
+        title="Move to trash?"
+        description={
+          pendingTrashItem
+            ? `Are you sure you want to move "${pendingTrashItem.name}" to trash?`
+            : ''
+        }
+        variant="destructive"
+        confirmLabel="Move to trash"
+        loading={isMovingItemToTrash}
+      />
+      <ConfirmModal
+        open={pendingBulkItemsToTrash !== null}
+        onClose={() => setPendingBulkItemsToTrash(null)}
+        onConfirm={executeBulkMoveToTrash}
+        title="Move to trash?"
+        description={
+          pendingBulkTrashCount > 0
+            ? `Are you sure you want to move ${pendingBulkTrashCount} item(s) to trash?`
+            : ''
+        }
+        variant="destructive"
+        confirmLabel="Move to trash"
+        loading={isBulkMovingToTrash}
+      />
     </div>
   );
 }

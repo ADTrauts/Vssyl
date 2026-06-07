@@ -4,7 +4,7 @@ Cross-cutting **visual and interaction standards** for Vssyl. Complements archit
 
 **Agent enforcement:** `.cursor/rules/ux-standards.mdc` (short) + `.cursor/rules/ui-standards.mdc` (shared components).
 
-**Last updated:** 2026-06-03
+**Last updated:** 2026-06-03 (3A-0 ContextMenu/Popover inventory added)
 
 ---
 
@@ -21,6 +21,9 @@ Cross-cutting **visual and interaction standards** for Vssyl. Complements archit
 | [UX_CERTIFICATION_SCORECARD.md](./UX_CERTIFICATION_SCORECARD.md) | 0–5 rubric and UX-L0–L3 levels |
 | [UX_AUDIT_TEMPLATE.md](./UX_AUDIT_TEMPLATE.md) | Module review worksheet (aligned to scorecard) |
 | [UX_MODERNIZATION_ROADMAP.md](./UX_MODERNIZATION_ROADMAP.md) | Waves 0–5; reference UX candidate |
+| [UX_PROGRAM_REVIEW.md](./UX_PROGRAM_REVIEW.md) | Post–Wave 2 program review; Wave 3A/B/C recommendations |
+| [CONTEXTMENU_POPOVER_STANDARDIZATION_REVIEW.md](./CONTEXTMENU_POPOVER_STANDARDIZATION_REVIEW.md) | Wave 3A menu inventory + primitive hardening |
+| [DRIVE_MENU_REFERENCE_ROLLOUT_PLAN.md](./DRIVE_MENU_REFERENCE_ROLLOUT_PLAN.md) | Wave 3A-3 Drive reference menu rollout plan |
 | [COMPONENT_INVENTORY.md](./COMPONENT_INVENTORY.md) | Shared primitive inventory; Wave 2 scope |
 | [audits/WAVE1_QA_CLOSEOUT.md](./audits/WAVE1_QA_CLOSEOUT.md) | Wave 1 / 1.5 formal QA closeout |
 | [audits/MODAL_STANDARDIZATION_CLOSEOUT.md](./audits/MODAL_STANDARDIZATION_CLOSEOUT.md) | Wave 2A modal certification (PASS WITH FINDINGS) |

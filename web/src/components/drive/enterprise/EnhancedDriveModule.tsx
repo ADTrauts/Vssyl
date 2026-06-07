@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
-import { Card, Button, Avatar, Badge, Spinner, Input } from 'shared/components';
+import { Card, Button, Avatar, Badge, Spinner, Input, ConfirmModal } from 'shared/components';
 import { useFeatureGating, useModuleFeatures } from '../../../hooks/useFeatureGating';
 import { FeatureGate } from '../../FeatureGate';
 import { FeatureBadge } from '../../EnterpriseUpgradePrompt';
@@ -94,6 +94,8 @@ export default function EnhancedDriveModule({ businessId, dashboardId, className
   const [isDragging, setIsDragging] = useState(false);
   const [fileTypeFilter, setFileTypeFilter] = useState<string>('');
   const { trashItem } = useGlobalTrash();
+  const [pendingBulkItemsToTrash, setPendingBulkItemsToTrash] = useState<string[] | null>(null);
+  const [isBulkMovingToTrash, setIsBulkMovingToTrash] = useState(false);
 
   // Load files with enterprise data
   const loadEnhancedFiles = useCallback(async () => {
@@ -260,6 +262,54 @@ export default function EnhancedDriveModule({ businessId, dashboardId, className
     setShowClassification(true);
   };
 
+  const requestBulkMoveToTrash = useCallback(() => {
+    if (selectedItems.size === 0) {
+      toast.error('Please select files first');
+      return;
+    }
+    setPendingBulkItemsToTrash(Array.from(selectedItems));
+  }, [selectedItems]);
+
+  const executeBulkMoveToTrash = useCallback(async () => {
+    const selectedIds = pendingBulkItemsToTrash;
+    if (!selectedIds || selectedIds.length === 0) return;
+
+    const itemsToDelete = selectedIds
+      .map((id) => items.find((i) => i.id === id))
+      .filter(Boolean) as DriveItem[];
+    if (itemsToDelete.length === 0) {
+      setPendingBulkItemsToTrash(null);
+      return;
+    }
+
+    setIsBulkMovingToTrash(true);
+    try {
+      await Promise.all(
+        itemsToDelete.map((item) =>
+          trashItem({
+            id: item.id,
+            name: item.name,
+            type: item.type,
+            moduleId: 'drive',
+            moduleName: 'File Hub',
+            metadata: { dashboardId: effectiveDashboardId || undefined },
+          })
+        )
+      );
+      setSelectedItems(new Set());
+      await loadEnhancedFiles();
+      toast.success(`${itemsToDelete.length} item(s) moved to trash`);
+      setPendingBulkItemsToTrash(null);
+    } catch (error) {
+      console.error('Failed to delete files:', error);
+      toast.error('Failed to delete files');
+    } finally {
+      setIsBulkMovingToTrash(false);
+    }
+  }, [pendingBulkItemsToTrash, items, effectiveDashboardId, trashItem, loadEnhancedFiles]);
+
+  const pendingBulkTrashCount = pendingBulkItemsToTrash?.length ?? 0;
+
   const handleBulkAction = async (action: string) => {
     if (selectedItems.size === 0) {
       toast.error('Please select files first');
@@ -282,29 +332,9 @@ export default function EnhancedDriveModule({ businessId, dashboardId, className
         case 'audit':
           setShowAuditLogs(true);
           break;
-        case 'delete': {
-          const itemsToDelete = Array.from(selectedItems)
-            .map((id) => items.find((i) => i.id === id))
-            .filter(Boolean) as DriveItem[];
-          if (itemsToDelete.length === 0) break;
-          if (!confirm(`Move ${itemsToDelete.length} item(s) to trash?`)) break;
-          await Promise.all(
-            itemsToDelete.map((item) =>
-              trashItem({
-                id: item.id,
-                name: item.name,
-                type: item.type,
-                moduleId: 'drive',
-                moduleName: 'File Hub',
-                metadata: { dashboardId: effectiveDashboardId || undefined },
-              })
-            )
-          );
-          setSelectedItems(new Set());
-          await loadEnhancedFiles();
-          toast.success(`${itemsToDelete.length} item(s) moved to trash`);
+        case 'delete':
+          requestBulkMoveToTrash();
           break;
-        }
         default:
           toast.success(`Bulk ${action} not implemented yet`);
       }
@@ -946,6 +976,21 @@ export default function EnhancedDriveModule({ businessId, dashboardId, className
           </div>
         </div>
       )}
+
+      <ConfirmModal
+        open={pendingBulkItemsToTrash !== null}
+        onClose={() => setPendingBulkItemsToTrash(null)}
+        onConfirm={executeBulkMoveToTrash}
+        title="Move to trash?"
+        description={
+          pendingBulkTrashCount > 0
+            ? `Move ${pendingBulkTrashCount} item(s) to trash?`
+            : ''
+        }
+        variant="destructive"
+        confirmLabel="Move to trash"
+        loading={isBulkMovingToTrash}
+      />
     </div>
   );
 }

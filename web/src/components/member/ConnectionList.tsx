@@ -3,7 +3,7 @@
 import React, { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import Link from 'next/link';
-import { Avatar, Badge, Button, Card, Spinner, Checkbox, Modal } from 'shared/components';
+import { Avatar, Badge, Button, Card, Spinner, Checkbox, Modal, ConfirmModal } from 'shared/components';
 import HouseholdMemberManager from '../household/HouseholdMemberManager';
 import { isHouseholdRosterManager } from '../../lib/householdPermissions';
 import { getConnections, Connection, removeConnection, bulkRemoveConnections } from '../../api/member';
@@ -31,6 +31,8 @@ export const ConnectionList: React.FC<ConnectionListProps> = ({ className = '' }
   const [selectedConnections, setSelectedConnections] = useState<Set<string>>(new Set());
   const [bulkLoading, setBulkLoading] = useState(false);
   const [managingHouseholdId, setManagingHouseholdId] = useState<string | null>(null);
+  const [pendingConnectionToRemove, setPendingConnectionToRemove] = useState<{ id: string; userName: string } | null>(null);
+  const [pendingBulkConnectionsToRemove, setPendingBulkConnectionsToRemove] = useState<string[] | null>(null);
 
   const loadConnections = async () => {
     if (filter === 'household' || filter === 'businesses') return;
@@ -100,12 +102,19 @@ export const ConnectionList: React.FC<ConnectionListProps> = ({ className = '' }
     else loadConnections();
   }, [filter, session?.accessToken]);
 
-  const handleRemoveConnection = async (connectionId: string, userName: string) => {
-    if (!window.confirm(`Remove connection with ${userName}?`)) return;
-    setRemovingId(connectionId);
+  const requestRemoveConnection = (connectionId: string, userName: string) => {
+    setPendingConnectionToRemove({ id: connectionId, userName });
+  };
+
+  const executeRemoveConnection = async () => {
+    const pending = pendingConnectionToRemove;
+    if (!pending) return;
+
+    setRemovingId(pending.id);
     try {
-      await removeConnection(connectionId);
-      toast.success(`Connection with ${userName} removed`);
+      await removeConnection(pending.id);
+      toast.success(`Connection with ${pending.userName} removed`);
+      setPendingConnectionToRemove(null);
       loadConnections();
     } catch (err) {
       console.error('Error removing connection:', err);
@@ -115,34 +124,31 @@ export const ConnectionList: React.FC<ConnectionListProps> = ({ className = '' }
     }
   };
 
-  const handleBulkRemoveConnections = async () => {
+  const requestBulkRemoveConnections = () => {
     if (selectedConnections.size === 0) return;
-    
-    const selectedNames = connections
-      .filter(conn => selectedConnections.has(conn.id))
-      .map(conn => conn.user.name || conn.user.email);
-    
-    const confirmMessage = selectedConnections.size === 1 
-      ? `Remove connection with ${selectedNames[0]}?`
-      : `Remove ${selectedConnections.size} connections?`;
-    
-    if (!window.confirm(confirmMessage)) return;
-    
+    setPendingBulkConnectionsToRemove(Array.from(selectedConnections));
+  };
+
+  const executeBulkRemoveConnections = async () => {
+    const connectionIds = pendingBulkConnectionsToRemove;
+    if (!connectionIds || connectionIds.length === 0) return;
+
     setBulkLoading(true);
     try {
-      const response = await bulkRemoveConnections(Array.from(selectedConnections));
-      
+      const response = await bulkRemoveConnections(connectionIds);
+
       const successCount = response.results.filter(r => r.success).length;
       const failureCount = response.results.filter(r => !r.success).length;
-      
+
       if (successCount > 0) {
         toast.success(`Successfully removed ${successCount} connection${successCount > 1 ? 's' : ''}`);
       }
       if (failureCount > 0) {
         toast.error(`Failed to remove ${failureCount} connection${failureCount > 1 ? 's' : ''}`);
       }
-      
+
       setSelectedConnections(new Set());
+      setPendingBulkConnectionsToRemove(null);
       loadConnections();
     } catch (err) {
       console.error('Error removing connections:', err);
@@ -151,6 +157,18 @@ export const ConnectionList: React.FC<ConnectionListProps> = ({ className = '' }
       setBulkLoading(false);
     }
   };
+
+  const pendingBulkRemoveCount = pendingBulkConnectionsToRemove?.length ?? 0;
+  const pendingBulkRemoveDescription =
+    pendingBulkConnectionsToRemove && pendingBulkRemoveCount > 0
+      ? pendingBulkRemoveCount === 1
+        ? (() => {
+            const conn = connections.find((c) => c.id === pendingBulkConnectionsToRemove[0]);
+            const name = conn?.user.name || conn?.user.email || 'this user';
+            return `Remove connection with ${name}?`;
+          })()
+        : `Remove ${pendingBulkRemoveCount} connections?`
+      : '';
 
   const handleSelectConnection = (connectionId: string, checked: boolean) => {
     const newSelected = new Set(selectedConnections);
@@ -366,7 +384,7 @@ export const ConnectionList: React.FC<ConnectionListProps> = ({ className = '' }
             label: `Remove (${selectedConnections.size})`,
             icon: Trash2,
             variant: 'secondary' as const,
-            onClick: handleBulkRemoveConnections,
+            onClick: requestBulkRemoveConnections,
             disabled: bulkLoading,
           },
         ]}
@@ -451,7 +469,7 @@ export const ConnectionList: React.FC<ConnectionListProps> = ({ className = '' }
                 <div className="flex items-center space-x-2">
                   <Button
                     variant="secondary"
-                    onClick={() => handleRemoveConnection(connection.id, connection.user.name || connection.user.email)}
+                    onClick={() => requestRemoveConnection(connection.id, connection.user.name || connection.user.email)}
                     disabled={removingId === connection.id}
                   >
                     {removingId === connection.id ? <Spinner size={16} /> : 'Remove'}
@@ -464,6 +482,32 @@ export const ConnectionList: React.FC<ConnectionListProps> = ({ className = '' }
       )}
         </>
       )}
+
+      <ConfirmModal
+        open={pendingConnectionToRemove !== null}
+        onClose={() => setPendingConnectionToRemove(null)}
+        onConfirm={executeRemoveConnection}
+        title="Remove connection?"
+        description={
+          pendingConnectionToRemove
+            ? `Remove connection with ${pendingConnectionToRemove.userName}?`
+            : ''
+        }
+        variant="destructive"
+        confirmLabel="Remove"
+        loading={removingId === pendingConnectionToRemove?.id}
+      />
+
+      <ConfirmModal
+        open={pendingBulkConnectionsToRemove !== null}
+        onClose={() => setPendingBulkConnectionsToRemove(null)}
+        onConfirm={executeBulkRemoveConnections}
+        title="Remove connections?"
+        description={pendingBulkRemoveDescription}
+        variant="destructive"
+        confirmLabel="Remove"
+        loading={bulkLoading}
+      />
     </div>
   );
 }; 
