@@ -10,6 +10,12 @@ import { DndContext, closestCenter, PointerSensor, KeyboardSensor, useSensor, us
 import { toast } from 'react-hot-toast';
 import { useVLinkDrag } from '@/contexts/VLinkDragContext';
 import { resolveDriveUploadFolderId } from '@/lib/driveDragDrop';
+import {
+  WorkspaceSplitLayout,
+  WorkspaceSidebar,
+  WorkspaceMain,
+} from '../layouts';
+import { DriveCreateFolderModal } from './DriveCreateFolderModal';
 
 interface DrivePageContentProps {
   className?: string;
@@ -28,6 +34,8 @@ export function DrivePageContent({ className = '' }: DrivePageContentProps) {
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [selectedFolder, setSelectedFolder] = useState<{ id: string; name: string } | null>(null);
   const [draggingId, setDraggingId] = useState<string | null>(null);
+  const [createFolderOpen, setCreateFolderOpen] = useState(false);
+  const [isCreatingFolder, setIsCreatingFolder] = useState(false);
   // Use ref instead of state to avoid render-phase updates
   const dragEndHandlerRef = useRef<((event: DragEndEvent | null) => Promise<void>) | null>(null);
 
@@ -136,21 +144,23 @@ export function DrivePageContent({ className = '' }: DrivePageContentProps) {
     input.click();
   }, [session, currentDashboard, openConnectModal, businessId, householdId, selectedFolder?.id]);
 
-  // Folder creation handler
-  const handleCreateFolder = useCallback(async () => {
+  const requestCreateFolder = useCallback(() => {
+    if (!session?.accessToken) return;
+    setCreateFolderOpen(true);
+  }, [session?.accessToken]);
+
+  const executeCreateFolder = useCallback(async (name: string) => {
     if (!session?.accessToken) return;
 
-    const name = prompt('Enter folder name:');
-    if (!name) return;
-
     try {
+      setIsCreatingFolder(true);
       const response = await fetch('/api/drive/folders', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${session.accessToken}`,
         },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           name,
           dashboardId: currentDashboard?.id || null,
           parentId: resolveDriveUploadFolderId(null, selectedFolder?.id ?? null),
@@ -159,12 +169,15 @@ export function DrivePageContent({ className = '' }: DrivePageContentProps) {
 
       if (!response.ok) {
         console.error('Failed to create folder');
+        return;
       }
-      
-      // Trigger refresh without page reload
+
       setRefreshTrigger(prev => prev + 1);
+      setCreateFolderOpen(false);
     } catch (error) {
       console.error('Error creating folder:', error);
+    } finally {
+      setIsCreatingFolder(false);
     }
   }, [session, currentDashboard, selectedFolder?.id]);
 
@@ -200,34 +213,39 @@ export function DrivePageContent({ className = '' }: DrivePageContentProps) {
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
-      <div className={`flex h-full bg-gray-50 dark:bg-gray-900 ${className}`}>
-        {/* Drive Sidebar - Same for all users */}
-        <DriveSidebar 
-          onNewFolder={handleCreateFolder} 
-          onFileUpload={handleFileUpload} 
-          onFolderUpload={handleFileUpload}
-          onContextSwitch={handleContextSwitch}
-          onFolderSelect={handleFolderSelect}
-          selectedFolderId={selectedFolder?.id}
-        />
-        
-        {/* Main Content - Context-aware module */}
-        <div className="flex-1 overflow-hidden">
-          <DriveModuleWrapper 
-            className="h-full" 
+      <WorkspaceSplitLayout className={className}>
+        <WorkspaceSidebar>
+          <DriveSidebar
+            onNewFolder={requestCreateFolder}
+            onFileUpload={handleFileUpload}
+            onFolderUpload={handleFileUpload}
+            onContextSwitch={handleContextSwitch}
+            onFolderSelect={handleFolderSelect}
+            selectedFolderId={selectedFolder?.id}
+          />
+        </WorkspaceSidebar>
+
+        <WorkspaceMain overflow="hidden">
+          <DriveModuleWrapper
+            className="h-full"
             refreshTrigger={refreshTrigger}
             selectedFolderId={selectedFolder?.id || null}
             selectedFileId={selectedFileId}
             onFolderSelect={(folderId) => {
-              // Update selected folder state with folderId from DriveModuleWrapper
               setSelectedFolder(folderId ? { id: folderId, name: '' } : null);
             }}
             onRegisterDragEndHandler={(handler) => {
               dragEndHandlerRef.current = handler;
             }}
           />
-        </div>
-      </div>
+        </WorkspaceMain>
+      </WorkspaceSplitLayout>
+      <DriveCreateFolderModal
+        open={createFolderOpen}
+        onClose={() => setCreateFolderOpen(false)}
+        onSubmit={executeCreateFolder}
+        loading={isCreatingFolder}
+      />
     </DndContext>
   );
 }

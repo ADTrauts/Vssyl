@@ -12,7 +12,14 @@ import { Alert } from 'shared/components/Alert';
 import { ShareModal, ShareLinkModal, ConfirmModal, ContextMenu, ContextMenuItem } from 'shared/components';
 import { useGlobalTrash } from '@/contexts/GlobalTrashContext';
 import DriveDetailsPanel from '@/components/drive/DriveDetailsPanel';
+import { DriveCreateFolderModal } from '@/components/drive/DriveCreateFolderModal';
 import DriveSidebar from '../DriveSidebar';
+import {
+  WorkspaceSplitLayout,
+  WorkspaceSidebar,
+  WorkspaceMain,
+  WorkspaceSecondary,
+} from '@/components/layouts';
 import { Pin, Grid, List, Share, Download, Trash2, Brain } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { DndContext, closestCenter, PointerSensor, KeyboardSensor, useSensor, useSensors, DragEndEvent, DragStartEvent, useDraggable, useDroppable } from '@dnd-kit/core';
@@ -251,6 +258,8 @@ const PinnedPage = () => {
   const [selectedFolder, setSelectedFolder] = useState<{ id: string; name: string } | null>(null);
   const [pendingItemToTrash, setPendingItemToTrash] = useState<string | null>(null);
   const [isMovingToTrash, setIsMovingToTrash] = useState(false);
+  const [createFolderOpen, setCreateFolderOpen] = useState(false);
+  const [isCreatingFolder, setIsCreatingFolder] = useState(false);
 
   const sensors = useSensors(
     useSensor(PointerSensor, {
@@ -586,26 +595,36 @@ const PinnedPage = () => {
     }
   };
 
-  const handleCreateFolder = useCallback(async () => {
+  const requestCreateFolder = useCallback(() => {
     if (!session?.accessToken) return;
-    const name = prompt('Enter folder name:');
-    if (!name) return;
+    setCreateFolderOpen(true);
+  }, [session?.accessToken]);
+
+  const executeCreateFolder = useCallback(async (name: string) => {
+    if (!session?.accessToken) return;
     try {
+      setIsCreatingFolder(true);
       const response = await fetch('/api/drive/folders', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${session.accessToken}`,
         },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           name,
           dashboardId: currentDashboard?.id || null,
-          parentId: null
+          parentId: null,
         }),
       });
-      if (!response.ok) console.error('Failed to create folder');
+      if (!response.ok) {
+        console.error('Failed to create folder');
+        return;
+      }
+      setCreateFolderOpen(false);
     } catch (error) {
       console.error('Error creating folder:', error);
+    } finally {
+      setIsCreatingFolder(false);
     }
   }, [session, currentDashboard]);
 
@@ -654,17 +673,19 @@ const PinnedPage = () => {
       onDragStart={handleDragStart}
       onDragEnd={handleDragEnd}
     >
-      <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
-        <DriveSidebar 
-          onNewFolder={handleCreateFolder} 
-          onFileUpload={handleFileUpload} 
-          onFolderUpload={handleFileUpload}
-          onContextSwitch={handleContextSwitch}
-          onFolderSelect={handleFolderSelect}
-          selectedFolderId={selectedFolder?.id}
-        />
-        
-        <div className="flex-1 overflow-auto flex">
+      <WorkspaceSplitLayout>
+        <WorkspaceSidebar>
+          <DriveSidebar
+            onNewFolder={requestCreateFolder}
+            onFileUpload={handleFileUpload}
+            onFolderUpload={handleFileUpload}
+            onContextSwitch={handleContextSwitch}
+            onFolderSelect={handleFolderSelect}
+            selectedFolderId={selectedFolder?.id}
+          />
+        </WorkspaceSidebar>
+
+        <WorkspaceMain overflow="auto" className="flex">
           {status === 'loading' || loading ? (
             <div className="flex items-center justify-center h-full w-full">
               <LoadingOverlay message="Loading pinned items..." />
@@ -814,27 +835,28 @@ const PinnedPage = () => {
             </div>
           )}
 
-          {/* Details Panel */}
           {detailsPanelOpen && selectedItemForDetails && (
-            <DriveDetailsPanel
-              item={selectedItemForDetails}
-              isOpen={detailsPanelOpen}
-              isCollapsed={detailsPanelCollapsed}
-              onClose={() => {
-                setDetailsPanelOpen(false);
-                setSelectedItemForDetails(null);
-              }}
-              onToggleCollapse={() => setDetailsPanelCollapsed(!detailsPanelCollapsed)}
-              onDelete={requestMoveToTrash}
-              onShare={handleShare}
-              onDownload={handleDownload}
-              onAskAI={handleAskAIAboutFile}
-              getFileIcon={getFileIcon}
-              formatFileSize={formatFileSize}
-              formatDate={formatDate}
-            />
+            <WorkspaceSecondary>
+              <DriveDetailsPanel
+                item={selectedItemForDetails}
+                isOpen={detailsPanelOpen}
+                isCollapsed={detailsPanelCollapsed}
+                onClose={() => {
+                  setDetailsPanelOpen(false);
+                  setSelectedItemForDetails(null);
+                }}
+                onToggleCollapse={() => setDetailsPanelCollapsed(!detailsPanelCollapsed)}
+                onDelete={requestMoveToTrash}
+                onShare={handleShare}
+                onDownload={handleDownload}
+                onAskAI={handleAskAIAboutFile}
+                getFileIcon={getFileIcon}
+                formatFileSize={formatFileSize}
+                formatDate={formatDate}
+              />
+            </WorkspaceSecondary>
           )}
-        </div>
+        </WorkspaceMain>
 
         {contextMenu && (
           <ContextMenu
@@ -891,7 +913,13 @@ const PinnedPage = () => {
           confirmLabel="Move to trash"
           loading={isMovingToTrash}
         />
-      </div>
+        <DriveCreateFolderModal
+          open={createFolderOpen}
+          onClose={() => setCreateFolderOpen(false)}
+          onSubmit={executeCreateFolder}
+          loading={isCreatingFolder}
+        />
+      </WorkspaceSplitLayout>
     </DndContext>
   );
 };

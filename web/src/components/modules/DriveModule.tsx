@@ -32,6 +32,12 @@ import { useGlobalSearch } from '../../contexts/GlobalSearchContext';
 import { ShareModal, ShareLinkModal, Modal, ConfirmModal } from 'shared/components';
 import { useGlobalTrash } from '../../contexts/GlobalTrashContext';
 import DriveDetailsPanel from '../drive/DriveDetailsPanel';
+import { DriveCreateFolderModal } from '../drive/DriveCreateFolderModal';
+import {
+  WorkspaceSplitLayout,
+  WorkspaceMain,
+  WorkspaceSecondary,
+} from '../layouts';
 import { useDriveWebSocket } from '../../hooks/useDriveWebSocket';
 import {
   DragEndEvent,
@@ -522,6 +528,8 @@ export default function DriveModule({ dashboardId, className = '', refreshTrigge
   const [pendingBulkItemsToTrash, setPendingBulkItemsToTrash] = useState<string[] | null>(null);
   const [isMovingItemToTrash, setIsMovingItemToTrash] = useState(false);
   const [isBulkMovingToTrash, setIsBulkMovingToTrash] = useState(false);
+  const [createFolderOpen, setCreateFolderOpen] = useState(false);
+  const [isCreatingFolder, setIsCreatingFolder] = useState(false);
   const itemsListRef = useRef<HTMLDivElement>(null);
 
   const effectiveDashboardId = dashboardId || currentDashboard?.id || null;
@@ -953,23 +961,25 @@ export default function DriveModule({ dashboardId, className = '', refreshTrigge
     input.click();
   };
 
-  // Folder creation handler
-  const handleCreateFolder = async () => {
+  const requestCreateFolder = useCallback(() => {
+    if (!session?.accessToken) return;
+    setCreateFolderOpen(true);
+  }, [session?.accessToken]);
+
+  const executeCreateFolder = useCallback(async (name: string) => {
     if (!session?.accessToken) return;
 
-    const name = prompt('Enter folder name:');
-    if (!name) return;
-
     try {
+      setIsCreatingFolder(true);
       setLoading(true);
-      
+
       const response = await fetch('/api/drive/folders', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${session.accessToken}`,
         },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           name,
           dashboardId: effectiveDashboardId,
           parentId: uploadFolderId,
@@ -980,16 +990,17 @@ export default function DriveModule({ dashboardId, className = '', refreshTrigge
         throw new Error('Failed to create folder');
       }
 
-      // Refresh content
       await loadFilesAndFolders();
       toast.success('Folder created successfully');
+      setCreateFolderOpen(false);
     } catch (error) {
       console.error('Error creating folder:', error);
       toast.error('Failed to create folder. Please try again.');
     } finally {
-    setLoading(false);
+      setIsCreatingFolder(false);
+      setLoading(false);
     }
-  };
+  }, [session?.accessToken, effectiveDashboardId, uploadFolderId, loadFilesAndFolders]);
 
   // Memoize formatting functions
   const formatFileSize = useCallback((bytes: number): string => {
@@ -1409,6 +1420,57 @@ export default function DriveModule({ dashboardId, className = '', refreshTrigge
     : null;
   const pendingBulkTrashCount = pendingBulkItemsToTrash?.length ?? 0;
 
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== 'Delete') return;
+
+      if (
+        e.target instanceof HTMLInputElement ||
+        e.target instanceof HTMLTextAreaElement ||
+        e.target instanceof HTMLSelectElement ||
+        (e.target as HTMLElement)?.isContentEditable
+      ) {
+        return;
+      }
+
+      const modalOpen =
+        pendingItemToTrash !== null ||
+        pendingBulkItemsToTrash !== null ||
+        showKeyboardShortcutsHelp ||
+        shareModalOpen ||
+        shareLinkModal !== null ||
+        createFolderOpen ||
+        contextMenu !== null ||
+        previewFile !== null;
+
+      if (modalOpen || selectedItems.size === 0) return;
+
+      e.preventDefault();
+
+      if (selectedItems.size === 1) {
+        const [itemId] = Array.from(selectedItems);
+        requestMoveToTrash(itemId);
+      } else {
+        requestBulkMoveToTrash();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [
+    selectedItems,
+    pendingItemToTrash,
+    pendingBulkItemsToTrash,
+    showKeyboardShortcutsHelp,
+    shareModalOpen,
+    shareLinkModal,
+    createFolderOpen,
+    contextMenu,
+    previewFile,
+    requestMoveToTrash,
+    requestBulkMoveToTrash,
+  ]);
+
   const handleBulkDownload = useCallback(async () => {
     if (!session?.accessToken || selectedItems.size === 0) return;
 
@@ -1488,41 +1550,9 @@ export default function DriveModule({ dashboardId, className = '', refreshTrigge
 
     if (!draggedItem) return;
 
-    // If dropping on global trash, move item to trash
+    // If dropping on global trash, open move-to-trash confirm (same gate as menu/details delete)
     if (over.id === 'global-trash-bin') {
-      // Track pending operation for conflict detection
-      pendingOperationsRef.current.add(draggedItem.id);
-      
-      // Optimistic update: remove item immediately
-      const previousItems = [...items];
-      setItems(prev => prev.filter(i => i.id !== draggedItem.id));
-      
-      try {
-        // Use global trash API
-        await trashItem({
-          id: draggedItem.id,
-          name: draggedItem.name,
-          type: draggedItem.type,
-          moduleId: 'drive',
-          moduleName: 'File Hub',
-          metadata: {
-            dashboardId: effectiveDashboardId || undefined,
-          },
-        });
-
-        toast.success(`${draggedItem.name} moved to trash`);
-        // Note: WebSocket will trigger refresh, but we already updated optimistically
-      } catch (error) {
-        console.error('Failed to move item to trash:', error);
-        // Rollback optimistic update on error
-        setItems(previousItems);
-        toast.error(`Failed to move ${draggedItem.name} to trash`);
-      } finally {
-        // Remove from pending operations after a delay to allow WebSocket event to process
-        setTimeout(() => {
-          pendingOperationsRef.current.delete(draggedItem.id);
-        }, 1000);
-      }
+      requestMoveToTrash(draggedItem.id);
       return;
     }
 
@@ -1614,7 +1644,7 @@ export default function DriveModule({ dashboardId, className = '', refreshTrigge
       }
       return;
     }
-  }, [items, session, loadFilesAndFolders, effectiveDashboardId, trashItem]);
+  }, [items, session, loadFilesAndFolders, requestMoveToTrash]);
 
   // Listen for custom events from GlobalTrashBin when items are trashed (after loadFilesAndFolders is defined)
   useEffect(() => {
@@ -1940,10 +1970,10 @@ export default function DriveModule({ dashboardId, className = '', refreshTrigge
   }
 
   return (
-    <div className={`flex h-full ${className}`}>
-      {/* Main Content Area */}
-      <div 
-        className={`relative flex-1 space-y-6 p-6 overflow-auto ${isExternalFileDrag ? 'bg-blue-50 border-2 border-blue-400 border-dashed' : ''}`}
+    <WorkspaceSplitLayout className={className}>
+      <WorkspaceMain
+        overflow="auto"
+        className={`space-y-6 p-6 ${isExternalFileDrag ? 'bg-blue-50 border-2 border-blue-400 border-dashed' : ''}`}
         onDragOver={handleDragOver}
         onDragLeave={handleDragLeave}
         onDrop={handleDrop}
@@ -1975,7 +2005,7 @@ export default function DriveModule({ dashboardId, className = '', refreshTrigge
             </p>
         </div>
         <div className="flex items-center space-x-3">
-            <Button variant="secondary" size="sm" onClick={handleCreateFolder}>
+            <Button variant="secondary" size="sm" onClick={requestCreateFolder}>
             <Folder className="w-4 h-4 mr-2" />
             New Folder
           </Button>
@@ -2382,40 +2412,40 @@ export default function DriveModule({ dashboardId, className = '', refreshTrigge
               <Upload className="w-4 h-4 mr-2" />
               Upload Files
             </Button>
-            <Button variant="secondary" onClick={handleCreateFolder}>
+            <Button variant="secondary" onClick={requestCreateFolder}>
               <Folder className="w-4 h-4 mr-2" />
               Create Folder
             </Button>
           </div>
         </div>
       )}
-      </div>
+      </WorkspaceMain>
 
-      {/* Details Panel - Shows when a file is selected */}
       {detailsPanelOpen && (
-        <DriveDetailsPanel
-          item={selectedItemForDetails}
-          activityRefreshTick={detailsActivityRefreshTick}
-          isOpen={detailsPanelOpen}
-          isCollapsed={detailsPanelCollapsed}
-          onClose={() => {
-            setDetailsPanelOpen(false);
-            setSelectedItemForDetails(null);
-            // Clean up blob URL if it exists
-            if (previewUrl && previewUrl.startsWith('blob:')) {
-              window.URL.revokeObjectURL(previewUrl);
-              setPreviewUrl(null);
-            }
-          }}
-          onToggleCollapse={() => setDetailsPanelCollapsed(!detailsPanelCollapsed)}
-          onDownload={handleDownload}
-          onShare={handleShare}
-          onDelete={requestMoveToTrash}
-          onAskAI={handleAskAIAboutFile}
-          getFileIcon={getFileIcon}
-          formatFileSize={formatFileSize}
-          formatDate={formatDate}
-        />
+        <WorkspaceSecondary>
+          <DriveDetailsPanel
+            item={selectedItemForDetails}
+            activityRefreshTick={detailsActivityRefreshTick}
+            isOpen={detailsPanelOpen}
+            isCollapsed={detailsPanelCollapsed}
+            onClose={() => {
+              setDetailsPanelOpen(false);
+              setSelectedItemForDetails(null);
+              if (previewUrl && previewUrl.startsWith('blob:')) {
+                window.URL.revokeObjectURL(previewUrl);
+                setPreviewUrl(null);
+              }
+            }}
+            onToggleCollapse={() => setDetailsPanelCollapsed(!detailsPanelCollapsed)}
+            onDownload={handleDownload}
+            onShare={handleShare}
+            onDelete={requestMoveToTrash}
+            onAskAI={handleAskAIAboutFile}
+            getFileIcon={getFileIcon}
+            formatFileSize={formatFileSize}
+            formatDate={formatDate}
+          />
+        </WorkspaceSecondary>
       )}
 
       {contextMenu && (
@@ -2749,6 +2779,12 @@ export default function DriveModule({ dashboardId, className = '', refreshTrigge
         confirmLabel="Move to trash"
         loading={isBulkMovingToTrash}
       />
-    </div>
+      <DriveCreateFolderModal
+        open={createFolderOpen}
+        onClose={() => setCreateFolderOpen(false)}
+        onSubmit={executeCreateFolder}
+        loading={isCreatingFolder}
+      />
+    </WorkspaceSplitLayout>
   );
 }

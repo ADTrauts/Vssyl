@@ -1,345 +1,120 @@
 import express from 'express';
-import { PrismaClient } from '@prisma/client';
 import { authenticateJWT } from '../../middleware/auth';
-import { AutonomousActionExecutor } from '../../ai/actions/AutonomousActionExecutor';
-import { AutonomyManager } from '../../ai/autonomy/AutonomyManager';
-import { ActionTemplates } from '../../ai/actions/ActionTemplates';
-import { DigitalLifeTwinCore } from '../../ai/core/DigitalLifeTwinCore';
-import { CrossModuleContextEngine } from '../../ai/context/CrossModuleContextEngine';
 import { prisma } from '../../lib/prisma';
 import { logger } from '../../lib/logger';
 
 /**
- * @deprecated Autonomy de-emphasis (A6, May 2026)
+ * @deprecated Autonomy de-emphasis — Wave 1B retirement (June 2026)
  *
- * `/api/ai/autonomous/*` is legacy scaffolding — not part of the product twin path.
- * User-facing autonomy controls affect **prompt boundaries** via `PreferenceResolver` only.
- * Do not add new features here; the Actions UI is hidden unless `NEXT_PUBLIC_AI_ACTIONS_UI=true`.
- * See `docs/plans/AI_PLATFORM_MATURITY_PLAN.md` § Autonomy de-emphasis.
+ * `/api/ai/autonomous/*` write paths are **disabled**. Use:
+ * - Conversational actions: `POST /api/ai/twin` (tool loop + LifeTwin actions)
+ * - Approvals: `GET /api/ai/approvals`, `POST /api/ai/approvals/:id/respond`
+ *
+ * `GET /history` remains read-only for audit visibility of legacy rows.
  */
-
-function logSrvErr(operation: string, message: string, err: unknown, context?: Record<string, unknown>): void {
-  const e = err instanceof Error ? err : new Error(String(err));
-  void logger.error(message, {
-    operation,
-    error: { message: e.message, stack: e.stack },
-    ...(context ? { context } : {}),
-  });
-}
-function logSrvWarn(operation: string, message: string, err?: unknown, context?: Record<string, unknown>): void {
-  if (err !== undefined) {
-    const e = err instanceof Error ? err : new Error(String(err));
-    void logger.warn(message, {
-      operation,
-      error: { message: e.message, stack: e.stack },
-      ...(context ? { context } : {}),
-    });
-  } else {
-    void logger.warn(message, { operation, ...(context ? { context } : {}) });
-  }
-}
-function logSrvDebug(operation: string, message: string, context?: Record<string, unknown>): void {
-  void logger.debug(message, { operation, ...(context ? { context } : {}) });
-}
-
 
 const router: express.Router = express.Router();
 
-// Initialize AI components
-const contextEngine = new CrossModuleContextEngine();
-const digitalTwin = new DigitalLifeTwinCore(contextEngine, prisma);
-const autonomyManager = new AutonomyManager(prisma);
-const actionTemplates = new ActionTemplates(prisma);
-const actionExecutor = new AutonomousActionExecutor(prisma, autonomyManager, actionTemplates, digitalTwin);
+const AUTONOMOUS_RETIRED_BODY = {
+  error: 'autonomous_path_retired',
+  message:
+    'The /api/ai/autonomous API is retired. Use POST /api/ai/twin for governed actions and /api/ai/approvals for approval flows.',
+  replacement: {
+    twin: 'POST /api/ai/twin',
+    approvals: 'GET /api/ai/approvals',
+    approvalRespond: 'POST /api/ai/approvals/:id/respond',
+  },
+  wave: 'AI Platform 1B',
+};
 
-/**
- * Execute an autonomous action
- */
-router.post('/execute', authenticateJWT, async (req, res) => {
-  try {
-    const { actionType, parameters, context } = req.body;
-    const userId = req.user?.id;
+function respondAutonomousRetired(res: express.Response, operation: string): void {
+  void logger.warn('Autonomous API path invoked after retirement', {
+    operation: `autonomous_retired_${operation}`,
+  });
+  res.setHeader('Deprecation', 'true');
+  res.setHeader('Link', '</api/ai/twin>; rel="successor-version"');
+  res.status(410).json(AUTONOMOUS_RETIRED_BODY);
+}
 
-    if (!userId) {
-      return res.status(401).json({ error: 'User not authenticated' });
-    }
+router.post('/execute', authenticateJWT, (_req, res) => {
+  respondAutonomousRetired(res, 'execute');
+});
 
-    if (!actionType || !parameters || !context) {
-      return res.status(400).json({ 
-        error: 'Missing required fields: actionType, parameters, context' 
-      });
-    }
+router.get('/pending-approvals', authenticateJWT, (_req, res) => {
+  respondAutonomousRetired(res, 'pending_approvals');
+});
 
-    // Execute the autonomous action
-    const result = await actionExecutor.executeAutonomousAction(
-      userId,
-      actionType,
-      parameters,
-      context
-    );
+router.post('/approval/:actionId', authenticateJWT, (_req, res) => {
+  respondAutonomousRetired(res, 'approval');
+});
 
-    res.json({
-      success: result.success,
-      actionId: result.actionId,
-      result: result.result,
-      error: result.error,
-      needsApproval: result.needsApproval,
-      approvalReason: result.approvalReason,
-      autonomyDecision: {
-        canExecute: result.autonomyDecision.canExecute,
-        autonomyLevel: result.autonomyDecision.autonomyLevel,
-        confidence: result.autonomyDecision.confidence,
-        riskLevel: result.autonomyDecision.riskAssessment.level
-      },
-      executionTime: result.executionTime
-    });
-
-  } catch (error) {
-    logSrvErr('autonomous_error_executing_autonomous_action', 'Error executing autonomous action:', error);
-    res.status(500).json({ 
-      error: 'Failed to execute autonomous action',
-      details: error instanceof Error ? error.message : 'Unknown error'
-    });
-  }
+router.post('/suggest', authenticateJWT, (_req, res) => {
+  respondAutonomousRetired(res, 'suggest');
 });
 
 /**
- * Get pending actions that require user approval
- */
-router.get('/pending-approvals', authenticateJWT, async (req, res) => {
-  try {
-    const userId = req.user?.id;
-
-    if (!userId) {
-      return res.status(401).json({ error: 'User not authenticated' });
-    }
-
-    const pendingActions = await actionExecutor.getPendingApprovals(userId);
-
-    res.json({
-      success: true,
-      pendingActions,
-      count: pendingActions.length
-    });
-
-  } catch (error) {
-    logSrvErr('autonomous_error_getting_pending_approvals', 'Error getting pending approvals:', error);
-    res.status(500).json({ 
-      error: 'Failed to get pending approvals',
-      details: error instanceof Error ? error.message : 'Unknown error'
-    });
-  }
-});
-
-/**
- * Approve or reject a pending action
- */
-router.post('/approval/:actionId', authenticateJWT, async (req, res) => {
-  try {
-    const { actionId } = req.params;
-    const { approved } = req.body;
-    const userId = req.user?.id;
-
-    if (!userId) {
-      return res.status(401).json({ error: 'User not authenticated' });
-    }
-
-    if (typeof approved !== 'boolean') {
-      return res.status(400).json({ 
-        error: 'Missing required field: approved (boolean)' 
-      });
-    }
-
-    const result = await actionExecutor.handleApproval(userId, actionId, approved);
-
-    res.json({
-      success: result.success,
-      actionId: result.actionId,
-      result: result.result,
-      error: result.error,
-      approved,
-      message: approved ? 'Action approved and executed' : 'Action rejected'
-    });
-
-  } catch (error) {
-    logSrvErr('autonomous_error_handling_approval', 'Error handling approval:', error);
-    res.status(500).json({ 
-      error: 'Failed to handle approval',
-      details: error instanceof Error ? error.message : 'Unknown error'
-    });
-  }
-});
-
-/**
- * Suggest autonomous actions based on user context
- */
-router.post('/suggest', authenticateJWT, async (req, res) => {
-  try {
-    const { context, currentActivity } = req.body;
-    const userId = req.user?.id;
-
-    if (!userId) {
-      return res.status(401).json({ error: 'User not authenticated' });
-    }
-
-    // Get user's autonomy settings  
-    const autonomySettings = await prisma.aIAutonomySettings.findUnique({
-      where: { userId }
-    }) || {
-      scheduling: 50,
-      communication: 30,
-      taskCreation: 50,
-      dataAnalysis: 80
-    };
-    
-    // Generate suggestions based on context and patterns
-    const suggestions = await generateActionSuggestions(userId, context, currentActivity, autonomySettings);
-
-    res.json({
-      success: true,
-      suggestions,
-      count: suggestions.length,
-      autonomySettings: {
-        scheduling: autonomySettings.scheduling || 50,
-        communication: autonomySettings.communication || 30,
-        taskCreation: autonomySettings.taskCreation || 50,
-        dataAnalysis: autonomySettings.dataAnalysis || 80
-      }
-    });
-
-  } catch (error) {
-    logSrvErr('autonomous_error_generating_action_suggestions', 'Error generating action suggestions:', error);
-    res.status(500).json({ 
-      error: 'Failed to generate suggestions',
-      details: error instanceof Error ? error.message : 'Unknown error'
-    });
-  }
-});
-
-/**
- * Get autonomous action history
+ * Read-only audit visibility for legacy autonomous conversation rows.
  */
 router.get('/history', authenticateJWT, async (req, res) => {
   try {
     const userId = req.user?.id;
-    const { limit = 20, offset = 0 } = req.query;
+    const limitRaw = req.query.limit;
+    const offsetRaw = req.query.offset;
+    const limit =
+      typeof limitRaw === 'string' && /^\d+$/.test(limitRaw) ? parseInt(limitRaw, 10) : 20;
+    const offset =
+      typeof offsetRaw === 'string' && /^\d+$/.test(offsetRaw) ? parseInt(offsetRaw, 10) : 0;
 
     if (!userId) {
       return res.status(401).json({ error: 'User not authenticated' });
     }
 
+    res.setHeader('Deprecation', 'true');
+    res.setHeader('Link', '</api/ai/history>; rel="successor-version"');
+
     const history = await prisma.aIConversationHistory.findMany({
       where: {
         userId,
-        userQuery: {
-          contains: 'Action:'
-        }
+        userQuery: { contains: 'Action:' },
       },
       orderBy: { createdAt: 'desc' },
-      take: parseInt(limit as string),
-      skip: parseInt(offset as string)
+      take: limit,
+      skip: offset,
     });
 
-    const formattedHistory = history.map(item => {
-      const data = typeof item.aiResponse === 'string' 
-        ? JSON.parse(item.aiResponse) 
-        : item.aiResponse;
-
+    const formattedHistory = history.map((item) => {
+      const data =
+        typeof item.aiResponse === 'string'
+          ? (JSON.parse(item.aiResponse) as Record<string, unknown>)
+          : (item.aiResponse as Record<string, unknown>);
       return {
         id: item.id,
-        type: item.interactionType,
-        actionType: data.action?.actionType,
-        parameters: data.action?.parameters,
-        status: data.action?.status,
-        success: data.success,
-        confidence: item.confidence,
-        createdAt: item.createdAt,
+        timestamp: item.createdAt,
+        action: data.action || item.userQuery,
         result: data.result,
-        error: data.error
+        success: data.success,
+        legacySource: 'autonomous',
       };
     });
 
     res.json({
       success: true,
+      deprecated: true,
+      message: 'Autonomous writes are retired; this endpoint is read-only audit visibility.',
       history: formattedHistory,
-      count: formattedHistory.length
+      count: formattedHistory.length,
     });
-
-  } catch (error) {
-    logSrvErr('autonomous_error_getting_action_history', 'Error getting action history:', error);
-    res.status(500).json({ 
-      error: 'Failed to get action history',
-      details: error instanceof Error ? error.message : 'Unknown error'
+  } catch (error: unknown) {
+    const err = error instanceof Error ? error : new Error(String(error));
+    void logger.error('Autonomous history read failed', {
+      operation: 'autonomous_history_read',
+      error: { message: err.message, stack: err.stack },
+    });
+    res.status(500).json({
+      error: 'Failed to get autonomous history',
+      details: err.message,
     });
   }
 });
-
-/**
- * Generate action suggestions based on user context
- */
-async function generateActionSuggestions(
-  userId: string, 
-  context: any, 
-  currentActivity: string,
-  autonomySettings: any
-): Promise<any[]> {
-  const suggestions = [];
-
-  // Example suggestions based on context
-  if (context.module === 'chat' && context.hasUnrespondedMessages) {
-    if (autonomySettings.communication >= 60) {
-      suggestions.push({
-        actionType: 'send_message',
-        title: 'Send Follow-up Message',
-        description: 'Send a follow-up message to recent conversations',
-        confidence: 0.7,
-        riskLevel: 'low',
-        estimatedTime: '2 minutes',
-        parameters: {
-          recipient: context.lastMessageSender,
-          message: 'Following up on our previous conversation...',
-          channel: 'email'
-        }
-      });
-    }
-  }
-
-  if (context.module === 'calendar' && context.hasUnscheduledTasks) {
-    if (autonomySettings.scheduling >= 70) {
-      suggestions.push({
-        actionType: 'schedule_event',
-        title: 'Schedule Pending Tasks',
-        description: 'Automatically schedule time for pending tasks',
-        confidence: 0.8,
-        riskLevel: 'low',
-        estimatedTime: '1 minute',
-        parameters: {
-          tasks: context.pendingTasks,
-          preferredTimeSlots: context.availableSlots
-        }
-      });
-    }
-  }
-
-  if (context.module === 'files' && context.hasDisorganizedFiles) {
-    if (autonomySettings.fileManagement >= 50) {
-      suggestions.push({
-        actionType: 'organize_files',
-        title: 'Organize Recent Downloads',
-        description: 'Organize files in your downloads folder',
-        confidence: 0.6,
-        riskLevel: 'low',
-        estimatedTime: '5 minutes',
-        parameters: {
-          source: 'downloads',
-          organizationType: 'by_type_and_date',
-          rules: { keepRecent: true, archiveOlder: 30 }
-        }
-      });
-    }
-  }
-
-  return suggestions;
-}
 
 export default router;

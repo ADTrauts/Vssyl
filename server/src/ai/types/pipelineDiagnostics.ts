@@ -265,6 +265,7 @@ export interface BuildPipelineTraceInput {
   createdAt?: string;
   enforcementApplied?: boolean;
   enforcementAction?: PipelineEnforcementAction;
+  llmProviderRouting?: LlmProviderRoutingSummary;
 }
 
 export interface PipelineEvidenceItem {
@@ -279,6 +280,39 @@ export interface PipelineContextBlockSummary {
   title: string;
   sourceType?: string;
   priority?: string;
+}
+
+/** Subset of conversation reasoning persisted on twin history context (Wave 1D diagnostics). */
+export interface LlmProviderRoutingDiagnostic {
+  phase: string;
+  requestedProvider?: string;
+  requestedModel?: string;
+  selectedProvider: string;
+  selectedModel?: string;
+  fallbackReason?: string;
+  capabilityConstraints?: string[];
+  unsupportedCapabilities?: string[];
+  warnings?: string[];
+}
+
+export interface LlmProviderRoutingSummary {
+  matrixVersion: string;
+  requestedProvider?: string;
+  requestedModel?: string;
+  selectedProvider: string;
+  selectedModel?: string;
+  effectiveProvider?: string;
+  fallbackApplied: boolean;
+  fallbackReason?: string;
+  capabilityWarnings: string[];
+  diagnostics: LlmProviderRoutingDiagnostic[];
+}
+
+export interface PipelineConversationReasoningSummary {
+  conversationObjective?: string;
+  understandingConfidence?: number;
+  prematureSolutionRisk?: boolean;
+  recommendedResponseAction?: string;
 }
 
 export interface PipelineEvidenceBundle {
@@ -328,6 +362,10 @@ export interface AIPipelineTrace {
   enforcementApplied?: boolean;
   enforcementAction?: PipelineEnforcementAction;
   evidenceBundle?: PipelineEvidenceBundle;
+  /** From history context `_conversationReasoning` when rebuilding admin diagnostics. */
+  conversationReasoning?: PipelineConversationReasoningSummary;
+  /** Wave 1E — LLM provider selection / fallback diagnostics. */
+  llmProviderRouting?: LlmProviderRoutingSummary;
 }
 
 export interface PipelineEnforcementSettings {

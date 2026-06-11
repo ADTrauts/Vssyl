@@ -4,7 +4,7 @@ Cross-cutting **visual and interaction standards** for Vssyl. Complements archit
 
 **Agent enforcement:** `.cursor/rules/ux-standards.mdc` (short) + `.cursor/rules/ui-standards.mdc` (shared components).
 
-**Last updated:** 2026-06-03 (3A-0 ContextMenu/Popover inventory added)
+**Last updated:** 2026-06-03 (Wave 5A certification framework)
 
 ---
 
@@ -18,7 +18,10 @@ Cross-cutting **visual and interaction standards** for Vssyl. Complements archit
 | [COMPONENT_STANDARDS.md](./COMPONENT_STANDARDS.md) | Canonical UI primitives, variants, states, repo locations |
 | [INTERACTION_STANDARDS.md](./INTERACTION_STANDARDS.md) | Loading, empty, error, toast, confirm, DnD, search, forms |
 | [ACCESSIBILITY_STANDARDS.md](./ACCESSIBILITY_STANDARDS.md) | Keyboard, focus, ARIA, contrast, motion, testing checklist |
-| [UX_CERTIFICATION_SCORECARD.md](./UX_CERTIFICATION_SCORECARD.md) | 0–5 rubric and UX-L0–L3 levels |
+| [UX_CERTIFICATION_STANDARD.md](./UX_CERTIFICATION_STANDARD.md) | UX-L1 / L2 / L3 certification definitions (Wave 5A) |
+| [UX_CERTIFICATION_SCORECARD.md](./UX_CERTIFICATION_SCORECARD.md) | 11-category PASS/FAIL scorecard + level thresholds |
+| [REFERENCE_MODULE_PROGRAM.md](./REFERENCE_MODULE_PROGRAM.md) | Reference UX / Architecture / Workspace / AI / Calendar slots |
+| [audits/REFERENCE_MODULE_DRIVE.md](./audits/REFERENCE_MODULE_DRIVE.md) | Reference UX Module #1 registration (Drive) |
 | [UX_AUDIT_TEMPLATE.md](./UX_AUDIT_TEMPLATE.md) | Module review worksheet (aligned to scorecard) |
 | [UX_MODERNIZATION_ROADMAP.md](./UX_MODERNIZATION_ROADMAP.md) | Waves 0–5; reference UX candidate |
 | [UX_PROGRAM_REVIEW.md](./UX_PROGRAM_REVIEW.md) | Post–Wave 2 program review; Wave 3A/B/C recommendations |
@@ -40,8 +43,8 @@ Cross-cutting **visual and interaction standards** for Vssyl. Complements archit
 | Architecture | UX |
 |--------------|-----|
 | `VSSYL_PLATFORM_STANDARDS_AND_MODULE_CONTRACT.md` | `UX_CONSTITUTION.md` |
-| `CERTIFICATION_LEDGER.md` | `UX_CERTIFICATION_SCORECARD.md` + filled audits |
-| Reference Module Catalog (L3 code) | Reference UX Module (L3 visual/interaction) |
+| `CERTIFICATION_LEDGER.md` | `UX_CERTIFICATION_STANDARD.md` + scorecard + audits |
+| Reference Module Catalog (L3 code) | `REFERENCE_MODULE_PROGRAM.md` + `REFERENCE_MODULE_*.md` |
 
 **Runtime tokens:** `web/src/styles/tokens.css` (imported from `web/src/app/globals.css`). Tailwind: `v.*` namespace in `web/tailwind.config.js`.
 

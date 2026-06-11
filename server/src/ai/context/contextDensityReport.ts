@@ -46,6 +46,8 @@ export interface ContextOrchestrationDiagnostics {
   }>;
   /** Phase B.5 — metadata-only orchestration snapshots (cap 2 per request). */
   snapshots?: AIOrchestrationSnapshot[];
+  /** Wave 1E — LLM provider selection / fallback (not module context providers). */
+  llmProviderRouting?: Record<string, unknown>;
 }
 
 export interface ContextDensityTierUsage {
@@ -308,6 +310,12 @@ export function buildOrchestrationDiagnosticsFromQueryContext(
   const snapshots = Array.isArray(queryContext.orchestrationSnapshots)
     ? (queryContext.orchestrationSnapshots as AIOrchestrationSnapshot[])
     : undefined;
+  const llmProviderRouting =
+    queryContext.llmProviderRouting &&
+    typeof queryContext.llmProviderRouting === 'object' &&
+    !Array.isArray(queryContext.llmProviderRouting)
+      ? (queryContext.llmProviderRouting as Record<string, unknown>)
+      : undefined;
 
   if (
     !contextGenerationId &&
@@ -316,7 +324,8 @@ export function buildOrchestrationDiagnosticsFromQueryContext(
     !requiredSourceFailures?.length &&
     !staleContextWarnings?.length &&
     !groundingSourceToProvider?.length &&
-    !snapshots?.length
+    !snapshots?.length &&
+    !llmProviderRouting
   ) {
     return undefined;
   }
@@ -329,6 +338,7 @@ export function buildOrchestrationDiagnosticsFromQueryContext(
     staleContextWarnings,
     groundingSourceToProvider,
     ...(snapshots?.length ? { snapshots } : {}),
+    ...(llmProviderRouting ? { llmProviderRouting } : {}),
   };
 }
 

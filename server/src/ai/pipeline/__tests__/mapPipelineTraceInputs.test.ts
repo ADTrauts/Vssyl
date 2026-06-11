@@ -169,6 +169,28 @@ describe('extractPipelineTraceFromContext', () => {
 });
 
 describe('buildPipelineTrace with orchestration mapping', () => {
+  it('includes llmProviderRouting from query context', () => {
+    const trace = buildPipelineTrace(
+      mapOrchestrationToPipelineTraceInput({
+        userId: 'u1',
+        userMessage: 'hello',
+        finalResponse: 'hi',
+        confidence: 0.9,
+        queryContext: {
+          llmProviderRouting: {
+            matrixVersion: '1e-test',
+            selectedProvider: 'openai',
+            fallbackApplied: false,
+            capabilityWarnings: [],
+            diagnostics: [{ phase: 'selected', selectedProvider: 'openai' }],
+          },
+        },
+      })
+    );
+    expect(trace.llmProviderRouting?.selectedProvider).toBe('openai');
+    expect(trace.llmProviderRouting?.matrixVersion).toBe('1e-test');
+  });
+
   it('marks retrieval when tools were used', () => {
     const trace = buildPipelineTrace(
       mapOrchestrationToPipelineTraceInput({

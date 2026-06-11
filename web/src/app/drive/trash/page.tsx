@@ -11,8 +11,15 @@ import { TrashIcon, ArrowUturnLeftIcon, ArchiveBoxXMarkIcon } from '@heroicons/r
 import { Squares2X2Icon, Bars3Icon } from '@heroicons/react/24/solid';
 import { LoadingOverlay } from 'shared/components/LoadingOverlay';
 import { Alert } from 'shared/components/Alert';
+import { ConfirmModal } from 'shared/components';
 import DriveSidebar from '../DriveSidebar';
+import {
+  WorkspaceSplitLayout,
+  WorkspaceSidebar,
+  WorkspaceMain,
+} from '@/components/layouts';
 import { toast } from 'react-hot-toast';
+import { DriveCreateFolderModal } from '@/components/drive/DriveCreateFolderModal';
 
 type ViewMode = 'list' | 'grid';
 
@@ -33,8 +40,18 @@ export default function TrashPage() {
 
   const [error, setError] = useState<string | null>(null);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
+  const [pendingEmptyTrash, setPendingEmptyTrash] = useState(false);
+  const [pendingPermanentDeleteItem, setPendingPermanentDeleteItem] = useState<
+    Pick<TrashedItem, 'id' | 'name' | 'moduleId' | 'type'> | null
+  >(null);
   const [selectedFolder, setSelectedFolder] = useState<{ id: string; name: string } | null>(null);
   const [isDraggingOver, setIsDraggingOver] = useState(false);
+  const [createFolderOpen, setCreateFolderOpen] = useState(false);
+  const [isCreatingFolder, setIsCreatingFolder] = useState(false);
+  const [pendingDropMoveToTrashItem, setPendingDropMoveToTrashItem] = useState<
+    Omit<TrashedItem, 'trashedAt'> | null
+  >(null);
+  const [isMovingDropToTrash, setIsMovingDropToTrash] = useState(false);
   const [viewMode, setViewMode] = useState<ViewMode>(() => {
     // Initialize from localStorage, default to 'list' if not set
     if (typeof window !== 'undefined') {
@@ -52,27 +69,53 @@ export default function TrashPage() {
     }
   };
 
-  // Sidebar handlers
-  const handleCreateFolder = useCallback(async () => {
-    if (!session?.accessToken) return;
-    const name = prompt('Enter folder name:');
-    if (!name) return;
+  const executeDropMoveToTrash = useCallback(async () => {
+    const itemData = pendingDropMoveToTrashItem;
+    if (!itemData) return;
+    setIsMovingDropToTrash(true);
     try {
+      await trashItem(itemData);
+      toast.success(`${itemData.name} moved to trash`);
+      await refreshTrash();
+      setPendingDropMoveToTrashItem(null);
+    } catch (error) {
+      console.error('Error handling drop:', error);
+      toast.error('Failed to move item to trash');
+    } finally {
+      setIsMovingDropToTrash(false);
+    }
+  }, [pendingDropMoveToTrashItem, trashItem, refreshTrash]);
+
+  const requestCreateFolder = useCallback(() => {
+    if (!session?.accessToken) return;
+    setCreateFolderOpen(true);
+  }, [session?.accessToken]);
+
+  const executeCreateFolder = useCallback(async (name: string) => {
+    if (!session?.accessToken) return;
+    try {
+      setIsCreatingFolder(true);
       const response = await fetch('/api/drive/folders', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${session.accessToken}`,
         },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           name,
           dashboardId: currentDashboard?.id || null,
-          parentId: null
+          parentId: null,
         }),
       });
-      if (!response.ok) console.error('Failed to create folder');
+      if (!response.ok) {
+        console.error('Failed to create folder');
+        return;
+      }
+      setCreateFolderOpen(false);
     } catch (error) {
       console.error('Error creating folder:', error);
+    } finally {
+      setIsCreatingFolder(false);
     }
   }, [session, currentDashboard]);
 
@@ -139,11 +182,23 @@ export default function TrashPage() {
     }
   };
 
-  const handleDelete = async (item: TrashedItem) => {
+  const requestPermanentDelete = (item: TrashedItem) => {
+    setPendingPermanentDeleteItem({
+      id: item.id,
+      name: item.name,
+      moduleId: item.moduleId,
+      type: item.type,
+    });
+  };
+
+  const executePermanentDelete = async () => {
+    const item = pendingPermanentDeleteItem;
+    if (!item) return;
     setActionLoading(item.id);
     try {
       await deleteItem(item.id, { moduleId: item.moduleId, type: item.type });
       await refreshTrash();
+      setPendingPermanentDeleteItem(null);
     } catch {
       setError('Failed to delete');
     } finally {
@@ -151,13 +206,17 @@ export default function TrashPage() {
     }
   };
 
-  const handleEmptyDriveTrash = async () => {
-    if (!window.confirm('Permanently delete all File Hub items in trash?')) return;
+  const requestEmptyDriveTrash = () => {
+    setPendingEmptyTrash(true);
+  };
+
+  const executeEmptyDriveTrash = async () => {
     setActionLoading('empty');
     try {
       await emptyDriveTrash();
       await refreshTrash();
       toast.success('File Hub trash emptied');
+      setPendingEmptyTrash(false);
     } catch {
       setError('Failed to empty trash');
       toast.error('Failed to empty File Hub trash');
@@ -175,20 +234,24 @@ export default function TrashPage() {
   const isEmpty = driveItems.length === 0;
 
   return (
-    <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
-      {/* Drive Sidebar */}
-      <DriveSidebar 
-        onNewFolder={handleCreateFolder} 
-        onFileUpload={handleFileUpload} 
-        onFolderUpload={handleFileUpload}
-        onContextSwitch={handleContextSwitch}
-        onFolderSelect={handleFolderSelect}
-        selectedFolderId={selectedFolder?.id}
-      />
-      
-      {/* Main Content */}
-      <main 
-        className={`flex-1 overflow-auto ${isDraggingOver ? 'bg-red-50 border-4 border-red-400 border-dashed' : ''}`}
+    <>
+    <WorkspaceSplitLayout>
+      <WorkspaceSidebar>
+        <DriveSidebar
+          onNewFolder={requestCreateFolder}
+          onFileUpload={handleFileUpload}
+          onFolderUpload={handleFileUpload}
+          onContextSwitch={handleContextSwitch}
+          onFolderSelect={handleFolderSelect}
+          selectedFolderId={selectedFolder?.id}
+        />
+      </WorkspaceSidebar>
+
+      <WorkspaceMain
+        overflow="auto"
+        role="region"
+        aria-label="File Hub trash. Drop files here to move them to trash."
+        className={isDraggingOver ? 'bg-red-50 border-4 border-red-400 border-dashed' : ''}
         onDragEnter={(e) => {
           const trashItemData = e.dataTransfer.getData('application/json');
           if (trashItemData) {
@@ -212,20 +275,20 @@ export default function TrashPage() {
           e.preventDefault();
           e.dataTransfer.dropEffect = 'move';
         }}
-        onDrop={async (e) => {
+        onDrop={(e) => {
           e.preventDefault();
           setIsDraggingOver(false);
           try {
             const trashItemData = e.dataTransfer.getData('application/json');
-            if (trashItemData) {
-              const itemData = JSON.parse(trashItemData);
-              
-              // Only handle drive items
-              if (itemData.moduleId === 'drive' && (itemData.type === 'file' || itemData.type === 'folder')) {
-                await trashItem(itemData);
-                toast.success(`${itemData.name} moved to trash`);
-                await refreshTrash();
-              }
+            if (!trashItemData) return;
+
+            const itemData = JSON.parse(trashItemData) as Omit<TrashedItem, 'trashedAt'>;
+
+            if (
+              itemData.moduleId === 'drive' &&
+              (itemData.type === 'file' || itemData.type === 'folder')
+            ) {
+              setPendingDropMoveToTrashItem(itemData);
             }
           } catch (error) {
             console.error('Error handling drop:', error);
@@ -259,7 +322,7 @@ export default function TrashPage() {
               </div>
               {!isEmpty && (
                 <button
-                  onClick={handleEmptyDriveTrash}
+                  onClick={requestEmptyDriveTrash}
                   disabled={actionLoading === 'empty'}
                   className="inline-flex items-center gap-2 rounded-md border border-red-300 px-4 py-2 text-sm font-medium text-red-700 hover:bg-red-50 disabled:opacity-50"
                 >
@@ -332,7 +395,7 @@ export default function TrashPage() {
                         Restore
                       </button>
                       <button 
-                        onClick={() => handleDelete(item)} 
+                        onClick={() => requestPermanentDelete(item)}
                         disabled={actionLoading === item.id} 
                         className="ml-4 font-medium text-red-600 hover:text-red-800 disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center gap-1"
                       >
@@ -378,7 +441,7 @@ export default function TrashPage() {
                         Restore
                       </button>
                       <button 
-                        onClick={() => handleDelete(item)} 
+                        onClick={() => requestPermanentDelete(item)}
                         disabled={actionLoading === item.id} 
                         className="flex-1 text-xs font-medium text-red-600 hover:text-red-800 disabled:opacity-50 disabled:cursor-not-allowed inline-flex items-center justify-center gap-1 py-1 px-2 border border-red-200 rounded hover:bg-red-50"
                       >
@@ -395,7 +458,56 @@ export default function TrashPage() {
             )}
           </div>
         )}
-      </main>
-    </div>
+      </WorkspaceMain>
+    </WorkspaceSplitLayout>
+
+    <ConfirmModal
+      open={pendingEmptyTrash}
+      onClose={() => setPendingEmptyTrash(false)}
+      onConfirm={executeEmptyDriveTrash}
+      title="Empty File Hub Trash?"
+      description="Permanently delete all File Hub items in trash?"
+      variant="destructive"
+      confirmLabel="Empty File Hub Trash"
+      loading={actionLoading === 'empty'}
+    />
+    <ConfirmModal
+      open={pendingPermanentDeleteItem !== null}
+      onClose={() => setPendingPermanentDeleteItem(null)}
+      onConfirm={executePermanentDelete}
+      title="Delete forever?"
+      description={
+        pendingPermanentDeleteItem
+          ? `Permanently delete "${pendingPermanentDeleteItem.name}"? This cannot be undone.`
+          : ''
+      }
+      variant="destructive"
+      confirmLabel="Delete forever"
+      loading={
+        pendingPermanentDeleteItem !== null &&
+        actionLoading === pendingPermanentDeleteItem.id
+      }
+    />
+    <DriveCreateFolderModal
+      open={createFolderOpen}
+      onClose={() => setCreateFolderOpen(false)}
+      onSubmit={executeCreateFolder}
+      loading={isCreatingFolder}
+    />
+    <ConfirmModal
+      open={pendingDropMoveToTrashItem !== null}
+      onClose={() => setPendingDropMoveToTrashItem(null)}
+      onConfirm={executeDropMoveToTrash}
+      title="Move to trash?"
+      description={
+        pendingDropMoveToTrashItem
+          ? `Are you sure you want to move "${pendingDropMoveToTrashItem.name}" to trash?`
+          : ''
+      }
+      variant="destructive"
+      confirmLabel="Move to trash"
+      loading={isMovingDropToTrash}
+    />
+    </>
   );
 } 

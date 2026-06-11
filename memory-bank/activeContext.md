@@ -1,5 +1,131 @@
 # Active Context - Vssyl Business Admin & AI Integration
 
+## QA-ENV-01 — Environment blocker remediation (June 2026) ✅
+
+**Status:** **RESOLVED** — runtime/build investigation only; no QA re-run; no certification changes.
+
+**Root cause:** `ContextMenu.tsx` / `DropdownMenu.tsx` imported `./menuShared.js` while Next.js bundles `shared/src` via path alias — `.js` sibling does not exist in source; TypeScript `bundler` resolution masked the gap.
+
+**Fix:** Extensionless `./menuShared` imports in both files (matches shared component convention).
+
+**Validation:** `/calendar/month|day|week|year`, `/chat`, `/todo`, `/notifications` compile (dev turbo); `pnpm type-check` PASS.
+
+**Evidence:** [`QA_ENV_01_ROOT_CAUSE_ANALYSIS.md`](../docs/ux/audits/QA_ENV_01_ROOT_CAUSE_ANALYSIS.md).
+
+**Residual:** **QA-ENV-02** — `JWT_SECRET` missing blocks local backend; **E-14** still open.
+
+---
+
+## Calendar — Wave 5G-QA-EXEC (June 2026) ⚠️
+
+**Status:** **ATTEMPTED — BLOCKED** (session 2026-06-03) — QA evidence wave only; no certification promotion.
+
+**Outcome:** **0 PASS / 24 BLOCKED** — blocked by **QA-ENV-01** (now resolved).
+
+**E-14:** **Open** — cannot close without successful matrix run.
+
+**Evidence:** [`CALENDAR_QA_EXECUTION_REPORT_2026.md`](../docs/ux/audits/CALENDAR_QA_EXECUTION_REPORT_2026.md), [`qa-evidence/5G-QA/calendar/`](../docs/ux/audits/qa-evidence/5G-QA/calendar/).
+
+**Next:** Re-run **5G-QA-EXEC** (local or staging; address QA-ENV-02 if API cases needed) → **5G-Calendar-D**.
+
+---
+
+## Calendar — UX-L3 Readiness Review (Wave 5G-Calendar-L3 Prep) (June 2026) ✅
+
+**Status:** **COMPLETE** — readiness audit only; no code changes; no L3 promotion.
+
+**Posture:** **UX-L2 CwF** (9 PASS / 2 PWF); **78%** L3-ready; 3C-7 engineering **complete**.
+
+**Blockers:** **E-14** manual QA (CAL-01–24); cat **4** core quartet PWF until QA signed.
+
+**E-10 / E-13:** Implementation **resolved** — cat 4/5 upgrade is **QA outcome**, not engineering.
+
+**Next:** **5G-QA-EXEC** (Calendar Part 2D) → **5G-Calendar-D** → Reference UX **#5** prep.
+
+**Evidence:** [`CALENDAR_UX_L3_READINESS_REVIEW.md`](../docs/ux/audits/CALENDAR_UX_L3_READINESS_REVIEW.md).
+
+---
+
+## AI Platform — L3 Readiness & Strategic ROI Review (June 2026) ✅
+
+**Status:** **COMPLETE** — planning/governance only; no runtime changes; **no L3 promotion**.
+
+**Decision:** **Defer AI Platform L3** — readiness **52/100**; UX certification higher ROI.
+
+**Evidence:** [`AI_PLATFORM_LEVEL3_READINESS_REVIEW.md`](../docs/architecture/audits/AI_PLATFORM_LEVEL3_READINESS_REVIEW.md).
+
+**Recommended next:** **UX Wave 5G-QA** + **Calendar → UX-L3 → Reference UX #5**; parallel **Notifications L3** path. **Do not start** AI Waves 2A–2C yet.
+
+---
+
+## AI Platform — Level 2 Certification Review (June 2026) ✅
+
+**Status:** **CERTIFIED** — formal governance review only; no runtime changes.
+
+**Decision:** **APPROVED WITH FINDINGS** — **Level 2 — Platform Compliant** (2026-06-03).
+
+**Evidence:** [`AI_PLATFORM_LEVEL2_CERTIFICATION_REVIEW.md`](../docs/architecture/audits/AI_PLATFORM_LEVEL2_CERTIFICATION_REVIEW.md), [`CERTIFICATION_LEDGER.md`](../docs/architecture/CERTIFICATION_LEDGER.md), [`AI_PLATFORM_SCORECARD.md`](../docs/architecture/AI_PLATFORM_SCORECARD.md).
+
+**Maturity:** **Level 2 — Platform Compliant** (ledger). Waves **1A–1E** + formal L2 review complete.
+
+**Next:** See **L3 Readiness & ROI Review** above — L3 deferred.
+
+---
+
+## AI Platform — Wave 1E Provider Capability Matrix (June 2026) ✅
+
+**Status:** **SHIPPED** — canonical LLM capability matrix, routing/fallback hardening, trace diagnostics.
+
+**Changes:** `providerCapabilityMatrix.ts`, `providerRouting.ts`; `GET /api/ai/models` exposes `capabilities`; `llmProviderRouting` on pipeline trace; 12 vitest cases.
+
+**Evidence:** [`AI_PLATFORM_WAVE_1E_PROVIDER_CAPABILITY_CLOSEOUT.md`](../docs/architecture/audits/AI_PLATFORM_WAVE_1E_PROVIDER_CAPABILITY_CLOSEOUT.md).
+
+**Maturity:** Historical — superseded by **Level 2 certification** above.
+
+---
+
+## AI Platform — Wave 1D Admin Gates & Diagnostics (June 2026) ✅
+
+**Status:** **SHIPPED** — centralized-ai admin fence; diagnostics trace/reasoning alignment.
+
+**Changes:** Mount `requireAdmin` + `centralizedAiDeprecatedMiddleware` on `/api/centralized-ai`; 410 for `/learning/event` and `/models/*`; `mergeDiagnosticsFromHistoryContext`; twin history saves `_conversationReasoning`.
+
+**Evidence:** [`AI_PLATFORM_WAVE_1D_ADMIN_DIAGNOSTICS_CLOSEOUT.md`](../docs/architecture/audits/AI_PLATFORM_WAVE_1D_ADMIN_DIAGNOSTICS_CLOSEOUT.md).
+
+**Maturity:** Historical — superseded by Wave **1E**.
+
+---
+
+## AI Platform — Wave 1C Drive Context Provider (June 2026) ✅
+
+**Status:** **SHIPPED** — Drive AI context on canonical `driveVisibilityService`; controller Prisma removed.
+
+**Changes:** `driveAIContextService`; `listAccessibleRecentFilesForAIContext`, `aggregateAccessibleDriveStorageForAIContext`, `countAccessibleDriveFilesForAIContext`; 21 vitest cases; matrices **N → C** for Drive context providers.
+
+**Evidence:** [`AI_PLATFORM_WAVE_1C_DRIVE_CONTEXT_CLOSEOUT.md`](../docs/architecture/audits/AI_PLATFORM_WAVE_1C_DRIVE_CONTEXT_CLOSEOUT.md), [`AI_CONTEXT_PROVIDER_MATRIX.md`](../docs/architecture/audits/AI_CONTEXT_PROVIDER_MATRIX.md).
+
+**Maturity:** Historical — superseded by Wave **1D**.
+
+---
+
+## AI Platform — Wave 1B Constitutional Remediation (June 2026) ✅
+
+**Status:** **SHIPPED** — P1 blockers resolved; superseded for context path by 1C.
+
+**Changes:** `/api/ai/user-context` canonical mount; `driveAIActionService`, `hrAIActionService`, `schedulingAIActionService`; `grantFileShareByEmail`; autonomous writes **410**; `POST /api/ai/chat` deprecated; twin `/:module` UUID guard.
+
+**Evidence:** [`AI_PLATFORM_SCORECARD.md`](../docs/architecture/AI_PLATFORM_SCORECARD.md), [`AI_CANONICAL_ROUTE_MAP.md`](../docs/architecture/AI_CANONICAL_ROUTE_MAP.md), tests under `server/src/ai/**/__tests__`.
+
+**Maturity:** Historical — see Wave **1C** section above.
+
+---
+
+## AI Platform — Wave 1A Route Audit (June 2026) ✅
+
+**Status:** **COMPLETE** — planning artifact; superseded by 1B implementation.
+
+---
+
 ## AI Platform — Wave G0 Constitutional Framework (June 2026) ✅
 
 **Status:** **GOVERNANCE COMPLETE** — no runtime changes.
@@ -7,10 +133,6 @@
 **Constitutional authority:** [`AI_PLATFORM_CONSTITUTION.md`](../docs/architecture/AI_PLATFORM_CONSTITUTION.md), [`AI_PLATFORM_BOUNDARY_MODEL.md`](../docs/architecture/AI_PLATFORM_BOUNDARY_MODEL.md), [`AI_PLATFORM_OPERATION_MATRIX.md`](../docs/architecture/AI_PLATFORM_OPERATION_MATRIX.md), [`AI_PLATFORM_CERTIFICATION_STRATEGY.md`](../docs/architecture/AI_PLATFORM_CERTIFICATION_STRATEGY.md)
 
 **Wave 0 audits (evidence):** [`audits/AI_PLATFORM_CONSTITUTIONAL_AUDIT.md`](../docs/architecture/audits/AI_PLATFORM_CONSTITUTIONAL_AUDIT.md) + tool/context/admin/legacy matrices.
-
-**Maturity:** **Level 0 — G0 constitution** (ledger). Operation matrix: 62 C / 21 P / 6 N.
-
-**Next:** Wave **1A** authorized — pipeline map + legacy route retirement **plan**. No further constitutional work required before 1A.
 
 ---
 
@@ -38,7 +160,7 @@
 
 **Status:** **SHIPPED** — Family 6 `--v-skeleton-*`, `.v-skeleton` + `skeleton-loading` in `ux.css`, `LoadingSkeleton` migrated. Zero module consumers today.
 
-**Closeout:** [`docs/ux/audits/WAVE1_QA_CLOSEOUT.md`](../docs/ux/audits/WAVE1_QA_CLOSEOUT.md) — PASS. **Wave 2B-3 Batch 1:** **closed** — [`CONFIRMMODAL_BATCH1_CLOSEOUT.md`](../docs/ux/audits/CONFIRMMODAL_BATCH1_CLOSEOUT.md) (**PASS WITH FINDINGS**). **Batch 2 closed** — [`CONFIRMMODAL_BATCH2_CLOSEOUT.md`](../docs/ux/audits/CONFIRMMODAL_BATCH2_CLOSEOUT.md); **43** confirms remaining. **Wave 3A-0–2:** **done** — menu primitives hardened — [`CONTEXTMENU_POPOVER_STANDARDIZATION_REVIEW.md`](../docs/ux/CONTEXTMENU_POPOVER_STANDARDIZATION_REVIEW.md). **Wave 3A-3:** **in progress** — [`DRIVE_MENU_REFERENCE_ROLLOUT_PLAN.md`](../docs/ux/DRIVE_MENU_REFERENCE_ROLLOUT_PLAN.md): **3A-3.1a–3A-3.3 + 3A-3.1b done** — context/sidebar/filter surfaces migrated (`ContextMenu`, `DropdownMenu`, `Popover`); `pnpm type-check` PASS. **Next:** **3A-3.6** delete `FileContextMenu.tsx` (ready); manual QA pending for 3A-3.1a–3A-3.1b.
+**Closeout:** [`docs/ux/audits/WAVE1_QA_CLOSEOUT.md`](../docs/ux/audits/WAVE1_QA_CLOSEOUT.md) — PASS. **Wave 2B-3 Batch 1:** **closed** — [`CONFIRMMODAL_BATCH1_CLOSEOUT.md`](../docs/ux/audits/CONFIRMMODAL_BATCH1_CLOSEOUT.md) (**PASS WITH FINDINGS**). **Batch 2 closed** — [`CONFIRMMODAL_BATCH2_CLOSEOUT.md`](../docs/ux/audits/CONFIRMMODAL_BATCH2_CLOSEOUT.md); **43** confirms remaining. **Wave 3A-0–2:** **done** — menu primitives hardened — [`CONTEXTMENU_POPOVER_STANDARDIZATION_REVIEW.md`](../docs/ux/CONTEXTMENU_POPOVER_STANDARDIZATION_REVIEW.md). **Wave 3A-3:** **done** — Drive Reference Menu Certification — [`DRIVE_MENU_REFERENCE_CLOSEOUT.md`](../docs/ux/audits/DRIVE_MENU_REFERENCE_CLOSEOUT.md). **Wave 3A-4A:** **done** — AI menu rollout — [`AI_MENU_ROLLOUT_CLOSEOUT.md`](../docs/ux/audits/AI_MENU_ROLLOUT_CLOSEOUT.md). **Wave 3A-4B:** **done** — Notifications menu rollout — [`NOTIFICATIONS_MENU_ROLLOUT_CLOSEOUT.md`](../docs/ux/audits/NOTIFICATIONS_MENU_ROLLOUT_CLOSEOUT.md). **Wave 3A-4C:** **done** — Chat menu rollout — [`CHAT_MENU_ROLLOUT_CLOSEOUT.md`](../docs/ux/audits/CHAT_MENU_ROLLOUT_CLOSEOUT.md). **Wave 3A-4D:** **done** — Todo menu rollout — [`TODO_MENU_ROLLOUT_CLOSEOUT.md`](../docs/ux/audits/TODO_MENU_ROLLOUT_CLOSEOUT.md): `TaskItem` → `DropdownMenu`; `pnpm type-check` PASS. **3A-4 platform rollout complete.** **Wave 3A-5:** **done** — platform menu certification — [`PLATFORM_MENU_CERTIFICATION.md`](../docs/ux/audits/PLATFORM_MENU_CERTIFICATION.md) (**PASS WITH FINDINGS**): `ContextMenu`/`DropdownMenu`/`Popover` ratified; 7+9+1 `web/` consumers; manual QA gate pending. **Wave 3C-0:** **done** — layout shell inventory — [`LAYOUT_SHELL_STANDARDIZATION_REVIEW.md`](../docs/ux/LAYOUT_SHELL_STANDARDIZATION_REVIEW.md): ~12 shell families; Drive = workspace reference; `WorkspaceSplitLayout` + `PlatformShell` extraction recommended. **Wave 3C-1:** **done** — `WorkspaceSplitLayout` primitive + Drive pilot (`DrivePageContent`, `DriveModule`); `pnpm type-check` PASS. **Wave 3C-2:** **done** — Drive `WorkspaceSplitLayout` rollout (starred/shared/recent/trash + business drive branch); `pnpm type-check` PASS. **Wave 3C-3:** **done** — Chat `WorkspaceSplitLayout` rollout (`ChatContent` 3-col + `EnhancedChatModule` 2/3-col); certified exceptions: `MobileChat`, `UnifiedGlobalChat`; `pnpm type-check` PASS. **Wave 3C-4:** **done (PLAN)** — PlatformShell standardization plan — [`PLATFORMSHELL_STANDARDIZATION_PLAN.md`](../docs/ux/PLATFORMSHELL_STANDARDIZATION_PLAN.md). **Wave 3C-4A:** **done** — `PlatformShell` foundation (`layouts/PlatformShell.tsx` + slot subcomponents); zero consumers; `pnpm type-check` PASS. **Wave 3C-4B:** **done** — `PlatformLeftSidebar` + `PlatformRightRail` extracted; `DashboardLayoutInner` + `DashboardLayoutWrapper` wired (behavior preserved); `pnpm type-check` PASS. **Wave 3C-4C:** **done** — `DashboardLayoutWrapper` → `PlatformShell` (`mode="business"`, `useNativePanels`); first production consumer; `pnpm type-check` PASS. **Wave 3C-4D:** **done (PLAN)** — header unification plan — [`PLATFORM_HEADER_STANDARDIZATION_PLAN.md`](../docs/ux/PLATFORM_HEADER_STANDARDIZATION_PLAN.md): Option B (`PlatformHeader` + shared tabs); unify before Inner → PlatformShell. **Wave 3C-4D.1:** **done** — `PlatformHeader` + `platformHeaderTabs` + `useNativeHeader` on `PlatformShell`. **Wave 3C-4D.2:** **done** — `GlobalHeaderTabs` → `PlatformHeader` (`mode="business"`); `DashboardLayoutWrapper` `useNativeHeader`. **Wave 3C-4D.3:** **done** — `DashboardLayoutInner` personal header → `PlatformHeader` (`mode="personal"`). **Wave 3C-4D.4:** **done** — `PlatformHeaderActionRow` shared by both headers. **Wave 3C-4E:** **done** — `DashboardLayoutInner` → `PlatformShell`. **Wave 3C-4F:** **done** — PlatformShell certified — [`PLATFORMSHELL_CERTIFICATION.md`](../docs/ux/audits/PLATFORMSHELL_CERTIFICATION.md) (**PASS WITH FINDINGS**); Wave 3C PlatformShell program **complete**; manual QA pending. **Wave 3C-5:** **done** — AI Chat deduplication — [`AI_CHAT_DEDUPLICATION_CLOSEOUT.md`](../docs/ux/audits/AI_CHAT_DEDUPLICATION_CLOSEOUT.md): `AIChatWorkspace` single implementation; `ai-chat/page.tsx` + `AIChatModule.tsx` thin entry points; `pnpm type-check` PASS. **Wave 3C-6:** **done** — Notifications layout consolidation — [`NOTIFICATIONS_LAYOUT_CONSOLIDATION_CLOSEOUT.md`](../docs/ux/audits/NOTIFICATIONS_LAYOUT_CONSOLIDATION_CLOSEOUT.md): `PageHeader` + `PageToolbar` primitives; `/notifications` double chrome removed; `pnpm type-check` PASS. **Wave 3C paused.** **Wave 3B-0:** **done (PLAN)** — Drive interaction completion review — [`DRIVE_INTERACTION_COMPLETION_REVIEW.md`](../docs/ux/DRIVE_INTERACTION_COMPLETION_REVIEW.md). **Wave 3B-1:** **done** — empty-trash permanent purge ConfirmModal — [`DRIVE_PERMANENT_PURGE_BATCH3A_CLOSEOUT.md`](../docs/ux/audits/DRIVE_PERMANENT_PURGE_BATCH3A_CLOSEOUT.md): `drive/trash/page.tsx` + `GlobalTrashBin.tsx`; 0 native empty-trash confirms; `pnpm type-check` PASS. **Wave 3B-3:** **done** — per-item permanent delete ConfirmModal — [`DRIVE_PERMANENT_DELETE_PER_ITEM_BATCH3B3_CLOSEOUT.md`](../docs/ux/audits/DRIVE_PERMANENT_DELETE_PER_ITEM_BATCH3B3_CLOSEOUT.md): trash page + GlobalTrashBin per-item flows; `pnpm type-check` PASS. **Wave 3B-2:** **done** — drag-to-trash parity — [`DRIVE_DRAG_TO_TRASH_PARITY_BATCH3B2_CLOSEOUT.md`](../docs/ux/audits/DRIVE_DRAG_TO_TRASH_PARITY_BATCH3B2_CLOSEOUT.md): `DriveModule` `handleDragEnd` → `requestMoveToTrash`; reuses existing `ConfirmModal`; `pnpm type-check` PASS. **Wave 3B-4:** **done** — folder create modal — [`DRIVE_FOLDER_CREATE_MODAL_BATCH3B4_CLOSEOUT.md`](../docs/ux/audits/DRIVE_FOLDER_CREATE_MODAL_BATCH3B4_CLOSEOUT.md): `DriveCreateFolderModal` + 7 prompt sites migrated; 0 scoped `prompt()`; `pnpm type-check` PASS. **Wave 3B-4b:** **done** — business workspace folder create parity — [`DRIVE_FOLDER_CREATE_BUSINESS_PARITY_BATCH3B4B_CLOSEOUT.md`](../docs/ux/audits/DRIVE_FOLDER_CREATE_BUSINESS_PARITY_BATCH3B4B_CLOSEOUT.md): `BusinessWorkspaceContent` → `DriveCreateFolderModal`; 0 Drive folder-create `prompt()`; `pnpm type-check` PASS. **Wave 3B-5:** **done** — keyboard + a11y pass — [`DRIVE_KEYBOARD_A11Y_BATCH3B5_CLOSEOUT.md`](../docs/ux/audits/DRIVE_KEYBOARD_A11Y_BATCH3B5_CLOSEOUT.md). **Wave 3B-6:** **done** — Drive interaction certification — [`DRIVE_INTERACTION_CERTIFICATION.md`](../docs/ux/audits/DRIVE_INTERACTION_CERTIFICATION.md) + [`DRIVE_REFERENCE_UX_SCORECARD.md`](../docs/ux/audits/DRIVE_REFERENCE_UX_SCORECARD.md): **Reference UX Module #1 — Approved with Findings**; 3B program **complete**. **Next:** Human QA matrix execution + Wave 5 numeric UX-L3 audit (program choice; not 3C-7 unless reprioritized).
 
 ## UX Modernization — Wave 1 Token Foundation (June 2026) ✅
 
@@ -50,7 +172,7 @@
 
 **Canonical:** [`docs/ux/UX_CONSTITUTION.md`](../docs/ux/UX_CONSTITUTION.md), [`UX_MODERNIZATION_ROADMAP.md`](../docs/ux/UX_MODERNIZATION_ROADMAP.md)
 
-**Reference UX candidate (not certified):** Drive / File Hub
+**Reference UX Module #1:** Drive / File Hub — **Approved with Findings** (3B-6 + 5A registration — [`REFERENCE_MODULE_DRIVE.md`](../docs/ux/audits/REFERENCE_MODULE_DRIVE.md)). **Wave 5A:** **done** — platform UX-L3 framework — [`UX_CERTIFICATION_STANDARD.md`](../docs/ux/UX_CERTIFICATION_STANDARD.md), [`UX_CERTIFICATION_SCORECARD.md`](../docs/ux/UX_CERTIFICATION_SCORECARD.md), [`REFERENCE_MODULE_PROGRAM.md`](../docs/ux/REFERENCE_MODULE_PROGRAM.md). **Wave 5B:** **done** — Chat UX certification — [`CHAT_UX_CERTIFICATION.md`](../docs/ux/audits/CHAT_UX_CERTIFICATION.md) + [`CHAT_UX_SCORECARD.md`](../docs/ux/audits/CHAT_UX_SCORECARD.md): **UX-L1 Certified with Findings**; Reference UX Module #2 **Rejected** (pending re-cert). **Wave 5B.1:** **done** — Chat interaction safety — [`CHAT_INTERACTION_SAFETY_BATCH5B1_CLOSEOUT.md`](../docs/ux/audits/CHAT_INTERACTION_SAFETY_BATCH5B1_CLOSEOUT.md): C-1/C-2/C-3 resolved. **Wave 5B.2:** **done** — Chat mobile parity — [`CHAT_MOBILE_PARITY_BATCH5B2_CLOSEOUT.md`](../docs/ux/audits/CHAT_MOBILE_PARITY_BATCH5B2_CLOSEOUT.md). **Wave 5B.3:** **done** — Chat UX re-certification — [`CHAT_UX_RECERTIFICATION_2026.md`](../docs/ux/audits/CHAT_UX_RECERTIFICATION_2026.md): **UX-L1 CwF**; Reference UX #2 **Rejected**. **Wave 5C:** **done** — Notifications UX certification (initial audit). **Wave 5C.1:** **done** — interaction safety — [`NOTIFICATIONS_INTERACTION_SAFETY_BATCH5C1_CLOSEOUT.md`](../docs/ux/audits/NOTIFICATIONS_INTERACTION_SAFETY_BATCH5C1_CLOSEOUT.md): N-1 resolved. **Wave 5C.2:** **done** — Notifications UX re-certification — **UX-L2 CwF** (9 PASS). **Wave 5D:** **done** — Todo UX certification (initial). **Wave 5D.1:** **done** — interaction safety — T-1 resolved. **Wave 5D.2:** **done** — Todo UX re-certification — [`TODO_UX_RECERTIFICATION_2026.md`](../docs/ux/audits/TODO_UX_RECERTIFICATION_2026.md): **UX-L1 CwF** (6 PASS / 5 PWF); L2/L3 not certified. **Wave 5D.3:** **done** — Todo layout/workflow — [`TODO_LAYOUT_WORKFLOW_BATCH5D3_CLOSEOUT.md`](../docs/ux/audits/TODO_LAYOUT_WORKFLOW_BATCH5D3_CLOSEOUT.md): T-2–T-5 resolved. **Wave 5D.4:** **done** — Todo UX re-certification — [`TODO_UX_RECERTIFICATION_2026_5D4.md`](../docs/ux/audits/TODO_UX_RECERTIFICATION_2026_5D4.md): **UX-L1 CwF** (8 PASS / 3 PWF); UX-L2 not met (one short). **Wave 5E:** **done** — Calendar UX certification — [`CALENDAR_UX_CERTIFICATION.md`](../docs/ux/audits/CALENDAR_UX_CERTIFICATION.md): **UX-L1 not certified** (2 PASS / 2 FAIL). **Wave 5E.1:** **done** — Calendar interaction safety — [`CALENDAR_INTERACTION_SAFETY_BATCH5E1_CLOSEOUT.md`](../docs/ux/audits/CALENDAR_INTERACTION_SAFETY_BATCH5E1_CLOSEOUT.md): E-1–E-3, E-9 resolved; 0 native dialogs. **Wave 5E.2:** **done** — month workflow parity — [`CALENDAR_MONTH_WORKFLOW_PARITY_BATCH5E2_CLOSEOUT.md`](../docs/ux/audits/CALENDAR_MONTH_WORKFLOW_PARITY_BATCH5E2_CLOSEOUT.md): E-4, E-5 resolved. **Wave 5E.3:** **done** — Calendar UX re-certification — [`CALENDAR_UX_RECERTIFICATION_2026_5E3.md`](../docs/ux/audits/CALENDAR_UX_RECERTIFICATION_2026_5E3.md): **UX-L1 CwF** (6 PASS / 5 PWF). **Wave 3C-7 plan:** **done** — [`CALENDAR_LAYOUT_MODERNIZATION_PLAN.md`](../docs/ux/CALENDAR_LAYOUT_MODERNIZATION_PLAN.md). **Wave 3C-7A:** **done** — [`CALENDAR_LAYOUT_MODERNIZATION_3C7A_CLOSEOUT.md`](../docs/ux/audits/CALENDAR_LAYOUT_MODERNIZATION_3C7A_CLOSEOUT.md): E-6, E-7 resolved; month + business hub on `WorkspaceSplitLayout`. **Wave 3C-7B:** **done** — [`CALENDAR_LAYOUT_MODERNIZATION_3C7B_CLOSEOUT.md`](../docs/ux/audits/CALENDAR_LAYOUT_MODERNIZATION_3C7B_CLOSEOUT.md): day/week/year on `CalendarPageShell`; mobile sidebar; E-8, E-10, E-16 resolved; `BusinessCalendarWidget` removed. **Wave 3C-7C:** **done** — [`CALENDAR_LAYOUT_POLISH_3C7C_CLOSEOUT.md`](../docs/ux/audits/CALENDAR_LAYOUT_POLISH_3C7C_CLOSEOUT.md): `EmptyState`, `ContextMenu` on chips, shortcuts help; E-11–E-13 resolved. **Wave 3C-7D:** **done** — [`CALENDAR_UX_RECERTIFICATION_2026_3C7D.md`](../docs/ux/audits/CALENDAR_UX_RECERTIFICATION_2026_3C7D.md): **UX-L1 Certified**; **UX-L2 CwF** (9 PASS). **3C-7 complete.** **Wave 5F:** **done** — [`PLATFORM_CERTIFICATION_GAP_ANALYSIS.md`](../docs/ux/PLATFORM_CERTIFICATION_GAP_ANALYSIS.md): platform gap report; fastest L2 = Todo; highest ROI = Calendar; Ref #2 = Notifications; Ref #5 = Calendar. **Wave 5G-Todo:** **done** — [`TODO_L2_POLISH_BATCH5G_CLOSEOUT.md`](../docs/ux/audits/TODO_L2_POLISH_BATCH5G_CLOSEOUT.md): T-8 shared `EmptyState`, T-9 overflow `aria-label`, T-7 partial responsive detail; `pnpm type-check` PASS. **Wave 5G-Todo-D:** **done** — [`TODO_UX_RECERTIFICATION_2026_5G.md`](../docs/ux/audits/TODO_UX_RECERTIFICATION_2026_5G.md): **9 PASS / 2 PWF**; **UX-L1 Certified**; **UX-L2 CwF**. **Wave 5G-QA (plan):** **done** — [`PLATFORM_MANUAL_QA_MATRIX.md`](../docs/ux/PLATFORM_MANUAL_QA_MATRIX.md) + [`PLATFORM_MANUAL_QA_RUNBOOK.md`](../docs/ux/PLATFORM_MANUAL_QA_RUNBOOK.md). **Wave 5G-QA-D:** **done** — [`PLATFORM_QA_CERTIFICATION_ADDENDUM_2026.md`](../docs/ux/audits/PLATFORM_QA_CERTIFICATION_ADDENDUM_2026.md): QA **not executed**; levels unchanged. **Next:** **5G-QA-EXEC** (human) → **5G-Calendar-D**.
 
 ---
 

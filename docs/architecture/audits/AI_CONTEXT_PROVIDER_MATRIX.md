@@ -23,8 +23,8 @@
 
 | Provider id | Module | Endpoint | Visibility service | Direct Prisma | Tenant scoped | Grounding | Freshness | Diagnostics | Tests |
 |-------------|--------|----------|-------------------|---------------|---------------|-----------|-----------|-------------|-------|
-| `recent_files` | drive | `/api/drive/ai/context/recent` | **No** — controller Prisma | **Yes** | dashboard + user | `drive_files`, `module_context` | 300s policy | Yes | partial |
-| `storage_overview` | drive | `/api/drive/ai/context/storage` | **No** | **Yes** | dashboard + user | `module_context` | 300s | Yes | partial |
+| `recent_files` | drive | `/api/drive/ai/context/recent` | **Yes** — `driveVisibilityService.listAccessibleRecentFilesForAIContext` | **No** | dashboard + user | `drive_files`, `module_context` | 300s policy | Yes | yes |
+| `storage_overview` | drive | `/api/drive/ai/context/storage` | **Yes** — `aggregateAccessibleDriveStorageForAIContext` | **No** | dashboard + user | `module_context` | 300s | Yes | yes |
 | `recent_conversations` | chat | `/api/chat/ai/context/recent` | **Yes** (chat services) | No | participant scope | `module_context`, `recent_conversations` | 120s | Yes | yes |
 | `unread_messages` | chat | `/api/chat/ai/context/unread` | **Yes** | No | participant scope | `module_context` | 120s | Yes | yes |
 | `upcoming_events` | calendar | `/api/calendar/ai/context/upcoming` | **Yes** | No | calendar scope | `calendar`, `module_context` | 300s | Yes | yes |
@@ -111,7 +111,7 @@ See [AI_ADMIN_ANALYTICS_BOUNDARY_REVIEW.md](./AI_ADMIN_ANALYTICS_BOUNDARY_REVIEW
 
 | Priority | Provider group | Action |
 |----------|----------------|--------|
-| P0 | `recent_files`, `storage_overview` | Route through `driveVisibilityService` / drive read services |
+| P0 | `recent_files`, `storage_overview` | **Done (2026-06-03)** — `driveAIContextService` → `driveVisibilityService`; see [AI_PLATFORM_WAVE_1C_DRIVE_CONTEXT_CLOSEOUT.md](./AI_PLATFORM_WAVE_1C_DRIVE_CONTEXT_CLOSEOUT.md) |
 | P1 | HR + scheduling providers | Thin controllers + visibility services |
 | P1 | Dashboard providers | Document aggregation contract; reduce raw Prisma |
 | P2 | Place analytics provider | Confirm grounding necessity vs insights-only |
@@ -128,4 +128,4 @@ See [AI_ADMIN_ANALYTICS_BOUNDARY_REVIEW.md](./AI_ADMIN_ANALYTICS_BOUNDARY_REVIEW
 | Todo | TODO_OPERATION_MATRIX |
 | Notebook | NOTEBOOK_OPERATION_MATRIX |
 | Place | PLACE_OPERATION_MATRIX — read-only AI twins |
-| File Hub | FILE_HUB — tools compliant; context providers gap only |
+| File Hub | FILE_HUB — tools + Drive context providers compliant (Wave 1C) |

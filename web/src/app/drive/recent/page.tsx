@@ -13,6 +13,12 @@ import Link from 'next/link';
 import { formatDistanceToNow } from 'date-fns';
 import { ClockIcon, DocumentIcon, FolderIcon, TrashIcon, ArrowDownTrayIcon, PencilIcon } from '@heroicons/react/24/outline';
 import DriveSidebar from '../DriveSidebar';
+import { DriveCreateFolderModal } from '@/components/drive/DriveCreateFolderModal';
+import {
+  WorkspaceSplitLayout,
+  WorkspaceSidebar,
+  WorkspaceMain,
+} from '@/components/layouts';
 
 const RecentPage = () => {
   const { data: session, status } = useSession();
@@ -22,28 +28,39 @@ const RecentPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedFolder, setSelectedFolder] = useState<{ id: string; name: string } | null>(null);
+  const [createFolderOpen, setCreateFolderOpen] = useState(false);
+  const [isCreatingFolder, setIsCreatingFolder] = useState(false);
 
-  // Sidebar handlers
-  const handleCreateFolder = useCallback(async () => {
+  const requestCreateFolder = useCallback(() => {
     if (!session?.accessToken) return;
-    const name = prompt('Enter folder name:');
-    if (!name) return;
+    setCreateFolderOpen(true);
+  }, [session?.accessToken]);
+
+  const executeCreateFolder = useCallback(async (name: string) => {
+    if (!session?.accessToken) return;
     try {
+      setIsCreatingFolder(true);
       const response = await fetch('/api/drive/folders', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${session.accessToken}`,
         },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           name,
           dashboardId: currentDashboard?.id || null,
-          parentId: null
+          parentId: null,
         }),
       });
-      if (!response.ok) console.error('Failed to create folder');
+      if (!response.ok) {
+        console.error('Failed to create folder');
+        return;
+      }
+      setCreateFolderOpen(false);
     } catch (error) {
       console.error('Error creating folder:', error);
+    } finally {
+      setIsCreatingFolder(false);
     }
   }, [session, currentDashboard]);
 
@@ -159,19 +176,20 @@ const RecentPage = () => {
   };
 
   return (
-    <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
-      {/* Drive Sidebar */}
-      <DriveSidebar 
-        onNewFolder={handleCreateFolder} 
-        onFileUpload={handleFileUpload} 
-        onFolderUpload={handleFileUpload}
-        onContextSwitch={handleContextSwitch}
-        onFolderSelect={handleFolderSelect}
-        selectedFolderId={selectedFolder?.id}
-      />
-      
-      {/* Main Content */}
-      <div className="flex-1 overflow-auto">
+    <>
+    <WorkspaceSplitLayout>
+      <WorkspaceSidebar>
+        <DriveSidebar
+          onNewFolder={requestCreateFolder}
+          onFileUpload={handleFileUpload}
+          onFolderUpload={handleFileUpload}
+          onContextSwitch={handleContextSwitch}
+          onFolderSelect={handleFolderSelect}
+          selectedFolderId={selectedFolder?.id}
+        />
+      </WorkspaceSidebar>
+
+      <WorkspaceMain overflow="auto">
         {status === 'loading' || loading ? (
           <div className="flex items-center justify-center h-full">
             <LoadingOverlay message="Loading recent activity..." />
@@ -233,8 +251,15 @@ const RecentPage = () => {
             )}
           </div>
         )}
-      </div>
-    </div>
+      </WorkspaceMain>
+    </WorkspaceSplitLayout>
+    <DriveCreateFolderModal
+      open={createFolderOpen}
+      onClose={() => setCreateFolderOpen(false)}
+      onSubmit={executeCreateFolder}
+      loading={isCreatingFolder}
+    />
+    </>
   );
 };
 

@@ -141,6 +141,42 @@ async function notifyShareRevoke(params: {
 }
 
 /**
+ * Resolve a share target user id by email — canonical lookup for AI tools (no Prisma in toolExecutor).
+ */
+export async function resolveShareTargetUserIdByEmail(email: string): Promise<string | null> {
+  const normalized = email.trim().toLowerCase();
+  if (!normalized) return null;
+  const user = await prisma.user.findFirst({
+    where: { email: { equals: normalized, mode: 'insensitive' } },
+    select: { id: true },
+  });
+  return user?.id ?? null;
+}
+
+/**
+ * Grant file share by target email — wraps user resolution + grantFileSharePermission.
+ */
+export async function grantFileShareByEmail(input: {
+  ownerUserId: string;
+  fileId: string;
+  targetUserEmail: string;
+  canRead: boolean;
+  canWrite: boolean;
+}) {
+  const targetUserId = await resolveShareTargetUserIdByEmail(input.targetUserEmail);
+  if (!targetUserId) {
+    throw new DriveShareError(`No user found with email "${input.targetUserEmail}"`, 404);
+  }
+  return grantFileSharePermission({
+    ownerUserId: input.ownerUserId,
+    fileId: input.fileId,
+    targetUserId,
+    canRead: input.canRead,
+    canWrite: input.canWrite,
+  });
+}
+
+/**
  * Canonical File Hub file share — used by HTTP grantFilePermission and AI share_file tool.
  */
 export async function grantFileSharePermission(input: GrantFileShareInput) {

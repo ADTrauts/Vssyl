@@ -1,7 +1,7 @@
 # Platform Module Certification Ledger
 
 **Version:** 1.0.0  
-**Last updated:** 2026-06-04  
+**Last updated:** 2026-06-03 (AI Platform L3 readiness review)  
 **Status:** Active — executive dashboard for platform architecture health  
 **Owner:** Platform Engineering / Architecture Governance
 
@@ -109,8 +109,8 @@ Track cross-cutting certification separately; modules depend on these.
 | Policy Engine | Partial | High (drive + chat + calendar + todo + **notes/notebook link** + **place** writes) | 2 | Place connection + transaction PE Wave 2C |
 | Domain Event Bus | Partial | High (drive taxonomy) | 1 | Taxonomy thin beyond drive |
 | Module Activity | Partial | High (drive writes) | 1 | Legacy read paths platform-wide |
-| **AI Platform** (twin, pipeline, tools) | Partial | Partial | **0 — G0 constitution** | [AI_PLATFORM_CONSTITUTION](./AI_PLATFORM_CONSTITUTION.md), [AI_PLATFORM_CERTIFICATION_STRATEGY](./AI_PLATFORM_CERTIFICATION_STRATEGY.md), [AI_PLATFORM_OPERATION_MATRIX](./AI_PLATFORM_OPERATION_MATRIX.md); audit [AI_PLATFORM_CONSTITUTIONAL_AUDIT](./audits/AI_PLATFORM_CONSTITUTIONAL_AUDIT.md); promote to L1 after Wave 1A plan |
-| AI Tools / Actions | Low | Partial (L3 module services; drive/HR/scheduling mocks remain) | 0 | [AI_TOOL_ACTION_COMPLIANCE_MATRIX](./audits/AI_TOOL_ACTION_COMPLIANCE_MATRIX.md) |
+| **AI Platform** (twin, pipeline, tools) | **Partial** | **Partial** | **2 — Platform Compliant** | L2 certified 2026-06-03 — [AI_PLATFORM_LEVEL2_CERTIFICATION_REVIEW](./audits/AI_PLATFORM_LEVEL2_CERTIFICATION_REVIEW.md). **L3 readiness review** 2026-06-03 — [AI_PLATFORM_LEVEL3_READINESS_REVIEW](./audits/AI_PLATFORM_LEVEL3_READINESS_REVIEW.md): **not ready** (52/100); **defer L3** — prioritize UX certification (Calendar/Notifications) |
+| AI Tools / Actions | Partial | Partial (drive/HR/scheduling services) | 2 | [AI_TOOL_ACTION_COMPLIANCE_MATRIX](./audits/AI_TOOL_ACTION_COMPLIANCE_MATRIX.md) — catalog tools **C**; built-in L3 module actions **C**; LifeTwin stubs deferred L3 |
 | Platform Scheduler | Partial | Partial | 1 | Inventory-first per §22 |
 | Manifest / Capability governance | Partial | High (drive manifest) | 1 | Reconcile-on-startup incomplete for all built-ins |
 
@@ -313,7 +313,7 @@ Waves align with [`PLATFORM_MODULE_MODERNIZATION_ROADMAP.md`](../plans/PLATFORM_
 |-------|-------------|--------|
 | Global Trash handler expansion | compliance | **partial** — Place 2A |
 | Manifest / capability reconcile | compliance | **partial** — Place 2C core aligned |
-| AI tool/executor service routing | compliance | **partial** — Place 1F read-only |
+| AI tool/executor service routing | compliance | **partial** — Platform L2 (1B tools/actions); LifeTwin stubs + HR context open |
 | Notification metadata consolidation | compliance | **partial** — Place 6 types in manifest 3B |
 | V_Link resolver expansion | compliance | **partial** — Place 2A listing/meeting |
 | Scheduler job inventory (§22) | audit | not started |
@@ -338,10 +338,28 @@ Waves align with [`PLATFORM_MODULE_MODERNIZATION_ROADMAP.md`](../plans/PLATFORM_
 
 ---
 
+### AI Platform — Waves 1A–1E + L2 (platform system)
+
+| Wave | Deliverable | Certification impact |
+|------|-------------|----------------------|
+| **G0** | Constitution, boundary model, operation matrix, certification strategy | Enabled 0→1 |
+| **1A** | [AI_CANONICAL_ROUTE_MAP.md](./AI_CANONICAL_ROUTE_MAP.md), pipeline ownership, legacy retirement plan | Route governance baseline |
+| **1B** | ActionExecutor services; autonomous 410; user-context mount | Cleared V1/V2 blocking |
+| **1C** | [AI_PLATFORM_WAVE_1C_DRIVE_CONTEXT_CLOSEOUT.md](./audits/AI_PLATFORM_WAVE_1C_DRIVE_CONTEXT_CLOSEOUT.md) | Drive context **C** |
+| **1D** | [AI_PLATFORM_WAVE_1D_ADMIN_DIAGNOSTICS_CLOSEOUT.md](./audits/AI_PLATFORM_WAVE_1D_ADMIN_DIAGNOSTICS_CLOSEOUT.md) | Cleared V8; diagnostics **PASS** |
+| **1E** | [AI_PLATFORM_WAVE_1E_PROVIDER_CAPABILITY_CLOSEOUT.md](./audits/AI_PLATFORM_WAVE_1E_PROVIDER_CAPABILITY_CLOSEOUT.md) | Provider routing **PASS** |
+| **L2** | [AI_PLATFORM_LEVEL2_CERTIFICATION_REVIEW.md](./audits/AI_PLATFORM_LEVEL2_CERTIFICATION_REVIEW.md) | **Level 2 — Platform Compliant** (APPROVED WITH FINDINGS) |
+
+**Next:** **Defer AI L3** per [AI_PLATFORM_LEVEL3_READINESS_REVIEW](./audits/AI_PLATFORM_LEVEL3_READINESS_REVIEW.md) — UX **5G-QA** + Calendar/Notifications L3 first. AI L3 prep (stub policy, matrix C, legacy closure) when capacity allows.
+
+---
+
 ## History
 
 | Date | Change |
 |------|--------|
+| 2026-06-03 | AI Platform **L3 readiness + ROI review** — defer L3; prioritize UX certification — [AI_PLATFORM_LEVEL3_READINESS_REVIEW](./audits/AI_PLATFORM_LEVEL3_READINESS_REVIEW.md) |
+| 2026-06-03 | AI Platform **Level 2 — Platform Compliant** — formal L2 certification review (APPROVED WITH FINDINGS) |
 | 2026-05-31 | Ledger v1.0 — initial population from modernization roadmap + File Hub FH-6 certification |
 
 ---

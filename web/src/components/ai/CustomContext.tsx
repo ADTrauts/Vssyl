@@ -96,7 +96,7 @@ export default function CustomContext() {
     try {
       // Load contexts
       const contextsResponse = await authenticatedApiCall<{ success: boolean; data: UserAIContext[] }>(
-        '/api/ai/context',
+        '/api/ai/user-context',
         { method: 'GET' },
         session.accessToken
       );
@@ -171,7 +171,7 @@ export default function CustomContext() {
     setIsDeletingContext(id);
     try {
       await authenticatedApiCall(
-        `/api/ai/context/${id}`,
+        `/api/ai/user-context/${id}`,
         { method: 'DELETE' },
         session.accessToken
       );
@@ -192,7 +192,7 @@ export default function CustomContext() {
       if (editingContext) {
         // Update
         await authenticatedApiCall(
-          `/api/ai/context/${editingContext.id}`,
+          `/api/ai/user-context/${editingContext.id}`,
           {
             method: 'PUT',
             headers: { 'Content-Type': 'application/json' },
@@ -203,7 +203,7 @@ export default function CustomContext() {
       } else {
         // Create
         await authenticatedApiCall(
-          '/api/ai/context',
+          '/api/ai/user-context',
           {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },

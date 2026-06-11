@@ -1,7 +1,7 @@
 # Drive Reference Menu Rollout Plan (Wave 3A-3)
 
-**Status:** 3A-3.1a–3A-3.3 + 3A-3.1b complete (2026-06-03); 3A-3.6 ready for ACT  
-**Mode:** ACT in progress — Drive menu surfaces migrated; FileContextMenu hygiene next  
+**Status:** **Wave 3A-3 complete** (2026-06-03) — Drive Reference Menu Certification  
+**Mode:** Closed — see [`audits/DRIVE_MENU_REFERENCE_CLOSEOUT.md`](./audits/DRIVE_MENU_REFERENCE_CLOSEOUT.md)  
 **Prerequisite:** Wave 3A-2 primitive hardening — [`CONTEXTMENU_POPOVER_STANDARDIZATION_REVIEW.md`](./CONTEXTMENU_POPOVER_STANDARDIZATION_REVIEW.md) §3A-2  
 **Architecture:** Option A — `ContextMenu` / `Popover` / `DropdownMenu` layering (§11)
 
@@ -18,8 +18,8 @@ Drive / File Hub is the **Reference UX Module** for menu standardization. Within
 | **DropdownMenu** migrations | **1** (DriveSidebar “New”) |
 | **Popover** migrations | **1** (DriveModule filter panel) |
 | **Leave as-is** (non-menu) | **2** (Modal shortcuts; inline enterprise filters) |
-| **Delete** (orphan) | **1** (`FileContextMenu.tsx`) |
-| **Defer / stub** | **2** (EnhancedDriveModule overflow; DriveSearch orphan) |
+| **Delete** (orphan) | **1** (`FileContextMenu.tsx`) — **done (3A-3.6)** |
+| **Defer / stub** | **2** — DriveSearch orphan (documented); EnhancedDriveModule stub removed (3A-3.5) |
 
 **Recommended ACT order:** 3A-3.1a → 3A-3.2 → 3A-3.3 → 3A-3.1b → 3A-3.4 (hygiene) → 3A-3.5 (optional stub wire).
 
@@ -36,8 +36,8 @@ Drive / File Hub is the **Reference UX Module** for menu standardization. Within
 | 3 | **Keyboard shortcuts help** | `DriveModule.tsx` ~L2714+ | Shared `Modal` | Toolbar button | — | **Leave as-is** |
 | 4 | **File/folder context menu** | `starred/page.tsx` ~L838–846 | Shared `ContextMenu` + `buildStarredContextMenuItems()` | Right-click | **ContextMenu** | **Done (3A-3.2)** |
 | 5 | **“New” create menu** | `DriveSidebar.tsx` ~L595–616 | Shared `DropdownMenu` + `newMenuItems` | “New” button click | **DropdownMenu** | **Done (3A-3.3)** |
-| 6 | **Search results panel** | `DriveSearch.tsx` ~L147–180 | Inline `absolute` autocomplete list | Input focus + query ≥2 chars | **Popover** | **Defer** (orphan component) |
-| 7 | **Row overflow (stub)** | `EnhancedDriveModule.tsx` ~L935–941 | `MoreVertical` `Button`; **no menu rendered** | Click (no-op) | **DropdownMenu** | **Defer** (stub until menu spec) |
+| 6 | **Search results panel** | `DriveSearch.tsx` ~L147–180 | Inline `absolute` autocomplete list | Input focus + query ≥2 chars | **Popover** | **Orphan — documented (3A-3.4)** |
+| 7 | **Row overflow (stub)** | `EnhancedDriveModule.tsx` | Stub removed; share action remains | — | **DropdownMenu** (future) | **Done (3A-3.5)** — no menu until product spec |
 
 ### Non-inventory (adjacent, out of 3A-3 menu scope)
 
@@ -173,7 +173,7 @@ Drive / File Hub is the **Reference UX Module** for menu standardization. Within
 | **Complexity** | **Low** — isolated component |
 | **QA surface** | N/A until wired into Drive UI |
 
-**Recommendation:** **Defer** to post–3A-3 certification or SearchBox consolidation wave (Tier 3). If migrated in 3A-3.4, use **Popover** for results panel — **not** DropdownMenu.
+**3A-3.4 closeout:** **Orphan confirmed** — zero `web/` imports. Component left intact; Popover migration deferred until wired into Drive UI.
 
 ---
 
@@ -187,18 +187,17 @@ Drive / File Hub is the **Reference UX Module** for menu standardization. Within
 | **Complexity** | **High** if full parity with DriveModule + enterprise actions required |
 | **QA surface** | Business enterprise drive via `DriveModuleWrapper` |
 
-**Recommendation:** **Defer** wiring until action list is specified. Optional 3A-3.5 ACT: add right-click `ContextMenu` parity with DriveModule for enterprise rows (no overflow menu yet). Overflow stub remains until actions defined.
+**3A-3.5 closeout:** `MoreVertical` no-op stub **removed**. No menu invented. Future overflow → `DropdownMenu` when product defines actions.
 
 **Not in scope:** Inline classification/type `<select>` filters — leave as-is (toolbar form controls).
 
 ---
 
-### 3A-3.6 — Hygiene (planning)
+### 3A-3.6 — Hygiene
 
-| Action | File |
-|--------|------|
-| Delete orphan | `web/src/components/FileContextMenu.tsx` |
-| Remove unused import | `MoreVertical` in `DriveModule.tsx` (imported, unused) |
+| Action | File | Status |
+|--------|------|--------|
+| Delete orphan | `web/src/components/FileContextMenu.tsx` | **Done** |
 
 ---
 
@@ -300,9 +299,10 @@ Success criteria for **Drive Reference Menu Certification** (3A-3 closeout / pre
 | **3A-3.2 ready for ACT?** | **Done** — `starred/page.tsx` → `ContextMenu` |
 | **3A-3.3 ready for ACT?** | **Done** — `DriveSidebar.tsx` “New” → `DropdownMenu` |
 | **3A-3.1b ready for ACT?** | **Done** — `DriveModule.tsx` filter panel → `Popover` |
-| **3A-3.6 ready for ACT?** | **Yes** — delete `FileContextMenu.tsx` orphan |
+| **3A-3.6 ready for ACT?** | **Done** — `FileContextMenu.tsx` deleted |
+| **Drive Reference Certification** | **Ready** — see [`audits/DRIVE_MENU_REFERENCE_CLOSEOUT.md`](./audits/DRIVE_MENU_REFERENCE_CLOSEOUT.md) |
 
-**3A-3.1b closeout:** `pnpm type-check` PASS; zero `role="menu"` in `DriveModule.tsx`; context menu unchanged; manual QA **pending**.
+**Wave 3A-3 closeout:** `pnpm type-check` PASS; all active Drive menu surfaces migrated; manual QA **pending**.
 
 ---
 
@@ -312,4 +312,4 @@ Success criteria for **Drive Reference Menu Certification** (3A-3 closeout / pre
 - [`UX_MODERNIZATION_ROADMAP.md`](./UX_MODERNIZATION_ROADMAP.md)
 - [`COMPONENT_STANDARDS.md`](./COMPONENT_STANDARDS.md)
 
-**Last updated:** 2026-06-03 (3A-3.1a–3A-3.3 + 3A-3.1b ACT complete)
+**Last updated:** 2026-06-03 (Wave 3A-3 complete)

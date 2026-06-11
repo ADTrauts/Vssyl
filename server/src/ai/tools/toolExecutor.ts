@@ -3,9 +3,8 @@
  * Returns a string result for the model; throws on auth/validation errors.
  */
 
-import { prisma } from '../../lib/prisma';
 import { logger } from '../../lib/logger';
-import { grantFileSharePermission, DriveShareError } from '../../services/driveFileShareService';
+import { grantFileShareByEmail, DriveShareError } from '../../services/driveFileShareService';
 import { listAccessibleDriveFiles } from '../../services/driveVisibilityService';
 import type { AIToolName } from './toolDefinitions';
 
@@ -54,16 +53,11 @@ export async function executeTool(
           result = { success: false, message: 'fileId and targetUserEmail are required.' };
           break;
         }
-        const targetUser = await prisma.user.findUnique({ where: { email: targetUserEmail } });
-        if (!targetUser) {
-          result = { success: false, message: `No user found with email "${targetUserEmail}".` };
-          break;
-        }
         try {
-          const { file } = await grantFileSharePermission({
+          const { file } = await grantFileShareByEmail({
             ownerUserId: userId,
             fileId,
-            targetUserId: targetUser.id,
+            targetUserEmail,
             canRead: true,
             canWrite,
           });

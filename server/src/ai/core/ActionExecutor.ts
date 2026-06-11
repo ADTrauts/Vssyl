@@ -220,306 +220,225 @@ export class ActionExecutor {
     return executor(action, userContext);
   }
 
+  private driveActionMetadata(
+    action: AIAction,
+    startTime: number,
+    operation: string,
+    affectedUsers: string[],
+    rollbackAvailable: boolean
+  ) {
+    return {
+      executionTime: Date.now() - startTime,
+      module: 'drive' as const,
+      operation,
+      affectedUsers,
+      rollbackAvailable,
+    };
+  }
+
+  private driveActionResult(
+    action: AIAction,
+    startTime: number,
+    operation: string,
+    outcome: { success: true; data: unknown } | { success: false; error: string },
+    affectedUsers: string[],
+    rollbackAvailable: boolean
+  ): ActionExecutionResult {
+    if (!outcome.success) {
+      return {
+        actionId: action.id,
+        success: false,
+        error: outcome.error,
+        metadata: this.driveActionMetadata(action, startTime, operation, affectedUsers, rollbackAvailable),
+      };
+    }
+    return {
+      actionId: action.id,
+      success: true,
+      result: outcome.data,
+      metadata: this.driveActionMetadata(action, startTime, operation, affectedUsers, rollbackAvailable),
+    };
+  }
+
   /**
-   * Drive module action executor
+   * Drive module action executor — canonical driveAIActionService (Wave 1B).
    */
   private async executeDriveAction(action: AIAction, userContext: UserContext): Promise<ActionExecutionResult> {
     const startTime = Date.now();
     const { operation, parameters } = action;
 
     try {
+      const {
+        aiCreateFolder,
+        aiMoveFile,
+        aiShareFile,
+        aiDeleteFile,
+        aiOrganizeFiles,
+      } = await import('../../services/driveAIActionService.js');
+
       switch (operation) {
         case 'create_folder': {
           const { name, parentId, dashboardId } = parameters || {};
-          
           if (!name) {
-            return {
-              actionId: action.id,
-              success: false,
-              error: 'name is required',
-              metadata: {
-                executionTime: Date.now() - startTime,
-                module: 'drive',
-                operation: 'create_folder',
-                affectedUsers: action.affectedUsers || [],
-                rollbackAvailable: false
-              }
-            };
+            return this.driveActionResult(
+              action,
+              startTime,
+              'create_folder',
+              { success: false, error: 'name is required' },
+              action.affectedUsers || [],
+              false
+            );
           }
-
-          const { createFolder } = await import('../../controllers/folderController');
-          
-          const mockReq = {
-            user: { id: userContext.userId },
-            body: {
-              name,
-              parentId: parentId || null,
-              dashboardId: dashboardId || null
-            }
-          } as any;
-          
-          let result: any = {};
-          const mockRes = {
-            json: (data: any) => { result = data; },
-            status: (code: number) => ({ json: (data: any) => { result = { ...data, statusCode: code }; } })
-          } as any;
-
-          await createFolder(mockReq, mockRes);
-
-      return {
-        actionId: action.id,
-            success: !result.statusCode || result.statusCode === 200 || result.statusCode === 201,
-            result: result,
-        metadata: {
-              executionTime: Date.now() - startTime,
-          module: 'drive',
-              operation: 'create_folder',
-          affectedUsers: action.affectedUsers || [],
-          rollbackAvailable: true
-        }
-      };
+          const outcome = await aiCreateFolder({
+            userId: userContext.userId,
+            name: String(name),
+            parentId: parentId != null ? String(parentId) : null,
+            dashboardId: dashboardId != null ? String(dashboardId) : null,
+          });
+          return this.driveActionResult(
+            action,
+            startTime,
+            'create_folder',
+            outcome,
+            action.affectedUsers || [],
+            outcome.success
+          );
         }
 
         case 'move_file': {
           const { fileId, targetFolderId } = parameters || {};
-          
           if (!fileId) {
-            return {
-              actionId: action.id,
-              success: false,
-              error: 'fileId is required',
-              metadata: {
-                executionTime: Date.now() - startTime,
-                module: 'drive',
-                operation: 'move_file',
-                affectedUsers: action.affectedUsers || [],
-                rollbackAvailable: false
-              }
-            };
+            return this.driveActionResult(
+              action,
+              startTime,
+              'move_file',
+              { success: false, error: 'fileId is required' },
+              action.affectedUsers || [],
+              false
+            );
           }
-
-          const { moveFile } = await import('../../controllers/fileController');
-          
-          const mockReq = {
-            user: { id: userContext.userId },
-            params: { id: fileId },
-            body: {
-              targetFolderId: targetFolderId || null
-            }
-          } as any;
-          
-          let result: any = {};
-          const mockRes = {
-            json: (data: any) => { result = data; },
-            status: (code: number) => ({ json: (data: any) => { result = { ...data, statusCode: code }; } })
-          } as any;
-
-          await moveFile(mockReq, mockRes);
-
-          return {
-            actionId: action.id,
-            success: !result.statusCode || result.statusCode === 200,
-            result: result,
-            metadata: {
-              executionTime: Date.now() - startTime,
-              module: 'drive',
-              operation: 'move_file',
-              affectedUsers: action.affectedUsers || [],
-              rollbackAvailable: true
-            }
-          };
+          const outcome = await aiMoveFile({
+            userId: userContext.userId,
+            fileId: String(fileId),
+            targetFolderId: targetFolderId != null ? String(targetFolderId) : null,
+          });
+          return this.driveActionResult(
+            action,
+            startTime,
+            'move_file',
+            outcome,
+            action.affectedUsers || [],
+            outcome.success
+          );
         }
 
         case 'share_file': {
-          const { fileId, userId, canRead, canWrite } = parameters || {};
-          
-          if (!fileId || !userId) {
-            return {
-              actionId: action.id,
-              success: false,
-              error: 'fileId and userId are required',
-              metadata: {
-                executionTime: Date.now() - startTime,
-                module: 'drive',
-                operation: 'share_file',
-                affectedUsers: action.affectedUsers || [],
-                rollbackAvailable: false
-              }
-            };
+          const { fileId, userId: targetUserId, canRead, canWrite } = parameters || {};
+          if (!fileId || !targetUserId) {
+            return this.driveActionResult(
+              action,
+              startTime,
+              'share_file',
+              { success: false, error: 'fileId and userId are required' },
+              action.affectedUsers || [],
+              false
+            );
           }
-
-          const { grantFilePermission } = await import('../../controllers/fileController');
-          
-          const mockReq = {
-            user: { id: userContext.userId },
-            params: { id: fileId },
-            body: {
-              userId: userId as string,
-              canRead: canRead !== undefined ? canRead : true,
-              canWrite: canWrite !== undefined ? canWrite : false
-            }
-          } as any;
-          
-          let result: any = {};
-          const mockRes = {
-            json: (data: any) => { result = data; },
-            status: (code: number) => ({ json: (data: any) => { result = { ...data, statusCode: code }; } })
-          } as any;
-
-          await grantFilePermission(mockReq, mockRes);
-
-          const affectedUsersList: string[] = action.affectedUsers || [];
-          if (typeof userId === 'string' && !affectedUsersList.includes(userId)) {
-            affectedUsersList.push(userId);
+          const outcome = await aiShareFile({
+            ownerUserId: userContext.userId,
+            fileId: String(fileId),
+            targetUserId: String(targetUserId),
+            canRead: canRead !== undefined ? Boolean(canRead) : true,
+            canWrite: canWrite !== undefined ? Boolean(canWrite) : false,
+          });
+          const affectedUsersList = [...(action.affectedUsers || [])];
+          const targetId = String(targetUserId);
+          if (!affectedUsersList.includes(targetId)) {
+            affectedUsersList.push(targetId);
           }
-
-          return {
-            actionId: action.id,
-            success: !result.statusCode || result.statusCode === 200 || result.statusCode === 201,
-            result: result,
-            metadata: {
-              executionTime: Date.now() - startTime,
-              module: 'drive',
-              operation: 'share_file',
-              affectedUsers: affectedUsersList,
-              rollbackAvailable: true
-            }
-          };
+          return this.driveActionResult(
+            action,
+            startTime,
+            'share_file',
+            outcome,
+            affectedUsersList,
+            outcome.success
+          );
         }
 
         case 'delete_file': {
           const { fileId } = parameters || {};
-          
           if (!fileId) {
-            return {
-              actionId: action.id,
-              success: false,
-              error: 'fileId is required',
-              metadata: {
-                executionTime: Date.now() - startTime,
-                module: 'drive',
-                operation: 'delete_file',
-                affectedUsers: action.affectedUsers || [],
-                rollbackAvailable: false
-              }
-            };
+            return this.driveActionResult(
+              action,
+              startTime,
+              'delete_file',
+              { success: false, error: 'fileId is required' },
+              action.affectedUsers || [],
+              false
+            );
           }
-
-          const { deleteFile } = await import('../../controllers/fileController');
-          
-          const mockReq = {
-            user: { id: userContext.userId },
-            params: { id: fileId }
-          } as any;
-          
-          let result: any = {};
-          const mockRes = {
-            json: (data: any) => { result = data; },
-            status: (code: number) => ({ json: (data: any) => { result = { ...data, statusCode: code }; } })
-          } as any;
-
-          await deleteFile(mockReq, mockRes);
-
-          return {
-            actionId: action.id,
-            success: !result.statusCode || result.statusCode === 200,
-            result: result,
-            metadata: {
-              executionTime: Date.now() - startTime,
-              module: 'drive',
-              operation: 'delete_file',
-              affectedUsers: action.affectedUsers || [],
-              rollbackAvailable: true
-            }
-          };
+          const outcome = await aiDeleteFile({
+            userId: userContext.userId,
+            fileId: String(fileId),
+          });
+          return this.driveActionResult(
+            action,
+            startTime,
+            'delete_file',
+            outcome,
+            action.affectedUsers || [],
+            outcome.success
+          );
         }
 
         case 'organize_files': {
-          // This is a complex operation that might involve multiple file moves
-          // For now, implement basic organization by moving files to folders based on criteria
-          const { criteria, fileIds, targetFolderId } = parameters || {};
-          
+          const { fileIds, targetFolderId } = parameters || {};
           if (!fileIds || !Array.isArray(fileIds) || fileIds.length === 0) {
-            return {
-              actionId: action.id,
-              success: false,
-              error: 'fileIds array is required',
-              metadata: {
-                executionTime: Date.now() - startTime,
-                module: 'drive',
-                operation: 'organize_files',
-                affectedUsers: action.affectedUsers || [],
-                rollbackAvailable: false
-              }
-            };
+            return this.driveActionResult(
+              action,
+              startTime,
+              'organize_files',
+              { success: false, error: 'fileIds array is required' },
+              action.affectedUsers || [],
+              false
+            );
           }
-
-          const { moveFile } = await import('../../controllers/fileController');
-          
-          const results = [];
-          for (const fileId of fileIds) {
-            const mockReq = {
-              user: { id: userContext.userId },
-              params: { id: fileId },
-              body: {
-                targetFolderId: targetFolderId || null
-              }
-            } as any;
-            
-            let result: any = {};
-            const mockRes = {
-              json: (data: any) => { result = data; },
-              status: (code: number) => ({ json: (data: any) => { result = { ...data, statusCode: code }; } })
-            } as any;
-
-            await moveFile(mockReq, mockRes);
-            results.push({ fileId, success: !result.statusCode || result.statusCode === 200 });
-          }
-
-          const successful = results.filter(r => r.success).length;
-
-          return {
-            actionId: action.id,
-            success: successful > 0,
-            result: { organized: successful, total: fileIds.length, results },
-            metadata: {
-              executionTime: Date.now() - startTime,
-              module: 'drive',
-              operation: 'organize_files',
-              affectedUsers: action.affectedUsers || [],
-              rollbackAvailable: true
-            }
-          };
+          const outcome = await aiOrganizeFiles({
+            userId: userContext.userId,
+            fileIds: fileIds.map(String),
+            targetFolderId: targetFolderId != null ? String(targetFolderId) : null,
+          });
+          return this.driveActionResult(
+            action,
+            startTime,
+            'organize_files',
+            outcome,
+            action.affectedUsers || [],
+            outcome.success
+          );
         }
 
         default:
-          return {
-            actionId: action.id,
-            success: false,
-            error: `Unknown drive operation: ${operation}`,
-            metadata: {
-              executionTime: Date.now() - startTime,
-              module: 'drive',
-              operation: action.operation,
-              affectedUsers: action.affectedUsers || [],
-              rollbackAvailable: false
-            }
-          };
+          return this.driveActionResult(
+            action,
+            startTime,
+            operation,
+            { success: false, error: `Unknown drive operation: ${operation}` },
+            action.affectedUsers || [],
+            false
+          );
       }
-    } catch (error) {
-      const err = error as Error;
-      return {
-        actionId: action.id,
-        success: false,
-        error: err.message || 'Unknown error occurred',
-        metadata: {
-          executionTime: Date.now() - startTime,
-          module: 'drive',
-          operation: action.operation,
-          affectedUsers: action.affectedUsers || [],
-          rollbackAvailable: false
-        }
-      };
+    } catch (error: unknown) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      return this.driveActionResult(
+        action,
+        startTime,
+        operation,
+        { success: false, error: err.message || 'Unknown error occurred' },
+        action.affectedUsers || [],
+        false
+      );
     }
   }
 
@@ -744,159 +663,57 @@ export class ActionExecutor {
    * Household module action executor
    */
   private async executeHouseholdAction(action: AIAction, userContext: UserContext): Promise<ActionExecutionResult> {
-    const { operation, parameters } = action;
-
-    try {
-      let result;
-
-      switch (operation) {
-        case 'assign_task':
-          result = await this.assignHouseholdTask(parameters, userContext);
-          break;
-        case 'schedule_event':
-          result = await this.scheduleHouseholdEvent(parameters, userContext);
-          break;
-        case 'notify_members':
-          result = await this.notifyHouseholdMembers(parameters, userContext);
-          break;
-        case 'manage_budget':
-          result = await this.manageHouseholdBudget(parameters, userContext);
-          break;
-        default:
-          throw new Error(`Unknown household operation: ${operation}`);
-      }
-
-      return {
-        actionId: action.id,
-        success: true,
-        result,
-        metadata: {
-          executionTime: 0,
-          module: 'household',
-          operation,
-          affectedUsers: action.affectedUsers || [],
-          rollbackAvailable: true
-        }
-      };
-    } catch (error) {
-      return {
-        actionId: action.id,
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error occurred',
-        metadata: {
-          executionTime: 0,
-          module: 'household',
-          operation,
-          affectedUsers: action.affectedUsers || [],
-          rollbackAvailable: false
-        }
-      };
-    }
+    const { operation } = action;
+    return {
+      actionId: action.id,
+      success: false,
+      error: `Household AI action "${operation}" is not implemented — use module services when available`,
+      metadata: {
+        executionTime: 0,
+        module: 'household',
+        operation,
+        affectedUsers: action.affectedUsers || [],
+        rollbackAvailable: false,
+      },
+    };
   }
 
   /**
    * Business module action executor
    */
   private async executeBusinessAction(action: AIAction, userContext: UserContext): Promise<ActionExecutionResult> {
-    const { operation, parameters } = action;
-
-    try {
-      let result;
-
-      switch (operation) {
-        case 'schedule_meeting':
-          result = await this.scheduleBusinessMeeting(parameters, userContext);
-          break;
-        case 'delegate_task':
-          result = await this.delegateBusinessTask(parameters, userContext);
-          break;
-        case 'generate_report':
-          result = await this.generateBusinessReport(parameters, userContext);
-          break;
-        case 'update_project':
-          result = await this.updateBusinessProject(parameters, userContext);
-          break;
-        default:
-          throw new Error(`Unknown business operation: ${operation}`);
-      }
-
-      return {
-        actionId: action.id,
-        success: true,
-        result,
-        metadata: {
-          executionTime: 0,
-          module: 'business',
-          operation,
-          affectedUsers: action.affectedUsers || [],
-          rollbackAvailable: true
-        }
-      };
-    } catch (error) {
-      return {
-        actionId: action.id,
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error occurred',
-        metadata: {
-          executionTime: 0,
-          module: 'business',
-          operation,
-          affectedUsers: action.affectedUsers || [],
-          rollbackAvailable: false
-        }
-      };
-    }
+    const { operation } = action;
+    return {
+      actionId: action.id,
+      success: false,
+      error: `Business AI action "${operation}" is not implemented — use POST /api/business-ai/:businessId/interact or module services`,
+      metadata: {
+        executionTime: 0,
+        module: 'business',
+        operation,
+        affectedUsers: action.affectedUsers || [],
+        rollbackAvailable: false,
+      },
+    };
   }
 
   /**
    * Dashboard module action executor
    */
   private async executeDashboardAction(action: AIAction, userContext: UserContext): Promise<ActionExecutionResult> {
-    const { operation, parameters } = action;
-
-    try {
-      let result;
-
-      switch (operation) {
-        case 'create_widget':
-          result = await this.callDashboardAPI('/api/widgets', 'POST', parameters, userContext);
-          break;
-        case 'update_layout':
-          result = await this.updateDashboardLayout(parameters, userContext);
-          break;
-        case 'add_module':
-          result = await this.addDashboardModule(parameters, userContext);
-          break;
-        default:
-          throw new Error(`Unknown dashboard operation: ${operation}`);
-      }
-
-      return {
-        actionId: action.id,
-        success: true,
-        result,
-        metadata: {
-          executionTime: 0,
-          module: 'dashboard',
-          operation,
-          affectedUsers: action.affectedUsers || [],
-          rollbackAvailable: true
-        }
-      };
-    } catch (error) {
-      return {
-        actionId: action.id,
-        success: false,
-        error: error instanceof Error ? error.message : 'Unknown error occurred',
-        metadata: {
-          executionTime: 0,
-          module: 'dashboard',
-          operation,
-          affectedUsers: action.affectedUsers || [],
-          rollbackAvailable: false
-        }
-      };
-    }
+    const { operation } = action;
+    return {
+      actionId: action.id,
+      success: false,
+      error: `Dashboard AI action "${operation}" is not implemented — no synthetic success paths`,
+      metadata: {
+        executionTime: 0,
+        module: 'dashboard',
+        operation,
+        affectedUsers: action.affectedUsers || [],
+        rollbackAvailable: false,
+      },
+    };
   }
 
   private calendarActionMetadata(
@@ -1795,7 +1612,6 @@ export class ActionExecutor {
       switch (operation) {
         case 'create_time_off_request': {
           const { businessId, type, startDate, endDate, reason } = parameters || {};
-          
           if (!businessId || !type || !startDate || !endDate) {
             return {
               actionId: action.id,
@@ -1806,49 +1622,36 @@ export class ActionExecutor {
                 module: 'hr',
                 operation: 'create_time_off_request',
                 affectedUsers: action.affectedUsers || [],
-                rollbackAvailable: false
-              }
+                rollbackAvailable: false,
+              },
             };
           }
-
-          const { requestTimeOff } = await import('../../controllers/hrController');
-          
-          const mockReq = {
-            user: { id: userContext.userId },
-            query: { businessId },
-            body: {
-              type,
-              startDate,
-              endDate,
-              reason: reason || null
-            }
-          } as any;
-          
-          let result: any = {};
-          const mockRes = {
-            json: (data: any) => { result = data; },
-            status: (code: number) => ({ json: (data: any) => { result = { ...data, statusCode: code }; } })
-          } as any;
-
-          await requestTimeOff(mockReq, mockRes);
-
+          const { aiRequestTimeOff } = await import('../../services/hrAIActionService.js');
+          const outcome = await aiRequestTimeOff({
+            userId: userContext.userId,
+            businessId: String(businessId),
+            type: String(type),
+            startDate: String(startDate),
+            endDate: String(endDate),
+            reason: reason != null ? String(reason) : null,
+          });
           return {
             actionId: action.id,
-            success: !result.statusCode || result.statusCode === 200 || result.statusCode === 201,
-            result: result,
+            success: outcome.success,
+            result: outcome.success ? outcome.data : undefined,
+            error: outcome.success ? undefined : outcome.error,
             metadata: {
               executionTime: Date.now() - startTime,
               module: 'hr',
               operation: 'create_time_off_request',
               affectedUsers: action.affectedUsers || [],
-              rollbackAvailable: true
-            }
+              rollbackAvailable: outcome.success,
+            },
           };
         }
 
         case 'approve_time_off': {
           const { businessId, requestId, decision, note } = parameters || {};
-          
           if (!businessId || !requestId || !decision) {
             return {
               actionId: action.id,
@@ -1859,12 +1662,10 @@ export class ActionExecutor {
                 module: 'hr',
                 operation: 'approve_time_off',
                 affectedUsers: action.affectedUsers || [],
-                rollbackAvailable: false
-              }
+                rollbackAvailable: false,
+              },
             };
           }
-
-          // Validate decision
           if (decision !== 'APPROVE' && decision !== 'DENY') {
             return {
               actionId: action.id,
@@ -1875,42 +1676,30 @@ export class ActionExecutor {
                 module: 'hr',
                 operation: 'approve_time_off',
                 affectedUsers: action.affectedUsers || [],
-                rollbackAvailable: false
-              }
+                rollbackAvailable: false,
+              },
             };
           }
-
-          const { approveTeamTimeOff } = await import('../../controllers/hrController');
-          
-          const mockReq = {
-            user: { id: userContext.userId },
-            query: { businessId },
-            params: { id: requestId },
-            body: {
-              decision: decision as 'APPROVE' | 'DENY',
-              note: note || null
-            }
-          } as any;
-          
-          let result: any = {};
-          const mockRes = {
-            json: (data: any) => { result = data; },
-            status: (code: number) => ({ json: (data: any) => { result = { ...data, statusCode: code }; } })
-          } as any;
-
-          await approveTeamTimeOff(mockReq, mockRes);
-
+          const { aiApproveTimeOff } = await import('../../services/hrAIActionService.js');
+          const outcome = await aiApproveTimeOff({
+            managerUserId: userContext.userId,
+            businessId: String(businessId),
+            requestId: String(requestId),
+            decision: decision as 'APPROVE' | 'DENY',
+            note: note != null ? String(note) : null,
+          });
           return {
             actionId: action.id,
-            success: !result.statusCode || result.statusCode === 200,
-            result: result,
+            success: outcome.success,
+            result: outcome.success ? outcome.data : undefined,
+            error: outcome.success ? undefined : outcome.error,
             metadata: {
               executionTime: Date.now() - startTime,
               module: 'hr',
               operation: 'approve_time_off',
               affectedUsers: action.affectedUsers || [],
-              rollbackAvailable: true
-            }
+              rollbackAvailable: outcome.success,
+            },
           };
         }
 
@@ -2353,9 +2142,7 @@ export class ActionExecutor {
 
       switch (operation) {
         case 'generate_schedule': {
-          // Call the AI schedule generation endpoint internally
           const { businessId, scheduleId, strategy, constraints } = parameters || {};
-          
           if (!businessId || !scheduleId) {
             return {
               actionId: action.id,
@@ -2366,45 +2153,38 @@ export class ActionExecutor {
                 module: 'scheduling',
                 operation: 'generate_schedule',
                 affectedUsers: [],
-                rollbackAvailable: false
-              }
+                rollbackAvailable: false,
+              },
             };
           }
-
-          // Import scheduling controller functions directly (internal call)
-          const { generateAISchedule } = await import('../../controllers/schedulingController');
-          // Create a mock request/response for internal execution
-          // In a real scenario, you'd call the service directly, not through HTTP
-          const mockReq = {
-            user: { id: userContext.userId },
-            body: { businessId, scheduleId, strategy, constraints }
-          } as any;
-          
-          let result: any = {};
-          const mockRes = {
-            json: (data: any) => { result = data; },
-            status: (code: number) => ({ json: (data: any) => { result = { ...data, statusCode: code }; } })
-          } as any;
-
-          await generateAISchedule(mockReq, mockRes);
-
+          const { aiGenerateSchedule } = await import('../../services/schedulingAIActionService.js');
+          const outcome = await aiGenerateSchedule({
+            userId: userContext.userId,
+            businessId: String(businessId),
+            scheduleId: String(scheduleId),
+            strategy: strategy != null ? String(strategy) : undefined,
+            constraints:
+              constraints && typeof constraints === 'object'
+                ? (constraints as Record<string, unknown>)
+                : undefined,
+          });
           return {
             actionId: action.id,
-            success: result.success || false,
-            result: result,
+            success: outcome.success,
+            result: outcome.success ? outcome.data : undefined,
+            error: outcome.success ? undefined : outcome.error,
             metadata: {
               executionTime: 0,
               module: 'scheduling',
               operation: 'generate_schedule',
-              affectedUsers: result.affectedUsers || [],
-              rollbackAvailable: false
-            }
+              affectedUsers: [],
+              rollbackAvailable: false,
+            },
           };
         }
 
         case 'suggest_assignments': {
           const { businessId, scheduleId, shiftId } = parameters || {};
-          
           if (!businessId || !shiftId) {
             return {
               actionId: action.id,
@@ -2415,38 +2195,29 @@ export class ActionExecutor {
                 module: 'scheduling',
                 operation: 'suggest_assignments',
                 affectedUsers: [],
-                rollbackAvailable: false
-              }
+                rollbackAvailable: false,
+              },
             };
           }
-
-          // Import scheduling controller function directly
-          const { suggestShiftAssignments } = await import('../../controllers/schedulingController');
-          
-          const mockReq = {
-            user: { id: userContext.userId },
-            body: { businessId, scheduleId, shiftId }
-          } as any;
-          
-          let result: any = {};
-          const mockRes = {
-            json: (data: any) => { result = data; },
-            status: (code: number) => ({ json: (data: any) => { result = { ...data, statusCode: code }; } })
-          } as any;
-
-          await suggestShiftAssignments(mockReq, mockRes);
-
+          const { aiSuggestShiftAssignments } = await import('../../services/schedulingAIActionService.js');
+          const outcome = await aiSuggestShiftAssignments({
+            userId: userContext.userId,
+            businessId: String(businessId),
+            shiftId: String(shiftId),
+            scheduleId: scheduleId != null ? String(scheduleId) : undefined,
+          });
           return {
             actionId: action.id,
-            success: result.success || false,
-            result: result,
+            success: outcome.success,
+            result: outcome.success ? outcome.data : undefined,
+            error: outcome.success ? undefined : outcome.error,
             metadata: {
               executionTime: 0,
               module: 'scheduling',
               operation: 'suggest_assignments',
               affectedUsers: [],
-              rollbackAvailable: false
-            }
+              rollbackAvailable: false,
+            },
           };
         }
 

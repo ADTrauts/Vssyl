@@ -1,6 +1,8 @@
 'use client';
 import { useEffect, useMemo, useState } from 'react';
+import { toast } from 'react-hot-toast';
 import { calendarAPI, Calendar } from '../../api/calendar';
+import { CalendarCreateCalendarModal } from './CalendarCreateCalendarModal';
 import { useDashboard } from '../../contexts/DashboardContext';
 import { useCalendarContext } from '../../contexts/CalendarContext';
 import { Dashboard } from 'shared/types/dashboard';
@@ -27,14 +29,28 @@ interface ContextQuery {
 interface CalendarListSidebarProps {
   contextType?: 'PERSONAL' | 'BUSINESS' | 'HOUSEHOLD';
   contextId?: string;
+  /** When set, opens create flow in-place instead of navigating away */
+  onCreateEvent?: () => void;
+  /** Inside WorkspaceSidebar — omit fixed width / outer border */
+  embedded?: boolean;
+  /** Called after navigation (e.g. close mobile sidebar sheet) */
+  onNavigate?: () => void;
 }
 
-export default function CalendarListSidebar({ contextType, contextId }: CalendarListSidebarProps = {}) {
+export default function CalendarListSidebar({
+  contextType,
+  contextId,
+  onCreateEvent,
+  embedded = false,
+  onNavigate,
+}: CalendarListSidebarProps = {}) {
   const { currentDashboard, getDashboardType, getDashboardDisplayName } = useDashboard();
   const { visibleCalendarIds, toggleCalendarVisibility, overlayMode, setOverlayMode, setCalendars: setCalCtx } = useCalendarContext();
   const [calendars, setCalendars] = useState<Calendar[]>([]);
   const [loading, setLoading] = useState(false);
   const [masterCalendarActive, setMasterCalendarActive] = useState(true);
+  const [showCreateCalendarModal, setShowCreateCalendarModal] = useState(false);
+  const [isCreatingCalendar, setIsCreatingCalendar] = useState(false);
   const isContextLocked = Boolean(contextType && contextId);
   const shouldFilterBusinessCalendars = useMemo(() => {
     if (isContextLocked || !currentDashboard) {
@@ -133,8 +149,19 @@ export default function CalendarListSidebar({ contextType, contextId }: Calendar
   // Event counts will be added in future update
   const totalEvents = calendars.length;
 
+  const navigateTo = (href: string) => {
+    onNavigate?.();
+    window.location.href = href;
+  };
+
+  const rootClassName = embedded
+    ? 'h-full flex flex-col overflow-y-auto p-4'
+    : 'w-[280px] shrink-0 border-r bg-gray-50 dark:bg-gray-900 p-4 flex flex-col overflow-y-auto';
+
+  const Root = embedded ? 'div' : 'aside';
+
   return (
-    <aside className="w-[280px] shrink-0 border-r bg-gray-50 dark:bg-gray-900 p-4 flex flex-col overflow-y-auto">
+    <Root className={rootClassName}>
       {/* Header */}
       <div className="mb-4">
         <div className="flex items-center justify-between mb-4">
@@ -153,7 +180,11 @@ export default function CalendarListSidebar({ contextType, contextId }: Calendar
         {/* New Event Button - Chunky style like Drive */}
         <button
           onClick={() => {
-            window.location.href = '/calendar/month';
+            if (onCreateEvent) {
+              onCreateEvent();
+            } else {
+              window.location.href = '/calendar/month';
+            }
           }}
           className="w-full h-12 rounded-lg font-semibold text-sm flex items-center justify-center space-x-2 transition-all hover:shadow-lg"
           style={{
@@ -212,41 +243,7 @@ export default function CalendarListSidebar({ contextType, contextId }: Calendar
             Your Calendars
           </h3>
           <button
-            onClick={async () => {
-              const name = prompt('Calendar name');
-              if (!name) return;
-              const extendedDashboard = currentDashboard as ExtendedDashboard;
-              const resolvedContextType = isContextLocked
-                ? contextType!
-                : currentDashboard
-                  ? getDashboardType(currentDashboard).toUpperCase() as 'PERSONAL' | 'BUSINESS' | 'HOUSEHOLD'
-                  : 'PERSONAL';
-              const resolvedContextId = isContextLocked
-                ? contextId!
-                : extendedDashboard?.business?.id || extendedDashboard?.household?.id || currentDashboard?.id || '';
-              const body: { name: string; contextType: 'PERSONAL' | 'BUSINESS' | 'HOUSEHOLD'; contextId: string } = {
-                name,
-                contextType: resolvedContextType,
-                contextId: resolvedContextId
-              };
-              const resp = await calendarAPI.createCalendar(body);
-              if (resp?.success) {
-                const isAllowedBusinessCalendar = (calendar: Calendar) => {
-                  if (calendar.contextType !== 'BUSINESS') {
-                    return true;
-                  }
-                  const lowered = calendar.name?.trim().toLowerCase();
-                  return calendar.isSystem === true &&
-                    calendar.isDeletable === false &&
-                    lowered === 'schedule';
-                };
-
-                if (!shouldFilterBusinessCalendars || isAllowedBusinessCalendar(resp.data)) {
-                  setCalendars([resp.data, ...calendars]);
-                  setCalCtx([resp.data, ...calendars]);
-                }
-              }
-            }}
+            onClick={() => setShowCreateCalendarModal(true)}
             className="text-xs text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 font-medium"
           >
             + New
@@ -332,35 +329,84 @@ export default function CalendarListSidebar({ contextType, contextId }: Calendar
         </h3>
         <div className="space-y-1">
           <button
-            onClick={() => {
-              const today = new Date();
-              window.location.href = `/calendar/month?y=${today.getFullYear()}&m=${today.getMonth() + 1}`;
-            }}
-            className="w-full px-3 py-2 rounded-lg hover:bg-white dark:hover:bg-gray-800 transition-colors flex items-center space-x-3 text-sm"
+            type="button"
+            onClick={() => navigateTo('/calendar/day')}
+            className="w-full px-3 py-2 rounded-lg hover:bg-white dark:hover:bg-gray-800 transition-colors flex items-center space-x-3 text-sm text-left"
           >
             <ClockIcon className="w-5 h-5 text-gray-500 dark:text-gray-400" />
-            <span className="text-gray-700 dark:text-gray-300">Today's Events</span>
+            <span className="text-gray-700 dark:text-gray-300">Today&apos;s Events</span>
           </button>
           <button
-            onClick={() => {
-              window.location.href = '/calendar/month';
-            }}
-            className="w-full px-3 py-2 rounded-lg hover:bg-white dark:hover:bg-gray-800 transition-colors flex items-center space-x-3 text-sm"
+            type="button"
+            onClick={() => navigateTo('/calendar/week')}
+            className="w-full px-3 py-2 rounded-lg hover:bg-white dark:hover:bg-gray-800 transition-colors flex items-center space-x-3 text-sm text-left"
           >
             <BellIcon className="w-5 h-5 text-gray-500 dark:text-gray-400" />
-            <span className="text-gray-700 dark:text-gray-300">Upcoming</span>
+            <span className="text-gray-700 dark:text-gray-300">This Week</span>
           </button>
           <button
-            onClick={() => {
-              window.location.href = '/calendar/month';
-            }}
-            className="w-full px-3 py-2 rounded-lg hover:bg-white dark:hover:bg-gray-800 transition-colors flex items-center space-x-3 text-sm"
+            type="button"
+            disabled
+            title="Shared calendar management is not available yet"
+            className="w-full px-3 py-2 rounded-lg flex items-center space-x-3 text-sm text-left opacity-50 cursor-not-allowed"
           >
             <ShareIcon className="w-5 h-5 text-gray-500 dark:text-gray-400" />
             <span className="text-gray-700 dark:text-gray-300">Shared Calendars</span>
           </button>
         </div>
       </div>
-    </aside>
+      <CalendarCreateCalendarModal
+        open={showCreateCalendarModal}
+        onClose={() => setShowCreateCalendarModal(false)}
+        loading={isCreatingCalendar}
+        onSubmit={async (name) => {
+          setIsCreatingCalendar(true);
+          try {
+            const extendedDashboard = currentDashboard as ExtendedDashboard;
+            const resolvedContextType = isContextLocked
+              ? contextType!
+              : currentDashboard
+                ? getDashboardType(currentDashboard).toUpperCase() as 'PERSONAL' | 'BUSINESS' | 'HOUSEHOLD'
+                : 'PERSONAL';
+            const resolvedContextId = isContextLocked
+              ? contextId!
+              : extendedDashboard?.business?.id || extendedDashboard?.household?.id || currentDashboard?.id || '';
+            const body: { name: string; contextType: 'PERSONAL' | 'BUSINESS' | 'HOUSEHOLD'; contextId: string } = {
+              name,
+              contextType: resolvedContextType,
+              contextId: resolvedContextId,
+            };
+            const resp = await calendarAPI.createCalendar(body);
+            if (resp?.success) {
+              const isAllowedBusinessCalendar = (calendar: Calendar) => {
+                if (calendar.contextType !== 'BUSINESS') {
+                  return true;
+                }
+                const lowered = calendar.name?.trim().toLowerCase();
+                return (
+                  calendar.isSystem === true &&
+                  calendar.isDeletable === false &&
+                  lowered === 'schedule'
+                );
+              };
+
+              if (!shouldFilterBusinessCalendars || isAllowedBusinessCalendar(resp.data)) {
+                setCalendars([resp.data, ...calendars]);
+                setCalCtx([resp.data, ...calendars]);
+              }
+              toast.success('Calendar created');
+              setShowCreateCalendarModal(false);
+            } else {
+              toast.error('Failed to create calendar');
+            }
+          } catch (error: unknown) {
+            console.error('Failed to create calendar:', error);
+            toast.error('Failed to create calendar');
+          } finally {
+            setIsCreatingCalendar(false);
+          }
+        }}
+      />
+    </Root>
   );
 }

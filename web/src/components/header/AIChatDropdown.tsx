@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { Brain, Send, X, Sparkles, Bot, User, Search, Plus, Settings, History, ExternalLink, Zap, Lightbulb, TrendingUp, Clock, MoreVertical, Share2, Edit, Archive, Pin, Trash2, Check, Paperclip } from 'lucide-react';
 import { useRouter, usePathname } from 'next/navigation';
@@ -8,7 +8,7 @@ import { useSession } from 'next-auth/react';
 import { authenticatedApiCall } from '../../lib/apiUtils';
 import { buildAIConversationItemFromTwinData, buildAddMessagePayloadFromTwinData, buildErrorConversationItem, normalizeStoredAIMessage } from '../../lib/aiResponseHandler';
 import type { FileIssue } from '../../lib/aiResponseHandler';
-import { Button, Spinner, ConfirmModal } from 'shared/components';
+import { Button, Spinner, ConfirmModal, DropdownMenu, ContextMenuItem } from 'shared/components';
 import { generateAISchedule } from '../../api/scheduling';
 import * as todoAPI from '../../api/todo';
 import type { SchedulingSuggestion } from '../../api/todo';
@@ -158,7 +158,6 @@ export default function AIChatDropdown({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const conversationEndRef = useRef<HTMLDivElement>(null);
   const dropdownRef = useRef<HTMLDivElement>(null);
-  const menuRefs = useRef<Record<string, HTMLDivElement | null>>({});
 
   // Ensure component is mounted for portal
   useEffect(() => {
@@ -988,6 +987,54 @@ export default function AIChatDropdown({
     }
   };
 
+  const buildConversationMenuItems = useCallback(
+    (conv: AIConversationType): ContextMenuItem[] => [
+      {
+        icon: <Share2 className="h-4 w-4" />,
+        label: 'Share',
+        onClick: () => {
+          void handleShareConversation(conv.id);
+        },
+      },
+      {
+        icon: <Edit className="h-4 w-4" />,
+        label: 'Rename',
+        onClick: () => {
+          setRenameValue(conv.title);
+          setRenamingConversationId(conv.id);
+          setConversationMenuOpen(null);
+        },
+      },
+      {
+        icon: <Pin className="h-4 w-4" />,
+        label: `${conv.isPinned ? 'Unpin' : 'Pin'} chat`,
+        onClick: () => {
+          void handlePinConversation(conv.id);
+        },
+      },
+      {
+        icon: <Archive className="h-4 w-4" />,
+        label: conv.isArchived ? 'Unarchive' : 'Archive',
+        onClick: () => {
+          void handleArchiveConversation(conv.id);
+        },
+      },
+      { divider: true },
+      {
+        icon: <Trash2 className="h-4 w-4" />,
+        label: 'Delete',
+        destructive: true,
+        onClick: () => requestDeleteConversation(conv.id),
+      },
+    ],
+    [
+      handleShareConversation,
+      handlePinConversation,
+      handleArchiveConversation,
+      requestDeleteConversation,
+    ]
+  );
+
   const handleDragStart = (e: React.DragEvent, conversation: AIConversationType) => {
     const trashItemData = {
       id: conversation.id,
@@ -1003,21 +1050,6 @@ export default function AIChatDropdown({
     e.dataTransfer.setData('text/plain', conversation.title || 'Untitled Conversation');
     e.dataTransfer.effectAllowed = 'move';
   };
-
-  // Close menus when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (conversationMenuOpen) {
-        const menuElement = menuRefs.current[conversationMenuOpen];
-        if (menuElement && !menuElement.contains(event.target as Node)) {
-          setConversationMenuOpen(null);
-        }
-      }
-    };
-
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [conversationMenuOpen]);
 
   // Handle key press
   const handleKeyPress = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
@@ -1598,73 +1630,28 @@ export default function AIChatDropdown({
                             </p>
                           </div>
                           {(hoveredConversationId === conv.id || conversationMenuOpen === conv.id) && (
-                            <div className="relative" ref={(el) => { menuRefs.current[conv.id] = el; }}>
+                            <DropdownMenu
+                              open={conversationMenuOpen === conv.id}
+                              onOpenChange={(open) =>
+                                setConversationMenuOpen(open ? conv.id : null)
+                              }
+                              items={buildConversationMenuItems(conv)}
+                              menuLabel={`Conversation actions for ${conv.title}`}
+                              align="end"
+                            >
                               <button
+                                type="button"
                                 onClick={(e) => {
                                   e.stopPropagation();
-                                  setConversationMenuOpen(conversationMenuOpen === conv.id ? null : conv.id);
+                                  setConversationMenuOpen(
+                                    conversationMenuOpen === conv.id ? null : conv.id
+                                  );
                                 }}
                                 className="p-1 hover:bg-gray-200 rounded transition-colors"
                               >
                                 <MoreVertical className="h-3 w-3 text-gray-600 dark:text-gray-400" />
                               </button>
-                              {conversationMenuOpen === conv.id && (
-                                <div className="absolute right-0 mt-1 w-48 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg shadow-lg z-50">
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleShareConversation(conv.id);
-                                    }}
-                                    className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800 flex items-center space-x-2"
-                                  >
-                                    <Share2 className="h-4 w-4" />
-                                    <span>Share</span>
-                                  </button>
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      setRenameValue(conv.title);
-                                      setRenamingConversationId(conv.id);
-                                      setConversationMenuOpen(null);
-                                    }}
-                                    className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800 flex items-center space-x-2"
-                                  >
-                                    <Edit className="h-4 w-4" />
-                                    <span>Rename</span>
-                                  </button>
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handlePinConversation(conv.id);
-                                    }}
-                                    className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800 flex items-center space-x-2"
-                                  >
-                                    <Pin className="h-4 w-4" />
-                                    <span>{conv.isPinned ? 'Unpin' : 'Pin'} chat</span>
-                                  </button>
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      handleArchiveConversation(conv.id);
-                                    }}
-                                    className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800 flex items-center space-x-2"
-                                  >
-                                    <Archive className="h-4 w-4" />
-                                    <span>{conv.isArchived ? 'Unarchive' : 'Archive'}</span>
-                                  </button>
-                                  <button
-                                    onClick={(e) => {
-                                      e.stopPropagation();
-                                      requestDeleteConversation(conv.id);
-                                    }}
-                                    className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 flex items-center space-x-2"
-                                  >
-                                    <Trash2 className="h-4 w-4" />
-                                    <span>Delete</span>
-                                  </button>
-                                </div>
-                              )}
-                            </div>
+                            </DropdownMenu>
                           )}
                         </div>
                       )}

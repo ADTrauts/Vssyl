@@ -7,7 +7,6 @@ import GlobalTrashBin from '../../components/GlobalTrashBin';
 import { useSession } from "next-auth/react";
 import { usePathname, useRouter } from 'next/navigation';
 import { COLORS, getBrandColor, semanticColors } from 'shared/utils/brandColors';
-import ClientOnlyWrapper from '../ClientOnlyWrapper';
 import { createDashboard } from '../../api/dashboard';
 import { useDashboard } from '../../contexts/DashboardContext';
 import { useGlobalBranding } from '../../contexts/GlobalBrandingContext';
@@ -21,8 +20,6 @@ import { usePositionAwareModules } from '../../components/PositionAwareModulePro
 import { toast } from 'react-hot-toast';
 import { useDashboardDeletion } from '../../hooks/useDashboardDeletion';
 import DashboardDeletionModal from '../../components/DashboardDeletionModal';
-import AvatarContextMenu from '../../components/AvatarContextMenu';
-import CompactSearchButton from '../../components/header/CompactSearchButton';
 import AIChatDropdown from '../../components/header/AIChatDropdown';
 import { Modal, DraggableWrapper } from 'shared/components';
 import { getSuggestions } from '../../api/aiSuggestions';
@@ -31,6 +28,20 @@ import { DragEndEvent } from '@dnd-kit/core';
 import { SidebarCustomizationModal } from '../../components/sidebar/SidebarCustomizationModal';
 import { SidebarCustomizationProvider, useSidebarCustomization } from '../../contexts/SidebarCustomizationContext';
 import { SidebarFolderRenderer } from '../../components/sidebar/SidebarFolderRenderer';
+import {
+  PlatformShell,
+  PlatformHeader,
+  PlatformHeaderBrand,
+  PlatformDashboardTab,
+  PlatformHeaderActionRow,
+  computePlatformAIDropdownPosition,
+  usePlatformDashboardTabPalette,
+  usePlatformHeaderMobile,
+  PlatformLeftSidebar,
+  PlatformRightRail,
+  PlatformRightRailModuleButton,
+  PlatformRightRailSpacer,
+} from '../../components/layouts';
 import type { LeftSidebarConfig } from '../../types/sidebar';
 import { MODULE_ICONS } from '../../config/moduleIcons';
 
@@ -137,7 +148,7 @@ export function DashboardLayoutInner({ children }: { children: React.ReactNode }
       setPathname(window.location.pathname);
     }
   }, [nextPathname]);
-  const [isMobile, setIsMobile] = useState(false);
+  const isMobile = usePlatformHeaderMobile();
   const [showCustomizationModal, setShowCustomizationModal] = useState(false);
   const [modules, setModules] = useState<ModuleConfig[]>([]);
   const [sidebarCollapsed, setSidebarCollapsed] = useState(true);
@@ -285,7 +296,6 @@ export function DashboardLayoutInner({ children }: { children: React.ReactNode }
   useEffect(() => {
     const availableModules = getAvailableModules();
     setModules(availableModules);
-    setIsMobile(window.innerWidth < 700);
     setHydrated(true);
   }, [currentDashboard, getDashboardType, getFilteredModules]);
 
@@ -306,38 +316,7 @@ export function DashboardLayoutInner({ children }: { children: React.ReactNode }
 
   const isPlaceActive = showPlaceTab;
   const mutedTextColor = isDark ? '#cbd5e1' : '#4b5563';
-  const tabPalette = {
-    activeBg: isDark ? '#0f172a' : '#ffffff',
-    activeText: isDark ? '#f8fafc' : '#1f2937',
-    inactiveBg: isDark ? '#334155' : '#e5e7eb',
-    inactiveText: isDark ? '#cbd5e1' : '#4b5563',
-    border: isDark ? '#475569' : '#d1d5db',
-    newTabBg: isDark ? '#1e293b' : '#f3f4f6',
-    newTabText: isDark ? '#cbd5e1' : '#6b7280',
-  };
-
-  const getTabStyle = (isActive: boolean, borderRadius: string, marginLeft: number) => ({
-    background: isActive ? tabPalette.activeBg : tabPalette.inactiveBg,
-    color: isActive ? tabPalette.activeText : tabPalette.inactiveText,
-    borderStyle: 'solid',
-    borderColor: tabPalette.border,
-    borderTopWidth: 1,
-    borderRightWidth: 1,
-    borderLeftWidth: 1,
-    borderBottomWidth: 0,
-    borderRadius,
-    boxSizing: 'border-box' as const,
-    minHeight: 44,
-    height: 44,
-    padding: '0 24px',
-    marginLeft,
-    fontWeight: 700,
-    fontSize: 16,
-    display: 'flex',
-    alignItems: 'center',
-    gap: 8,
-    position: 'relative' as const,
-  });
+  const tabPalette = usePlatformDashboardTabPalette();
 
   const handleTabClick = (dashboardId: string) => {
     if (dashboardId === 'place') {
@@ -425,12 +404,7 @@ export function DashboardLayoutInner({ children }: { children: React.ReactNode }
   // Handle AI button click
   const handleAIClick = () => {
     if (aiButtonRef.current) {
-      const rect = aiButtonRef.current.getBoundingClientRect();
-      setAIDropdownPosition({
-        top: rect.bottom + window.scrollY + 8,
-        left: Math.max(20, (window.innerWidth - 700) / 2), // Center with min margin
-        width: Math.min(700, window.innerWidth - 40)
-      });
+      setAIDropdownPosition(computePlatformAIDropdownPosition(aiButtonRef.current.getBoundingClientRect()));
     }
     setIsAIOpen(!isAIOpen);
   };
@@ -691,320 +665,259 @@ export function DashboardLayoutInner({ children }: { children: React.ReactNode }
   }
 
   return (
-    <div style={{ height: '100vh', width: '100vw', position: 'relative' }}>
-      {/* Full-width header */}
-      <header style={{
-        position: 'fixed',
-        left: 0,
-        top: 0,
-        width: '100vw',
-        height: 64,
-        ...getHeaderStyle(isBusinessContext, isBusinessContext ? getHeaderStyles().backgroundColor : undefined),
-        display: 'flex',
-        alignItems: isMobile ? 'flex-start' : 'stretch',
-        flexDirection: isMobile ? 'column' : 'row',
-        padding: isMobile ? '0 12px' : '0 32px',
-        flexShrink: 0,
-        boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-        zIndex: 100,
-      }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 16, flex: '0 0 auto' }}>
-          {isBusinessContext && currentBranding?.logo ? (
-            <img 
-              src={currentBranding.logo} 
-              alt={`${currentBranding.name} logo`}
-              style={{ height: 32, width: 'auto' }}
-            />
-          ) : (
-            <div style={{ fontWeight: 800, fontSize: 22, color: getBrandColor('highlightYellow') }}>B</div>
-          )}
-          <h1 style={{ 
-            fontWeight: 600, 
-            fontSize: 18, 
-            color: isBusinessContext ? getHeaderStyles().color : '#fff' 
-          }}>
-            {isBusinessContext ? currentBranding?.name : 'Vssyl'}
-          </h1>
-        </div>
-        <div style={{
-          flex: '1 1 auto',
-          display: 'flex',
-          justifyContent: 'center',
-          marginTop: isMobile ? 8 : 0,
-          overflow: 'hidden',
-          minWidth: 0,
-          ...(isMobile ? {} : { alignItems: 'flex-end' as const }),
-        }}>
-          {/* Search functionality moved to GlobalHeaderTabs */}
-          <nav style={{
-            display: 'flex',
-            alignItems: isMobile ? 'center' : 'stretch',
-            gap: 0,
-            maxWidth: '100%',
-            overflow: 'auto',
-            scrollbarWidth: 'none',
-            msOverflowStyle: 'none',
-          }}>
-            <div style={{ display: 'flex', alignItems: isMobile ? 'center' : 'stretch', gap: 0, minWidth: 0, flexWrap: 'nowrap' }}>
-              {/* Vssyl Place tab (always first) */}
+    <>
+      <PlatformShell
+        mode="personal"
+        useNativeHeader
+        useNativePanels
+        showLeftNav={shouldShowSidebar}
+        showRightRail={shouldShowSidebar}
+        header={
+          <PlatformHeader
+        mode="personal"
+        isMobile={isMobile}
+        headerStyle={getHeaderStyle(isBusinessContext, isBusinessContext ? getHeaderStyles().backgroundColor : undefined)}
+        brand={
+          <PlatformHeaderBrand>
+            {isBusinessContext && currentBranding?.logo ? (
+              <img
+                src={currentBranding.logo}
+                alt={`${currentBranding.name} logo`}
+                style={{ height: 32, width: 'auto' }}
+              />
+            ) : (
+              <div style={{ fontWeight: 800, fontSize: 22, color: getBrandColor('highlightYellow') }}>B</div>
+            )}
+            <h1
+              style={{
+                fontWeight: 600,
+                fontSize: 18,
+                color: isBusinessContext ? getHeaderStyles().color : '#fff',
+              }}
+            >
+              {isBusinessContext ? currentBranding?.name : 'Vssyl'}
+            </h1>
+          </PlatformHeaderBrand>
+        }
+        tabs={
+          <div
+            className={`flex min-w-0 flex-nowrap gap-0 ${isMobile ? 'items-center' : 'items-stretch'}`}
+          >
+            <PlatformDashboardTab
+              isActive={isPlaceActive}
+              borderRadius="8px 0 0 0"
+              marginLeft={0}
+              palette={tabPalette}
+              activeColor="#4F46E5"
+              onClick={() => handleTabClick('place')}
+              style={{ cursor: 'pointer' }}
+            >
+              <MapPin size={20} style={{ marginRight: 4 }} />
+              Place
+            </PlatformDashboardTab>
+            <PlatformDashboardTab
+              key={mainPersonalDashboard.id}
+              isActive={!isPlaceActive && !showWorkTab && currentDashboardId === mainPersonalDashboard.id}
+              borderRadius="0"
+              marginLeft={-1}
+              palette={tabPalette}
+              onClick={() => handleTabClick(mainPersonalDashboard.id)}
+            >
+              {getDashboardIcon(mainPersonalDashboard.name, getDashboardType(mainPersonalDashboard)) &&
+                React.createElement(
+                  getDashboardIcon(mainPersonalDashboard.name, getDashboardType(mainPersonalDashboard)),
+                  { size: 20, style: { marginRight: 4 } }
+                )}
+              {getDashboardDisplayName(mainPersonalDashboard)}
+            </PlatformDashboardTab>
+            {editMode ? (
+              <DraggableWrapper
+                items={draggableDashboards}
+                onDragEnd={handleTabDragEnd}
+                onDragStart={() => {}}
+                renderItem={(dashboard, _idx, isDragging) => (
+                  <PlatformDashboardTab
+                    key={dashboard.id}
+                    isActive={!isPlaceActive && !showWorkTab && currentDashboardId === dashboard.id}
+                    borderRadius="0"
+                    marginLeft={-1}
+                    palette={tabPalette}
+                    onClick={() => handleTabClick(dashboard.id)}
+                    className={`dashboard-tab ${isDragging ? 'dragging' : ''}`}
+                    style={{ cursor: 'grab' }}
+                  >
+                    {getDashboardIcon(dashboard.name, getDashboardType(dashboard)) &&
+                      React.createElement(getDashboardIcon(dashboard.name, getDashboardType(dashboard)), {
+                        size: 20,
+                        style: { marginRight: 4 },
+                      })}
+                    {getDashboardDisplayName(dashboard)}
+                    {editMode && (
+                      <div
+                        style={{
+                          width: 12,
+                          height: 12,
+                          background:
+                            'linear-gradient(45deg, #ccc 25%, transparent 25%, transparent 75%, #ccc 75%, #ccc), linear-gradient(45deg, #ccc 25%, transparent 25%, transparent 75%, #ccc 75%, #ccc)',
+                          backgroundSize: '4px 4px',
+                          backgroundPosition: '0 0, 2px 2px',
+                          borderRadius: '2px',
+                          marginLeft: 'auto',
+                          opacity: 0.6,
+                        }}
+                        title="Drag to reorder"
+                      />
+                    )}
+                    {editMode && (
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          openDeletionModal(dashboard);
+                        }}
+                        className="delete-button"
+                        style={{
+                          position: 'absolute',
+                          top: 2,
+                          right: 2,
+                          background: 'transparent',
+                          border: 'none',
+                          color: '#c00',
+                          fontWeight: 'bold',
+                          fontSize: 18,
+                          cursor: 'pointer',
+                          padding: 0,
+                          marginLeft: 0,
+                        }}
+                        title="Delete dashboard"
+                      >
+                        ×
+                      </button>
+                    )}
+                  </PlatformDashboardTab>
+                )}
+              />
+            ) : (
+              draggableDashboards.map((dashboard) => (
+                <PlatformDashboardTab
+                  key={dashboard.id}
+                  isActive={!isPlaceActive && !showWorkTab && currentDashboardId === dashboard.id}
+                  borderRadius="0"
+                  marginLeft={-1}
+                  palette={tabPalette}
+                  onClick={() => handleTabClick(dashboard.id)}
+                >
+                  {getDashboardIcon(dashboard.name, getDashboardType(dashboard)) &&
+                    React.createElement(getDashboardIcon(dashboard.name, getDashboardType(dashboard)), {
+                      size: 20,
+                      style: { marginRight: 4 },
+                    })}
+                  {getDashboardDisplayName(dashboard)}
+                </PlatformDashboardTab>
+              ))
+            )}
+            <PlatformDashboardTab
+              isActive={showWorkTab}
+              borderRadius={allDashboards.length === 0 ? '8px 0 0 0' : '0 0 0 0'}
+              marginLeft={allDashboards.length === 0 ? 0 : -1}
+              palette={tabPalette}
+              onClick={() => handleTabClick('work')}
+            >
+              <Briefcase size={20} style={{ marginRight: 4 }} />
+              Work
+            </PlatformDashboardTab>
+            {editMode && (
               <button
-                onClick={() => handleTabClick('place')}
+                type="button"
+                onClick={() => setShowAddModal(true)}
                 style={{
-                  ...getTabStyle(isPlaceActive, '8px 0 0 0', 0),
-                  color: isPlaceActive ? '#4F46E5' : tabPalette.inactiveText,
-                  cursor: 'pointer',
+                  background: tabPalette.newTabBg,
+                  color: tabPalette.newTabText,
+                  borderStyle: 'dashed',
+                  borderColor: tabPalette.border,
+                  borderTopWidth: 1,
+                  borderRightWidth: 1,
+                  borderLeftWidth: 1,
+                  borderBottomWidth: 0,
+                  borderRadius: '0',
+                  boxSizing: 'border-box',
+                  minHeight: 44,
+                  height: 44,
+                  padding: '0 24px',
+                  marginLeft: -1,
+                  fontWeight: 700,
+                  fontSize: 16,
+                  display: 'flex',
+                  alignItems: 'center',
+                  gap: 8,
                 }}
               >
-                <MapPin size={20} style={{ marginRight: 4 }} />
-                Place
-              </button>
-              {/* Main personal dashboard (not draggable) */}
-              <button
-                key={mainPersonalDashboard.id}
-                onClick={() => handleTabClick(mainPersonalDashboard.id)}
-                style={getTabStyle(!isPlaceActive && !showWorkTab && currentDashboardId === mainPersonalDashboard.id, '0', -1)}
-              >
-                {getDashboardIcon(mainPersonalDashboard.name, getDashboardType(mainPersonalDashboard)) && React.createElement(getDashboardIcon(mainPersonalDashboard.name, getDashboardType(mainPersonalDashboard)), { size: 20, style: { marginRight: 4 } })}
-                {getDashboardDisplayName(mainPersonalDashboard)}
-              </button>
-              {/* Draggable personal dashboards */}
-              {editMode ? (
-                <DraggableWrapper
-                  items={draggableDashboards}
-                  onDragEnd={handleTabDragEnd}
-                  onDragStart={(result) => {}}
-                  renderItem={(dashboard, idx, isDragging) => (
-                    <button
-                      key={dashboard.id}
-                      onClick={() => handleTabClick(dashboard.id)}
-                      className={`dashboard-tab ${isDragging ? 'dragging' : ''}`}
-                      style={{
-                        ...getTabStyle(!isPlaceActive && !showWorkTab && currentDashboardId === dashboard.id, '0', -1),
-                        cursor: 'grab',
-                      }}
-                    >
-                      {getDashboardIcon(dashboard.name, getDashboardType(dashboard)) && React.createElement(getDashboardIcon(dashboard.name, getDashboardType(dashboard)), { size: 20, style: { marginRight: 4 } })}
-                      {getDashboardDisplayName(dashboard)}
-                      {/* Drag handle indicator */}
-                      {editMode && (
-                        <div
-                          style={{
-                            width: 12,
-                            height: 12,
-                            background: 'linear-gradient(45deg, #ccc 25%, transparent 25%, transparent 75%, #ccc 75%, #ccc), linear-gradient(45deg, #ccc 25%, transparent 25%, transparent 75%, #ccc 75%, #ccc)',
-                            backgroundSize: '4px 4px',
-                            backgroundPosition: '0 0, 2px 2px',
-                            borderRadius: '2px',
-                            marginLeft: 'auto',
-                            opacity: 0.6,
-                          }}
-                          title="Drag to reorder"
-                        />
-                      )}
-                      {/* Delete (X) button */}
-                      {editMode && (
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            openDeletionModal(dashboard);
-                          }}
-                          className="delete-button"
-                          style={{
-                            position: 'absolute',
-                            top: 2,
-                            right: 2,
-                            background: 'transparent',
-                            border: 'none',
-                            color: '#c00',
-                            fontWeight: 'bold',
-                            fontSize: 18,
-                            cursor: 'pointer',
-                            padding: 0,
-                            marginLeft: 0,
-                          }}
-                          title="Delete dashboard"
-                        >
-                          ×
-                        </button>
-                      )}
-                    </button>
-                  )}
-                />
-              ) : (
-                draggableDashboards.map((dashboard, idx) => (
-                  <button
-                    key={dashboard.id}
-                    onClick={() => handleTabClick(dashboard.id)}
-                    style={getTabStyle(!isPlaceActive && !showWorkTab && currentDashboardId === dashboard.id, '0', -1)}
-                  >
-                    {getDashboardIcon(dashboard.name, getDashboardType(dashboard)) && React.createElement(getDashboardIcon(dashboard.name, getDashboardType(dashboard)), { size: 20, style: { marginRight: 4 } })}
-                    {getDashboardDisplayName(dashboard)}
-                  </button>
-                ))
-              )}
-              {/* Work Tab, Add Tab, +/- Button as before */}
-              <button
-                onClick={() => handleTabClick('work')}
-                style={getTabStyle(
-                  showWorkTab,
-                  allDashboards.length === 0 ? '8px 0 0 0' : '0 0 0 0',
-                  allDashboards.length === 0 ? 0 : -1
-                )}
-              >
-                <Briefcase size={20} style={{ marginRight: 4 }} />
-                Work
-              </button>
-              {/* Edit Mode: Add Tab (greyed out) */}
-              {editMode && (
-                <button
-                  onClick={() => setShowAddModal(true)}
+                <span
                   style={{
-                    background: tabPalette.newTabBg,
-                    color: tabPalette.newTabText,
-                    borderStyle: 'dashed',
-                    borderColor: tabPalette.border,
-                    borderTopWidth: 1,
-                    borderRightWidth: 1,
-                    borderLeftWidth: 1,
-                    borderBottomWidth: 0,
-                    borderRadius: '0',
-                    boxSizing: 'border-box',
-                    minHeight: 44,
-                    height: 44,
-                    padding: '0 24px',
-                    marginLeft: -1,
+                    fontSize: 20,
                     fontWeight: 700,
-                    fontSize: 16,
-                    display: 'flex',
+                    lineHeight: 1,
+                    display: 'inline-flex',
                     alignItems: 'center',
-                    gap: 8,
                   }}
                 >
-                  <span style={{ fontSize: 20, fontWeight: 700, lineHeight: 1, display: 'inline-flex', alignItems: 'center' }}>+</span>
-                  New Tab
-                </button>
-              )}
-              {/* '+/-' Edit Button */}
-              <button
-                onClick={() => setEditMode((v) => !v)}
-                style={getTabStyle(editMode, '0 8px 0 0', -1)}
-              >
-                <span style={{ fontSize: 20, fontWeight: 700, lineHeight: 1, display: 'inline-flex', alignItems: 'center' }}>+/-</span>
+                  +
+                </span>
+                New Tab
               </button>
-            </div>
-          </nav>
-        </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: isMobile ? 8 : 0, flex: '0 0 auto', alignSelf: isMobile ? 'auto' : 'center' }}>
-          {/* Search Button */}
-          <CompactSearchButton />
-          
-          {/* AI Button */}
-          <button
-            ref={aiButtonRef}
-            onClick={handleAIClick}
-            className="flex items-center justify-center w-10 h-10 rounded-full transition-colors hover:bg-purple-100 relative"
-            style={{
-              background: isAIOpen ? '#8b5cf6' : 'transparent',
-              color: isAIOpen ? '#fff' : '#8b5cf6',
-              border: '2px solid #8b5cf6',
-              outline: 'none',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              width: 40,
-              height: 40,
-              borderRadius: '50%',
-              transition: 'all 0.2s ease',
-              fontWeight: '600',
-              fontSize: '12px',
-            }}
-            title={pendingSuggestionsCount > 0 ? `AI Assistant (${pendingSuggestionsCount} suggestion${pendingSuggestionsCount > 1 ? 's' : ''})` : 'AI Assistant'}
-          >
-            AI
-            {pendingSuggestionsCount > 0 && (
+            )}
+            <PlatformDashboardTab
+              isActive={editMode}
+              borderRadius="0 8px 0 0"
+              marginLeft={-1}
+              palette={tabPalette}
+              onClick={() => setEditMode((v) => !v)}
+            >
               <span
-                className="absolute -top-1 -right-1 bg-yellow-500 text-white text-xs font-bold rounded-full flex items-center justify-center z-10"
                 style={{
-                  minWidth: '18px',
-                  height: '18px',
-                  padding: '0 4px',
-                  fontSize: '10px',
-                  lineHeight: '1',
-                  boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                  fontSize: 20,
+                  fontWeight: 700,
+                  lineHeight: 1,
+                  display: 'inline-flex',
+                  alignItems: 'center',
                 }}
               >
-                {pendingSuggestionsCount > 9 ? '9+' : pendingSuggestionsCount}
+                +/-
               </span>
-            )}
-          </button>
-          
-          {/* Avatar */}
-          <ClientOnlyWrapper>
-            <AvatarContextMenu />
-          </ClientOnlyWrapper>
-        </div>
-
-        {/* AI Chat Dropdown */}
-        <AIChatDropdown
-          isOpen={isAIOpen}
-          onClose={handleAIClose}
-          position={aiDropdownPosition}
-          dashboardId={currentDashboardId || undefined}
-          dashboardType={currentDashboard ? getDashboardType(currentDashboard) : 'personal'}
-          dashboardName={currentDashboard ? getDashboardDisplayName(currentDashboard) : 'Dashboard'}
-        />
-      </header>
-      {/* Main content area below header */}
-      <div style={{ display: 'flex', flexGrow: 1, overflow: 'hidden', position: 'absolute', top: 64, left: 0, right: 0, bottom: 0 }}>
-        <aside style={{
-          width: shouldShowSidebar ? (sidebarCollapsed ? 0 : 240) : 0,
-          background: (showWorkTab || isBusinessContext)
+            </PlatformDashboardTab>
+          </div>
+        }
+        actions={
+          <PlatformHeaderActionRow
+            variant="personal"
+            isAIOpen={isAIOpen}
+            onAIClick={handleAIClick}
+            aiButtonRef={aiButtonRef}
+          />
+        }
+        overlays={
+          <AIChatDropdown
+            isOpen={isAIOpen}
+            onClose={handleAIClose}
+            position={aiDropdownPosition}
+            dashboardId={currentDashboardId || undefined}
+            dashboardType={currentDashboard ? getDashboardType(currentDashboard) : 'personal'}
+            dashboardName={currentDashboard ? getDashboardDisplayName(currentDashboard) : 'Dashboard'}
+          />
+        }
+          />
+        }
+        leftNav={
+          <PlatformLeftSidebar
+          visible={shouldShowSidebar}
+          collapsed={sidebarCollapsed}
+          onToggleCollapse={() => setSidebarCollapsed((v) => !v)}
+          backgroundColor={(showWorkTab || isBusinessContext)
             ? getSidebarStyles().backgroundColor
-            : (isDark ? '#0f172a' : getBrandColor('neutralMid')),
-          display: 'flex',
-          flexDirection: 'column',
-          padding: '20px 0',
-          flexShrink: 0,
-          transition: 'width 0.2s ease-in-out',
-          position: 'relative',
-          height: '100%',
-          overflow: 'hidden',
-        }}>
-          {/* Collapse/Expand Arrow Button */}
-          <button
-            onClick={() => setSidebarCollapsed((v) => !v)}
-            aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-            style={{
-              position: 'fixed',
-              top: '50%',
-              left: shouldShowSidebar ? (sidebarCollapsed ? 0 : 228) : -100,
-              transform: 'translateY(-50%)',
-              width: 28,
-              height: 28,
-              borderRadius: '50%',
-              background: '#444',
-              color: '#fff',
-              border: '1px solid #555',
-              cursor: 'pointer',
-              zIndex: 1000,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-              transition: 'left 0.2s ease-in-out',
-            }}
-          >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d={sidebarCollapsed ? 'M9 18l6-6-6-6' : 'M15 18l-6-6 6-6'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </button>
-          <div style={{ 
-            visibility: (shouldShowSidebar && !sidebarCollapsed) ? 'visible' : 'hidden', 
-            opacity: (shouldShowSidebar && !sidebarCollapsed) ? 1 : 0, 
-            transition: 'opacity 0.2s, visibility 0.2s' 
-          }}>
-            {(
+            : (isDark ? '#0f172a' : getBrandColor('neutralMid'))}
+          customizeTextColor={(showWorkTab || isBusinessContext) ? getSidebarStyles().color : (isDark ? '#e2e8f0' : '#ffffff')}
+          customizeBorderColor={isDark ? '#475569' : '#9ca3af'}
+          onCustomizeClick={() => setShowCustomizationModal(true)}
+        >
               <nav>
                 <ul style={{ listStyle: 'none', padding: 0 }}>
                   {showWorkTab && isWorkAuthenticated ? (
@@ -1157,134 +1070,48 @@ export function DashboardLayoutInner({ children }: { children: React.ReactNode }
                   )}
                 </ul>
               </nav>
-            )}
-            <div style={{ marginTop: 'auto' }}>
-              <button onClick={() => setShowCustomizationModal(true)} style={{ width: '100%', background: 'none', border: `1px solid ${isDark ? '#475569' : '#9ca3af'}`, color: (showWorkTab || isBusinessContext) ? getSidebarStyles().color : (isDark ? '#e2e8f0' : '#ffffff'), padding: '8px 0', borderRadius: 6, fontWeight: 600 }}>
-                Customize
-              </button>
-            </div>
-          </div>
-        </aside>
-        <main className="flex-1 overflow-y-auto h-full bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-200" style={{ 
-          padding: 0, 
-          paddingRight: shouldShowSidebar ? 40 : 0,
-          marginLeft: 0,
-          transition: 'margin-left 0.2s ease-in-out, padding-right 0.2s ease-in-out',
-        }}>
-          {showWorkTab ? (
-            <WorkTab onSwitchToWork={handleSwitchToWork} />
-          ) : showPlaceTab ? (
-            <PlaceContent />
-          ) : (
-            children
-          )}
-        </main>
-        <aside
-          style={{
-            width: 40,
-            background: isBusinessContext ? getSidebarStyles().backgroundColor : getBrandColor('neutralMid'),
-            display: 'flex',
-            flexDirection: 'column',
-            alignItems: 'center',
-            padding: '10px 0',
-            gap: 12,
-            flexShrink: 0,
-            position: 'fixed',
-            right: 0,
-            top: 64,
-            height: 'calc(100vh - 64px)',
-            zIndex: 1000,
-            boxShadow: '0 0 8px rgba(0,0,0,0.04)',
-            transition: 'opacity 0.2s ease-in-out, visibility 0.2s ease-in-out',
-            overflow: 'hidden',
-            // Right sidebar should always be visible when sidebars are shown, regardless of left sidebar collapse state
-            visibility: shouldShowSidebar ? 'visible' : 'hidden',
-            opacity: shouldShowSidebar ? 1 : 0,
-          }}
+          </PlatformLeftSidebar>
+        }
+        rightRail={
+          <PlatformRightRail
+          visible={shouldShowSidebar}
+          backgroundColor={isBusinessContext ? getSidebarStyles().backgroundColor : getBrandColor('neutralMid')}
         >
-          {/* Fixed Top: Dashboard */}
           {getRightSidebarModules.top.map(module => {
             const Icon = (MODULE_ICONS as Record<string, typeof LayoutDashboard>)[module.id] || LayoutDashboard;
             const isActive = pathname?.startsWith(`/${module.id}`) ?? false;
             return (
-              <button
+              <PlatformRightRailModuleButton
                 key={module.id}
-                className={`flex items-center justify-center w-10 h-10 my-1 rounded-lg transition-colors ${isActive ? 'bg-gray-800' : 'hover:bg-gray-700'} ${isActive ? 'text-white' : 'text-gray-300'}`}
-                style={{
-                  background: isActive ? '#1f2937' : 'transparent',
-                  color: isActive ? '#fff' : '#cbd5e1',
-                  border: 'none',
-                  outline: 'none',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  width: 40,
-                  height: 40,
-                  margin: '8px 0',
-                  borderRadius: 8,
-                  transition: 'background 0.18s cubic-bezier(.4,1.2,.6,1)',
-                }}
+                isActive={isActive}
                 onClick={() => navigateToModule(module.id)}
                 title={module.name}
               >
                 <Icon size={22} />
-              </button>
+              </PlatformRightRailModuleButton>
             );
           })}
-          
-          {/* Customizable Middle: Pinned Modules */}
+
           {getRightSidebarModules.middle.map(module => {
             const Icon = (MODULE_ICONS as Record<string, typeof LayoutDashboard>)[module.id] || LayoutDashboard;
             const isActive = pathname?.startsWith(`/${module.id}`) ?? false;
             return (
-              <button
+              <PlatformRightRailModuleButton
                 key={module.id}
-                className={`flex items-center justify-center w-10 h-10 my-1 rounded-lg transition-colors ${isActive ? 'bg-gray-800' : 'hover:bg-gray-700'} ${isActive ? 'text-white' : 'text-gray-300'}`}
-                style={{
-                  background: isActive ? '#1f2937' : 'transparent',
-                  color: isActive ? '#fff' : '#cbd5e1',
-                  border: 'none',
-                  outline: 'none',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  width: 40,
-                  height: 40,
-                  margin: '8px 0',
-                  borderRadius: 8,
-                  transition: 'background 0.18s cubic-bezier(.4,1.2,.6,1)',
-                }}
+                isActive={isActive}
                 onClick={() => navigateToModule(module.id)}
                 title={module.name}
               >
                 <Icon size={22} />
-              </button>
+              </PlatformRightRailModuleButton>
             );
           })}
-          
-          {/* Spacer to push bottom items down */}
-          <div className="flex-1" />
-          
-          {/* Fixed Bottom: AI Assistant, Modules, Trash */}
-          <button
-            className={`flex items-center justify-center w-10 h-10 my-1 rounded-lg transition-colors ${pathname?.startsWith('/ai-chat') ? 'bg-purple-600' : 'hover:bg-gray-700'} ${pathname?.startsWith('/ai-chat') ? 'text-white' : 'text-gray-300'}`}
-            style={{
-              background: pathname?.startsWith('/ai-chat') ? '#9333ea' : 'transparent',
-              color: pathname?.startsWith('/ai-chat') ? '#fff' : '#cbd5e1',
-              border: 'none',
-              outline: 'none',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              width: 40,
-              height: 40,
-              margin: '8px 0',
-              borderRadius: 8,
-              transition: 'background 0.18s cubic-bezier(.4,1.2,.6,1)',
-            }}
+
+          <PlatformRightRailSpacer />
+
+          <PlatformRightRailModuleButton
+            isActive={pathname?.startsWith('/ai-chat') ?? false}
+            variant="purple"
             onClick={() => {
               try {
                 router.push('/ai-chat');
@@ -1296,47 +1123,38 @@ export function DashboardLayoutInner({ children }: { children: React.ReactNode }
             title="AI Chat"
           >
             <Brain size={22} />
-          </button>
+          </PlatformRightRailModuleButton>
 
           <VLinkSidebarButton />
 
-          <button
-            className={`flex items-center justify-center w-10 h-10 my-1 rounded-lg transition-colors ${pathname?.startsWith('/modules') ? 'bg-gray-800' : 'hover:bg-gray-700'} ${pathname?.startsWith('/modules') ? 'text-white' : 'text-gray-300'}`}
-            style={{
-              background: pathname?.startsWith('/modules') ? '#1f2937' : 'transparent',
-              color: pathname?.startsWith('/modules') ? '#fff' : '#cbd5e1',
-              border: 'none',
-              outline: 'none',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              width: 40,
-              height: 40,
-              margin: '8px 0',
-              borderRadius: 8,
-              transition: 'background 0.18s cubic-bezier(.4,1.2,.6,1)',
-            }}
+          <PlatformRightRailModuleButton
+            isActive={pathname?.startsWith('/modules') ?? false}
             onClick={() => router.push('/modules')}
             title="Module Management"
           >
             <Puzzle size={22} />
-          </button>
-          
-          {/* Global Trash Bin */}
+          </PlatformRightRailModuleButton>
+
           <div className="mt-auto mb-4">
-            <GlobalTrashBin 
+            <GlobalTrashBin
               onItemTrashed={(item) => {
-                // If a message was trashed, we need to reload messages in chat
                 if (item.type === 'message') {
-                  // This will be handled by the chat context when it detects the change
-                  // We could add a global event or context update here if needed
+                  // Handled by chat context when it detects the change
                 }
               }}
             />
           </div>
-        </aside>
-      </div>
+          </PlatformRightRail>
+        }
+      >
+        {showWorkTab ? (
+          <WorkTab onSwitchToWork={handleSwitchToWork} />
+        ) : showPlaceTab ? (
+          <PlaceContent />
+        ) : (
+          children
+        )}
+      </PlatformShell>
       {/* Modal for new dashboard */}
       {showAddModal && (
         <Modal open={showAddModal} onClose={() => {
@@ -1640,6 +1458,6 @@ export function DashboardLayoutInner({ children }: { children: React.ReactNode }
         open={showCustomizationModal}
         onClose={() => setShowCustomizationModal(false)}
       />
-    </div>
+    </>
   );
 }

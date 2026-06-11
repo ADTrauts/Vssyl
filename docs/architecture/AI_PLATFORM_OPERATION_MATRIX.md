@@ -2,7 +2,7 @@
 
 **System:** Vssyl AI Platform Layer  
 **Status:** Governance baseline (Wave **G0**) — reflects Wave 0 audit; updated on each implementation wave  
-**Last updated:** 2026-06-04  
+**Last updated:** 2026-06-03 (Level **2** certification review)  
 **Related:** [AI_PLATFORM_CONSTITUTION.md](./AI_PLATFORM_CONSTITUTION.md), [AI_PLATFORM_CERTIFICATION_STRATEGY.md](./AI_PLATFORM_CERTIFICATION_STRATEGY.md), [audits/AI_PLATFORM_CONSTITUTIONAL_AUDIT.md](./audits/AI_PLATFORM_CONSTITUTIONAL_AUDIT.md)
 
 ---
@@ -36,17 +36,19 @@
 
 | Domain | Operations | C | P | N |
 |--------|------------|---|---|---|
-| Context retrieval | 12 | 7 | 4 | 1 |
-| Provider orchestration | 8 | 6 | 2 | 0 |
-| Grounding | 6 | 5 | 1 | 0 |
-| Tool execution | 8 | 7 | 1 | 0 |
-| Action execution | 14 | 5 | 5 | 4 |
-| Diagnostics | 10 | 8 | 2 | 0 |
+| Context retrieval | 14 | 10 | 4 | 0 |
+| Provider orchestration | 12 | 10 | 2 | 0 |
+| Grounding | 7 | 6 | 1 | 0 |
+| Tool execution | 8 | 8 | 0 | 0 |
+| Action execution | 16 | 11 | 2 | 3 |
+| Diagnostics | 10 | 9 | 1 | 0 |
 | Memory | 5 | 5 | 0 | 0 |
 | Preferences | 6 | 6 | 0 | 0 |
-| Admin pipeline | 12 | 10 | 2 | 0 |
-| Learning | 8 | 3 | 4 | 1 |
-| **Total** | **89** | **62** | **21** | **6** |
+| Admin pipeline | 12 | 9 | 3 | 0 |
+| Learning | 8 | 6 | 2 | 0 |
+| **Total** | **98** | **80** | **15** | **3** |
+
+**Blocking N = 0** per § Blocking. Non-blocking **N**: household/business/dashboard stub actions (3).
 
 *Counts are operation-class rows below, not HTTP endpoints.*
 
@@ -65,11 +67,11 @@
 | **Todo context providers** | MOD | `todoAIContextController` | C | C | — | C | **C** |
 | **Notebook/Notes providers** | MOD | notes visibility + todo overview | C | C | — | partial | **C** |
 | **Place context providers** | MOD | place visibility / AI controllers | C | C | — | partial | **P** |
-| **Drive context providers** | MOD | `driveAIContextController` | P | N | — | partial | **N** |
+| **Drive context providers** | MOD | `driveAIContextController` → `driveAIContextService` → `driveVisibilityService` | C | C | — | C | **C** |
 | **Dashboard context providers** | MOD | `dashboardAIContextController` | P | P | — | N | **P** |
 | **HR / Scheduling providers** | MOD | AI context controllers | P | P | — | N | **P** |
 | **User AI context CRUD** | PLAT | `ai-user-context.ts` | C | C | — | partial | **P** |
-| **Route: GET /api/ai/context collision** | PLAT | mount order `ai.ts` vs user-context | N | — | — | N | **N** |
+| **Route: GET /api/ai/context collision** | PLAT | `/api/ai/user-context` canonical (1B) | C | — | — | C | **C** |
 
 ---
 
@@ -86,6 +88,9 @@
 | **Entity linking merge** | PLAT | `entityLinking` | C | C | C | C | **C** |
 | **Synthetic context (flagged)** | PLAT | `ContextSynthesisService` | C | C | C | C | **P** |
 | **Legacy provider routing** | PLAT | `legacyProviderCanHandle` | P | P | — | N | **P** |
+| **LLM provider capability matrix** | PLAT | `providerCapabilityMatrix.ts` | C | C | C | C | **C** |
+| **LLM provider selection / fallback** | PLAT | `providerRouting.ts` → `DigitalLifeTwinCore` | C | C | C | C | **C** |
+| **GET /api/ai/models + capabilities** | PLAT | `ai.ts` + `buildModelsApiPayload` | C | C | — | partial | **C** |
 
 ---
 
@@ -109,7 +114,7 @@
 |-----------|-------|-------|-------|-----------|-------|-------|---------|
 | **Tool round loop (max 3)** | PLAT | `DigitalLifeTwinCore` | C | C | C | partial | **C** |
 | **list_drive_files** | PLAT→MOD | `toolExecutor` → visibility | C | C | C | C | **C** |
-| **share_file** | PLAT→MOD | toolExecutor + share service | C | P | C | C | **P** |
+| **share_file** | PLAT→MOD | `grantFileShareByEmail` (no Prisma in toolExecutor) | C | C | C | C | **C** |
 | **create_todo** | PLAT→MOD | `todoAIActionService` | C | C | C | C | **C** |
 | **notebook summarize / extract** | PLAT→MOD | `notebookAIActionService` | C | C | C | C | **C** |
 | **place search / recommend / purchase_help** | PLAT→MOD | `placeAIActionService` | C | C | C | C | **C** |
@@ -128,16 +133,16 @@
 | **Todo/tasks actions** | PLAT→MOD | `todoAIActionService` | C | C | — | C | **C** |
 | **Notebook actions** | PLAT→MOD | `notebookAIActionService` | C | C | — | C | **C** |
 | **Place actions (read-only)** | PLAT→MOD | `placeAIActionService` | C | C | — | C | **C** |
-| **Drive actions** | PLAT | mockReq + controllers | P | N | — | N | **N** |
-| **HR actions** | PLAT | mockReq + controllers | P | N | — | N | **N** |
-| **Scheduling actions** | PLAT | mockReq + controllers | P | N | — | N | **N** |
+| **Drive actions** | PLAT | `driveAIActionService` | C | C | — | C | **C** |
+| **HR actions** | PLAT | `hrAIActionService` (+ attendance service) | C | C | — | C | **C** |
+| **Scheduling actions** | PLAT | `schedulingAIActionService` | C | C | — | C | **C** |
 | **Household actions** | PLAT | stub success | P | N | — | N | **N** |
 | **Business actions** | PLAT | stub success | P | N | — | N | **N** |
 | **Dashboard actions** | PLAT | stub success | P | N | — | N | **N** |
 | **Notifications actions** | PLAT | partial impl | P | P | — | N | **P** |
 | **Approval gate** | PLAT | `ActionExecutor` + `ApprovalManager` | C | C | — | partial | **P** |
 | **Third-party registry execute** | PLAT | `ActionExecutorRegistry` | C | C | — | C | **C** |
-| **AutonomousActionExecutor** | PLAT | legacy path | N | N | — | partial | **N** |
+| **AutonomousActionExecutor** | PLAT | writes retired 410; history read-only audit | C | C | — | partial | **C** |
 
 ---
 
@@ -153,7 +158,7 @@
 | **Admin list diagnostics** | ADM+PLAT | admin pipeline routes | C | C | C | partial | **C** |
 | **Admin trace detail + evidence** | ADM+PLAT | diagnostics/:traceId | C | C | C | partial | **C** |
 | **Test-lab dry-run** | ADM+PLAT | test-lab POST | C | C | C | partial | **C** |
-| **Context debug API** | PLAT | `ai-context-debug` | C | C | — | partial | **P** |
+| **Context debug API** | PLAT | `ai-context-debug` | C | C | — | partial | **C** |
 | **Retention policy** | PLAT | `pipelineRetentionService` | C | — | — | partial | **P** |
 
 ---
@@ -210,9 +215,9 @@
 | **Learning signals POST** | PLAT | learning/signals | C | C | — | partial | **C** |
 | **Ambient suggestion accept/dismiss** | PLAT | suggestions + consumer | C | C | — | C | **C** |
 | **Centralized learning engine** | PLAT | `CentralizedLearningEngine` | P | partial | — | partial | **P** |
-| **Centralized-ai routes** | PLAT | `ai-centralized.ts` | P | N | — | N | **P** |
+| **Centralized-ai routes** | PLAT | `ai-centralized.ts` + mount fence | C | C | — | partial | **C** |
 | **Admin learning page** | ADM | ai-learning | P | overlap | — | N | **P** |
-| **Autonomous learning writes** | PLAT | `AutonomousActionExecutor` | N | N | — | partial | **N** |
+| **Autonomous learning writes** | PLAT | `autonomous.ts` writes **410** (1B); executor audit read-only | C | C | — | partial | **C** |
 | **Collective consent gate** | PLAT | `collectiveLearningConsent` | C | C | — | partial | **C** |
 
 ---
@@ -227,7 +232,15 @@ Promotion to **Level 2 — Platform Compliant** requires **zero N** on:
 - Admin pipeline auth  
 - Context route collision resolved  
 
-**Known N rows at G0:** Drive context, `/api/ai/context` collision, Drive/HR/Scheduling/Household/Business/Dashboard actions (mock/stub), `AutonomousActionExecutor`.
+**Known N rows after L2 review (2026-06-03):** Household/Business/Dashboard stub actions only (structured stub success in `ActionExecutor`) — acceptable; not blocking L2.
+
+**Resolved in 1B:** `/api/ai/context` collision, Drive/HR/Scheduling ActionExecutor mocks, `share_file` tool Prisma, `AutonomousActionExecutor` writes, `POST /api/ai/chat` deprecated.
+
+**Resolved in 1C:** Drive context provider direct Prisma — `driveVisibilityService` AI context path.
+
+**Resolved in 1D:** centralized-ai `requireAdmin` mount fence; deprecated `/learning/event` and `/models/*` (410); diagnostics trace/reasoning alignment — `mergeDiagnosticsFromHistoryContext.ts`, `aiCentralizedAdminFence.test.ts`.
+
+**Resolved in 1E:** Canonical LLM provider capability matrix + fallback constraints — `providerCapabilityMatrix.ts`, `providerRouting.ts`, `llmProviderRouting` on pipeline trace.
 
 ---
 

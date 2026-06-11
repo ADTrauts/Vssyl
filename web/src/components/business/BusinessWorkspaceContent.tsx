@@ -26,13 +26,18 @@ import AIWidget from '../widgets/AIWidget';
 // Import module wrappers for full-page modules
 import ChatModuleWrapper from '../chat/ChatModuleWrapper';
 import DriveModuleWrapper from '../drive/DriveModuleWrapper';
-import CalendarModuleWrapper from '../calendar/CalendarModuleWrapper';
+import CalendarWorkspaceLanding from '../calendar/CalendarWorkspaceLanding';
 import { NotebookShell } from '../notebook/NotebookShell';
-import { TodoModule } from '../todo/TodoModule';
+import TodoWorkspaceLanding from '../todo/TodoWorkspaceLanding';
 import PlaceWorkspaceLanding from '../place/PlaceWorkspaceLanding';
 import { VLinkModule } from '../vlink/VLinkModule';
 import DriveSidebar from '../../app/drive/DriveSidebar';
-import CalendarListSidebar from '../calendar/CalendarListSidebar';
+import { DriveCreateFolderModal } from '../drive/DriveCreateFolderModal';
+import {
+  WorkspaceSplitLayout,
+  WorkspaceSidebar,
+  WorkspaceMain,
+} from '../layouts';
 import HRLayout from '../hr/HRLayout';
 import SchedulingLayout from '../scheduling/SchedulingLayout';
 import { getModuleDefinition, normalizeModuleId } from '../../runtime/modules/moduleRegistry';
@@ -206,89 +211,6 @@ function BusinessDashboardWidget() {
             </Button>
           </div>
         </Card>
-      </div>
-    </div>
-  );
-}
-
-interface CalendarEvent {
-  id: number;
-  title: string;
-  time: string;
-  type: string;
-}
-
-function BusinessCalendarWidget() {
-  const [events, setEvents] = useState<CalendarEvent[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    // TODO: Load business events
-    setTimeout(() => {
-      setEvents([
-        { id: 1, title: 'Team Standup', time: '9:00 AM', type: 'meeting' },
-        { id: 2, title: 'Project Review', time: '2:00 PM', type: 'meeting' },
-        { id: 3, title: 'Company Holiday', time: 'All Day', type: 'event' }
-      ]);
-      setLoading(false);
-    }, 1000);
-  }, []);
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center p-8">
-        <Spinner size={32} />
-      </div>
-    );
-  }
-
-  return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Business Calendar</h1>
-          <p className="text-gray-700 dark:text-gray-300">Manage your business events and meetings</p>
-        </div>
-        <Button>
-          <Plus className="w-4 h-4 mr-2" />
-          New Event
-        </Button>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
-          <Card className="p-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Today's Events</h3>
-            <div className="space-y-3">
-              {events.map((event) => (
-                <div key={event.id} className="flex items-center space-x-3 p-3 border border-gray-200 dark:border-slate-600 rounded-lg">
-                  <div className={`w-3 h-3 rounded-full ${
-                    event.type === 'meeting' ? 'bg-blue-500' : 'bg-green-500'
-                  }`}></div>
-                  <div className="flex-1">
-                    <p className="font-medium text-gray-900 dark:text-gray-100">{event.title}</p>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">{event.time}</p>
-                  </div>
-                </div>
-              ))}
-            </div>
-          </Card>
-        </div>
-        <div>
-          <Card className="p-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Quick Actions</h3>
-            <div className="space-y-2">
-              <Button variant="secondary" className="w-full justify-start">
-                <Calendar className="w-4 h-4 mr-2" />
-                Schedule Meeting
-              </Button>
-              <Button variant="secondary" className="w-full justify-start">
-                <Users className="w-4 h-4 mr-2" />
-                Team Availability
-              </Button>
-            </div>
-          </Card>
-        </div>
       </div>
     </div>
   );
@@ -515,6 +437,8 @@ export default function BusinessWorkspaceContent({ business, currentModule, busi
   const router = useRouter();
   const [refreshTrigger, setRefreshTrigger] = useState(0);
   const [selectedFolder, setSelectedFolder] = useState<any>(null);
+  const [createFolderOpen, setCreateFolderOpen] = useState(false);
+  const [isCreatingFolder, setIsCreatingFolder] = useState(false);
 
   // File upload handler for Drive
   const handleFileUpload = useCallback(() => {
@@ -548,30 +472,40 @@ export default function BusinessWorkspaceContent({ business, currentModule, busi
     input.click();
   }, [session, businessDashboardId]);
 
-  // Folder creation handler for Drive
-  const handleCreateFolder = useCallback(async () => {
+  const requestCreateFolder = useCallback(() => {
+    if (!session?.accessToken) return;
+    setCreateFolderOpen(true);
+  }, [session?.accessToken]);
+
+  const executeCreateFolder = useCallback(async (name: string) => {
     if (!session?.accessToken) return;
 
-    const name = prompt('Enter folder name:');
-    if (!name) return;
-
     try {
-      await fetch('/api/drive/folders', {
+      setIsCreatingFolder(true);
+      const response = await fetch('/api/drive/folders', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${session.accessToken}`,
         },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           name,
           dashboardId: businessDashboardId || null,
-          parentId: null
+          parentId: null,
         }),
       });
-      
+
+      if (!response.ok) {
+        console.error('Failed to create folder');
+        return;
+      }
+
       setRefreshTrigger(prev => prev + 1);
+      setCreateFolderOpen(false);
     } catch (error) {
       console.error('Failed to create folder');
+    } finally {
+      setIsCreatingFolder(false);
     }
   }, [session, businessDashboardId]);
 
@@ -590,23 +524,27 @@ export default function BusinessWorkspaceContent({ business, currentModule, busi
         return <BusinessDashboardWidget />;
       case 'drive':
         return (
-          <div className="flex h-full">
-            <DriveSidebar
-              onNewFolder={handleCreateFolder}
-              onFileUpload={handleFileUpload}
-              onFolderUpload={handleFileUpload}
-              onContextSwitch={handleContextSwitch}
-              onFolderSelect={setSelectedFolder}
-              selectedFolderId={selectedFolder?.id}
-              lockedDashboardId={businessDashboardId || undefined}
-            />
-            <DriveModuleWrapper 
-              className="flex-1"
-              refreshTrigger={refreshTrigger}
-              dashboardId={businessDashboardId}
-              businessId={business.id}
-            />
-          </div>
+          <WorkspaceSplitLayout>
+            <WorkspaceSidebar>
+              <DriveSidebar
+                onNewFolder={requestCreateFolder}
+                onFileUpload={handleFileUpload}
+                onFolderUpload={handleFileUpload}
+                onContextSwitch={handleContextSwitch}
+                onFolderSelect={setSelectedFolder}
+                selectedFolderId={selectedFolder?.id}
+                lockedDashboardId={businessDashboardId || undefined}
+              />
+            </WorkspaceSidebar>
+            <WorkspaceMain overflow="hidden">
+              <DriveModuleWrapper
+                className="h-full"
+                refreshTrigger={refreshTrigger}
+                dashboardId={businessDashboardId}
+                businessId={business.id}
+              />
+            </WorkspaceMain>
+          </WorkspaceSplitLayout>
         );
       case 'chat':
         return (
@@ -620,19 +558,10 @@ export default function BusinessWorkspaceContent({ business, currentModule, busi
       case 'calendar':
         return (
           <CalendarProvider>
-            <div className="flex h-full">
-              <CalendarListSidebar 
-                contextType="BUSINESS" 
-                contextId={business.id} 
-              />
-              <CalendarModuleWrapper 
-                className="flex-1"
-                refreshTrigger={refreshTrigger}
-                dashboardId={businessDashboardId}
-                contextType="BUSINESS"
-                businessId={business.id}
-              />
-            </div>
+            <CalendarWorkspaceLanding
+              dashboardId={businessDashboardId}
+              businessId={business.id}
+            />
           </CalendarProvider>
         );
       case 'hr':
@@ -665,7 +594,7 @@ export default function BusinessWorkspaceContent({ business, currentModule, busi
         );
       case 'todo':
         return (
-          <TodoModule
+          <TodoWorkspaceLanding
             dashboardId={businessDashboardId}
             businessId={business.id}
           />
@@ -684,8 +613,16 @@ export default function BusinessWorkspaceContent({ business, currentModule, busi
   };
 
   return (
-    <div className="h-full">
-      {renderModuleContent()}
-    </div>
+    <>
+      <div className="h-full">
+        {renderModuleContent()}
+      </div>
+      <DriveCreateFolderModal
+        open={createFolderOpen}
+        onClose={() => setCreateFolderOpen(false)}
+        onSubmit={executeCreateFolder}
+        loading={isCreatingFolder}
+      />
+    </>
   );
 }

@@ -5,7 +5,7 @@ import { useSession } from 'next-auth/react';
 import { Message, Conversation, FileReference as SharedFileReference, Thread } from 'shared/types/chat';
 import { chatAPI } from '../../api/chat';
 import { getMessages } from '../../api/chat';
-import { Button, Input, Avatar, Badge, Spinner } from 'shared/components';
+import { Button, Input, Avatar, Badge, Spinner, ContextMenu, ContextMenuItem, ConfirmModal } from 'shared/components';
 import { Send, Paperclip, Smile, MoreVertical, Download, Trash2, Share2, Users, MessageSquare, Reply, Plus, CheckCircle, Search, X, ChevronLeft, ChevronRight, Shield, FileText, Folder } from 'lucide-react';
 import ChatFileUpload from './ChatFileUpload';
 import data from '@emoji-mart/data';
@@ -157,15 +157,36 @@ const MessageItem = React.memo(({
     // The actual drop handling is done by the GlobalTrashBin component
   };
 
-  // Close context menu when clicking outside
-  useEffect(() => {
-    const handleClickOutside = () => setShowContextMenu(false);
-    if (showContextMenu) {
-      document.addEventListener('click', handleClickOutside);
-      return () => document.removeEventListener('click', handleClickOutside);
+  const contextMenuItems = useMemo((): ContextMenuItem[] => {
+    const items: ContextMenuItem[] = [
+      {
+        icon: <Reply className="w-4 h-4" />,
+        label: 'Reply',
+        onClick: () => onReply(message),
+      },
+    ];
+
+    if (hasEnterprise) {
+      items.push({
+        icon: <Shield className="w-4 h-4" />,
+        label: 'Classify',
+        onClick: () => setShowClassificationModal(true),
+      });
     }
-  }, [showContextMenu]);
-  
+
+    items.push(
+      { divider: true },
+      {
+        icon: <Trash2 className="w-4 h-4" />,
+        label: 'Delete',
+        destructive: true,
+        onClick: () => onDeleteMessage(message),
+      }
+    );
+
+    return items;
+  }, [message, hasEnterprise, onReply, onDeleteMessage]);
+
   return (
     <div 
       className={`flex ${isOwnMessage ? 'justify-end' : 'justify-start'}`}
@@ -431,51 +452,13 @@ const MessageItem = React.memo(({
         )}
       </div>
 
-      {/* Context Menu */}
-      {showContextMenu && (
-        <div 
-          className="fixed z-50 bg-white dark:bg-slate-800 border border-gray-200 dark:border-slate-700 rounded-lg shadow-lg py-1 min-w-[160px]"
-          style={{ 
-            left: contextMenuPosition.x, 
-            top: contextMenuPosition.y,
-            transform: 'translate(-50%, -100%)'
-          }}
-        >
-          <button
-            onClick={() => {
-              onReply(message);
-              setShowContextMenu(false);
-            }}
-            className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 flex items-center space-x-2"
-          >
-            <Reply className="w-4 h-4" />
-            <span>Reply</span>
-          </button>
-          {/* Classify option - Enterprise only */}
-          {hasEnterprise && (
-            <button
-              onClick={() => {
-                setShowClassificationModal(true);
-                setShowContextMenu(false);
-              }}
-              className="w-full px-4 py-2 text-left text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 flex items-center space-x-2"
-            >
-              <Shield className="w-4 h-4" />
-              <span>Classify</span>
-            </button>
-          )}
-          <button
-            onClick={() => {
-              onDeleteMessage(message);
-              setShowContextMenu(false);
-            }}
-            className="w-full px-4 py-2 text-left text-sm hover:bg-gray-100 dark:hover:bg-slate-700 flex items-center space-x-2 text-red-600 dark:text-red-400"
-          >
-            <Trash2 className="w-4 h-4" />
-            <span>Delete</span>
-          </button>
-        </div>
-      )}
+      <ContextMenu
+        open={showContextMenu}
+        onClose={() => setShowContextMenu(false)}
+        anchorPoint={contextMenuPosition}
+        items={contextMenuItems}
+        menuLabel="Message actions"
+      />
 
       {/* Classification Modal (Enterprise only) */}
       {hasEnterprise && (
@@ -543,6 +526,8 @@ export default function ChatMainPanel({ panelState, onThreadSelect, onToggleRigh
   const [isSearching, setIsSearching] = useState(false);
   const [connectionError, setConnectionError] = useState<string | null>(null);
   const [retryCount, setRetryCount] = useState(0);
+  const [pendingMessageToTrash, setPendingMessageToTrash] = useState<Message | null>(null);
+  const [isMovingMessageToTrash, setIsMovingMessageToTrash] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const typingTimeoutRef = useRef<NodeJS.Timeout>();
   const [showEmojiPickerFor, setShowEmojiPickerFor] = useState<string | null>(null);
@@ -976,30 +961,46 @@ export default function ChatMainPanel({ panelState, onThreadSelect, onToggleRigh
     handleFileDownload(file);
   }, [handleFileDownload]);
 
-  // Handle message deletion
-  const handleDeleteMessage = useCallback(async (message: Message) => {
+  const getMessageTrashName = useCallback((content: string) => {
+    return content.length > 50 ? `${content.substring(0, 50)}...` : content;
+  }, []);
+
+  const requestDeleteMessage = useCallback((message: Message) => {
+    setPendingMessageToTrash(message);
+  }, []);
+
+  const executeDeleteMessage = useCallback(async () => {
+    const message = pendingMessageToTrash;
+    if (!message) return;
+
+    setIsMovingMessageToTrash(true);
     try {
-      // Move message to trash
       await trashItem({
         id: message.id,
-        name: message.content.length > 50 ? message.content.substring(0, 50) + '...' : message.content,
+        name: getMessageTrashName(message.content),
         type: 'message',
         moduleId: 'chat',
         moduleName: 'Chat',
         metadata: {
           conversationId: message.conversationId,
           senderId: message.senderId,
-        }
+        },
       });
-      
-      // Reload messages to reflect the deletion
+
       if (activeConversation?.id) {
         await loadMessages(activeConversation.id);
       }
-    } catch (error) {
-      console.error('Failed to delete message:', error);
+
+      toast.success('Message moved to trash');
+      setPendingMessageToTrash(null);
+    } catch (error: unknown) {
+      const err = error instanceof Error ? error : new Error('Failed to delete message');
+      console.error('Failed to delete message:', { message: err.message, stack: err.stack });
+      toast.error('Failed to move message to trash');
+    } finally {
+      setIsMovingMessageToTrash(false);
     }
-  }, [trashItem, activeConversation?.id, loadMessages]);
+  }, [pendingMessageToTrash, trashItem, activeConversation?.id, loadMessages, getMessageTrashName]);
 
   // Handle file selection
   const handleFileSelect = useCallback((fileId: string, fileName: string) => {
@@ -1092,7 +1093,7 @@ export default function ChatMainPanel({ panelState, onThreadSelect, onToggleRigh
                 getGroupedReactions={getGroupedReactions}
                 hasUserReacted={hasUserReacted}
                 replyingTo={replyToMessage}
-                onDeleteMessage={handleDeleteMessage}
+                onDeleteMessage={requestDeleteMessage}
                 accessToken={session?.accessToken || ''}
                 hasEnterprise={hasEnterprise}
               />
@@ -1383,7 +1384,7 @@ export default function ChatMainPanel({ panelState, onThreadSelect, onToggleRigh
               getGroupedReactions={getGroupedReactions}
               hasUserReacted={hasUserReacted}
               replyingTo={replyToMessage}
-              onDeleteMessage={handleDeleteMessage}
+              onDeleteMessage={requestDeleteMessage}
               accessToken={session?.accessToken || ''}
               hasEnterprise={hasEnterprise}
             />
@@ -1521,6 +1522,21 @@ export default function ChatMainPanel({ panelState, onThreadSelect, onToggleRigh
         
         {error && <div className="text-red-500 text-xs mt-1">{error}</div>}
       </div>
+
+      <ConfirmModal
+        open={pendingMessageToTrash !== null}
+        onClose={() => setPendingMessageToTrash(null)}
+        onConfirm={executeDeleteMessage}
+        title="Move to trash?"
+        description={
+          pendingMessageToTrash
+            ? `Are you sure you want to move this message to trash?`
+            : ''
+        }
+        variant="destructive"
+        confirmLabel="Move to trash"
+        loading={isMovingMessageToTrash}
+      />
     </div>
   );
 }

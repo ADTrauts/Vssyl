@@ -6,6 +6,12 @@ import { ChevronLeft, ChevronRight, MessageSquare, Users, Search, Plus } from 'l
 import ChatLeftPanel from './ChatLeftPanel';
 import ChatMainPanel from './ChatMainPanel';
 import ChatRightPanel from './ChatRightPanel';
+import {
+  WorkspaceSplitLayout,
+  WorkspaceSidebar,
+  WorkspaceMain,
+  WorkspaceSecondary,
+} from '../../components/layouts';
 import { ChatPanelState, Conversation } from 'shared/types/chat';
 import { useChat } from '../../contexts/ChatContext';
 
@@ -173,9 +179,9 @@ export default function ChatContent({ fileReference }: ChatContentProps) {
   }
 
   return (
-    <div className="flex h-full overflow-hidden">
+    <WorkspaceSplitLayout className="overflow-hidden">
       {/* Left Panel - Conversation List */}
-      <div 
+      <WorkspaceSidebar
         className={`bg-white dark:bg-slate-800 border-r border-gray-200 dark:border-slate-700 transition-all duration-300 flex flex-col ${panelState.leftPanelCollapsed ? 'w-16' : 'w-[260px]'}`}
         style={{ width: panelState.leftPanelCollapsed ? '64px' : '260px', minWidth: panelState.leftPanelCollapsed ? '64px' : '260px', maxWidth: panelState.leftPanelCollapsed ? '64px' : '260px' }}
       >
@@ -187,21 +193,21 @@ export default function ChatContent({ fileReference }: ChatContentProps) {
           onFiltersChange={updateActiveFilters}
           onTeamToggle={toggleTeamExpanded}
         />
-      </div>
+      </WorkspaceSidebar>
 
       {/* Main Panel - Active Conversation */}
-      <div className="flex-1 min-w-0 flex flex-col bg-gray-50 dark:bg-gray-900 overflow-hidden">
+      <WorkspaceMain className="flex flex-col bg-gray-50 dark:bg-gray-900" overflow="hidden">
         <ChatMainPanel
           panelState={panelState}
           onThreadSelect={updateActiveThread}
           onToggleRightPanel={toggleRightPanel}
           fileReference={fileReference}
         />
-      </div>
+      </WorkspaceMain>
 
       {/* Right Panel - Thread Details */}
       {panelState.rightPanelCollapsed ? (
-        <div className="flex flex-col items-center justify-center bg-white dark:bg-slate-800 border-l border-gray-200 dark:border-slate-700 transition-all duration-300 w-12 min-w-[48px] max-w-[48px] relative">
+        <WorkspaceSecondary className="flex flex-col items-center justify-center bg-white dark:bg-slate-800 border-l border-gray-200 dark:border-slate-700 transition-all duration-300 w-12 min-w-[48px] max-w-[48px] relative">
           <button
             className="absolute top-1/2 transform -translate-y-1/2 -left-3 w-6 h-6 rounded-full bg-gray-600 text-white border border-gray-500 cursor-pointer z-20 flex items-center justify-center hover:bg-gray-700 transition-colors"
             onClick={toggleRightPanel}
@@ -212,9 +218,9 @@ export default function ChatContent({ fileReference }: ChatContentProps) {
               <path d="M15 18l-6-6 6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
             </svg>
           </button>
-        </div>
+        </WorkspaceSecondary>
       ) : (
-        <div 
+        <WorkspaceSecondary
           className="bg-white dark:bg-slate-800 border-l border-gray-200 dark:border-slate-700 transition-all duration-300 w-[320px] relative flex flex-col overflow-hidden"
           style={{ width: '320px', minWidth: '320px', maxWidth: '320px' }}
         >
@@ -233,7 +239,7 @@ export default function ChatContent({ fileReference }: ChatContentProps) {
             onToggleCollapse={toggleRightPanel}
             onThreadSelect={updateActiveThread}
           />
-        </div>
+        </WorkspaceSecondary>
       )}
 
       {/* Mobile overlay for right panel */}
@@ -268,6 +274,6 @@ export default function ChatContent({ fileReference }: ChatContentProps) {
           )}
         </div>
       )}
-    </div>
+    </WorkspaceSplitLayout>
   );
 } 

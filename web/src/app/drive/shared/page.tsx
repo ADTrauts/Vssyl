@@ -14,6 +14,12 @@ import { formatFileSize, formatDate } from 'shared/utils/format';
 import { UserGroupIcon, FolderIcon, DocumentIcon, ArrowDownTrayIcon, ArrowLeftIcon } from '@heroicons/react/24/outline';
 import { Squares2X2Icon, Bars3Icon } from '@heroicons/react/24/solid';
 import DriveSidebar from '../DriveSidebar';
+import { DriveCreateFolderModal } from '@/components/drive/DriveCreateFolderModal';
+import {
+  WorkspaceSplitLayout,
+  WorkspaceSidebar,
+  WorkspaceMain,
+} from '@/components/layouts';
 
 type ViewMode = 'list' | 'grid';
 
@@ -46,7 +52,9 @@ const SharedPageContent = () => {
   const [error, setError] = useState<string | null>(null);
   const [selectedFolder, setSelectedFolder] = useState<{ id: string; name: string } | null>(null);
   const [specificItem, setSpecificItem] = useState<SharedItem | null>(null);
-  
+  const [createFolderOpen, setCreateFolderOpen] = useState(false);
+  const [isCreatingFolder, setIsCreatingFolder] = useState(false);
+
   // Get file or folder ID from query params
   const fileId = searchParams?.get('file');
   const folderId = searchParams?.get('folder');
@@ -67,27 +75,36 @@ const SharedPageContent = () => {
     }
   };
 
-  // Sidebar handlers
-  const handleCreateFolder = useCallback(async () => {
+  const requestCreateFolder = useCallback(() => {
     if (!session?.accessToken) return;
-    const name = prompt('Enter folder name:');
-    if (!name) return;
+    setCreateFolderOpen(true);
+  }, [session?.accessToken]);
+
+  const executeCreateFolder = useCallback(async (name: string) => {
+    if (!session?.accessToken) return;
     try {
+      setIsCreatingFolder(true);
       const response = await fetch('/api/drive/folders', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${session.accessToken}`,
         },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           name,
           dashboardId: currentDashboard?.id || null,
-          parentId: null
+          parentId: null,
         }),
       });
-      if (!response.ok) console.error('Failed to create folder');
+      if (!response.ok) {
+        console.error('Failed to create folder');
+        return;
+      }
+      setCreateFolderOpen(false);
     } catch (error) {
       console.error('Error creating folder:', error);
+    } finally {
+      setIsCreatingFolder(false);
     }
   }, [session, currentDashboard]);
 
@@ -261,19 +278,20 @@ const SharedPageContent = () => {
   });
 
   return (
-    <div className="flex h-screen bg-gray-50 dark:bg-gray-900">
-      {/* Drive Sidebar */}
-      <DriveSidebar 
-        onNewFolder={handleCreateFolder} 
-        onFileUpload={handleFileUpload} 
-        onFolderUpload={handleFileUpload}
-        onContextSwitch={handleContextSwitch}
-        onFolderSelect={handleFolderSelect}
-        selectedFolderId={selectedFolder?.id}
-      />
-      
-      {/* Main Content */}
-      <div className="flex-1 overflow-auto">
+    <>
+    <WorkspaceSplitLayout>
+      <WorkspaceSidebar>
+        <DriveSidebar
+          onNewFolder={requestCreateFolder}
+          onFileUpload={handleFileUpload}
+          onFolderUpload={handleFileUpload}
+          onContextSwitch={handleContextSwitch}
+          onFolderSelect={handleFolderSelect}
+          selectedFolderId={selectedFolder?.id}
+        />
+      </WorkspaceSidebar>
+
+      <WorkspaceMain overflow="auto">
         {status === 'loading' || loading ? (
           <div className="flex items-center justify-center h-full">
             <LoadingOverlay message="Loading shared items..." />
@@ -532,8 +550,15 @@ const SharedPageContent = () => {
             )}
           </div>
         )}
-      </div>
-    </div>
+      </WorkspaceMain>
+    </WorkspaceSplitLayout>
+    <DriveCreateFolderModal
+      open={createFolderOpen}
+      onClose={() => setCreateFolderOpen(false)}
+      onSubmit={executeCreateFolder}
+      loading={isCreatingFolder}
+    />
+  </>
   );
 };
 

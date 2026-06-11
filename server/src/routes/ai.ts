@@ -17,6 +17,7 @@ import { fetchAccessibleActiveFiles } from '../services/driveVisibilityService';
 import { createDriveFile, DriveUploadError } from '../services/driveUploadService';
 import { AIQueryService } from '../services/aiQueryService';
 import { getModelsGroupedByProvider, getModel, getQueryCostForModel } from '../ai/providers/modelCatalog';
+import { buildModelsApiPayload } from '../ai/providers/providerRouting';
 import { logger } from '../lib/logger';
 import { geolocationService } from '../services/geolocationService';
 import {
@@ -93,6 +94,10 @@ async function saveTwinQueryHistory(
         const ctx = JSON.parse(JSON.stringify(context)) as Record<string, unknown>;
         if (response.metadata?.pipelineTrace) {
           ctx._pipelineTrace = response.metadata.pipelineTrace;
+        }
+        const reasoning = response.metadata?.conversationReasoning;
+        if (reasoning && typeof reasoning === 'object') {
+          ctx._conversationReasoning = reasoning;
         }
         return JSON.parse(JSON.stringify(ctx)) as Prisma.InputJsonValue;
       })(),
@@ -171,8 +176,13 @@ function formatPatternForUser(p: LearningPattern): { id: string; description: st
  */
 router.get('/models', authenticateJWT, (_req, res) => {
   try {
-    const models = getModelsGroupedByProvider();
-    res.json({ success: true, data: models });
+    const payload = buildModelsApiPayload(getModelsGroupedByProvider());
+    res.json({
+      success: true,
+      data: payload.models,
+      capabilities: payload.providers,
+      matrixVersion: payload.matrixVersion,
+    });
   } catch (err) {
     logSrvErr('ai_ai_models_failed_to_get_models', '[AI models] Failed to get models:', err);
     res.status(500).json({ success: false, error: 'Failed to load models' });
@@ -1057,6 +1067,26 @@ router.get('/context', authenticateJWT, async (req, res) => {
   }
 });
 
+/** Built-in module ids for twin orchestrated context — not user-context entry UUIDs. */
+const TWIN_CONTEXT_MODULE_IDS = new Set([
+  'drive',
+  'chat',
+  'calendar',
+  'todo',
+  'tasks',
+  'notes',
+  'notebook',
+  'place',
+  'hr',
+  'scheduling',
+  'dashboard',
+  'notifications',
+  'analytics',
+  'vlinks',
+]);
+
+const UUID_LIKE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
 /**
  * GET /api/ai/context/:module
  * Get module-specific context with cross-module intelligence
@@ -1070,6 +1100,20 @@ router.get('/context/:module', authenticateJWT, async (req, res) => {
     
     if (!userId) {
       return res.status(401).json({ error: 'User not authenticated' });
+    }
+
+    if (UUID_LIKE.test(module)) {
+      return res.status(404).json({
+        error: 'Not a module id',
+        message: 'Use GET /api/ai/user-context/:id for user-defined context entries.',
+      });
+    }
+
+    if (!TWIN_CONTEXT_MODULE_IDS.has(module)) {
+      return res.status(404).json({
+        error: 'Unknown module',
+        message: `Module "${module}" is not a registered twin context module.`,
+      });
     }
 
     if (businessId && !(await userHasActiveBusinessMembership(userId, businessId))) {
@@ -1246,7 +1290,7 @@ router.get('/learning/my-patterns', authenticateJWT, async (req, res) => {
 
 /**
  * POST /api/ai/chat
- * Legacy AI conversation endpoint (kept for backward compatibility)
+ * @deprecated Use POST /api/ai/twin — compatibility shim (Wave 1B).
  */
 router.post('/chat', authenticateJWT, async (req, res) => {
   try {
@@ -1261,6 +1305,10 @@ router.post('/chat', authenticateJWT, async (req, res) => {
       return res.status(400).json({ error: 'Query is required' });
     }
 
+    res.setHeader('Deprecation', 'true');
+    res.setHeader('Link', '</api/ai/twin>; rel="successor-version"');
+    res.setHeader('Warning', '299 - "POST /api/ai/chat is deprecated; migrate to POST /api/ai/twin"');
+
     const aiRequest: AIRequest = {
       id: `ai_req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
       userId,
@@ -1274,6 +1322,8 @@ router.post('/chat', authenticateJWT, async (req, res) => {
 
     res.json({
       success: true,
+      deprecated: true,
+      successor: 'POST /api/ai/twin',
       data: response
     });
   } catch (error) {

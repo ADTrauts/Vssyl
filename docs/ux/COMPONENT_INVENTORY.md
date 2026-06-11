@@ -68,7 +68,7 @@
 | ErrorBoundary | `web/src/app/ErrorBoundaryWrapper.tsx` | No | No | **Duplicate** | Uses `react-error-boundary` |
 | EmptyState | `web/src/app/notifications/page.tsx` (local) | No | No | **Duplicate** | Local function; not shared |
 | EmptyState | `web/src/components/dashboard/WidgetPicker.tsx` (local) | No | No | **Duplicate** | Local function |
-| FileContextMenu | `web/src/components/FileContextMenu.tsx` | No | Partial | **Needs Review** | Wraps / extends Drive context menu patterns |
+| ~~FileContextMenu~~ | *deleted 3A-3.6* | — | — | **Removed** | Replaced by shared `ContextMenu` in DriveModule + starred |
 | EventDrawer | `web/src/components/calendar/EventDrawer.tsx` | No | No | **Needs Review** | Calendar-specific drawer |
 | AIResponseExplainDrawer | `web/src/components/ai/AIResponseExplainDrawer.tsx` | No | No | **Needs Review** | AI-specific panel |
 
@@ -194,7 +194,7 @@
 |------|------|
 | **Canonical (today)** | `shared/src/components/Popover.tsx` |
 | Context actions | `shared/src/components/ContextMenu.tsx` |
-| App menu | `web/src/components/AvatarContextMenu.tsx`, `FileContextMenu.tsx` |
+| App menu | `web/src/components/AvatarContextMenu.tsx` |
 
 **Recommendation:** Treat `Popover` as dropdown primitive in docs; improve keyboard/a11y. `ContextMenu` Tier 1 for Drive parity. No separate `Dropdown.tsx` until Popover is renamed or wrapped.
 
@@ -203,7 +203,7 @@
 | Role | File |
 |------|------|
 | **Canonical** | `shared/src/components/ContextMenu.tsx` |
-| File Hub wrapper | `web/src/components/FileContextMenu.tsx` |
+| File Hub context menus | `DriveModule.tsx`, `drive/starred/page.tsx` → shared `ContextMenu` |
 
 **Recommendation:** Keep shared `ContextMenu` canonical; File Hub wrapper stays thin.
 

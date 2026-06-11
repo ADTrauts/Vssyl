@@ -24,7 +24,7 @@ Vssyl has **two shared menu-related primitives** (`ContextMenu`, `Popover`) but 
 | **Shared primitive consumers in `web/`** | **2** | `AvatarContextMenu`, `ScheduleCalendarGrid` (via shared `ContextMenu`) |
 | **`Popover` consumers in `web/`** | **0** | Storybook only |
 | **App-layer menu implementations** | **~28** | Distinct files with menu/dropdown UI (excludes stub `MoreVertical` buttons) |
-| **Orphan / duplicate primitives** | **1** | `FileContextMenu.tsx` — unused, parallel to shared `ContextMenu` |
+| **Orphan / duplicate primitives** | **0** | `FileContextMenu.tsx` deleted (3A-3.6); `DriveSearch.tsx` orphan documented |
 | **Stub overflow buttons (no menu)** | **~8** | `MoreVertical` / `showMoreMenu` state with no rendered panel |
 | **Repeated outside-click handlers** | **~18** | Per-file `mousedown` listeners; no shared hook |
 | **Portal-based menu UIs** | **5** | `ContextMenu`, search bars, `AIChatDropdown`, `GlobalTrashBin` (panel) |
@@ -61,9 +61,9 @@ Vssyl has **two shared menu-related primitives** (`ContextMenu`, `Popover`) but 
 |-----------|----------|------|-----------|------------|-------|
 | **DriveModule context menu** | `web/src/components/modules/DriveModule.tsx` | Right-click file/folder menu | Drive module | **No** | Inline `fixed` panel; `role="menu"` + per-item `aria-label`; no shared primitive; duplicate of starred page |
 | **Drive starred context menu** | `web/src/app/drive/starred/page.tsx` | Right-click menu | Starred page | **No** | Near-duplicate of `DriveModule`; `onMouseLeave` close (differs from DriveModule click-outside) |
-| **ChatMainPanel message menu** | `web/src/app/chat/ChatMainPanel.tsx` | Right-click message menu | Chat main panel | **No** | `fixed` portal-style; Reply / Classify / Delete; document `click` outside (not `mousedown`) |
-| **ChatWindow message menu** | `web/src/components/chat/ChatWindow.tsx` | Right-click + emoji popover | Floating chat window | **No** | Absolute mini-menu; separate emoji picker panel |
-| **UnifiedGlobalChat message menu** | `web/src/components/chat/UnifiedGlobalChat.tsx` | Right-click message menu | Global chat widget | **No** | Absolute `min-w-32`; Reply / Delete only |
+| **ChatMainPanel message menu** | `web/src/app/chat/ChatMainPanel.tsx` | Right-click message menu | Chat main panel | **Yes (3A-4C)** | Shared `ContextMenu`; Reply / Classify / Delete |
+| **ChatWindow message menu** | `web/src/components/chat/ChatWindow.tsx` | Right-click + emoji submenu | Floating chat window | **Yes (3A-4C)** | Shared `ContextMenu`; React via submenu |
+| **UnifiedGlobalChat message menu** | `web/src/components/chat/UnifiedGlobalChat.tsx` | Right-click message menu | Global chat widget | **Yes (3A-4C)** | Shared `ContextMenu`; Reply / Delete |
 | **ScheduleCalendarGrid context menu** | `web/src/components/scheduling/ScheduleCalendarGrid.tsx` | Employee row right-click | Scheduling admin | **Yes (shared)** | Uses shared `ContextMenu`; 1-item menu today |
 
 ### 2D. Overflow / action menus (trigger-anchored)
@@ -71,7 +71,7 @@ Vssyl has **two shared menu-related primitives** (`ContextMenu`, `Popover`) but 
 | Component | Location | Type | Consumers | Canonical? | Notes |
 |-----------|----------|------|-----------|------------|-------|
 | **NotificationActionsMenu** | `web/src/app/notifications/page.tsx` (local) | Row overflow menu | Notifications page | **No** | `MoreHorizontal`; snooze sub-panel; delete uses `ConfirmModal`; no Escape / keyboard |
-| **TaskItem overflow menu** | `web/src/components/todo/TaskItem.tsx` | Task row actions | Todo module | **No** | `MoreVertical`; `absolute right-0 top-full`; outside-click |
+| **TaskItem overflow menu** | `web/src/components/todo/TaskItem.tsx` | Task row actions | Todo module | **Yes (3A-4D)** | Shared `DropdownMenu`; Reopen / Edit / Delete |
 | **AI conversation menus** | `web/src/app/ai-chat/page.tsx` | Conversation overflow (×3) | AI chat page | **No** | Duplicated inline menus (pinned / recent / mobile); share/edit/archive/pin/trash |
 | **AIChatDropdown conversation menu** | `web/src/components/header/AIChatDropdown.tsx` | Conversation overflow | Global header | **No** | Duplicates `ai-chat/page.tsx` pattern inside portal panel |
 | **DriveModule filter panel** | `web/src/components/modules/DriveModule.tsx` | Filter dropdown | Drive toolbar | **No** | `role="menu"` but content is **form controls** (selects, checkbox) — archetype blur |
@@ -111,12 +111,12 @@ Vssyl has **two shared menu-related primitives** (`ContextMenu`, `Popover`) but 
 | Component | Location | Type | Consumers | Canonical? | Notes |
 |-----------|----------|------|-----------|------------|-------|
 | **EnhancedDriveModule** | `web/src/components/drive/enterprise/EnhancedDriveModule.tsx` | `MoreVertical` button | Enterprise drive | **Stub** | No menu panel |
-| **TodoModule** | `web/src/components/todo/TodoModule.tsx` | `MoreVertical` button | Todo header | **Stub** | `title="More options"` only |
+| **TodoModule** | `web/src/components/todo/TodoModule.tsx` | `MoreVertical` button | Todo header | **Removed (3A-4D)** | Orphan stub deleted |
 | **Admin users row** | `web/src/app/admin-portal/users/page.tsx` | `MoreVertical` button | Admin users table | **Stub** | No menu |
 | **Workspace members** | `web/src/app/business/[id]/workspace/members/page.tsx` | `MoreVertical` button | Business members | **Stub** | No menu |
 | **Workspace calendar** | `web/src/app/business/[id]/workspace/calendar/page.tsx` | `MoreVertical` button | Business calendar | **Stub** | No menu |
 | **Workspace chat** | `web/src/app/business/[id]/workspace/chat/page.tsx` | `MoreVertical` button | Business chat | **Stub** | No menu |
-| **EnhancedChatModule** | `web/src/components/chat/enterprise/EnhancedChatModule.tsx` | `MoreVertical` button | Enterprise chat | **Stub** | No menu |
+| **EnhancedChatModule** | `web/src/components/chat/enterprise/EnhancedChatModule.tsx` | `MoreVertical` button | Enterprise chat | **Removed (3A-4C)** | Orphan stub deleted |
 | **AIChatModule** | `web/src/components/ai/AIChatModule.tsx` | `showMoreMenu` state | AI module | **Stub** | State set on click; **no rendered menu** |
 
 ---
@@ -338,8 +338,10 @@ Mirrors Modal Wave 2A phasing.
 | **3A-0 Inventory** | Repo-wide menu audit | This document | **Done (PLAN)** |
 | **3A-1 Canonical shell + tokenization** | `ContextMenu.tsx` + `Popover.tsx` tokens; item flags; Storybook | Tokenized shells; no consumer migrations | **Done (ACT)** |
 | **3A-2 Primitive hardening** | `menuShared`; `DropdownMenu` scaffold; Popover portal/dismiss; baseline a11y | Hardened primitives; no consumer migrations | **Done (ACT)** |
-| **3A-3 Reference module rollout** | Drive menu migrations per [`DRIVE_MENU_REFERENCE_ROLLOUT_PLAN.md`](./DRIVE_MENU_REFERENCE_ROLLOUT_PLAN.md) | 7 surfaces inventoried; 3A-3.1a ready | **PLAN done — 3A-3.1a ready for ACT** |
-| **3A-4 Platform rollout** | AI conversation menus, Chat message menus, Notifications, Todo, Scheduling | Tier A/B migrations | After 3A-3 sign-off |
+| **3A-3 Reference module rollout** | Drive menu migrations per [`DRIVE_MENU_REFERENCE_ROLLOUT_PLAN.md`](./DRIVE_MENU_REFERENCE_ROLLOUT_PLAN.md) | All active surfaces migrated | **Done (ACT)** — [`audits/DRIVE_MENU_REFERENCE_CLOSEOUT.md`](./audits/DRIVE_MENU_REFERENCE_CLOSEOUT.md) |
+| **3A-4A AI menu rollout** | `ai-chat/page.tsx`, `AIChatDropdown.tsx`, AI pickers | `DropdownMenu` migrations | **Done (ACT)** — [`audits/AI_MENU_ROLLOUT_CLOSEOUT.md`](./audits/AI_MENU_ROLLOUT_CLOSEOUT.md) |
+| **3A-4B Notifications menu rollout** | `notifications/page.tsx` `NotificationActionsMenu` | `DropdownMenu` | **Done (ACT)** — [`audits/NOTIFICATIONS_MENU_ROLLOUT_CLOSEOUT.md`](./audits/NOTIFICATIONS_MENU_ROLLOUT_CLOSEOUT.md) |
+| **3A-4 Platform rollout** | Chat, Todo, Scheduling | Tier A/B migrations | **Done** — major domains complete; Scheduling deferred |
 | **3A-5 Certification review** | Manual QA + closeout doc | `audits/CONTEXTMENU_POPOVER_CLOSEOUT.md` | After 3A-4 |
 
 ### 3A-1 closeout (2026-06-03)
@@ -375,19 +377,20 @@ Mirrors Modal Wave 2A phasing.
 | Storybook: ContextMenu (5), Popover (2), DropdownMenu (2) | **Done** |
 | `web/` consumer migrations | **None** |
 
-### 3A-3 planning closeout (2026-06-03)
+### 3A-3 rollout closeout (2026-06-03)
 
-**Authoritative plan:** [`DRIVE_MENU_REFERENCE_ROLLOUT_PLAN.md`](./DRIVE_MENU_REFERENCE_ROLLOUT_PLAN.md)
+**Authoritative plan:** [`DRIVE_MENU_REFERENCE_ROLLOUT_PLAN.md`](./DRIVE_MENU_REFERENCE_ROLLOUT_PLAN.md)  
+**Closeout:** [`audits/DRIVE_MENU_REFERENCE_CLOSEOUT.md`](./audits/DRIVE_MENU_REFERENCE_CLOSEOUT.md) (**PASS WITH FINDINGS**)
 
 | Item | Target | ACT step |
 |------|--------|----------|
-| `DriveModule.tsx` context menu | → `ContextMenu` | **3A-3.1a** (ready) |
-| `DriveModule.tsx` filter panel | → `Popover` | 3A-3.1b |
-| `drive/starred/page.tsx` context menu | → `ContextMenu` | 3A-3.2 |
-| `DriveSidebar.tsx` “New” dropdown | → `DropdownMenu` | 3A-3.3 |
-| `DriveSearch.tsx` results panel | → `Popover` (defer — orphan) | 3A-3.4 |
-| `EnhancedDriveModule.tsx` overflow stub | → `DropdownMenu` (defer) | 3A-3.5 |
-| `FileContextMenu.tsx` orphan | Delete | 3A-3.6 |
+| `DriveModule.tsx` context menu | → `ContextMenu` | **Done (3A-3.1a)** |
+| `DriveModule.tsx` filter panel | → `Popover` | **Done (3A-3.1b)** |
+| `drive/starred/page.tsx` context menu | → `ContextMenu` | **Done (3A-3.2)** |
+| `DriveSidebar.tsx` “New” dropdown | → `DropdownMenu` | **Done (3A-3.3)** |
+| `DriveSearch.tsx` results panel | Orphan — documented | **Done (3A-3.4)** — defer Popover until wired |
+| `EnhancedDriveModule.tsx` overflow stub | Stub removed | **Done (3A-3.5)** |
+| `FileContextMenu.tsx` orphan | Deleted | **Done (3A-3.6)** |
 | `AvatarContextMenu` | → `DropdownMenu` | **3A-4** (not Drive) |
 
 ### Accessibility status (post–3A-2)
@@ -398,14 +401,15 @@ Mirrors Modal Wave 2A phasing.
 | **Popover** | `aria-expanded` / `aria-haspopup` / `aria-controls`; `role="region"`; Escape + outside-click | Focus management |
 | **DropdownMenu** | `role="menu"` / `menuitem`; trigger `aria-expanded` / `aria-haspopup="menu"` / `aria-controls`; Escape + outside-click | Keyboard nav; focus trap; submenu |
 
-### 3A-3.1a readiness (DriveModule context menu)
+### 3A-3 certification
 
 | Gate | Status |
 |------|--------|
-| Tokenized + hardened primitives | **Yes** |
-| Drive rollout plan complete | **Yes** — [`DRIVE_MENU_REFERENCE_ROLLOUT_PLAN.md`](./DRIVE_MENU_REFERENCE_ROLLOUT_PLAN.md) |
-| Scoped ACT file identified | **Yes** — `DriveModule.tsx` context menu only |
-| **3A-3.1a ready for ACT?** | **Yes** |
+| All active Drive menu surfaces migrated | **Yes** |
+| `FileContextMenu` deleted | **Yes** |
+| `pnpm type-check` | **Pass** |
+| Manual QA | **Pending** |
+| **Drive Reference UX certification** | **Ready** — pending manual QA sign-off |
 
 ### Parallel tracks (not 3A)
 
@@ -476,7 +480,7 @@ Popover     = canonical dropdown/menu primitive for all trigger-anchored menus
 | Emoji / color pickers | `Popover` (generic content) | Long-tail; optional 3A-4+ |
 | Search autocomplete portals | Out of 3A — SearchBox wave (Tier 3) | Not `Popover` / `DropdownMenu` |
 | `AvatarContextMenu` (click at avatar) | `DropdownMenu` | **3A-4** — migrate off coordinate-hack `ContextMenu` |
-| `FileContextMenu` orphan | Delete; use `ContextMenu` | **3A-3** hygiene |
+| `FileContextMenu` orphan | Deleted; use `ContextMenu` | **Done (3A-3.6)** |
 | Stub `MoreVertical` buttons | `DropdownMenu` when implemented | Ship with feature work |
 
 **No breaking changes to existing exports in 3A-1.** `Popover` API unchanged. `DropdownMenu` is **additive** in 3A-2+.
@@ -509,7 +513,7 @@ If **Option B** had been chosen, 3A-2 would have forced a breaking `Popover` red
 | Area | Files |
 |------|-------|
 | Shared primitives | `ContextMenu.tsx`, `Popover.tsx`, `ContextMenu.stories.tsx`, `Popover.stories.tsx`, `index.ts` |
-| App wrappers | `AvatarContextMenu.tsx`, `FileContextMenu.tsx` |
+| App wrappers | `AvatarContextMenu.tsx` |
 | Drive | `DriveModule.tsx`, `drive/starred/page.tsx`, `DriveSidebar.tsx`, `DriveSearch.tsx`, `EnhancedDriveModule.tsx` |
 | Chat | `ChatMainPanel.tsx`, `ChatWindow.tsx`, `UnifiedGlobalChat.tsx`, `ChatLeftPanel.tsx`, `ChatSidebar.tsx`, `EnhancedChatModule.tsx`, `MobileChat.tsx` |
 | AI | `ai-chat/page.tsx`, `AIChatDropdown.tsx`, `AIChatModule.tsx`, `AIModelPicker.tsx`, `AIServicePicker.tsx`, `AIProviderModelPicker.tsx` |
@@ -521,4 +525,49 @@ If **Option B** had been chosen, 3A-2 would have forced a breaking `Popover` red
 
 ---
 
-**Last updated:** 2026-06-03 (3A-3 PLAN closeout)
+### 3A-4A AI rollout closeout (2026-06-03)
+
+**Closeout:** [`audits/AI_MENU_ROLLOUT_CLOSEOUT.md`](./audits/AI_MENU_ROLLOUT_CLOSEOUT.md)
+
+| Item | Primitive | Status |
+|------|-----------|--------|
+| `ai-chat/page.tsx` conversation overflow (×3) | `DropdownMenu` | **Done** |
+| `AIChatDropdown.tsx` conversation overflow | `DropdownMenu` | **Done** |
+| `AIServicePicker.tsx` | `DropdownMenu` | **Done** |
+| `AIModelPicker.tsx` | `DropdownMenu` | **Done** |
+| `AIProviderModelPicker.tsx` | `DropdownMenu` | **Done** |
+
+### 3A-4B Notifications rollout closeout (2026-06-03)
+
+**Closeout:** [`audits/NOTIFICATIONS_MENU_ROLLOUT_CLOSEOUT.md`](./audits/NOTIFICATIONS_MENU_ROLLOUT_CLOSEOUT.md)
+
+| Item | Primitive | Status |
+|------|-----------|--------|
+| `NotificationActionsMenu` row overflow | `DropdownMenu` | **Done** |
+
+### 3A-4C Chat rollout closeout (2026-06-03)
+
+**Closeout:** [`audits/CHAT_MENU_ROLLOUT_CLOSEOUT.md`](./audits/CHAT_MENU_ROLLOUT_CLOSEOUT.md)
+
+| Item | Primitive | Status |
+|------|-----------|--------|
+| `ChatMainPanel.tsx` message right-click | `ContextMenu` | **Done** |
+| `ChatWindow.tsx` message right-click | `ContextMenu` | **Done** |
+| `UnifiedGlobalChat.tsx` message right-click | `ContextMenu` | **Done** |
+| `MobileChat.tsx` header overflow | `DropdownMenu` | **Done** |
+
+### 3A-4D Todo rollout closeout (2026-06-03)
+
+**Closeout:** [`audits/TODO_MENU_ROLLOUT_CLOSEOUT.md`](./audits/TODO_MENU_ROLLOUT_CLOSEOUT.md)
+
+| Item | Primitive | Status |
+|------|-----------|--------|
+| `TaskItem.tsx` task overflow | `DropdownMenu` | **Done** |
+
+### 3A-5 Platform menu certification (2026-06-03)
+
+**Certification:** [`audits/PLATFORM_MENU_CERTIFICATION.md`](./audits/PLATFORM_MENU_CERTIFICATION.md) — **PASS WITH FINDINGS**
+
+Wave 3A menu program **complete**. Option A layering ratified as platform standard.
+
+**Last updated:** 2026-06-03 (3A-5 certification closeout)

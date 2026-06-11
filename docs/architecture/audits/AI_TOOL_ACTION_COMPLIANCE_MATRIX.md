@@ -28,7 +28,7 @@
 | Tool | Module | Op | R/W | Canonical service | PE | Activity | Prisma | Mock | Tests | Disposition |
 |------|--------|-----|-----|-------------------|----|----------|--------|------|-------|-------------|
 | `list_drive_files` | drive | list | R | `listAccessibleDriveFiles` (visibility) | read filter | N/A | No | No | `toolExecutor.listDriveFiles.test.ts` | **Keep** |
-| `share_file` | drive | share | W | `grantFileSharePermission` | via service | via service | **Yes** (`user.findUnique` by email) | No | `toolExecutor.shareFile.test.ts` | **Consolidate** — user resolve via member/identity service |
+| `share_file` | drive | share | W | `grantFileShareByEmail` | via service | via service | No | No | `toolExecutor.shareFile.test.ts` | **Keep** — Wave 1B |
 | `summarize_notebook_page` | notebook | summarize | R | `notebookAIActionService.summarizePage` | via service | N/A | No | No | `toolExecutor.notebook.test.ts` | **Keep** |
 | `extract_notebook_action_items` | notebook | extract | R | `notebookAIActionService.extractActionItems` | via service | N/A | No | No | `toolExecutor.notebook.test.ts` | **Keep** |
 | `search_places` | place | search | R | `placeAIActionService.searchPlaces` | via service | N/A | No | No | `toolExecutor.place.test.ts` | **Keep** |
@@ -56,9 +56,9 @@
 
 | Module | Operations | R/W | Canonical | PE | Activity | Mock | Tests | Disposition |
 |--------|------------|-----|-----------|----|----------|------|-------|-------------|
-| **drive** | `create_folder`, `move_file`, `share_file`, `delete_file`, `organize_files` | W | **No** — imports drive controllers | Partial | Partial | **Yes** | None dedicated | **Consolidate** → `driveAIActionService` (mirror tool path) |
-| **hr** | `create_time_off_request`, `approve_time_off`, `clock_in`, `clock_out` | W | **No** | Unknown | Unknown | **Yes** | None | **Consolidate** → `hrAIActionService` |
-| **scheduling** | `generate_schedule`, `suggest_assignments` | W | **No** | Unknown | Unknown | **Yes** | None | **Consolidate** → scheduling AI action service |
+| **drive** | `create_folder`, `move_file`, `share_file`, `delete_file`, `organize_files` | W | `driveAIActionService` | Yes | Yes | No | `driveActionExecutor.test.ts` | **Keep** — Wave 1B |
+| **hr** | `create_time_off_request`, `approve_time_off`, `clock_in`, `clock_out` | W | `hrAIActionService` + `hrAttendanceService` | Yes | Partial | No | — | **Keep** — Wave 1B |
+| **scheduling** | `generate_schedule`, `suggest_assignments` | W | `schedulingAIActionService` | Partial | Partial | No | — | **Keep** — Wave 1B |
 
 ### B.3 Stub / placeholder executors
 
@@ -84,7 +84,7 @@
 
 | Path | R/W | Prisma | Approval | Tests | Disposition |
 |------|-----|--------|----------|-------|-------------|
-| `AutonomousActionExecutor.ts` | W | **Yes** (conversation history, learning events) | Unclear vs `AutonomyManager` | `autonomousTodoAction.test.ts` (todo only) | **Deprecate** — align with twin approval or retire with `/api/ai/autonomous` |
+| `AutonomousActionExecutor.ts` | W | N/A on live path | Retired | `autonomousRetired.test.ts` | **Retired** — writes 410; history read-only (1B) |
 
 ---
 
@@ -97,9 +97,9 @@
 | `todoAIActionService.ts` | ActionExecutor, toolExecutor | TODO_LEVEL3 |
 | `notebookAIActionService.ts` | ActionExecutor, toolExecutor | NOTEBOOK_LEVEL3 |
 | `placeAIActionService.ts` | ActionExecutor, toolExecutor | PLACE_LEVEL3 (read-only) |
-| `driveAIActionService` | **Missing** | FILE_HUB — tools use visibility; actions use mocks |
-| `hrAIActionService` | **Missing** | — |
-| `schedulingAIActionService` | **Missing** | — |
+| `driveAIActionService.ts` | ActionExecutor | Wave 1B |
+| `hrAIActionService.ts` | ActionExecutor | Wave 1B |
+| `schedulingAIActionService.ts` | ActionExecutor | Wave 1B |
 
 ---
 
@@ -107,12 +107,12 @@
 
 | Area | Compliant ops | Total ops | % |
 |------|---------------|-----------|---|
-| Tools | 7 | 8 | 87.5% |
-| ActionExecutor (modernized modules) | ~25 | ~25 | ~100% of those modules |
-| ActionExecutor (legacy mock modules) | 0 | ~12 | 0% |
-| ActionExecutor (stubs) | 0 | ~10 | 0% |
+| Tools | 8 | 8 | **100%** |
+| ActionExecutor (modernized modules) | ~37 | ~37 | **~100%** |
+| ActionExecutor (legacy mock modules) | 0 | 0 | **100%** |
+| ActionExecutor (stubs) | 0 | ~10 | explicit not_implemented |
 
-**Wave 1B target:** 100% tool compliance; zero mock req/res in ActionExecutor; drive/HR/scheduling on services.
+**Wave 1B:** ✅ 100% tool compliance; zero mock req/res in ActionExecutor; drive/HR/scheduling on services.
 
 ---
 

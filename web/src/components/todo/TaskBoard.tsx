@@ -24,6 +24,8 @@ interface TaskBoardProps {
   onTaskDelete?: (taskId: string) => void;
   onViewAttachments?: (task: Task) => void;
   onCreateTask?: () => void;
+  filtered?: boolean;
+  projectScoped?: boolean;
 }
 
 const columns: { id: TaskStatus; label: string; color: string }[] = [
@@ -70,7 +72,18 @@ function DroppableColumn({
   );
 }
 
-export function TaskBoard({ tasks, onTaskSelect, onTaskUpdate, onTaskReopen, onTaskEdit, onTaskDelete, onViewAttachments, onCreateTask }: TaskBoardProps) {
+export function TaskBoard({
+  tasks,
+  onTaskSelect,
+  onTaskUpdate,
+  onTaskReopen,
+  onTaskEdit,
+  onTaskDelete,
+  onViewAttachments,
+  onCreateTask,
+  filtered = false,
+  projectScoped = false,
+}: TaskBoardProps) {
   const [activeId, setActiveId] = useState<string | null>(null);
   
   const tasksByStatus = tasks.reduce((acc, task) => {
@@ -94,12 +107,9 @@ export function TaskBoard({ tasks, onTaskSelect, onTaskUpdate, onTaskReopen, onT
     
     if (!task) return;
 
-    // Check if dropped on global trash bin
+    // Request delete confirm — no immediate mutation (5D.1)
     if (over.id === 'global-trash-bin') {
-      if (onTaskDelete) {
-        onTaskDelete(taskId);
-        toast.success(`${task.title} moved to trash`);
-      }
+      onTaskDelete?.(taskId);
       return;
     }
 
@@ -119,7 +129,12 @@ export function TaskBoard({ tasks, onTaskSelect, onTaskUpdate, onTaskReopen, onT
   if (tasks.length === 0) {
     return (
       <div className="h-full overflow-auto">
-        <EmptyTaskState onCreateTask={onCreateTask || (() => {})} view="board" />
+        <EmptyTaskState
+          onCreateTask={onCreateTask || (() => {})}
+          view="board"
+          filtered={filtered}
+          projectScoped={projectScoped}
+        />
       </div>
     );
   }

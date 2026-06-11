@@ -1,5 +1,9 @@
 'use client';
 
+/**
+ * Dashboard widget shell — **exception** to CalendarPageShell (Wave 3C-7B).
+ * Compact summary card for personal/business dashboards; full views use `/calendar/*` routes.
+ */
 import React, { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';

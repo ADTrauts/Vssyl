@@ -163,7 +163,7 @@ export default function AIMemoriesView({ onNavigateToTab }: AIMemoriesViewProps)
       const token = session.accessToken;
       const [contextRes, patternsRes, facts] = await Promise.all([
         authenticatedApiCall<{ success: boolean; data: UserAIContextItem[] }>(
-          '/api/ai/context',
+          '/api/ai/user-context',
           { method: 'GET' },
           token
         ),
@@ -207,7 +207,7 @@ export default function AIMemoriesView({ onNavigateToTab }: AIMemoriesViewProps)
     if (!session?.accessToken) return;
     setDeletingId(id);
     try {
-      await authenticatedApiCall(`/api/ai/context/${id}`, { method: 'DELETE' }, session.accessToken);
+      await authenticatedApiCall(`/api/ai/user-context/${id}`, { method: 'DELETE' }, session.accessToken);
       setContexts((prev) => prev.filter((c) => c.id !== id));
     } catch (err) {
       console.error('Failed to delete context:', err);

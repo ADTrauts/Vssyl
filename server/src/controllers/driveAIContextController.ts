@@ -1,306 +1,131 @@
 /**
- * File Hub AI Context Provider Controller
- * 
- * Provides context data about a user's File Hub usage to the AI system.
- * These endpoints are called by the CrossModuleContextEngine when processing AI queries.
+ * File Hub AI Context Provider Controller (thin HTTP layer)
+ *
+ * Retrieval is delegated to driveAIContextService → driveVisibilityService.
+ * Wave 1C: no direct Prisma in this controller.
  */
 
 import { Request, Response } from 'express';
-import { prisma } from '../lib/prisma';
 import { AuthenticatedRequest } from '../middleware/auth';
 import { logger } from '../lib/logger';
-import { Prisma } from '@prisma/client';
 import {
-  accessibleOwnedOrSharedFileClause,
-  listAccessibleDriveFiles,
-} from '../services/driveVisibilityService';
+  buildFileCountAIContext,
+  buildRecentFilesAIContext,
+  buildStorageStatsAIContext,
+} from '../services/driveAIContextService';
 
-// Type definitions for AI context responses
-interface RecentFileData {
-  id: string;
-  name: string;
-  type: string;
-  size: number;
-  createdAt: Date;
-  updatedAt: Date;
-  starred: boolean;
-  folderId: string | null;
-  folder: {
-    id: string;
-    name: string;
-  } | null;
+function parseOptionalDashboardId(req: Request): string | null | undefined {
+  const raw = req.query.dashboardId;
+  if (raw === undefined || raw === null || raw === '') return undefined;
+  return typeof raw === 'string' ? raw : undefined;
 }
 
 /**
  * GET /api/drive/ai/context/recent
- * 
- * Returns recent files for AI context
- * Used by AI to understand what files the user has been working with
  */
 export async function getRecentFilesContext(req: Request, res: Response) {
   try {
     const userId = (req as AuthenticatedRequest).user?.id;
-    
+
     if (!userId) {
-      return res.status(401).json({ 
-        success: false, 
-        message: 'Authentication required' 
+      return res.status(401).json({
+        success: false,
+        message: 'Authentication required',
       });
     }
-    
-    // Get recent accessible files (owned + shared), same visibility model as UI/AI tools
-    const recentFiles = await listAccessibleDriveFiles({
-      userId,
-      limit: 10,
-      applyPolicyEngine: true,
-    });
 
-    const recentFilesWithFolder = await prisma.file.findMany({
-      where: { id: { in: recentFiles.map((f) => f.id) } },
-      select: {
-        id: true,
-        name: true,
-        type: true,
-        size: true,
-        createdAt: true,
-        updatedAt: true,
-        starred: true,
-        folderId: true,
-        folder: {
-          select: {
-            id: true,
-            name: true,
-          },
-        },
-      },
-      orderBy: [{ updatedAt: 'desc' }, { createdAt: 'desc' }],
-    });
-    
-    // Format for AI consumption
-    const context = {
-      recentFiles: recentFilesWithFolder.map((file: RecentFileData) => ({
-        id: file.id,
-        name: file.name,
-        type: file.type,
-        size: formatFileSize(file.size),
-        lastModified: file.updatedAt.toISOString(),
-        folder: file.folder?.name || 'Root',
-        starred: file.starred
-      })),
-      summary: {
-        totalRecentFiles: recentFilesWithFolder.length,
-        hasStarredFiles: recentFilesWithFolder.some((f: RecentFileData) => f.starred),
-        mostRecentUpdate: recentFilesWithFolder[0]?.updatedAt.toISOString()
-      }
-    };
-    
+    const payload = await buildRecentFilesAIContext(userId, parseOptionalDashboardId(req));
+
     res.json({
       success: true,
-      context,
-      metadata: {
-        provider: 'drive',
-        endpoint: 'recentFiles',
-        timestamp: new Date().toISOString()
-      }
+      ...payload,
     });
-    
   } catch (error: unknown) {
-    const err = error as Error;
+    const err = error instanceof Error ? error : new Error(String(error));
     logger.error('Error in getRecentFilesContext', {
       operation: 'getRecentFilesContext',
-      error: { message: err.message, stack: err.stack }
+      error: { message: err.message, stack: err.stack },
     });
-    res.status(500).json({ 
-      success: false, 
+    res.status(500).json({
+      success: false,
       message: 'Failed to fetch recent files context',
-      error: err.message || 'Unknown error'
+      error: err.message || 'Unknown error',
     });
   }
 }
 
 /**
  * GET /api/drive/ai/context/storage
- * 
- * Returns storage statistics for AI context
- * Used by AI to answer questions about storage usage
  */
 export async function getStorageStatsContext(req: Request, res: Response) {
   try {
     const userId = (req as AuthenticatedRequest).user?.id;
-    
+
     if (!userId) {
-      return res.status(401).json({ 
-        success: false, 
-        message: 'Authentication required' 
+      return res.status(401).json({
+        success: false,
+        message: 'Authentication required',
       });
     }
-    
-    const accessibleWhere = {
-      trashedAt: null,
-      ...accessibleOwnedOrSharedFileClause(userId),
-    };
 
-    // Get file counts by type and calculate storage (owned + shared readable files)
-    const [
-      totalFiles,
-      documentFiles,
-      imageFiles,
-      videoFiles,
-      files
-    ] = await Promise.all([
-      prisma.file.count({
-        where: accessibleWhere,
-      }),
-      prisma.file.count({
-        where: { 
-          ...accessibleWhere,
-          type: {
-            in: ['application/pdf', 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', 'application/msword', 'text/plain']
-          }
-        }
-      }),
-      prisma.file.count({
-        where: { 
-          ...accessibleWhere,
-          type: {
-            startsWith: 'image/'
-          }
-        }
-      }),
-      prisma.file.count({
-        where: { 
-          ...accessibleWhere,
-          type: {
-            startsWith: 'video/'
-          }
-        }
-      }),
-      prisma.file.findMany({
-        where: accessibleWhere,
-        select: { size: true }
-      })
-    ]);
-    
-    // Calculate storage usage from actual files
-    const storageUsed = files.reduce((sum, file) => sum + (file.size || 0), 0);
-    const storageLimit = 10737418240; // 10GB default
-    const percentageUsed = (storageUsed / storageLimit) * 100;
-    
-    // Format for AI consumption
-    const context = {
-      storage: {
-        used: formatFileSize(storageUsed),
-        usedBytes: storageUsed,
-        limit: formatFileSize(storageLimit),
-        limitBytes: storageLimit,
-        percentageUsed: Math.round(percentageUsed * 100) / 100,
-        available: formatFileSize(storageLimit - storageUsed)
-      },
-      files: {
-        total: totalFiles,
-        byType: {
-          documents: documentFiles,
-          images: imageFiles,
-          videos: videoFiles,
-          other: totalFiles - documentFiles - imageFiles - videoFiles
-        }
-      },
-      status: percentageUsed >= 90 ? 'critical' : percentageUsed >= 75 ? 'warning' : 'normal'
-    };
-    
+    const payload = await buildStorageStatsAIContext(userId, parseOptionalDashboardId(req));
+
     res.json({
       success: true,
-      context,
-      metadata: {
-        provider: 'drive',
-        endpoint: 'storageStats',
-        timestamp: new Date().toISOString()
-      }
+      ...payload,
     });
-    
   } catch (error: unknown) {
-    const err = error as Error;
+    const err = error instanceof Error ? error : new Error(String(error));
     logger.error('Error in getStorageStatsContext', {
       operation: 'getStorageStatsContext',
-      error: { message: err.message, stack: err.stack }
+      error: { message: err.message, stack: err.stack },
     });
-    res.status(500).json({ 
-      success: false, 
+    res.status(500).json({
+      success: false,
       message: 'Failed to fetch storage stats context',
-      error: err.message || 'Unknown error'
+      error: err.message || 'Unknown error',
     });
   }
 }
 
 /**
  * GET /api/drive/ai/query/count
- * 
- * Queryable endpoint for file counts
- * Supports dynamic queries from the AI system
  */
 export async function getFileCount(req: Request, res: Response) {
   try {
     const userId = (req as AuthenticatedRequest).user?.id;
-    const { type = 'all', folderId } = req.query;
-    
+    const typeRaw = req.query.type;
+    const type = typeof typeRaw === 'string' ? typeRaw : 'all';
+    const folderIdRaw = req.query.folderId;
+    const folderId = typeof folderIdRaw === 'string' ? folderIdRaw : null;
+
     if (!userId) {
-      return res.status(401).json({ 
-        success: false, 
-        message: 'Authentication required' 
+      return res.status(401).json({
+        success: false,
+        message: 'Authentication required',
       });
     }
-    
-    const countWhere: Prisma.FileWhereInput = {
-      trashedAt: null,
-      ...accessibleOwnedOrSharedFileClause(userId),
-    };
 
-    if (type === 'folder' && folderId && typeof folderId === 'string') {
-      countWhere.folderId = folderId;
-    } else if (type === 'recent') {
-      const sevenDaysAgo = new Date();
-      sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
-      countWhere.updatedAt = { gte: sevenDaysAgo };
-    }
+    const payload = await buildFileCountAIContext(userId, {
+      type,
+      folderId,
+      dashboardId: parseOptionalDashboardId(req),
+    });
 
-    const count = await prisma.file.count({ where: countWhere });
-    
     res.json({
       success: true,
-      count,
-      parameters: {
-        type,
-        folderId: folderId || null
-      },
-      metadata: {
-        provider: 'drive',
-        endpoint: 'fileCount',
-        timestamp: new Date().toISOString()
-      }
+      ...payload,
     });
-    
   } catch (error: unknown) {
-    const err = error as Error;
+    const err = error instanceof Error ? error : new Error(String(error));
     logger.error('Error in getFileCount', {
       operation: 'getFileCount',
-      error: { message: err.message, stack: err.stack }
+      error: { message: err.message, stack: err.stack },
     });
-    res.status(500).json({ 
-      success: false, 
+    res.status(500).json({
+      success: false,
       message: 'Failed to get file count',
-      error: err.message || 'Unknown error'
+      error: err.message || 'Unknown error',
     });
   }
 }
-
-// Helper function to format file sizes
-function formatFileSize(bytes: number): string {
-  if (bytes === 0) return '0 Bytes';
-  
-  const k = 1024;
-  const sizes = ['Bytes', 'KB', 'MB', 'GB', 'TB'];
-  const i = Math.floor(Math.log(bytes) / Math.log(k));
-  
-  return Math.round((bytes / Math.pow(k, i)) * 100) / 100 + ' ' + sizes[i];
-}
-

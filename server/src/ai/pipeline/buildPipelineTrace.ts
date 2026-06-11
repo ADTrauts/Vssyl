@@ -157,5 +157,6 @@ export function buildPipelineTrace(
     createdAt: input.createdAt ?? new Date().toISOString(),
     enforcementApplied: input.enforcementApplied,
     enforcementAction: input.enforcementAction,
+    ...(input.llmProviderRouting && { llmProviderRouting: input.llmProviderRouting }),
   };
 }

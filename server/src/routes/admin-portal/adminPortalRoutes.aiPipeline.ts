@@ -45,7 +45,7 @@ import {
   setPipelineToolArchived,
   setPipelineToolEnabled,
 } from '../../ai/pipeline/pipelineRegistryService';
-import { extractPipelineTraceFromContext } from '../../ai/pipeline/extractPipelineTraceFromContext';
+import { extractCanonicalPipelineTraceFromHistoryContext } from '../../ai/pipeline/mergeDiagnosticsFromHistoryContext';
 import { getPipelineTraceById, savePipelineTrace } from '../../ai/pipeline/pipelineTraceStore';
 import { evidenceBundleFromTrace } from '../../ai/pipeline/buildPipelineEvidenceBundle';
 import {
@@ -849,7 +849,7 @@ export function registerAdminPortalAiPipelineRoutes(router: express.Router): voi
       });
 
       for (const row of historyRows) {
-        const embedded = extractPipelineTraceFromContext(row.context);
+        const embedded = extractCanonicalPipelineTraceFromHistoryContext(row.context);
         const trace =
           embedded ??
           buildPipelineTrace(
@@ -938,7 +938,7 @@ export function registerAdminPortalAiPipelineRoutes(router: express.Router): voi
         if (!row) {
           return res.status(404).json({ error: 'Diagnostic trace not found' });
         }
-        const embedded = extractPipelineTraceFromContext(row.context);
+        const embedded = extractCanonicalPipelineTraceFromHistoryContext(row.context);
         const trace =
           embedded ??
           buildPipelineTrace(

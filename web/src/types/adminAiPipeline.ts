@@ -189,6 +189,21 @@ export interface AIPipelineTrace {
   evidenceBundle?: PipelineEvidenceBundle;
   insights?: PipelineTraceInsights;
   diagnosticSource?: 'TWIN' | 'TEST_LAB';
+  conversationReasoning?: {
+    conversationObjective?: string;
+    understandingConfidence?: number;
+    prematureSolutionRisk?: boolean;
+    recommendedResponseAction?: string;
+  };
+  llmProviderRouting?: {
+    matrixVersion: string;
+    selectedProvider: string;
+    selectedModel?: string;
+    effectiveProvider?: string;
+    fallbackApplied: boolean;
+    fallbackReason?: string;
+    capabilityWarnings: string[];
+  };
 }
 
 export interface PipelineIntentDefinition extends PipelineRegistryMeta {

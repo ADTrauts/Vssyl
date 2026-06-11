@@ -4,7 +4,7 @@ import React, { useState, useRef, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { toast } from 'react-hot-toast';
 import { Conversation, Message } from 'shared/types/chat';
-import { Avatar, Button, Spinner } from 'shared/components';
+import { Avatar, Button, Spinner, ContextMenu, ContextMenuItem } from 'shared/components';
 import { useDashboard } from '@/contexts/DashboardContext';
 import * as todoAPI from '@/api/todo';
 import { 
@@ -67,7 +67,7 @@ const MessageItem: React.FC<MessageItemProps> = ({
   onCreateTask
 }) => {
   const [showContextMenu, setShowContextMenu] = useState(false);
-  const [showReactions, setShowReactions] = useState(false);
+  const [contextMenuPosition, setContextMenuPosition] = useState({ x: 0, y: 0 });
 
   const formatTime = (timestamp: string): string => {
     return new Date(timestamp).toLocaleTimeString('en-US', {
@@ -86,20 +86,57 @@ const MessageItem: React.FC<MessageItemProps> = ({
 
   const handleContextMenu = (e: React.MouseEvent) => {
     e.preventDefault();
+    setContextMenuPosition({ x: e.clientX, y: e.clientY });
     setShowContextMenu(true);
   };
 
-  const handleDelete = () => {
-    onDelete(message.id);
-    setShowContextMenu(false);
-  };
-
-  const handleReply = () => {
-    onReply(message);
-    setShowContextMenu(false);
-  };
-
   const commonEmojis = ['👍', '❤️', '😂', '😮', '😢', '😡'];
+
+  const contextMenuItems = React.useMemo((): ContextMenuItem[] => {
+    const items: ContextMenuItem[] = [
+      {
+        icon: <Reply className="w-4 h-4" />,
+        label: 'Reply',
+        onClick: () => onReply(message),
+      },
+      {
+        icon: <Smile className="w-4 h-4" />,
+        label: 'React',
+        submenu: commonEmojis.map((emoji) => ({
+          label: emoji,
+          onClick: () => onAddReaction(message.id, emoji),
+        })),
+      },
+    ];
+
+    if (onCreateTask && conversationId && dashboardId) {
+      items.push({
+        icon: <CheckSquare className="w-4 h-4" />,
+        label: 'Create Task',
+        onClick: () => onCreateTask(message.id, conversationId),
+      });
+    }
+
+    items.push(
+      { divider: true },
+      {
+        icon: <Trash2 className="w-4 h-4" />,
+        label: 'Delete',
+        destructive: true,
+        onClick: () => onDelete(message.id),
+      }
+    );
+
+    return items;
+  }, [
+    message,
+    onReply,
+    onAddReaction,
+    onDelete,
+    onCreateTask,
+    conversationId,
+    dashboardId,
+  ]);
 
   return (
     <div
@@ -166,62 +203,13 @@ const MessageItem: React.FC<MessageItemProps> = ({
           </div>
         )}
 
-        {/* Context Menu */}
-        {showContextMenu && (
-          <div className="absolute right-2 top-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg shadow-lg z-50 min-w-32">
-            <button
-              onClick={handleReply}
-              className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800 flex items-center space-x-2"
-            >
-              <Reply className="w-4 h-4" />
-              <span>Reply</span>
-            </button>
-            <button
-              onClick={() => setShowReactions(!showReactions)}
-              className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800 flex items-center space-x-2"
-            >
-              <Smile className="w-4 h-4" />
-              <span>React</span>
-            </button>
-            {onCreateTask && conversationId && dashboardId && (
-              <button
-                onClick={() => {
-                  onCreateTask(message.id, conversationId);
-                  setShowContextMenu(false);
-                }}
-                className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800 flex items-center space-x-2"
-              >
-                <CheckSquare className="w-4 h-4" />
-                <span>Create Task</span>
-              </button>
-            )}
-            <button
-              onClick={handleDelete}
-              className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800 flex items-center space-x-2 text-red-600"
-            >
-              <Trash2 className="w-4 h-4" />
-              <span>Delete</span>
-            </button>
-          </div>
-        )}
-
-        {/* Reaction picker */}
-        {showReactions && (
-          <div className="absolute top-full left-0 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg shadow-lg p-2 z-50 flex space-x-1">
-            {commonEmojis.map(emoji => (
-              <button
-                key={emoji}
-                onClick={() => {
-                  onAddReaction(message.id, emoji);
-                  setShowReactions(false);
-                }}
-                className="p-1 hover:bg-gray-100 dark:hover:bg-slate-800 dark:bg-slate-700 rounded text-lg"
-              >
-                {emoji}
-              </button>
-            ))}
-          </div>
-        )}
+        <ContextMenu
+          open={showContextMenu}
+          onClose={() => setShowContextMenu(false)}
+          anchorPoint={contextMenuPosition}
+          items={contextMenuItems}
+          menuLabel="Message actions"
+        />
       </div>
     </div>
   );

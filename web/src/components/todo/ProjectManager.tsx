@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import { Button, Badge, Input, Textarea, Modal, ConfirmModal } from 'shared/components';
+import { Button, Badge, Input, Textarea, Modal, ConfirmModal, EmptyState } from 'shared/components';
 import { Plus, X, Edit, Trash2, Folder, Palette } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import * as todoAPI from '@/api/todo';
@@ -168,6 +168,7 @@ export function ProjectManager({
             <Button
               variant="ghost"
               size="sm"
+              aria-label="Create project"
               onClick={() => {
                 setEditingProject(null);
                 setFormData({ name: '', description: '', color: PROJECT_COLORS[0] });
@@ -191,21 +192,25 @@ export function ProjectManager({
           {loading ? (
             <div className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">Loading...</div>
           ) : projects.length === 0 ? (
-            <div className="text-sm text-gray-500 dark:text-gray-400 text-center py-4">
-              No projects yet
-              <br />
-              <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  setEditingProject(null);
-                  setFormData({ name: '', description: '', color: PROJECT_COLORS[0] });
-                  setShowCreateModal(true);
-                }}
-                className="mt-2"
-              >
-                Create one
-              </Button>
+            <div className="px-1 py-2">
+              <EmptyState
+                icon={<Folder className="h-8 w-8" />}
+                title="No projects yet"
+                description="Create a project to group related tasks."
+              />
+              <div className="mt-3 flex justify-center">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setEditingProject(null);
+                    setFormData({ name: '', description: '', color: PROJECT_COLORS[0] });
+                    setShowCreateModal(true);
+                  }}
+                >
+                  Create one
+                </Button>
+              </div>
             </div>
           ) : (
             <div className="space-y-1">
@@ -231,6 +236,7 @@ export function ProjectManager({
                     <Button
                       variant="ghost"
                       size="sm"
+                      aria-label={`Edit project ${project.name}`}
                       onClick={(e) => {
                         e.stopPropagation();
                         handleEdit(project);
@@ -242,6 +248,7 @@ export function ProjectManager({
                     <Button
                       variant="ghost"
                       size="sm"
+                      aria-label={`Delete project ${project.name}`}
                       onClick={(e) => {
                         e.stopPropagation();
                         handleDelete(project);

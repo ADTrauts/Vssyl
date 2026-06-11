@@ -1,25 +1,22 @@
+/**
+ * Centralized AI scaffold router (admin / diagnostics only).
+ *
+ * Wave 1D: Mounted with `authenticateJWT` + `requireAdmin` + deprecated-route fence in `index.ts`.
+ * Not a production twin path — use POST /api/ai/twin → DigitalLifeTwinCore.
+ *
+ * Retired duplicates (410): POST /learning/event → /api/ai/learning/*; /models/* → GET /api/ai/models
+ */
+
 import * as express from 'express';
 import { PrismaClient } from '@prisma/client';
 import { CentralizedLearningEngine } from '../ai/learning/CentralizedLearningEngine';
 import { prisma } from '../lib/prisma';
 import { logger } from '../lib/logger';
+import { authenticateJWT } from '../middleware/auth';
+import { requireAdmin } from './admin-portal/adminPortalShared';
 
 const router: express.Router = express.Router();
 const centralizedLearning = new CentralizedLearningEngine(prisma);
-
-import { authenticateJWT, AuthenticatedRequest } from '../middleware/auth';
-
-/** Admin-only — must run after `authenticateJWT` (JWT loads DB-backed `role`). */
-const requireAdmin = (req: express.Request, res: express.Response, next: express.NextFunction) => {
-  const user = (req as AuthenticatedRequest).user;
-  if (!user?.id) {
-    return res.status(401).json({ error: 'Authentication required' });
-  }
-  if (user.role !== 'ADMIN') {
-    return res.status(403).json({ error: 'Admin access required' });
-  }
-  next();
-};
 
 // ===== CENTRALIZED LEARNING ENDPOINTS =====
 

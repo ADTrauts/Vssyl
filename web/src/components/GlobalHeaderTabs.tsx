@@ -1,22 +1,25 @@
 'use client';
 
 import React, { useEffect, useState, useRef } from 'react';
-import { LayoutDashboard, Home, Briefcase, GraduationCap, Users, Brain } from 'lucide-react';
+import { LayoutDashboard, Home, Briefcase, GraduationCap } from 'lucide-react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { useDashboard } from '../contexts/DashboardContext';
 import { useGlobalBranding } from '../contexts/GlobalBrandingContext';
-import { usePositionAwareModules } from './PositionAwareModuleProvider';
-import AvatarContextMenu from './AvatarContextMenu';
-import CompactSearchButton from './header/CompactSearchButton';
 import AIChatDropdown from './header/AIChatDropdown';
-import ClientOnlyWrapper from '../app/ClientOnlyWrapper';
-import { useWorkAuth } from '../contexts/WorkAuthContext';
 import { useThemeColors } from '../hooks/useThemeColors';
 import { useBusinessConfiguration } from '../contexts/BusinessConfigurationContext';
 import { getBusiness } from '../api/business';
 import { getSuggestions } from '../api/aiSuggestions';
 import { resolveBusinessIdFromDashboard } from '../lib/resolveBusinessIdFromDashboard';
+import {
+  PlatformHeader,
+  PlatformHeaderBrand,
+  PlatformDashboardTab,
+  PlatformHeaderActionRow,
+  computePlatformAIDropdownPosition,
+  usePlatformHeaderMobile,
+} from './layouts';
 
 // Helper: get dashboard icon
 function getDashboardIcon(name: string, type?: string) {
@@ -33,10 +36,8 @@ export default function GlobalHeaderTabs() {
   const { data: session } = useSession();
 
   const { currentBranding, isBusinessContext, getHeaderStyles } = useGlobalBranding();
-  const { getHeaderStyle, isDark } = useThemeColors();
-  const { isWorkAuthenticated } = useWorkAuth();
+  const { getHeaderStyle } = useThemeColors();
   const { configuration } = useBusinessConfiguration();
-  // Local override when on business workspace: fetch authoritative business branding
   const [businessHeader, setBusinessHeader] = useState<{ name?: string; logo?: string } | null>(null);
 
   useEffect(() => {
@@ -64,19 +65,17 @@ export default function GlobalHeaderTabs() {
     }
   }, [pathname, session?.accessToken]);
 
-  const { 
+  const {
     currentDashboard,
     currentDashboardId,
     allDashboards,
     loading,
-    error,
     navigateToDashboard,
     getDashboardDisplayName,
-    getDashboardType
+    getDashboardType,
   } = useDashboard();
 
-  const [isMobile, setIsMobile] = useState(false);
-  const [hydrated, setHydrated] = useState(false);
+  const isMobile = usePlatformHeaderMobile();
   const [showWorkTab, setShowWorkTab] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [isAIOpen, setIsAIOpen] = useState(false);
@@ -88,43 +87,33 @@ export default function GlobalHeaderTabs() {
   const [isInTodo, setIsInTodo] = useState(false);
 
   useEffect(() => {
-    setIsMobile(window.innerWidth < 700);
-    setHydrated(true);
-  }, []);
-
-  // Detect if we're in scheduling module and listen for schedule selection
-  useEffect(() => {
     if (pathname) {
-      // Check for scheduling module in URL (workspace, admin, or direct scheduling paths)
-      const isScheduling = pathname.includes('/workspace/scheduling') || 
-                          pathname.includes('/admin/scheduling') ||
-                          pathname.includes('/scheduling');
+      const isScheduling =
+        pathname.includes('/workspace/scheduling') ||
+        pathname.includes('/admin/scheduling') ||
+        pathname.includes('/scheduling');
       setIsInScheduling(isScheduling);
-      
+
       if (isScheduling) {
-        // Extract businessId from URL
         const segments = pathname.split('/').filter(Boolean);
         const businessIndex = segments.indexOf('business');
         const businessId = businessIndex >= 0 && segments[businessIndex + 1] ? segments[businessIndex + 1] : undefined;
-        
         setSchedulingContext(businessId ? { businessId } : null);
       } else {
         setSchedulingContext(null);
       }
 
-      // Check for To-Do module in URL
       const isTodo = pathname.includes('/todo') || pathname.includes('/tasks');
       setIsInTodo(isTodo);
     }
   }, [pathname]);
 
-  // Listen for schedule selection events from scheduling components
   useEffect(() => {
     const handleScheduleSelected = (e: CustomEvent<{ scheduleId: string }>) => {
       if (isInScheduling && schedulingContext) {
         setSchedulingContext({
           ...schedulingContext,
-          scheduleId: e.detail.scheduleId
+          scheduleId: e.detail.scheduleId,
         });
       }
     };
@@ -135,10 +124,9 @@ export default function GlobalHeaderTabs() {
     };
   }, [isInScheduling, schedulingContext]);
 
-  // Poll for AI suggestions to show badge on AI button
   useEffect(() => {
     if (!session?.accessToken) return;
-    
+
     const loadSuggestionCount = async () => {
       try {
         const dashboardType = currentDashboard ? getDashboardType(currentDashboard) : 'personal';
@@ -154,18 +142,14 @@ export default function GlobalHeaderTabs() {
       }
     };
 
-    // Load immediately
     loadSuggestionCount();
-    
-    // Poll every 3 seconds
     const interval = setInterval(loadSuggestionCount, 3000);
     return () => clearInterval(interval);
   }, [session?.accessToken, currentDashboardId, currentDashboard, getDashboardType]);
 
-
-  // Personal dashboards ordering
   const personalDashboards = allDashboards.filter(
-    d => ('businessId' in d ? (d as any).businessId == null : true) && ('institutionId' in d ? (d as any).institutionId == null : true)
+    (d) => ('businessId' in d ? (d as { businessId?: string | null }).businessId == null : true) &&
+      ('institutionId' in d ? (d as { institutionId?: string | null }).institutionId == null : true)
   );
 
   const [orderedPersonalIds, setOrderedPersonalIds] = useState<string[]>([]);
@@ -176,19 +160,21 @@ export default function GlobalHeaderTabs() {
     if (saved) {
       order = JSON.parse(saved);
     } else {
-      order = personalDashboards.map(d => d.id);
+      order = personalDashboards.map((d) => d.id);
     }
-    order = order.filter(id => personalDashboards.some(d => d.id === id));
-    personalDashboards.forEach(d => { if (!order.includes(d.id)) order.push(d.id); });
+    order = order.filter((id) => personalDashboards.some((d) => d.id === id));
+    personalDashboards.forEach((d) => {
+      if (!order.includes(d.id)) order.push(d.id);
+    });
     if (order.length === 0 && personalDashboards.length > 0) {
-      order = personalDashboards.map(d => d.id);
+      order = personalDashboards.map((d) => d.id);
     }
     setOrderedPersonalIds(order);
     localStorage.setItem('dashboardTabOrder', JSON.stringify(order));
   }, [allDashboards.length]);
 
   const orderedPersonalDashboards = orderedPersonalIds
-    .map(id => personalDashboards.find(d => d.id === id))
+    .map((id) => personalDashboards.find((d) => d.id === id))
     .filter(Boolean) as typeof personalDashboards;
 
   const mainPersonalDashboard = orderedPersonalDashboards[0];
@@ -199,7 +185,6 @@ export default function GlobalHeaderTabs() {
       setShowWorkTab(true);
     } else {
       setShowWorkTab(false);
-      // If on business route, force navigation to personal dashboard page
       if (pathname?.startsWith('/business/')) {
         router.push(`/dashboard/${dashboardId}`);
         return;
@@ -208,278 +193,155 @@ export default function GlobalHeaderTabs() {
     }
   };
 
-  // Handle AI button click
   const handleAIClick = () => {
     if (tabsRef.current) {
-      const rect = tabsRef.current.getBoundingClientRect();
-      setAIDropdownPosition({
-        top: rect.bottom + window.scrollY + 8,
-        left: Math.max(20, (window.innerWidth - 700) / 2), // Center with min margin
-        width: Math.min(700, window.innerWidth - 40)
-      });
+      setAIDropdownPosition(computePlatformAIDropdownPosition(tabsRef.current.getBoundingClientRect()));
     }
     setIsAIOpen(!isAIOpen);
   };
 
-  // Handle AI dropdown close
   const handleAIClose = () => {
     setIsAIOpen(false);
   };
 
   const isBusinessWorkspace = pathname?.startsWith('/business/');
   const workActive = isBusinessWorkspace || showWorkTab;
-  const tabPalette = {
-    activeBg: isDark ? '#0f172a' : '#ffffff',
-    activeText: isDark ? '#f8fafc' : '#1f2937',
-    inactiveBg: isDark ? '#334155' : '#e5e7eb',
-    inactiveText: isDark ? '#cbd5e1' : '#4b5563',
-    border: isDark ? '#475569' : '#d1d5db',
-  };
-
-  const getTabStyle = (isActive: boolean, borderRadius: string, marginLeft: number) => ({
-    background: isActive ? tabPalette.activeBg : tabPalette.inactiveBg,
-    color: isActive ? tabPalette.activeText : tabPalette.inactiveText,
-    border: `1px solid ${tabPalette.border}`,
-    borderBottom: 'none',
-    borderRadius,
-    boxSizing: 'border-box' as const,
-    minHeight: 44,
-    height: 44,
-    padding: '0 24px',
-    marginLeft,
-    fontWeight: 700,
-    fontSize: 16,
-    display: 'flex',
-    alignItems: 'center',
-    gap: 8,
-    position: 'relative' as const,
-  });
 
   if (loading || !mainPersonalDashboard) {
     return null;
   }
 
-  // Detect business/workspace context and compute branding
   const effectiveBusiness = !!(isBusinessContext || isBusinessWorkspace);
-  const overrideBg = isBusinessWorkspace && configuration?.branding?.secondaryColor 
-    ? configuration.branding.secondaryColor 
-    : (isBusinessContext ? getHeaderStyles().backgroundColor : undefined);
+  const overrideBg =
+    isBusinessWorkspace && configuration?.branding?.secondaryColor
+      ? configuration.branding.secondaryColor
+      : isBusinessContext
+        ? getHeaderStyles().backgroundColor
+        : undefined;
 
-  const brandLogo = isBusinessWorkspace 
-    ? (businessHeader?.logo || configuration?.branding?.logo || currentBranding?.logo)
-    : (currentBranding?.logo);
-  const brandName = isBusinessWorkspace 
-    ? (businessHeader?.name || configuration?.name || currentBranding?.name)
-    : (currentBranding?.name);
+  const brandLogo = isBusinessWorkspace
+    ? businessHeader?.logo || configuration?.branding?.logo || currentBranding?.logo
+    : currentBranding?.logo;
+  const brandName = isBusinessWorkspace
+    ? businessHeader?.name || configuration?.name || currentBranding?.name
+    : currentBranding?.name;
+
+  const titleColor = isBusinessContext ? getHeaderStyles().color : '#fff';
 
   return (
-    <header style={{
-      position: 'fixed',
-      left: 0,
-      top: 0,
-      width: '100vw',
-      height: 64,
-      ...getHeaderStyle(effectiveBusiness, overrideBg),
-      display: 'flex',
-      alignItems: isMobile ? 'flex-start' : 'stretch',
-      flexDirection: isMobile ? 'column' : 'row',
-      padding: isMobile ? '0 12px' : '0 32px',
-      flexShrink: 0,
-      boxShadow: '0 2px 8px rgba(0,0,0,0.06)',
-      zIndex: 100,
-    }}>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 16, flex: '0 0 auto' }}>
-        {effectiveBusiness && brandLogo ? (
-          <img src={brandLogo} alt={`${brandName || 'Business'} logo`} style={{ height: 32, width: 'auto' }} />
-        ) : (
-          <div style={{ fontWeight: 800, fontSize: 22, color: getHeaderStyles().color }}>V</div>
-        )}
-        <h1 style={{ fontWeight: 600, fontSize: 18, color: isBusinessContext ? getHeaderStyles().color : '#fff' }}>
-          {effectiveBusiness ? (brandName || 'Workspace') : 'Vssyl'}
-        </h1>
-      </div>
-      <div style={{
-        flex: '1 1 auto',
-        display: 'flex',
-        justifyContent: 'center',
-        marginTop: isMobile ? 8 : 0,
-        overflow: 'hidden',
-        minWidth: 0,
-        ...(isMobile ? {} : { alignItems: 'flex-end' as const }),
-      }}>
-        <nav ref={tabsRef} style={{
-          display: 'flex',
-          alignItems: isMobile ? 'center' : 'stretch',
-          gap: 0,
-          maxWidth: '100%',
-          overflow: 'auto',
-          scrollbarWidth: 'none',
-          msOverflowStyle: 'none',
-        }}>
-          <div style={{ display: 'flex', alignItems: isMobile ? 'center' : 'stretch', gap: 0, minWidth: 0, flexWrap: 'nowrap' }}>
-            {/* Main personal dashboard (not draggable) */}
-            <button
-              key={mainPersonalDashboard.id}
-              onClick={() => handleTabClick(mainPersonalDashboard.id)}
-              style={getTabStyle(!workActive && currentDashboardId === mainPersonalDashboard.id, '8px 0 0 0', 0)}
-            >
-              {getDashboardIcon(mainPersonalDashboard.name, getDashboardType(mainPersonalDashboard)) && React.createElement(getDashboardIcon(mainPersonalDashboard.name, getDashboardType(mainPersonalDashboard)), { size: 20, style: { marginRight: 4 } })}
-              {getDashboardDisplayName(mainPersonalDashboard)}
-            </button>
-            {/* Non-draggable personal dashboards (to match appearance without DnD complexity) */}
-            {draggableDashboards.map((dashboard) => (
-              <button
-                key={dashboard.id}
-                onClick={() => handleTabClick(dashboard.id)}
-                style={getTabStyle(!workActive && currentDashboardId === dashboard.id, '0', -1)}
-              >
-                {getDashboardIcon(dashboard.name, getDashboardType(dashboard)) && React.createElement(getDashboardIcon(dashboard.name, getDashboardType(dashboard)), { size: 20, style: { marginRight: 4 } })}
-                {getDashboardDisplayName(dashboard)}
-              </button>
-            ))}
-            {/* Work Tab */}
-            <button
-              onClick={() => handleTabClick('work')}
-              style={getTabStyle(
-                workActive,
-                allDashboards.length === 0 ? '8px 0 0 0' : '0 0 0 0',
-                allDashboards.length === 0 ? 0 : -1
-              )}
-            >
-              <Briefcase size={20} style={{ marginRight: 4 }} />
-              Work
-            </button>
-            {/* '+/-' Edit Button (visual consistency) */}
-            <button
-              onClick={() => setEditMode((v) => !v)}
-              style={getTabStyle(editMode, '0 8px 0 0', -1)}
-            >
-              <span style={{ fontSize: 20, fontWeight: 700, lineHeight: 1, display: 'inline-flex', alignItems: 'center' }}>+/-</span>
-            </button>
-          </div>
-        </nav>
-      </div>
-      <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: isMobile ? 8 : 0, flex: '0 0 auto', alignSelf: isMobile ? 'auto' : 'center' }}>
-        {/* Search Button */}
-        <CompactSearchButton />
-        
-        {/* AI Button */}
-        <button
-          onClick={handleAIClick}
-          className="flex items-center justify-center transition-all hover:bg-purple-100 relative"
-          style={{
-            background: isAIOpen ? '#8b5cf6' : 'transparent',
-            color: isAIOpen ? '#fff' : '#8b5cf6',
-            border: 'none',
-            outline: 'none',
-            cursor: 'pointer',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            width: 52,
-            height: 52,
-            borderRadius: '50%',
-            transition: 'all 0.2s ease',
-            position: 'relative',
-          }}
-          title={pendingSuggestionsCount > 0 ? `AI Assistant (${pendingSuggestionsCount} suggestion${pendingSuggestionsCount > 1 ? 's' : ''})` : 'AI Assistant'}
+    <PlatformHeader
+      mode="business"
+      isMobile={isMobile}
+      headerStyle={getHeaderStyle(effectiveBusiness, overrideBg)}
+      brand={
+        <PlatformHeaderBrand>
+          {effectiveBusiness && brandLogo ? (
+            <img src={brandLogo} alt={`${brandName || 'Business'} logo`} style={{ height: 32, width: 'auto' }} />
+          ) : (
+            <div style={{ fontWeight: 800, fontSize: 22, color: getHeaderStyles().color }}>V</div>
+          )}
+          <h1 style={{ fontWeight: 600, fontSize: 18, color: titleColor }}>
+            {effectiveBusiness ? brandName || 'Workspace' : 'Vssyl'}
+          </h1>
+        </PlatformHeaderBrand>
+      }
+      tabs={
+        <div
+          ref={tabsRef}
+          className={`flex min-w-0 flex-nowrap gap-0 ${isMobile ? 'items-center' : 'items-stretch'}`}
         >
-          {/* Badge for pending suggestions */}
-          {pendingSuggestionsCount > 0 && (
+          <PlatformDashboardTab
+            key={mainPersonalDashboard.id}
+            isActive={!workActive && currentDashboardId === mainPersonalDashboard.id}
+            borderRadius="8px 0 0 0"
+            marginLeft={0}
+            onClick={() => handleTabClick(mainPersonalDashboard.id)}
+          >
+            {getDashboardIcon(mainPersonalDashboard.name, getDashboardType(mainPersonalDashboard)) &&
+              React.createElement(
+                getDashboardIcon(mainPersonalDashboard.name, getDashboardType(mainPersonalDashboard)),
+                { size: 20, style: { marginRight: 4 } }
+              )}
+            {getDashboardDisplayName(mainPersonalDashboard)}
+          </PlatformDashboardTab>
+          {draggableDashboards.map((dashboard) => (
+            <PlatformDashboardTab
+              key={dashboard.id}
+              isActive={!workActive && currentDashboardId === dashboard.id}
+              borderRadius="0"
+              marginLeft={-1}
+              onClick={() => handleTabClick(dashboard.id)}
+            >
+              {getDashboardIcon(dashboard.name, getDashboardType(dashboard)) &&
+                React.createElement(getDashboardIcon(dashboard.name, getDashboardType(dashboard)), {
+                  size: 20,
+                  style: { marginRight: 4 },
+                })}
+              {getDashboardDisplayName(dashboard)}
+            </PlatformDashboardTab>
+          ))}
+          <PlatformDashboardTab
+            isActive={workActive}
+            borderRadius={allDashboards.length === 0 ? '8px 0 0 0' : '0 0 0 0'}
+            marginLeft={allDashboards.length === 0 ? 0 : -1}
+            onClick={() => handleTabClick('work')}
+          >
+            <Briefcase size={20} style={{ marginRight: 4 }} />
+            Work
+          </PlatformDashboardTab>
+          <PlatformDashboardTab
+            isActive={editMode}
+            borderRadius="0 8px 0 0"
+            marginLeft={-1}
+            onClick={() => setEditMode((v) => !v)}
+          >
             <span
-              className="absolute -top-1 -right-1 bg-yellow-500 text-white text-xs font-bold rounded-full flex items-center justify-center z-10"
               style={{
-                minWidth: '18px',
-                height: '18px',
-                padding: '0 4px',
-                fontSize: '10px',
-                lineHeight: '1',
-                boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                fontSize: 20,
+                fontWeight: 700,
+                lineHeight: 1,
+                display: 'inline-flex',
+                alignItems: 'center',
               }}
             >
-              {pendingSuggestionsCount > 9 ? '9+' : pendingSuggestionsCount}
+              +/-
             </span>
-          )}
-          {/* Pulsing circle animation when in scheduling or To-Do context */}
-          {isInScheduling && !isAIOpen && (
-            <>
-              {/* Outer pulsing ring with expanding glow */}
-              <div
-                className="absolute inset-0 pointer-events-none"
-                style={{
-                  background: 'radial-gradient(circle, rgba(139, 92, 246, 0.6) 0%, rgba(139, 92, 246, 0.3) 50%, transparent 70%)',
-                  animation: 'pulse-ring 2s cubic-bezier(0.4, 0, 0.6, 1) infinite',
-                  zIndex: 0,
-                  borderRadius: '50%',
-                }}
-              />
-              {/* Rotating color wave */}
-              <div
-                className="absolute inset-0 pointer-events-none"
-                style={{
-                  background: 'conic-gradient(from 0deg, rgba(139, 92, 246, 0.4), rgba(168, 85, 247, 0.6), rgba(139, 92, 246, 0.4))',
-                  backgroundSize: '200% 200%',
-                  animation: 'color-wave 4s linear infinite',
-                  zIndex: 0,
-                  borderRadius: '50%',
-                  opacity: 0.8,
-                }}
-              />
-              {/* Glow effect on the button itself */}
-              <div
-                className="absolute inset-0 pointer-events-none"
-                style={{
-                  animation: 'glow-pulse 2s ease-in-out infinite',
-                  zIndex: 0,
-                  borderRadius: '50%',
-                }}
-              />
-            </>
-          )}
-          <Brain size={26} style={{ position: 'relative', zIndex: 1 }} />
-          {/* Badge for pending suggestions */}
-          {pendingSuggestionsCount > 0 && (
-            <span
-              className="absolute -top-1 -right-1 bg-yellow-500 text-white text-xs font-bold rounded-full flex items-center justify-center z-20"
-              style={{
-                minWidth: '18px',
-                height: '18px',
-                padding: '0 4px',
-                fontSize: '10px',
-                lineHeight: '1',
-                boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-              }}
-            >
-              {pendingSuggestionsCount > 9 ? '9+' : pendingSuggestionsCount}
-            </span>
-          )}
-        </button>
-        
-        {/* Avatar */}
-        <ClientOnlyWrapper>
-          <AvatarContextMenu />
-        </ClientOnlyWrapper>
-      </div>
-
-      {/* AI Chat Dropdown */}
-      <AIChatDropdown
-        isOpen={isAIOpen}
-        onClose={handleAIClose}
-        position={aiDropdownPosition}
-        dashboardId={currentDashboardId || undefined}
-        dashboardType={currentDashboard ? getDashboardType(currentDashboard) : 'personal'}
-        dashboardName={currentDashboard ? getDashboardDisplayName(currentDashboard) : 'Dashboard'}
-        moduleContext={isInScheduling ? {
-          module: 'scheduling',
-          businessId: schedulingContext?.businessId,
-          scheduleId: schedulingContext?.scheduleId,
-        } : isInTodo ? {
-          module: 'todo',
-          businessId: (currentDashboard as { business?: { id: string } })?.business?.id || undefined,
-        } : undefined}
-      />
-    </header>
+          </PlatformDashboardTab>
+        </div>
+      }
+      actions={
+        <PlatformHeaderActionRow
+          variant="business"
+          isAIOpen={isAIOpen}
+          onAIClick={handleAIClick}
+          pendingSuggestionsCount={pendingSuggestionsCount}
+          showSchedulingPulse={isInScheduling && !isAIOpen}
+        />
+      }
+      overlays={
+        <AIChatDropdown
+          isOpen={isAIOpen}
+          onClose={handleAIClose}
+          position={aiDropdownPosition}
+          dashboardId={currentDashboardId || undefined}
+          dashboardType={currentDashboard ? getDashboardType(currentDashboard) : 'personal'}
+          dashboardName={currentDashboard ? getDashboardDisplayName(currentDashboard) : 'Dashboard'}
+          moduleContext={
+            isInScheduling
+              ? {
+                  module: 'scheduling',
+                  businessId: schedulingContext?.businessId,
+                  scheduleId: schedulingContext?.scheduleId,
+                }
+              : isInTodo
+                ? {
+                    module: 'todo',
+                    businessId: (currentDashboard as { business?: { id: string } })?.business?.id || undefined,
+                  }
+                : undefined
+          }
+        />
+      }
+    />
   );
 }
-
-

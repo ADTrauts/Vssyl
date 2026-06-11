@@ -6,7 +6,6 @@ import {
   MessageSquare, 
   Send, 
   Search, 
-  MoreVertical, 
   Phone,
   Video,
   File,
@@ -26,6 +25,12 @@ import {
   Plus
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import {
+  WorkspaceSplitLayout,
+  WorkspaceSidebar,
+  WorkspaceMain,
+  WorkspaceSecondary,
+} from '../../layouts';
 
 // Import enterprise components
 import MessageRetentionPanel from './MessageRetentionPanel';
@@ -324,9 +329,9 @@ export default function EnhancedChatModule({ businessId, dashboardId: _dashboard
   }
 
   return (
-    <div className={`h-full flex ${className}`}>
+    <WorkspaceSplitLayout className={className}>
       {/* Left Sidebar - Channels */}
-      <div className="w-80 border-r border-gray-200 dark:border-slate-700 flex flex-col">
+      <WorkspaceSidebar className="w-80 border-r border-gray-200 dark:border-slate-700 flex flex-col">
         {/* Enhanced Header */}
         <div className="p-4 border-b border-gray-200 dark:border-slate-700">
           <div className="flex items-center justify-between mb-4">
@@ -441,10 +446,10 @@ export default function EnhancedChatModule({ businessId, dashboardId: _dashboard
             </div>
           ))}
         </div>
-      </div>
+      </WorkspaceSidebar>
       
       {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col">
+      <WorkspaceMain className="flex flex-col">
         {selectedChannel ? (
           <>
             {/* Chat Header */}
@@ -484,10 +489,6 @@ export default function EnhancedChatModule({ businessId, dashboardId: _dashboard
                       <Phone className="w-4 h-4" />
                     </Button>
                   </FeatureGate>
-                  
-                  <Button variant="ghost" size="sm">
-                    <MoreVertical className="w-4 h-4" />
-                  </Button>
                 </div>
               </div>
             </div>
@@ -591,11 +592,11 @@ export default function EnhancedChatModule({ businessId, dashboardId: _dashboard
             </div>
           </div>
         )}
-      </div>
+      </WorkspaceMain>
       
       {/* Enterprise Panel */}
       {showEnterprisePanel && hasEnterprise && (
-        <div className="w-96 border-l border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900">
+        <WorkspaceSecondary className="w-96 border-l border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900">
           <div className="p-4 border-b border-gray-200 dark:border-slate-700">
             <div className="flex items-center justify-between">
               <h3 className="font-semibold text-gray-900 dark:text-gray-100">Enterprise Features</h3>
@@ -659,8 +660,8 @@ export default function EnhancedChatModule({ businessId, dashboardId: _dashboard
               />
             )}
           </div>
-        </div>
+        </WorkspaceSecondary>
       )}
-    </div>
+    </WorkspaceSplitLayout>
   );
 }

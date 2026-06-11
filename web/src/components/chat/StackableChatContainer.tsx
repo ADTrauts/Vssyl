@@ -7,6 +7,8 @@ import { useDashboard } from '../../contexts/DashboardContext';
 import { useSession } from 'next-auth/react';
 import { usePathname } from 'next/navigation';
 import { toast } from 'react-hot-toast';
+import { ConfirmModal } from 'shared/components';
+import { useGlobalTrash } from '../../contexts/GlobalTrashContext';
 import ChatSidebar from './ChatSidebar';
 import ChatWindow from './ChatWindow';
 import { chatAPI } from '../../api/chat';
@@ -85,7 +87,9 @@ const StackableChatContainer: React.FC = () => {
     removeReaction,
     setDashboardOverride,
     clearDashboardOverride,
+    loadMessages,
   } = useChat();
+  const { trashItem } = useGlobalTrash();
 
   // Local state for chat window management
   const [chatState, setChatState] = useState<ChatWindowState>({
@@ -101,6 +105,8 @@ const StackableChatContainer: React.FC = () => {
   
   const [dashboardUnreadCounts, setDashboardUnreadCounts] = useState<Record<string, number>>({});
   const unreadPollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [pendingMessageIdToTrash, setPendingMessageIdToTrash] = useState<string | null>(null);
+  const [isMovingMessageToTrash, setIsMovingMessageToTrash] = useState(false);
 
   // Initialize selected dashboard to first personal dashboard
   useEffect(() => {
@@ -275,15 +281,50 @@ const StackableChatContainer: React.FC = () => {
     }
   };
 
-  // Handle message deletion
-  const handleDeleteMessage = async (messageId: string) => {
+  const requestDeleteMessage = (messageId: string) => {
+    setPendingMessageIdToTrash(messageId);
+  };
+
+  const executeDeleteMessage = async () => {
+    const messageId = pendingMessageIdToTrash;
+    if (!messageId) return;
+
+    const message = messages.find((m) => m.id === messageId);
+    if (!message) {
+      toast.error('Message not found');
+      setPendingMessageIdToTrash(null);
+      return;
+    }
+
+    setIsMovingMessageToTrash(true);
     try {
-      // TODO: Implement message deletion
-      console.log('Deleting message:', messageId);
-      toast('Message deletion coming soon', { icon: 'ℹ️' });
-    } catch (error) {
-      console.error('Failed to delete message:', error);
-      toast.error('Failed to delete message');
+      const name =
+        message.content.length > 50 ? `${message.content.substring(0, 50)}...` : message.content;
+
+      await trashItem({
+        id: message.id,
+        name,
+        type: 'message',
+        moduleId: 'chat',
+        moduleName: 'Chat',
+        metadata: {
+          conversationId: message.conversationId,
+          senderId: message.senderId,
+        },
+      });
+
+      if (chatState.activeChat?.id) {
+        await loadMessages(chatState.activeChat.id);
+      }
+
+      toast.success('Message moved to trash');
+      setPendingMessageIdToTrash(null);
+    } catch (error: unknown) {
+      const err = error instanceof Error ? error : new Error('Failed to delete message');
+      console.error('Failed to delete message:', { message: err.message, stack: err.stack });
+      toast.error('Failed to move message to trash');
+    } finally {
+      setIsMovingMessageToTrash(false);
     }
   };
 
@@ -383,7 +424,7 @@ const StackableChatContainer: React.FC = () => {
           messages={messages}
           onSendMessage={handleSendMessage}
           onReplyToMessage={handleReplyToMessage}
-          onDeleteMessage={handleDeleteMessage}
+          onDeleteMessage={requestDeleteMessage}
           onAddReaction={handleAddReaction}
           onRemoveReaction={handleRemoveReaction}
           isLoading={isLoading}
@@ -409,6 +450,17 @@ const StackableChatContainer: React.FC = () => {
           onRemoveReaction={() => {}} // Not applicable for minimized
         />
       ))}
+
+      <ConfirmModal
+        open={pendingMessageIdToTrash !== null}
+        onClose={() => setPendingMessageIdToTrash(null)}
+        onConfirm={executeDeleteMessage}
+        title="Move to trash?"
+        description="Are you sure you want to move this message to trash?"
+        variant="destructive"
+        confirmLabel="Move to trash"
+        loading={isMovingMessageToTrash}
+      />
     </>
   );
 };

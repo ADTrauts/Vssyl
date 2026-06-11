@@ -3,6 +3,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { createPortal } from 'react-dom';
 import { Trash2, ChevronUp, ChevronDown, RotateCcw, X, Maximize2, Minimize2 } from 'lucide-react';
+import { ConfirmModal } from 'shared/components';
 import { useGlobalTrash, TrashedItem } from '../contexts/GlobalTrashContext';
 import { useDroppable } from '@dnd-kit/core';
 import { toast } from 'react-hot-toast';
@@ -21,6 +22,17 @@ export default function GlobalTrashBin({ className = '', onItemTrashed }: Global
   const [panelPosition, setPanelPosition] = useState<{ bottom: number; right: number } | null>(null);
   const [mounted, setMounted] = useState(false);
   const [expandedModules, setExpandedModules] = useState<Set<string>>(new Set());
+  const [pendingEmptyTrash, setPendingEmptyTrash] = useState(false);
+  const [pendingEmptyTrashCount, setPendingEmptyTrashCount] = useState(0);
+  const [isEmptyingTrash, setIsEmptyingTrash] = useState(false);
+  const [pendingPermanentDeleteItem, setPendingPermanentDeleteItem] = useState<
+    Pick<TrashedItem, 'id' | 'name' | 'moduleId' | 'type'> | null
+  >(null);
+  const [isDeletingItem, setIsDeletingItem] = useState(false);
+  const [pendingMoveToTrashItem, setPendingMoveToTrashItem] = useState<
+    Omit<TrashedItem, 'trashedAt'> | null
+  >(null);
+  const [isMovingToTrash, setIsMovingToTrash] = useState(false);
 
   // Track when component is mounted for portal
   useEffect(() => {
@@ -58,27 +70,46 @@ export default function GlobalTrashBin({ className = '', onItemTrashed }: Global
     }
   };
 
-  const handleDelete = async (item: TrashedItem) => {
+  const requestPermanentDelete = (item: TrashedItem) => {
+    setPendingPermanentDeleteItem({
+      id: item.id,
+      name: item.name,
+      moduleId: item.moduleId,
+      type: item.type,
+    });
+  };
+
+  const executePermanentDelete = async () => {
+    const item = pendingPermanentDeleteItem;
+    if (!item) return;
+    setIsDeletingItem(true);
     try {
-      await deleteItem(item.id);
+      await deleteItem(item.id, { moduleId: item.moduleId, type: item.type });
       toast.success(`${item.name} deleted permanently`);
+      setPendingPermanentDeleteItem(null);
     } catch (error) {
       toast.error('Failed to delete item');
+    } finally {
+      setIsDeletingItem(false);
     }
   };
 
-  const handleEmptyTrash = async () => {
+  const requestEmptyTrash = () => {
     if (itemCount === 0) return;
-    
-    if (!confirm(`Are you sure you want to permanently delete all ${itemCount} items?`)) {
-      return;
-    }
+    setPendingEmptyTrashCount(itemCount);
+    setPendingEmptyTrash(true);
+  };
 
+  const executeEmptyTrash = async () => {
+    setIsEmptyingTrash(true);
     try {
       await emptyTrash();
       toast.success('Trash emptied successfully');
+      setPendingEmptyTrash(false);
     } catch (error) {
       toast.error('Failed to empty trash');
+    } finally {
+      setIsEmptyingTrash(false);
     }
   };
 
@@ -168,48 +199,70 @@ export default function GlobalTrashBin({ className = '', onItemTrashed }: Global
     e.dataTransfer.dropEffect = 'move';
   };
 
+  const finalizeMoveToTrash = async (itemData: Omit<TrashedItem, 'trashedAt'>) => {
+    await trashItem(itemData);
+    toast.success(`${itemData.name} moved to trash`);
+
+    if (onItemTrashed) {
+      onItemTrashed({ ...itemData, trashedAt: new Date().toISOString() });
+    }
+
+    if (itemData.type === 'message') {
+      window.dispatchEvent(
+        new CustomEvent('messageTrashed', {
+          detail: {
+            messageId: itemData.id,
+            conversationId: itemData.metadata?.conversationId,
+          },
+        })
+      );
+    }
+
+    if (itemData.moduleId === 'drive') {
+      window.dispatchEvent(new CustomEvent('driveItemTrashed', { detail: itemData }));
+    }
+  };
+
+  const executeMoveToTrashFromDrop = async () => {
+    const itemData = pendingMoveToTrashItem;
+    if (!itemData) return;
+    setIsMovingToTrash(true);
+    try {
+      await finalizeMoveToTrash(itemData);
+      setPendingMoveToTrashItem(null);
+    } catch (error) {
+      console.error('Error handling drop:', error);
+      toast.error('Failed to move item to trash');
+    } finally {
+      setIsMovingToTrash(false);
+    }
+  };
+
   const handleDrop = async (e: React.DragEvent) => {
     e.preventDefault();
     setIsDraggingOver(false);
-    
+
     try {
       const trashItemData = e.dataTransfer.getData('application/json');
-      if (trashItemData) {
-        const itemData = JSON.parse(trashItemData);
-        
-        // Check if this is a schedule (schedules don't use trash API, they're hard-deleted)
-        if (itemData.type === 'module' && itemData.moduleId === 'scheduling' && itemData.metadata?.scheduleId) {
-          // Dispatch event for schedule trashing (handled by scheduling component)
-          window.dispatchEvent(new CustomEvent('scheduleTrashed', { 
-            detail: { ...itemData, scheduleId: itemData.metadata.scheduleId }
-          }));
-          toast.success(`${itemData.name} will be deleted`);
-          return;
-        }
-        
-        // For other item types, use the trash API
-        await trashItem(itemData);
-        toast.success(`${itemData.name} moved to trash`);
-        
-        // Notify parent component that an item was trashed
-        if (onItemTrashed) {
-          onItemTrashed(itemData);
-        }
-        
-        // Dispatch custom events for specific item types
-        if (itemData.type === 'message') {
-          window.dispatchEvent(new CustomEvent('messageTrashed', { 
-            detail: { messageId: itemData.id, conversationId: itemData.metadata?.conversationId }
-          }));
-        }
-        
-        // Dispatch event for drive items so DriveModule can update immediately
-        if (itemData.moduleId === 'drive') {
-          window.dispatchEvent(new CustomEvent('driveItemTrashed', { 
-            detail: itemData
-          }));
-        }
+      if (!trashItemData) return;
+
+      const itemData = JSON.parse(trashItemData) as Omit<TrashedItem, 'trashedAt'>;
+
+      if (
+        itemData.type === 'module' &&
+        itemData.moduleId === 'scheduling' &&
+        itemData.metadata?.scheduleId
+      ) {
+        window.dispatchEvent(
+          new CustomEvent('scheduleTrashed', {
+            detail: { ...itemData, scheduleId: itemData.metadata.scheduleId },
+          })
+        );
+        toast.success(`${itemData.name} will be deleted`);
+        return;
       }
+
+      setPendingMoveToTrashItem(itemData);
     } catch (error) {
       console.error('Error handling drop:', error);
       toast.error('Failed to move item to trash');
@@ -217,8 +270,10 @@ export default function GlobalTrashBin({ className = '', onItemTrashed }: Global
   };
 
   return (
-    <div 
+    <div
       ref={setNodeRef}
+      role="region"
+      aria-label="Trash drop zone. Drag items here to move them to trash."
       className={`relative ${className}`}
       onDragEnter={() => setIsDraggingOver(true)}
       onDragLeave={() => setIsDraggingOver(false)}
@@ -228,18 +283,21 @@ export default function GlobalTrashBin({ className = '', onItemTrashed }: Global
       {/* Main Trash Button */}
       <button
         ref={buttonRef}
+        type="button"
         onClick={() => setIsExpanded(!isExpanded)}
+        aria-label={`Trash bin, ${itemCount} item${itemCount === 1 ? '' : 's'}. ${isExpanded ? 'Close' : 'Open'} trash panel.`}
+        aria-expanded={isExpanded}
         className={`
-          relative w-10 h-10 rounded-lg transition-all duration-200 flex items-center justify-center
-          ${isDraggingOver 
-            ? 'bg-red-100 border-2 border-red-400 scale-110' 
+          relative w-10 h-10 rounded-lg transition-all duration-200 flex items-center justify-center v-focus-ring focus:outline-none
+          ${isDraggingOver
+            ? 'bg-red-100 border-2 border-red-400 scale-110'
             : 'bg-gray-700 hover:bg-gray-600'
           }
           ${itemCount > 0 ? 'text-red-400' : 'text-gray-300'}
         `}
         title={`Trash (${itemCount} items)`}
       >
-        <Trash2 size={20} />
+        <Trash2 size={20} aria-hidden="true" />
         
         {/* Item Count Badge */}
         {itemCount > 0 && (
@@ -287,28 +345,34 @@ export default function GlobalTrashBin({ className = '', onItemTrashed }: Global
             </div>
             <div className="flex items-center gap-1">
               <button
+                type="button"
                 onClick={(e) => {
                   e.stopPropagation();
                   setIsPanelExpanded(!isPanelExpanded);
                 }}
-                className="p-1 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+                className="p-1 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors v-focus-ring focus:outline-none rounded"
                 title={isPanelExpanded ? "Minimize" : "Expand"}
+                aria-label={isPanelExpanded ? 'Minimize trash panel' : 'Expand trash panel'}
               >
                 {isPanelExpanded ? <Minimize2 size={14} /> : <Maximize2 size={14} />}
               </button>
               {itemCount > 0 && (
                 <button
-                  onClick={handleEmptyTrash}
-                  className="p-1 text-gray-500 dark:text-gray-400 hover:text-red-600 transition-colors"
+                  type="button"
+                  onClick={requestEmptyTrash}
+                  className="p-1 text-gray-500 dark:text-gray-400 hover:text-red-600 transition-colors v-focus-ring focus:outline-none rounded"
                   title="Empty trash"
+                  aria-label="Empty all trash"
                 >
                   <X size={14} />
                 </button>
               )}
               <button
+                type="button"
                 onClick={() => setIsExpanded(false)}
-                className="p-1 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors"
+                className="p-1 text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300 transition-colors v-focus-ring focus:outline-none rounded"
                 title="Close"
+                aria-label="Close trash panel"
               >
                 <X size={14} />
               </button>
@@ -378,16 +442,20 @@ export default function GlobalTrashBin({ className = '', onItemTrashed }: Global
                               {/* Actions */}
                               <div className="flex items-center gap-1">
                                 <button
+                                  type="button"
                                   onClick={() => handleRestore(item)}
-                                  className="p-1 text-gray-500 dark:text-gray-400 hover:text-green-600 transition-colors"
+                                  className="p-1 text-gray-500 dark:text-gray-400 hover:text-green-600 transition-colors v-focus-ring focus:outline-none rounded"
                                   title="Restore"
+                                  aria-label={`Restore ${item.name}`}
                                 >
-                                  <RotateCcw size={14} />
+                                  <RotateCcw size={14} aria-hidden="true" />
                                 </button>
                                 <button
-                                  onClick={() => handleDelete(item)}
-                                  className="p-1 text-gray-500 dark:text-gray-400 hover:text-red-600 transition-colors"
+                                  type="button"
+                                  onClick={() => requestPermanentDelete(item)}
+                                  className="p-1 text-gray-500 dark:text-gray-400 hover:text-red-600 transition-colors v-focus-ring focus:outline-none rounded"
                                   title="Delete permanently"
+                                  aria-label={`Delete ${item.name} permanently`}
                                 >
                                   <X size={14} />
                                 </button>
@@ -415,6 +483,49 @@ export default function GlobalTrashBin({ className = '', onItemTrashed }: Global
         </>,
         document.body
       )}
+
+      <ConfirmModal
+        open={pendingEmptyTrash}
+        onClose={() => setPendingEmptyTrash(false)}
+        onConfirm={executeEmptyTrash}
+        title="Empty trash?"
+        description={
+          pendingEmptyTrashCount > 0
+            ? `Are you sure you want to permanently delete all ${pendingEmptyTrashCount} items?`
+            : ''
+        }
+        variant="destructive"
+        confirmLabel="Empty trash"
+        loading={isEmptyingTrash}
+      />
+      <ConfirmModal
+        open={pendingPermanentDeleteItem !== null}
+        onClose={() => setPendingPermanentDeleteItem(null)}
+        onConfirm={executePermanentDelete}
+        title="Delete forever?"
+        description={
+          pendingPermanentDeleteItem
+            ? `Permanently delete "${pendingPermanentDeleteItem.name}"? This cannot be undone.`
+            : ''
+        }
+        variant="destructive"
+        confirmLabel="Delete forever"
+        loading={isDeletingItem}
+      />
+      <ConfirmModal
+        open={pendingMoveToTrashItem !== null}
+        onClose={() => setPendingMoveToTrashItem(null)}
+        onConfirm={executeMoveToTrashFromDrop}
+        title="Move to trash?"
+        description={
+          pendingMoveToTrashItem
+            ? `Are you sure you want to move "${pendingMoveToTrashItem.name}" to trash?`
+            : ''
+        }
+        variant="destructive"
+        confirmLabel="Move to trash"
+        loading={isMovingToTrash}
+      />
     </div>
   );
 } 

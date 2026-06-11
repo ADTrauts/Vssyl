@@ -483,3 +483,168 @@ export const DRIVE_SEARCH_VISIBILITY_MODEL = {
   folders:
     'Same as browse: owner OR FolderPermission; Policy Engine file:read on folder; trashed excluded.',
 } as const;
+
+/** Row shape for Drive AI context providers (recent files endpoint). */
+export const driveAIContextFileSelect = {
+  id: true,
+  name: true,
+  type: true,
+  size: true,
+  createdAt: true,
+  updatedAt: true,
+  starred: true,
+  folderId: true,
+  dashboardId: true,
+  folder: {
+    select: {
+      id: true,
+      name: true,
+    },
+  },
+} as const;
+
+export type DriveAIContextFileRow = {
+  id: string;
+  name: string;
+  type: string;
+  size: number;
+  createdAt: Date;
+  updatedAt: Date;
+  starred: boolean;
+  folderId: string | null;
+  dashboardId: string | null;
+  folder: { id: string; name: string } | null;
+};
+
+export interface DriveAIContextListInput {
+  userId: string;
+  dashboardId?: string | null;
+  limit?: number;
+}
+
+function buildAccessibleActiveFileWhere(
+  userId: string,
+  dashboardId?: string | null
+): Prisma.FileWhereInput {
+  const where: Prisma.FileWhereInput = {
+    trashedAt: null,
+    ...accessibleOwnedOrSharedFileClause(userId),
+  };
+  if (dashboardId !== undefined && dashboardId !== null) {
+    where.dashboardId = dashboardId;
+  }
+  return where;
+}
+
+/**
+ * Recent files for AI context — owned + shared, PE-gated, excludes trashed (Wave 1C).
+ */
+export async function listAccessibleRecentFilesForAIContext(
+  input: DriveAIContextListInput
+): Promise<DriveAIContextFileRow[]> {
+  const { userId, dashboardId, limit = 10 } = input;
+  const candidates = await prisma.file.findMany({
+    where: buildAccessibleActiveFileWhere(userId, dashboardId),
+    select: driveAIContextFileSelect,
+    orderBy: [{ updatedAt: 'desc' }, { createdAt: 'desc' }],
+    take: Math.min(Math.max(limit, 1), 50),
+  });
+  return filterFilesByReadPolicy(userId, candidates);
+}
+
+export interface DriveAIContextStorageAggregate {
+  totalFiles: number;
+  documentFiles: number;
+  imageFiles: number;
+  videoFiles: number;
+  storageUsedBytes: number;
+}
+
+const DOCUMENT_MIME_TYPES = [
+  'application/pdf',
+  'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+  'application/msword',
+  'text/plain',
+] as const;
+
+function classifyFileTypeForStorage(type: string): 'documents' | 'images' | 'videos' | 'other' {
+  if (DOCUMENT_MIME_TYPES.includes(type as (typeof DOCUMENT_MIME_TYPES)[number])) {
+    return 'documents';
+  }
+  if (type.startsWith('image/')) return 'images';
+  if (type.startsWith('video/')) return 'videos';
+  return 'other';
+}
+
+/**
+ * Storage aggregate for AI context — PE-gated over accessible active files (Wave 1C).
+ */
+export async function aggregateAccessibleDriveStorageForAIContext(
+  input: DriveAIContextListInput
+): Promise<DriveAIContextStorageAggregate> {
+  const { userId, dashboardId } = input;
+  const candidates = await prisma.file.findMany({
+    where: buildAccessibleActiveFileWhere(userId, dashboardId),
+    select: { id: true, size: true, type: true, dashboardId: true },
+  });
+  const allowed = await filterFilesByReadPolicy(userId, candidates);
+
+  let documentFiles = 0;
+  let imageFiles = 0;
+  let videoFiles = 0;
+  let storageUsedBytes = 0;
+
+  for (const file of allowed) {
+    storageUsedBytes += file.size || 0;
+    const bucket = classifyFileTypeForStorage(file.type);
+    if (bucket === 'documents') documentFiles += 1;
+    else if (bucket === 'images') imageFiles += 1;
+    else if (bucket === 'videos') videoFiles += 1;
+  }
+
+  return {
+    totalFiles: allowed.length,
+    documentFiles,
+    imageFiles,
+    videoFiles,
+    storageUsedBytes,
+  };
+}
+
+export interface DriveAIContextCountInput extends DriveAIContextListInput {
+  type?: 'all' | 'folder' | 'recent';
+  folderId?: string | null;
+}
+
+/**
+ * File count for AI query endpoint — PE-gated (Wave 1C).
+ */
+export async function countAccessibleDriveFilesForAIContext(
+  input: DriveAIContextCountInput
+): Promise<number> {
+  const { userId, dashboardId, type = 'all', folderId } = input;
+  const where = buildAccessibleActiveFileWhere(userId, dashboardId);
+
+  if (type === 'folder' && folderId) {
+    where.folderId = folderId;
+  } else if (type === 'recent') {
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    where.updatedAt = { gte: sevenDaysAgo };
+  }
+
+  const candidates = await prisma.file.findMany({
+    where,
+    select: { id: true, dashboardId: true },
+  });
+  const allowed = await filterFilesByReadPolicy(userId, candidates);
+  return allowed.length;
+}
+
+export const DRIVE_AI_CONTEXT_VISIBILITY_MODEL = {
+  recent:
+    'Owner OR FilePermission; trashedAt null; Policy Engine file:read per row; ordered by updatedAt.',
+  storage:
+    'Same visibility as recent; aggregate counts/sizes over PE-allowed active files only.',
+  count: 'Same visibility; optional folder or 7-day recent filter.',
+} as const;

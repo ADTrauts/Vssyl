@@ -94,6 +94,10 @@ import aiSessionPreferencesRouter from './routes/ai-session-preferences';
 import aiAutonomyRouter from './routes/ai-autonomy';
 import aiIntelligenceRouter from './routes/ai-intelligence';
 import aiCentralizedRouter from './routes/ai-centralized';
+import { requireAdmin } from './routes/admin-portal/adminPortalShared';
+import {
+  centralizedAiDeprecatedMiddleware,
+} from './middleware/centralizedAiFence';
 import aiAutonomousRouter from './routes/ai/autonomous';
 import aiStatsRouter from './routes/ai-stats';
 import aiPersonalityRouter from './routes/ai-personality';
@@ -897,8 +901,17 @@ app.use('/api/ai/autonomous', authenticateJWT, aiAutonomousRouter);
 app.use('/api/ai-stats', authenticateJWT, aiStatsRouter);
 app.use('/api/ai/personality', authenticateJWT, aiPersonalityRouter);
 app.use('/api/ai/patterns', authenticateJWT, aiPatternsRouter);
+app.use('/api/ai/user-context', authenticateJWT, aiUserContextRouter);
+/** @deprecated Wave 1B — use /api/ai/user-context; retained for non-GET CRUD callers during migration */
 app.use('/api/ai/context', authenticateJWT, aiUserContextRouter);
-app.use('/api/centralized-ai', authenticateJWT, aiCentralizedRouter);
+/** Wave 1D — admin-only scaffold; deprecated duplicates return 410. Twin path: POST /api/ai/twin */
+app.use(
+  '/api/centralized-ai',
+  authenticateJWT,
+  requireAdmin,
+  centralizedAiDeprecatedMiddleware,
+  aiCentralizedRouter
+);
 app.use('/api/billing', authenticateJWT, billingRouter);
 app.use('/api/pricing', pricingRouter); // Public read access, admin write access
 app.use('/api/feature-gating', authenticateJWT, featureGatingRouter);

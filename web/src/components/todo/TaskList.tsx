@@ -16,9 +16,23 @@ interface TaskListProps {
   onTaskDelete?: (taskId: string) => void;
   onViewAttachments?: (task: Task) => void;
   onCreateTask?: () => void;
+  filtered?: boolean;
+  projectScoped?: boolean;
 }
 
-export function TaskList({ tasks, projects = [], onTaskSelect, onTaskComplete, onTaskReopen, onTaskEdit, onTaskDelete, onViewAttachments, onCreateTask }: TaskListProps) {
+export function TaskList({
+  tasks,
+  projects = [],
+  onTaskSelect,
+  onTaskComplete,
+  onTaskReopen,
+  onTaskEdit,
+  onTaskDelete,
+  onViewAttachments,
+  onCreateTask,
+  filtered = false,
+  projectScoped = false,
+}: TaskListProps) {
   // Track collapsed state for each project
   const [collapsedProjects, setCollapsedProjects] = useState<Set<string>>(new Set());
 
@@ -318,16 +332,27 @@ export function TaskList({ tasks, projects = [], onTaskSelect, onTaskComplete, o
     return 0;
   });
 
+  const hasVisibleTasks = sortedProjectIds.some(
+    (projectId) => (tasksByProject[projectId]?.length || 0) > 0
+  );
+
+  if (!hasVisibleTasks) {
+    return (
+      <EmptyTaskState
+        onCreateTask={onCreateTask || (() => {})}
+        view="list"
+        filtered={filtered}
+        projectScoped={projectScoped}
+      />
+    );
+  }
+
   return (
     <div className="p-6 space-y-4 min-w-0">
-      {sortedProjectIds.length > 0 ? (
-        sortedProjectIds.map(projectId => {
-          const projectTasks = tasksByProject[projectId] || [];
-          return renderProjectSection(projectId, projectTasks);
-        })
-      ) : (
-        <EmptyTaskState onCreateTask={onCreateTask || (() => {})} view="list" />
-      )}
+      {sortedProjectIds.map((projectId) => {
+        const projectTasks = tasksByProject[projectId] || [];
+        return renderProjectSection(projectId, projectTasks);
+      })}
     </div>
   );
 }

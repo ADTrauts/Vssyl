@@ -18,6 +18,6 @@ function isPipelineTrace(value: unknown): value is AIPipelineTrace {
 export function extractPipelineTraceFromContext(context: unknown): AIPipelineTrace | null {
   if (!context || typeof context !== 'object' || Array.isArray(context)) return null;
   const record = context as Record<string, unknown>;
-  const raw = record._pipelineTrace;
+  const raw = record._pipelineTrace ?? record.pipelineTrace;
   return isPipelineTrace(raw) ? raw : null;
 }

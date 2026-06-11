@@ -6,6 +6,7 @@ import type { AIAssembledContext } from '../context/AIContextAssembler';
 import type { MemoryRetrievalReport } from '../memory/MemoryRetrievalService';
 import type {
   BuildPipelineTraceInput,
+  LlmProviderRoutingSummary,
   PipelineConfidenceLevel,
   PipelineContextRetrievedRecord,
   PipelineEnforcementAction,
@@ -213,6 +214,8 @@ export function mapOrchestrationToPipelineTraceInput(
         }
       : undefined;
 
+  const llmRouting = readLlmProviderRoutingFromContext(ctx);
+
   return {
     userId: params.userId,
     conversationId: params.conversationId,
@@ -230,5 +233,16 @@ export function mapOrchestrationToPipelineTraceInput(
     traceId: params.traceId,
     enforcementApplied: params.enforcementApplied,
     enforcementAction: params.enforcementAction,
+    ...(llmRouting && { llmProviderRouting: llmRouting }),
   };
+}
+
+function readLlmProviderRoutingFromContext(
+  ctx: Record<string, unknown>
+): LlmProviderRoutingSummary | undefined {
+  const raw = ctx.llmProviderRouting;
+  if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return undefined;
+  const record = raw as Record<string, unknown>;
+  if (typeof record.selectedProvider !== 'string') return undefined;
+  return raw as LlmProviderRoutingSummary;
 }

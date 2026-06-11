@@ -1,3 +1,7 @@
+/**
+ * Enterprise calendar panel — **exception** to CalendarPageShell (Wave 3C-7B).
+ * Feature-gated enterprise surface; do not merge with certified workspace shell.
+ */
 import React, { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';

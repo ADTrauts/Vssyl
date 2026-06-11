@@ -1,7 +1,8 @@
 'use client';
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useEffect, useMemo, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
-import { Button } from 'shared/components';
+import { Button, ConfirmModal } from 'shared/components';
+import { RecurrenceScopeModal, type RecurrenceScope } from './RecurrenceScopeModal';
 import { BookOpen, Link2 } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import {
@@ -97,6 +98,177 @@ export default function EventDrawer({ isOpen, onClose, onCreated, onUpdated, con
   const [recurrenceEnd, setRecurrenceEnd] = useState<string>('');
   const [editSeriesMode, setEditSeriesMode] = useState<'THIS'|'SERIES'>('SERIES');
   const [ruleError, setRuleError] = useState<string>('');
+  const [pendingEventDelete, setPendingEventDelete] = useState<EventItem | null>(null);
+  const [pendingDeleteScope, setPendingDeleteScope] = useState(false);
+  const [isDeletingEvent, setIsDeletingEvent] = useState(false);
+  const [pendingSkipOccurrence, setPendingSkipOccurrence] = useState(false);
+  const [isSkippingOccurrence, setIsSkippingOccurrence] = useState(false);
+  const [conflictCount, setConflictCount] = useState(0);
+  const [showConflictConfirm, setShowConflictConfirm] = useState(false);
+  const [pendingFindTimeSlot, setPendingFindTimeSlot] = useState<{
+    start: string;
+    end: string;
+    label: string;
+  } | null>(null);
+
+  const requestDeleteEvent = useCallback(() => {
+    if (!eventToEdit?.id) return;
+    setPendingEventDelete(eventToEdit);
+  }, [eventToEdit]);
+
+  const executeDeleteEvent = useCallback(
+    async (scope: RecurrenceScope | 'NON_RECURRING') => {
+      if (!eventToEdit?.id) return;
+
+      setIsDeletingEvent(true);
+      try {
+        if (scope === 'THIS') {
+          await calendarAPI.deleteEvent(eventToEdit.id, {
+            editMode: 'THIS',
+            occurrenceStartAt: eventToEdit.occurrenceStartAt || eventToEdit.startAt,
+          });
+          toast.success('Occurrence deleted');
+        } else {
+          await trashItem({
+            id: eventToEdit.id,
+            name: eventToEdit.title,
+            type: 'event',
+            moduleId: 'calendar',
+            moduleName: 'Calendar',
+            metadata: {
+              calendarId: eventToEdit.calendarId,
+            },
+          });
+          toast.success(`${eventToEdit.title} moved to trash`);
+        }
+        onUpdated?.(eventToEdit);
+        onClose();
+      } catch (error: unknown) {
+        console.error('Failed to delete event:', error);
+        toast.error('Failed to delete event');
+      } finally {
+        setIsDeletingEvent(false);
+        setPendingEventDelete(null);
+        setPendingDeleteScope(false);
+      }
+    },
+    [eventToEdit, onClose, onUpdated, trashItem]
+  );
+
+  const executeSkipOccurrence = useCallback(async () => {
+    if (!eventToEdit?.id) return;
+
+    setIsSkippingOccurrence(true);
+    try {
+      await calendarAPI.deleteEvent(eventToEdit.id, {
+        editMode: 'THIS',
+        occurrenceStartAt: eventToEdit.occurrenceStartAt || eventToEdit.startAt,
+      });
+      toast.success('Occurrence skipped');
+      onUpdated?.(eventToEdit);
+      onClose();
+    } catch (error: unknown) {
+      console.error('Failed to skip occurrence:', error);
+      toast.error('Failed to skip occurrence');
+    } finally {
+      setIsSkippingOccurrence(false);
+      setPendingSkipOccurrence(false);
+    }
+  }, [eventToEdit, onClose, onUpdated]);
+
+  const persistEvent = useCallback(
+    async (skipConflictCheck = false) => {
+      if (!title || !startAt || !endAt || !calendarId) return;
+
+      if (isRecurring) {
+        const rule = (recurrenceRule || '').trim().toUpperCase();
+        if (!rule || !/FREQ=(DAILY|WEEKLY|MONTHLY|YEARLY)/.test(rule)) {
+          setRuleError('Please provide a valid RRULE (e.g., FREQ=WEEKLY;BYDAY=MO)');
+          return;
+        }
+        setRuleError('');
+      }
+
+      if (!skipConflictCheck) {
+        try {
+          const conflicts = await calendarAPI.checkConflicts({
+            start: new Date(startAt).toISOString(),
+            end: new Date(endAt).toISOString(),
+            calendarIds: [calendarId],
+          });
+          if ((conflicts as ConflictData)?.success && (conflicts as ConflictData).data?.length > 0) {
+            setConflictCount((conflicts as ConflictData).data.length);
+            setShowConflictConfirm(true);
+            return;
+          }
+        } catch {
+          // Best-effort conflict check
+        }
+      }
+
+      setSaving(true);
+      try {
+        const payload: EventPayload = {
+          calendarId,
+          title,
+          description,
+          location,
+          onlineMeetingLink: onlineLink,
+          startAt: new Date(startAt).toISOString(),
+          endAt: new Date(endAt).toISOString(),
+          allDay,
+          timezone,
+          attendees,
+          recurrenceRule: isRecurring && recurrenceRule ? recurrenceRule : undefined,
+          recurrenceEndAt: isRecurring && recurrenceEnd ? new Date(recurrenceEnd).toISOString() : undefined,
+        };
+        if (eventToEdit?.id) {
+          if (eventToEdit.recurrenceRule && editSeriesMode === 'THIS') {
+            payload.editMode = 'THIS';
+            payload.occurrenceStartAt = eventToEdit.occurrenceStartAt || eventToEdit.startAt;
+          }
+          const resp = await calendarAPI.updateEvent(eventToEdit.id, payload);
+          if (resp?.success) {
+            onUpdated?.(resp.data);
+            onClose();
+          }
+        } else {
+          const resp = await calendarAPI.createEvent({
+            ...payload,
+            reminders: [{ minutesBefore: reminderMinutes, method: reminderMethod }],
+          });
+          if (resp?.success) {
+            onCreated?.(resp.data);
+            onClose();
+          }
+        }
+      } finally {
+        setSaving(false);
+      }
+    },
+    [
+      allDay,
+      attendees,
+      calendarId,
+      description,
+      editSeriesMode,
+      endAt,
+      eventToEdit,
+      isRecurring,
+      location,
+      onClose,
+      onCreated,
+      onUpdated,
+      onlineLink,
+      recurrenceEnd,
+      recurrenceRule,
+      reminderMethod,
+      reminderMinutes,
+      startAt,
+      timezone,
+      title,
+    ]
+  );
 
   useEffect(() => {
     if (!isOpen) return;
@@ -189,66 +361,7 @@ export default function EventDrawer({ isOpen, onClose, onCreated, onUpdated, con
   }, [isOpen, listParams]);
 
   const handleSave = async () => {
-    if (!title || !startAt || !endAt || !calendarId) return;
-    setSaving(true);
-    try {
-      // Basic RRULE validation
-      if (isRecurring) {
-        const rule = (recurrenceRule || '').trim().toUpperCase();
-        if (!rule || !/FREQ=(DAILY|WEEKLY|MONTHLY|YEARLY)/.test(rule)) {
-          setRuleError('Please provide a valid RRULE (e.g., FREQ=WEEKLY;BYDAY=MO)');
-          setSaving(false);
-          return;
-        }
-        setRuleError('');
-      }
-      // Check conflicts before save (best effort)
-      try {
-        const conflicts = await calendarAPI.checkConflicts({
-          start: new Date(startAt).toISOString(),
-          end: new Date(endAt).toISOString(),
-          calendarIds: [calendarId]
-        });
-        if ((conflicts as ConflictData)?.success && (conflicts as ConflictData).data?.length > 0) {
-          const proceed = confirm(`This time conflicts with ${((conflicts as ConflictData).data).length} event(s). Continue?`);
-          if (!proceed) { setSaving(false); return; }
-        }
-      } catch {}
-      const payload: EventPayload = {
-        calendarId,
-        title,
-        description,
-        location,
-        onlineMeetingLink: onlineLink,
-        startAt: new Date(startAt).toISOString(),
-        endAt: new Date(endAt).toISOString(),
-        allDay,
-        timezone,
-        attendees,
-        recurrenceRule: isRecurring && recurrenceRule ? recurrenceRule : undefined,
-        recurrenceEndAt: isRecurring && recurrenceEnd ? new Date(recurrenceEnd).toISOString() : undefined,
-      };
-      if (eventToEdit?.id) {
-        // If editing a recurring event and user chose THIS, pass editMode and occurrenceStartAt
-        if (eventToEdit.recurrenceRule && editSeriesMode === 'THIS') {
-          payload.editMode = 'THIS';
-          payload.occurrenceStartAt = eventToEdit.occurrenceStartAt || eventToEdit.startAt;
-        }
-        const resp = await calendarAPI.updateEvent(eventToEdit.id, payload);
-        if (resp?.success) {
-          onUpdated?.(resp.data);
-          onClose();
-        }
-      } else {
-        const resp = await calendarAPI.createEvent({ ...payload, reminders: [{ minutesBefore: reminderMinutes, method: reminderMethod }] });
-        if (resp?.success) {
-          onCreated?.(resp.data);
-          onClose();
-        }
-      }
-    } finally {
-      setSaving(false);
-    }
+    await persistEvent(false);
   };
 
   return (
@@ -348,17 +461,18 @@ export default function EventDrawer({ isOpen, onClose, onCreated, onUpdated, con
                         const suggestions = openSlots.slice(0, 5);
                         const selectedSlot = suggestions[0]; // Use first suggestion
                         
-                        if (confirm(`Found ${openSlots.length} open slots this week. Use the first available slot (${selectedSlot.start.toLocaleString()} - ${selectedSlot.end.toLocaleString()})?`)) {
-                          setStartAt(selectedSlot.start.toISOString().slice(0, 16));
-                          setEndAt(selectedSlot.end.toISOString().slice(0, 16));
-                        }
+                        setPendingFindTimeSlot({
+                          start: selectedSlot.start.toISOString().slice(0, 16),
+                          end: selectedSlot.end.toISOString().slice(0, 16),
+                          label: `${selectedSlot.start.toLocaleString()} – ${selectedSlot.end.toLocaleString()}`,
+                        });
                       } else {
-                        alert('No open slots found in the next week. Try a different time range.');
+                        toast.error('No open slots found in the next week. Try a different time range.');
                       }
                     }
-                  } catch (error) {
+                  } catch (error: unknown) {
                     console.error('Error finding available time:', error);
-                    alert('Unable to find available time. Please check your calendar settings.');
+                    toast.error('Unable to find available time. Please check your calendar settings.');
                   }
                 }}
                 className="px-4 py-2 bg-green-600 text-white rounded hover:bg-green-700 transition-colors"
@@ -407,7 +521,7 @@ export default function EventDrawer({ isOpen, onClose, onCreated, onUpdated, con
                           });
                           
                           if (newEvent?.success) {
-                            alert('Event imported successfully!');
+                            toast.success('Event imported successfully');
                             onCreated?.(newEvent.data);
                           }
                         }
@@ -422,9 +536,9 @@ export default function EventDrawer({ isOpen, onClose, onCreated, onUpdated, con
                         else if (key === 'TZID') eventData.timezone = value;
                       }
                     }
-                  } catch (error) {
+                  } catch (error: unknown) {
                     console.error('Error importing ICS:', error);
-                    alert('Error importing ICS file. Please check the file format.');
+                    toast.error('Error importing ICS file. Please check the file format.');
                   }
                   
                   // Reset file input
@@ -539,53 +653,8 @@ export default function EventDrawer({ isOpen, onClose, onCreated, onUpdated, con
              <div className="flex justify-end gap-2">
             {eventToEdit?.id && (
               <button
-                onClick={async () => {
-                  if (!eventToEdit?.id) return;
-                  setSaving(true);
-                  try {
-                    if (eventToEdit.recurrenceRule) {
-                      const thisOnly = confirm('Delete this occurrence only? Press Cancel to delete the entire series.');
-                      if (thisOnly) {
-                        // For single occurrence, use API (creates exception)
-                        await calendarAPI.deleteEvent(eventToEdit.id, { editMode: 'THIS', occurrenceStartAt: eventToEdit.occurrenceStartAt || eventToEdit.startAt });
-                        toast.success('Occurrence deleted');
-                      } else {
-                        // For entire series, use global trash
-                        await trashItem({
-                          id: eventToEdit.id,
-                          name: eventToEdit.title,
-                          type: 'event',
-                          moduleId: 'calendar',
-                          moduleName: 'Calendar',
-                          metadata: {
-                            calendarId: eventToEdit.calendarId,
-                          },
-                        });
-                        toast.success(`${eventToEdit.title} moved to trash`);
-                      }
-                    } else {
-                      // For non-recurring events, use global trash
-                      await trashItem({
-                        id: eventToEdit.id,
-                        name: eventToEdit.title,
-                        type: 'event',
-                        moduleId: 'calendar',
-                        moduleName: 'Calendar',
-                        metadata: {
-                          calendarId: eventToEdit.calendarId,
-                        },
-                      });
-                      toast.success(`${eventToEdit.title} moved to trash`);
-                    }
-                    onUpdated?.(eventToEdit);
-                    onClose();
-                  } catch (error) {
-                    console.error('Failed to delete event:', error);
-                    toast.error('Failed to delete event');
-                  } finally {
-                    setSaving(false);
-                  }
-                }}
+                type="button"
+                onClick={requestDeleteEvent}
                 className="px-3 py-1 border rounded text-red-600 border-red-300"
               >
                 Delete
@@ -593,22 +662,8 @@ export default function EventDrawer({ isOpen, onClose, onCreated, onUpdated, con
             )}
             {eventToEdit?.recurrenceRule && (
               <button
-                onClick={async () => {
-                  if (!eventToEdit?.id) return;
-                  setSaving(true);
-                  try {
-                    // For skipping single occurrence, use API (creates exception)
-                    await calendarAPI.deleteEvent(eventToEdit.id, { editMode: 'THIS', occurrenceStartAt: eventToEdit.occurrenceStartAt || eventToEdit.startAt });
-                    toast.success('Occurrence skipped');
-                    onUpdated?.(eventToEdit);
-                    onClose();
-                  } catch (error) {
-                    console.error('Failed to skip occurrence:', error);
-                    toast.error('Failed to skip occurrence');
-                  } finally {
-                    setSaving(false);
-                  }
-                }}
+                type="button"
+                onClick={() => setPendingSkipOccurrence(true)}
                 className="px-3 py-1 border rounded text-orange-700 border-orange-300"
                 title="Skip only this occurrence"
               >
@@ -756,6 +811,84 @@ export default function EventDrawer({ isOpen, onClose, onCreated, onUpdated, con
           )}
         </div>
       </div>
+
+      <ConfirmModal
+        open={pendingEventDelete !== null && !pendingDeleteScope}
+        onClose={() => setPendingEventDelete(null)}
+        onConfirm={() => {
+          if (!pendingEventDelete) return;
+          if (pendingEventDelete.recurrenceRule) {
+            setPendingDeleteScope(true);
+          } else {
+            void executeDeleteEvent('NON_RECURRING');
+          }
+        }}
+        title="Delete event?"
+        description={
+          pendingEventDelete
+            ? `Are you sure you want to delete "${pendingEventDelete.title}"?`
+            : undefined
+        }
+        variant="destructive"
+        confirmLabel="Delete"
+        loading={isDeletingEvent}
+      />
+
+      <RecurrenceScopeModal
+        open={pendingDeleteScope && pendingEventDelete !== null}
+        onClose={() => {
+          setPendingDeleteScope(false);
+          setPendingEventDelete(null);
+        }}
+        title="Delete recurring event"
+        description="Apply this delete to a single occurrence or the entire series?"
+        onSelect={(scope) => {
+          void executeDeleteEvent(scope);
+        }}
+      />
+
+      <ConfirmModal
+        open={pendingSkipOccurrence}
+        onClose={() => setPendingSkipOccurrence(false)}
+        onConfirm={executeSkipOccurrence}
+        title="Skip this occurrence?"
+        description="This occurrence will be removed from the series without deleting other events."
+        variant="destructive"
+        confirmLabel="Skip occurrence"
+        loading={isSkippingOccurrence}
+      />
+
+      <ConfirmModal
+        open={showConflictConfirm}
+        onClose={() => setShowConflictConfirm(false)}
+        onConfirm={async () => {
+          setShowConflictConfirm(false);
+          await persistEvent(true);
+        }}
+        title="Scheduling conflict"
+        description={`This time conflicts with ${conflictCount} other event(s). Save anyway?`}
+        variant="informational"
+        confirmLabel="Save anyway"
+      />
+
+      <ConfirmModal
+        open={pendingFindTimeSlot !== null}
+        onClose={() => setPendingFindTimeSlot(null)}
+        onConfirm={() => {
+          if (!pendingFindTimeSlot) return;
+          setStartAt(pendingFindTimeSlot.start);
+          setEndAt(pendingFindTimeSlot.end);
+          setPendingFindTimeSlot(null);
+        }}
+        title="Use available time slot?"
+        description={
+          pendingFindTimeSlot
+            ? `Use ${pendingFindTimeSlot.label}?`
+            : undefined
+        }
+        variant="informational"
+        confirmLabel="Use this slot"
+      />
     </div>
   );
 }

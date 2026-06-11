@@ -10,7 +10,6 @@ import {
   File, 
   Upload, 
   Search, 
-  MoreVertical, 
   Grid, 
   List,
   Download,
@@ -26,6 +25,7 @@ import {
   Filter
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import { DriveCreateFolderModal } from '../DriveCreateFolderModal';
 import { useGlobalTrash } from '../../../contexts/GlobalTrashContext';
 import { useDriveWebSocket } from '../../../hooks/useDriveWebSocket';
 import { VLinkIndicator, VLinkCornerMarker } from '@/components/vlink/VLinkIndicator';
@@ -96,6 +96,8 @@ export default function EnhancedDriveModule({ businessId, dashboardId, className
   const { trashItem } = useGlobalTrash();
   const [pendingBulkItemsToTrash, setPendingBulkItemsToTrash] = useState<string[] | null>(null);
   const [isBulkMovingToTrash, setIsBulkMovingToTrash] = useState(false);
+  const [createFolderOpen, setCreateFolderOpen] = useState(false);
+  const [isCreatingFolder, setIsCreatingFolder] = useState(false);
 
   // Load files with enterprise data
   const loadEnhancedFiles = useCallback(async () => {
@@ -388,26 +390,28 @@ export default function EnhancedDriveModule({ businessId, dashboardId, className
     input.click();
   };
 
-  // Folder creation handler
-  const handleCreateFolder = async () => {
+  const requestCreateFolder = () => {
+    if (!session?.accessToken) return;
+    setCreateFolderOpen(true);
+  };
+
+  const executeCreateFolder = async (name: string) => {
     if (!session?.accessToken) return;
 
-    const name = prompt('Enter folder name:');
-    if (!name) return;
-
     try {
+      setIsCreatingFolder(true);
       setLoading(true);
-      
+
       const response = await fetch('/api/drive/folders', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${session.accessToken}`,
         },
-        body: JSON.stringify({ 
+        body: JSON.stringify({
           name,
           dashboardId: effectiveDashboardId,
-          parentId: currentFolder || null
+          parentId: currentFolder || null,
         }),
       });
 
@@ -415,13 +419,14 @@ export default function EnhancedDriveModule({ businessId, dashboardId, className
         throw new Error('Failed to create folder');
       }
 
-      // Refresh content
       await loadEnhancedFiles();
       toast.success('Folder created successfully');
+      setCreateFolderOpen(false);
     } catch (error) {
       console.error('Error creating folder:', error);
       toast.error('Failed to create folder. Please try again.');
     } finally {
+      setIsCreatingFolder(false);
       setLoading(false);
     }
   };
@@ -575,7 +580,7 @@ export default function EnhancedDriveModule({ businessId, dashboardId, className
           </p>
         </div>
         <div className="flex items-center space-x-3">
-            <Button variant="secondary" size="sm" onClick={handleCreateFolder}>
+            <Button variant="secondary" size="sm" onClick={requestCreateFolder}>
             <Folder className="w-4 h-4 mr-2" />
             New Folder
           </Button>
@@ -931,14 +936,6 @@ export default function EnhancedDriveModule({ businessId, dashboardId, className
                       <Share className="w-4 h-4" />
                     </Button>
                   </FeatureGate>
-                  
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={(e) => e.stopPropagation()}
-                  >
-                    <MoreVertical className="w-4 h-4" />
-                  </Button>
                 </div>
               </div>
             </div>
@@ -990,6 +987,12 @@ export default function EnhancedDriveModule({ businessId, dashboardId, className
         variant="destructive"
         confirmLabel="Move to trash"
         loading={isBulkMovingToTrash}
+      />
+      <DriveCreateFolderModal
+        open={createFolderOpen}
+        onClose={() => setCreateFolderOpen(false)}
+        onSubmit={executeCreateFolder}
+        loading={isCreatingFolder}
       />
     </div>
   );

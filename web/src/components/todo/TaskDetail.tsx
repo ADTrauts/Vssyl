@@ -39,10 +39,11 @@ interface TaskDetailProps {
   onUpdate: (data: UpdateTaskInput) => void;
   onDelete: () => void;
   onComplete: () => void;
+  onEdit?: () => void;
   onRefresh?: () => void;
 }
 
-export function TaskDetail({ task, onClose, onUpdate, onDelete, onComplete, onRefresh }: TaskDetailProps) {
+export function TaskDetail({ task, onClose, onUpdate, onDelete, onComplete, onEdit, onRefresh }: TaskDetailProps) {
   const { data: session } = useSession();
   const [comment, setComment] = useState('');
   const [linkedEvents, setLinkedEvents] = useState<Array<{ id: string; title: string; startAt: string; endAt: string; calendarId: string }>>([]);
@@ -1341,7 +1342,7 @@ export function TaskDetail({ task, onClose, onUpdate, onDelete, onComplete, onRe
           <CheckCircle2 className="w-4 h-4 mr-2" />
           Complete
         </Button>
-        <Button variant="secondary">
+        <Button variant="secondary" onClick={onEdit} disabled={!onEdit} title="Edit task">
           <Edit className="w-4 h-4" />
         </Button>
         <Button variant="ghost" onClick={onDelete}>

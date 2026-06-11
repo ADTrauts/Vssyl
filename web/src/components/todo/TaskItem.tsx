@@ -1,7 +1,7 @@
 'use client';
 
-import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { Card, Button, Badge, Avatar } from 'shared/components';
+import React, { useState, useRef, useEffect, useCallback, useMemo } from 'react';
+import { Card, Button, Badge, Avatar, DropdownMenu, ContextMenuItem } from 'shared/components';
 import { 
   CheckSquare, 
   Square, 
@@ -42,8 +42,7 @@ interface TaskItemProps {
 }
 
 export function TaskItem({ task, onSelect, onComplete, onReopen, onEdit, onDelete, onViewAttachments, view = 'list', draggableId, isDragging: externalIsDragging }: TaskItemProps) {
-  const [showMenu, setShowMenu] = useState(false);
-  const menuRef = useRef<HTMLDivElement>(null);
+  const [menuOpen, setMenuOpen] = useState(false);
   const dragHandleRef = useRef<HTMLDivElement>(null);
   const isCompleted = task.status === 'DONE';
   const isOverdue = task.dueDate && new Date(task.dueDate) < new Date() && !isCompleted;
@@ -113,23 +112,40 @@ export function TaskItem({ task, onSelect, onComplete, onReopen, onEdit, onDelet
     };
   }, [task]);
 
-  // Close menu when clicking outside
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setShowMenu(false);
-      }
-    };
+  const menuItems = useMemo((): ContextMenuItem[] => {
+    const items: ContextMenuItem[] = [];
 
-    if (showMenu) {
-      document.addEventListener('mousedown', handleClickOutside);
+    if (isCompleted && onReopen) {
+      items.push({
+        icon: <RotateCcw className="w-4 h-4" />,
+        label: 'Reopen Task',
+        onClick: () => onReopen(),
+      });
     }
 
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [showMenu]);
-  
+    if (onEdit) {
+      items.push({
+        icon: <Edit className="w-4 h-4" />,
+        label: 'Edit Task',
+        onClick: () => onEdit(),
+      });
+    }
+
+    if (onDelete) {
+      if (items.length > 0) {
+        items.push({ divider: true });
+      }
+      items.push({
+        icon: <Trash2 className="w-4 h-4" />,
+        label: 'Delete Task',
+        destructive: true,
+        onClick: () => onDelete(),
+      });
+    }
+
+    return items;
+  }, [isCompleted, onReopen, onEdit, onDelete]);
+
   const priorityColors: Record<string, string> = {
     URGENT: 'bg-red-100 text-red-800 border-red-300',
     HIGH: 'bg-orange-100 text-orange-800 border-orange-300',
@@ -390,68 +406,27 @@ export function TaskItem({ task, onSelect, onComplete, onReopen, onEdit, onDelet
         </div>
 
         {/* Actions - hide in compact view */}
-        {!isCompact && (
-          <div className="flex items-center gap-2 relative" ref={menuRef}>
-            <Button 
-              variant="ghost" 
-              size="sm"
-              onClick={(e) => {
-                e.stopPropagation();
-                setShowMenu(!showMenu);
-              }}
+        {!isCompact && menuItems.length > 0 && (
+          <div className="flex items-center gap-2">
+            <DropdownMenu
+              open={menuOpen}
+              onOpenChange={setMenuOpen}
+              items={menuItems}
+              menuLabel="Task actions"
+              align="end"
             >
-              <MoreVertical className="w-4 h-4" />
-            </Button>
-            
-            {/* Dropdown Menu */}
-            {showMenu && (
-              <div className="absolute right-0 top-full mt-1 z-50 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg shadow-lg py-1 min-w-[160px]">
-                {isCompleted && onReopen && (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onReopen();
-                      setShowMenu(false);
-                    }}
-                    className="w-full flex items-center gap-2 px-4 py-2 text-sm text-left text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800"
-                  >
-                    <RotateCcw className="w-4 h-4" />
-                    <span>Reopen Task</span>
-                  </button>
-                )}
-                {onEdit && (
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      onEdit();
-                      setShowMenu(false);
-                    }}
-                    className="w-full flex items-center gap-2 px-4 py-2 text-sm text-left text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800"
-                  >
-                    <Edit className="w-4 h-4" />
-                    <span>Edit Task</span>
-                  </button>
-                )}
-                {onDelete && (
-                  <>
-                    {(onEdit || (isCompleted && onReopen)) && (
-                      <div className="my-1 border-t border-gray-200 dark:border-slate-700" />
-                    )}
-                    <button
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onDelete();
-                        setShowMenu(false);
-                      }}
-                      className="w-full flex items-center gap-2 px-4 py-2 text-sm text-left text-red-600 hover:bg-red-50"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                      <span>Delete Task</span>
-                    </button>
-                  </>
-                )}
-              </div>
-            )}
+              <Button
+                variant="ghost"
+                size="sm"
+                aria-label="Task actions"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setMenuOpen((v) => !v);
+                }}
+              >
+                <MoreVertical className="w-4 h-4" />
+              </Button>
+            </DropdownMenu>
           </div>
         )}
       </div>

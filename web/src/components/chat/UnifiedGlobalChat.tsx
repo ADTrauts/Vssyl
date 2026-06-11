@@ -4,12 +4,12 @@ import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { useSession, getSession } from 'next-auth/react';
 import { useRouter } from 'next/navigation';
 import { Conversation, Message, Thread } from 'shared/types/chat';
-import { Button, Avatar, Badge, Spinner } from 'shared/components';
+import { Button, Avatar, Badge, Spinner, ContextMenu, ContextMenuItem, ConfirmModal } from 'shared/components';
+import { useGlobalTrash } from '../../contexts/GlobalTrashContext';
 import { 
   MessageSquare, 
   Send, 
   Smile, 
-  MoreHorizontal, 
   Reply, 
   X, 
   Hash,
@@ -51,21 +51,28 @@ const UnifiedGlobalChatMessageItem = React.memo(({
   hasEnterprise: boolean;
 }) => {
   const [showContextMenu, setShowContextMenu] = useState(false);
+  const [contextMenuPosition, setContextMenuPosition] = useState({ x: 0, y: 0 });
 
   const handleContextMenu = (e: React.MouseEvent) => {
     e.preventDefault();
+    setContextMenuPosition({ x: e.clientX, y: e.clientY });
     setShowContextMenu(true);
   };
 
-  const handleDelete = () => {
-    onDelete(message.id);
-    setShowContextMenu(false);
-  };
-
-  const handleReply = () => {
-    onReply(message);
-    setShowContextMenu(false);
-  };
+  const contextMenuItems = useMemo((): ContextMenuItem[] => [
+    {
+      icon: <Reply className="w-4 h-4" />,
+      label: 'Reply',
+      onClick: () => onReply(message),
+    },
+    { divider: true },
+    {
+      icon: <Trash2 className="w-4 h-4" />,
+      label: 'Delete',
+      destructive: true,
+      onClick: () => onDelete(message.id),
+    },
+  ], [message, onReply, onDelete]);
 
   return (
     <div
@@ -97,25 +104,13 @@ const UnifiedGlobalChatMessageItem = React.memo(({
         </div>
       </div>
 
-      {/* Context Menu */}
-      {showContextMenu && (
-        <div className="absolute right-2 top-2 bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg shadow-lg z-50 min-w-32">
-          <button
-            onClick={handleReply}
-            className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800 flex items-center space-x-2"
-          >
-            <Reply className="w-4 h-4" />
-            <span>Reply</span>
-          </button>
-          <button
-            onClick={handleDelete}
-            className="w-full text-left px-3 py-2 text-sm hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800 flex items-center space-x-2 text-red-600"
-          >
-            <Trash2 className="w-4 h-4" />
-            <span>Delete</span>
-          </button>
-        </div>
-      )}
+      <ContextMenu
+        open={showContextMenu}
+        onClose={() => setShowContextMenu(false)}
+        anchorPoint={contextMenuPosition}
+        items={contextMenuItems}
+        menuLabel="Message actions"
+      />
     </div>
   );
 });
@@ -194,11 +189,12 @@ export default function UnifiedGlobalChat({ className = '' }: UnifiedGlobalChatP
     setReplyToMessage,
     setDashboardOverride,
     clearDashboardOverride,
+    loadMessages,
   } = useChat();
+  const { trashItem } = useGlobalTrash();
   
   // UI state (local only)
   const [isMinimized, setIsMinimized] = useState(true);
-  const [showMenu, setShowMenu] = useState(false);
   const [chatSize, setChatSize] = useState<'small' | 'medium' | 'large'>('small');
   const [newMessage, setNewMessage] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
@@ -206,6 +202,8 @@ export default function UnifiedGlobalChat({ className = '' }: UnifiedGlobalChatP
   const unreadPollIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const [pendingMessageIdToTrash, setPendingMessageIdToTrash] = useState<string | null>(null);
+  const [isMovingMessageToTrash, setIsMovingMessageToTrash] = useState(false);
   
   // Initialize selected dashboard to first personal dashboard
   useEffect(() => {
@@ -332,11 +330,51 @@ export default function UnifiedGlobalChat({ className = '' }: UnifiedGlobalChatP
     setReplyToMessage(message);
   };
 
-  const handleDeleteMessage = async (messageId: string) => {
-    // Handle message deletion logic here
-    // TODO: Implement trash integration similar to main chat
-    console.log('Deleting message:', messageId);
-    toast('Message deletion coming soon', { icon: 'ℹ️' });
+  const requestDeleteMessage = (messageId: string) => {
+    setPendingMessageIdToTrash(messageId);
+  };
+
+  const executeDeleteMessage = async () => {
+    const messageId = pendingMessageIdToTrash;
+    if (!messageId) return;
+
+    const message = messages.find((m) => m.id === messageId);
+    if (!message) {
+      toast.error('Message not found');
+      setPendingMessageIdToTrash(null);
+      return;
+    }
+
+    setIsMovingMessageToTrash(true);
+    try {
+      const name =
+        message.content.length > 50 ? `${message.content.substring(0, 50)}...` : message.content;
+
+      await trashItem({
+        id: message.id,
+        name,
+        type: 'message',
+        moduleId: 'chat',
+        moduleName: 'Chat',
+        metadata: {
+          conversationId: message.conversationId,
+          senderId: message.senderId,
+        },
+      });
+
+      if (activeConversation?.id) {
+        await loadMessages(activeConversation.id);
+      }
+
+      toast.success('Message moved to trash');
+      setPendingMessageIdToTrash(null);
+    } catch (error: unknown) {
+      const err = error instanceof Error ? error : new Error('Failed to delete message');
+      console.error('Failed to delete message:', { message: err.message, stack: err.stack });
+      toast.error('Failed to move message to trash');
+    } finally {
+      setIsMovingMessageToTrash(false);
+    }
   };
 
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -594,7 +632,7 @@ export default function UnifiedGlobalChat({ className = '' }: UnifiedGlobalChatP
                           message={message}
                           isOwn={isOwnMessage(message)}
                           onReply={handleReply}
-                          onDelete={handleDeleteMessage}
+                          onDelete={requestDeleteMessage}
                           formatTime={formatTime}
                           hasEnterprise={hasEnterprise}
                         />
@@ -606,14 +644,6 @@ export default function UnifiedGlobalChat({ className = '' }: UnifiedGlobalChatP
                   {/* Message Input */}
                   <div className="p-3 border-t border-gray-200 dark:border-slate-700">
                     <div className="flex items-center space-x-2">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => setShowMenu(!showMenu)}
-                        className="p-2"
-                      >
-                        <MoreHorizontal className="w-4 h-4" />
-                      </Button>
                       <div className="flex-1">
                         <textarea
                           value={newMessage}
@@ -647,6 +677,17 @@ export default function UnifiedGlobalChat({ className = '' }: UnifiedGlobalChatP
           </div>
         )}
       </div>
+
+      <ConfirmModal
+        open={pendingMessageIdToTrash !== null}
+        onClose={() => setPendingMessageIdToTrash(null)}
+        onConfirm={executeDeleteMessage}
+        title="Move to trash?"
+        description="Are you sure you want to move this message to trash?"
+        variant="destructive"
+        confirmLabel="Move to trash"
+        loading={isMovingMessageToTrash}
+      />
     </div>
   );
 }

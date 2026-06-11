@@ -7,7 +7,7 @@ import {
   MENU_INNER_CLASS,
   renderMenuItem,
   type ContextMenuItem,
-} from './menuShared.js';
+} from './menuShared';
 
 export type DropdownMenuAlign = 'start' | 'end';
 export type DropdownMenuSide = 'bottom' | 'top';

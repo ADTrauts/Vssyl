@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect, useMemo, useRef } from 'react';
+import React, { useState, useEffect, useMemo, useRef, useCallback } from 'react';
 import { 
   Bell, 
   Settings, 
@@ -23,7 +23,8 @@ import {
   Zap,
   MapPin
 } from 'lucide-react';
-import { Avatar, Button, Badge, ConfirmModal } from 'shared/components';
+import { Avatar, Button, Badge, ConfirmModal, DropdownMenu, ContextMenuItem } from 'shared/components';
+import { PageHeader, PageToolbar } from '../../components/layouts';
 import { useSafeSession } from '../../lib/useSafeSession';
 import { useRouter } from 'next/navigation';
 import { getNotifications, markAsRead, markAllAsRead, getModuleNotificationTypes, archiveNotification, archiveMultipleNotifications, deleteNotification, deleteMultipleNotifications, getGroupedNotifications, markGroupAsRead, snoozeNotification, unsnoozeNotification, type Notification, type NotificationGroup } from '../../api/notifications';
@@ -104,6 +105,8 @@ export default function NotificationsPage() {
   const [priorityFilter, setPriorityFilter] = useState<'all' | 'urgent' | 'high' | 'normal' | 'low'>('all');
   const [focusedIndex, setFocusedIndex] = useState<number>(-1);
   const [showArchived, setShowArchived] = useState(false);
+  const [pendingBulkDelete, setPendingBulkDelete] = useState(false);
+  const [isBulkDeleting, setIsBulkDeleting] = useState(false);
   const limit = 50;
 
   // Load module notification types on mount
@@ -751,17 +754,27 @@ export default function NotificationsPage() {
     }
   };
 
-  const handleBulkDelete = async () => {
+  const requestBulkDelete = useCallback(() => {
     if (selectedNotifications.size === 0) return;
+    setPendingBulkDelete(true);
+  }, [selectedNotifications.size]);
+
+  const executeBulkDelete = useCallback(async () => {
+    if (!pendingBulkDelete || selectedNotifications.size === 0) return;
+    setIsBulkDeleting(true);
     try {
-      await deleteMultipleNotifications(Array.from(selectedNotifications));
+      const ids = Array.from(selectedNotifications);
+      await deleteMultipleNotifications(ids);
       setNotifications(prev => prev.filter(n => !selectedNotifications.has(n.id)));
       setSelectedNotifications(new Set());
       setSelectionMode(false);
+      setPendingBulkDelete(false);
     } catch (error) {
       console.error('Failed to delete notifications:', error);
+    } finally {
+      setIsBulkDeleting(false);
     }
-  };
+  }, [pendingBulkDelete, selectedNotifications]);
 
   const handleBulkMarkAsRead = async () => {
     if (selectedNotifications.size === 0) return;
@@ -798,140 +811,135 @@ export default function NotificationsPage() {
   if (!mounted || status === "loading") return null;
   if (!session?.user) return null;
 
-  return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
-      {/* Header */}
-      <div className="bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 px-6 py-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center space-x-3">
-            <Bell className="w-6 h-6 text-gray-700 dark:text-gray-300" />
-            <div>
-              <h1 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">Notifications</h1>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
-                {notifications.filter(n => !n.read).length} unread notifications
-              </p>
-            </div>
-          </div>
-          <div className="flex items-center space-x-3">
-            {/* View Mode Toggle */}
-            <div className="flex items-center space-x-1 border border-gray-300 dark:border-slate-600 rounded-lg p-1">
-              <button
-                onClick={() => setViewMode('list')}
-                className={`p-1.5 rounded transition-colors ${
-                  viewMode === 'list'
-                    ? 'bg-blue-500 text-white'
-                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700'
-                }`}
-                title="List View"
-              >
-                <List className="w-4 h-4" />
-              </button>
-              <button
-                onClick={() => setViewMode('grouped')}
-                className={`p-1.5 rounded transition-colors ${
-                  viewMode === 'grouped'
-                    ? 'bg-blue-500 text-white'
-                    : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700'
-                }`}
-                title="Grouped View"
-              >
-                <Layers className="w-4 h-4" />
-              </button>
-            </div>
-            
-            {selectionMode ? (
-              <>
-                <span className="text-sm text-gray-700 dark:text-gray-300">
-                  {selectedNotifications.size} selected
-                </span>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={handleBulkMarkAsRead}
-                  disabled={selectedNotifications.size === 0}
-                >
-                  <Check className="w-4 h-4 mr-2" />
-                  Mark as read
-                </Button>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={handleBulkArchive}
-                  disabled={selectedNotifications.size === 0}
-                >
-                  <Archive className="w-4 h-4 mr-2" />
-                  Archive
-                </Button>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={handleBulkDelete}
-                  disabled={selectedNotifications.size === 0}
-                >
-                  Delete
-                </Button>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={async () => {
-                    const selected = Array.from(selectedNotifications);
-                    try {
-                      await Promise.all(selected.map(id => snoozeNotification(id, '1d')));
-                      setNotifications(prev => prev.filter(n => !selectedNotifications.has(n.id)));
-                      setSelectedNotifications(new Set());
-                      setSelectionMode(false);
-                    } catch (error) {
-                      console.error('Failed to bulk snooze:', error);
-                    }
-                  }}
-                  disabled={selectedNotifications.size === 0}
-                >
-                  <Clock className="w-4 h-4 mr-2" />
-                  Snooze (1 day)
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => {
-                    setSelectionMode(false);
-                    setSelectedNotifications(new Set());
-                  }}
-                >
-                  Cancel
-                </Button>
-              </>
-            ) : (
-              <>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={() => setSelectionMode(true)}
-                >
-                  Select
-                </Button>
-                <Button
-                  variant="secondary"
-                  size="sm"
-                  onClick={handleMarkAllAsRead}
-                  disabled={notifications.filter(n => !n.read).length === 0}
-                >
-                  <Check className="w-4 h-4 mr-2" />
-                  Mark all as read
-                </Button>
-                <Button 
-                  variant="secondary" 
-                  size="sm"
-                  onClick={() => router.push('/notifications/settings')}
-                >
-                  <Settings className="w-4 h-4" />
-                </Button>
-              </>
-            )}
-          </div>
-        </div>
-      </div>
+  const unreadCount = notifications.filter((n) => !n.read).length;
 
-      <div className="flex h-[calc(100vh-80px)]">
+  const viewModeToggle = (
+    <div className="flex items-center space-x-1 border border-gray-300 dark:border-slate-600 rounded-lg p-1">
+      <button
+        onClick={() => setViewMode('list')}
+        className={`p-1.5 rounded transition-colors ${
+          viewMode === 'list'
+            ? 'bg-blue-500 text-white'
+            : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700'
+        }`}
+        title="List View"
+      >
+        <List className="w-4 h-4" />
+      </button>
+      <button
+        onClick={() => setViewMode('grouped')}
+        className={`p-1.5 rounded transition-colors ${
+          viewMode === 'grouped'
+            ? 'bg-blue-500 text-white'
+            : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700'
+        }`}
+        title="Grouped View"
+      >
+        <Layers className="w-4 h-4" />
+      </button>
+    </div>
+  );
+
+  const toolbarTrailing = selectionMode ? (
+    <>
+      <span className="text-sm text-gray-700 dark:text-gray-300">
+        {selectedNotifications.size} selected
+      </span>
+      <Button
+        variant="secondary"
+        size="sm"
+        onClick={handleBulkMarkAsRead}
+        disabled={selectedNotifications.size === 0}
+      >
+        <Check className="w-4 h-4 mr-2" />
+        Mark as read
+      </Button>
+      <Button
+        variant="secondary"
+        size="sm"
+        onClick={handleBulkArchive}
+        disabled={selectedNotifications.size === 0}
+      >
+        <Archive className="w-4 h-4 mr-2" />
+        Archive
+      </Button>
+      <Button
+        variant="secondary"
+        size="sm"
+        onClick={requestBulkDelete}
+        disabled={selectedNotifications.size === 0}
+      >
+        Delete
+      </Button>
+      <Button
+        variant="secondary"
+        size="sm"
+        onClick={async () => {
+          try {
+            await Promise.all(
+              Array.from(selectedNotifications).map((id) => snoozeNotification(id, '1d'))
+            );
+            setNotifications((prev) => prev.filter((n) => !selectedNotifications.has(n.id)));
+            setSelectedNotifications(new Set());
+            setSelectionMode(false);
+          } catch (error) {
+            console.error('Failed to bulk snooze:', error);
+          }
+        }}
+        disabled={selectedNotifications.size === 0}
+      >
+        <Clock className="w-4 h-4 mr-2" />
+        Snooze (1 day)
+      </Button>
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={() => {
+          setSelectionMode(false);
+          setSelectedNotifications(new Set());
+        }}
+      >
+        Cancel
+      </Button>
+    </>
+  ) : (
+    <>
+      {viewModeToggle}
+      <Button variant="secondary" size="sm" onClick={() => setSelectionMode(true)}>
+        Select
+      </Button>
+    </>
+  );
+
+  return (
+    <div className="flex h-full min-h-0 flex-col">
+      <PageHeader
+        title="Notifications"
+        description={`${unreadCount} unread notifications`}
+        icon={<Bell className="h-6 w-6" />}
+        actions={
+          <>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={handleMarkAllAsRead}
+              disabled={unreadCount === 0}
+            >
+              <Check className="w-4 h-4 mr-2" />
+              Mark all as read
+            </Button>
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => router.push('/notifications/settings')}
+            >
+              <Settings className="w-4 h-4" />
+            </Button>
+          </>
+        }
+      />
+
+      <div className="flex min-h-0 flex-1">
         {/* Left Sidebar - Categories */}
         <div className="w-64 bg-white dark:bg-slate-800 border-r border-gray-200 dark:border-slate-700 p-4">
           <div className="space-y-1">
@@ -963,93 +971,72 @@ export default function NotificationsPage() {
         </div>
 
         {/* Main Content - Notification List */}
-        <div className="flex-1 flex flex-col">
-          {/* Search and Filters */}
-          <div className="bg-white dark:bg-slate-800 border-b border-gray-200 dark:border-slate-700 p-4">
-            <div className="flex flex-col space-y-4">
-              {/* Top row: Search and basic filters */}
-              <div className="flex items-center space-x-4">
-                <div className="flex-1 relative">
-                  <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-500 dark:text-gray-400" />
+        <div className="flex min-h-0 flex-1 flex-col">
+          <PageToolbar
+            leading={
+              <>
+                <div className="relative min-w-0 flex-1">
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 transform text-gray-500 dark:text-gray-400" />
                   <input
                     type="text"
                     placeholder="Search notifications..."
                     value={searchQuery}
                     onChange={(e) => setSearchQuery(e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100 placeholder:text-gray-500 dark:placeholder:text-gray-400 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full rounded-lg border border-gray-300 bg-white py-2 pl-10 pr-4 text-gray-900 placeholder:text-gray-500 focus:border-transparent focus:ring-2 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-900 dark:text-gray-100 dark:placeholder:text-gray-400"
                   />
                 </div>
-                <div className="flex items-center space-x-2">
-                  <label className="flex items-center space-x-2 text-sm text-gray-700 dark:text-gray-300">
-                    <input
-                      type="checkbox"
-                      checked={showRead}
-                      onChange={(e) => setShowRead(e.target.checked)}
-                      className="rounded"
-                    />
-                    <span>Show read</span>
-                  </label>
-                </div>
-              </div>
-              
-              {/* Bottom row: Time range and Priority filters */}
-              <div className="flex items-center justify-between border-t border-gray-200 dark:border-slate-700 pt-3">
-                <div className="flex items-center space-x-4">
+                <label className="flex shrink-0 items-center space-x-2 text-sm text-gray-700 dark:text-gray-300">
+                  <input
+                    type="checkbox"
+                    checked={showRead}
+                    onChange={(e) => setShowRead(e.target.checked)}
+                    className="rounded"
+                  />
+                  <span>Show read</span>
+                </label>
+              </>
+            }
+            trailing={toolbarTrailing}
+            secondary={
+              <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                <div className="flex flex-wrap items-center gap-4">
                   <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Time Range:</span>
-                  <div className="flex items-center space-x-4">
-                    <label className="flex items-center space-x-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
-                      <input 
-                        type="radio" 
-                        name="timeRange" 
-                        value="today" 
-                        checked={timeRange === 'today'}
-                        onChange={(e) => setTimeRange(e.target.value as 'today' | 'week' | 'month' | 'all')}
-                        className="rounded" 
-                      />
-                      <span>Today</span>
-                    </label>
-                    <label className="flex items-center space-x-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
-                      <input 
-                        type="radio" 
-                        name="timeRange" 
-                        value="week" 
-                        checked={timeRange === 'week'}
-                        onChange={(e) => setTimeRange(e.target.value as 'today' | 'week' | 'month' | 'all')}
-                        className="rounded" 
-                      />
-                      <span>This week</span>
-                    </label>
-                    <label className="flex items-center space-x-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
-                      <input 
-                        type="radio" 
-                        name="timeRange" 
-                        value="month" 
-                        checked={timeRange === 'month'}
-                        onChange={(e) => setTimeRange(e.target.value as 'today' | 'week' | 'month' | 'all')}
-                        className="rounded" 
-                      />
-                      <span>This month</span>
-                    </label>
-                    <label className="flex items-center space-x-2 text-sm text-gray-700 dark:text-gray-300 cursor-pointer">
-                      <input 
-                        type="radio" 
-                        name="timeRange" 
-                        value="all" 
-                        checked={timeRange === 'all'}
-                        onChange={(e) => setTimeRange(e.target.value as 'today' | 'week' | 'month' | 'all')}
-                        className="rounded" 
-                      />
-                      <span>All time</span>
-                    </label>
+                  <div className="flex flex-wrap items-center gap-4">
+                    {(
+                      [
+                        ['today', 'Today'],
+                        ['week', 'This week'],
+                        ['month', 'This month'],
+                        ['all', 'All time'],
+                      ] as const
+                    ).map(([value, label]) => (
+                      <label
+                        key={value}
+                        className="flex cursor-pointer items-center space-x-2 text-sm text-gray-700 dark:text-gray-300"
+                      >
+                        <input
+                          type="radio"
+                          name="timeRange"
+                          value={value}
+                          checked={timeRange === value}
+                          onChange={(e) =>
+                            setTimeRange(e.target.value as 'today' | 'week' | 'month' | 'all')
+                          }
+                          className="rounded"
+                        />
+                        <span>{label}</span>
+                      </label>
+                    ))}
                   </div>
                 </div>
-                
                 <div className="flex items-center space-x-4">
                   <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Priority:</span>
                   <select
                     value={priorityFilter}
-                    onChange={(e) => setPriorityFilter(e.target.value as 'all' | 'urgent' | 'high' | 'normal' | 'low')}
-                    className="text-sm border border-gray-300 dark:border-slate-600 rounded px-2 py-1 bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    onChange={(e) =>
+                      setPriorityFilter(e.target.value as 'all' | 'urgent' | 'high' | 'normal' | 'low')
+                    }
+                    className="rounded border border-gray-300 bg-white px-2 py-1 text-sm text-gray-900 focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-900 dark:text-gray-100"
                   >
                     <option value="all">All</option>
                     <option value="urgent">Urgent</option>
@@ -1059,11 +1046,10 @@ export default function NotificationsPage() {
                   </select>
                 </div>
               </div>
-            </div>
-          </div>
+            }
+          />
 
-          {/* Notification List or Groups */}
-          <div className="flex-1 overflow-y-auto p-4">
+          <div className="min-h-0 flex-1 overflow-y-auto p-4">
             {loading ? (
               <div className="flex items-center justify-center h-64">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
@@ -1444,6 +1430,17 @@ export default function NotificationsPage() {
           </div>
         </div>
       </div>
+
+      <ConfirmModal
+        open={pendingBulkDelete}
+        onClose={() => setPendingBulkDelete(false)}
+        onConfirm={executeBulkDelete}
+        title="Delete notifications?"
+        description={`Are you sure you want to delete ${selectedNotifications.size} notification${selectedNotifications.size === 1 ? '' : 's'}?`}
+        variant="destructive"
+        confirmLabel="Delete"
+        loading={isBulkDeleting}
+      />
     </div>
   );
 }
@@ -1460,35 +1457,78 @@ interface NotificationActionsMenuProps {
 
 function NotificationActionsMenu({ notification, onArchive, onDelete, onMarkAsRead, onSnooze, onUnsnooze }: NotificationActionsMenuProps) {
   const [isOpen, setIsOpen] = useState(false);
-  const [showSnoozeOptions, setShowSnoozeOptions] = useState(false);
   const [pendingNotificationToDelete, setPendingNotificationToDelete] = useState<string | null>(null);
   const [isDeletingNotification, setIsDeletingNotification] = useState(false);
-  const menuRef = React.useRef<HTMLDivElement>(null);
-  
-  const isSnoozed = notification.snoozedUntil && new Date(notification.snoozedUntil) > new Date();
 
-  useEffect(() => {
-    const handleClickOutside = (event: MouseEvent) => {
-      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
-      }
-    };
+  const isSnoozed = Boolean(
+    notification.snoozedUntil && new Date(notification.snoozedUntil) > new Date()
+  );
 
-    if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
+  const menuItems = useMemo((): ContextMenuItem[] => {
+    const items: ContextMenuItem[] = [];
+
+    if (!notification.read) {
+      items.push({
+        icon: <Check className="w-4 h-4" />,
+        label: 'Mark as read',
+        onClick: () => onMarkAsRead(),
+      });
     }
 
-    return () => {
-      document.removeEventListener('mousedown', handleClickOutside);
-    };
-  }, [isOpen]);
+    if (isSnoozed) {
+      items.push({
+        icon: <Clock className="w-4 h-4" />,
+        label: 'Unsnooze',
+        onClick: () => onUnsnooze?.(),
+      });
+    } else if (onSnooze) {
+      items.push(
+        { heading: true, label: 'Snooze' },
+        {
+          icon: <Clock className="w-4 h-4" />,
+          label: '1 hour',
+          onClick: () => onSnooze('1h'),
+        },
+        {
+          icon: <Clock className="w-4 h-4 opacity-70" />,
+          label: '1 day',
+          onClick: () => onSnooze('1d'),
+        },
+        {
+          icon: <Clock className="w-4 h-4 opacity-70" />,
+          label: '1 week',
+          onClick: () => onSnooze('1w'),
+        }
+      );
+    }
 
-  const closeMenu = () => {
-    setIsOpen(false);
-    setShowSnoozeOptions(false);
-  };
+    items.push({
+      icon: <Archive className="w-4 h-4" />,
+      label: 'Archive',
+      onClick: () => onArchive(),
+    });
 
-  const executeDeleteNotification = async () => {
+    items.push(
+      { divider: true },
+      {
+        label: 'Delete',
+        destructive: true,
+        onClick: () => setPendingNotificationToDelete(notification.id),
+      }
+    );
+
+    return items;
+  }, [
+    notification.read,
+    notification.id,
+    isSnoozed,
+    onMarkAsRead,
+    onUnsnooze,
+    onSnooze,
+    onArchive,
+  ]);
+
+  const executeDeleteNotification = useCallback(async () => {
     if (pendingNotificationToDelete !== notification.id) return;
     setIsDeletingNotification(true);
     try {
@@ -1497,123 +1537,28 @@ function NotificationActionsMenu({ notification, onArchive, onDelete, onMarkAsRe
     } finally {
       setIsDeletingNotification(false);
     }
-  };
+  }, [pendingNotificationToDelete, notification.id, onDelete]);
 
   return (
     <>
-    <div className="relative" ref={menuRef}>
-      <button
-        className="p-1 hover:bg-gray-100 dark:hover:bg-slate-700 rounded"
-        onClick={(e) => {
-          e.stopPropagation();
-          setIsOpen(!isOpen);
-        }}
+      <DropdownMenu
+        open={isOpen}
+        onOpenChange={setIsOpen}
+        items={menuItems}
+        menuLabel="Notification actions"
+        align="end"
       >
-        <MoreHorizontal className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-      </button>
-      
-      {isOpen && (
-        <div className="absolute right-0 mt-2 w-48 bg-white dark:bg-slate-800 rounded-lg shadow-lg border border-gray-200 dark:border-slate-700 z-10">
-          <div className="py-1">
-            {!notification.read && (
-              <button
-                className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 flex items-center space-x-2"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onMarkAsRead();
-                  setIsOpen(false);
-                }}
-              >
-                <Check className="w-4 h-4" />
-                <span>Mark as read</span>
-              </button>
-            )}
-            {isSnoozed ? (
-              <button
-                className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 flex items-center space-x-2"
-                onClick={(e) => {
-                  e.stopPropagation();
-                  onUnsnooze?.();
-                  setIsOpen(false);
-                }}
-              >
-                <Clock className="w-4 h-4" />
-                <span>Unsnooze</span>
-              </button>
-            ) : (
-              <>
-                <button
-                  className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 flex items-center space-x-2"
-                  onClick={(e) => {
-                    e.stopPropagation();
-                    setShowSnoozeOptions(!showSnoozeOptions);
-                  }}
-                >
-                  <Clock className="w-4 h-4" />
-                  <span>Snooze</span>
-                  <ChevronRight className={`w-3 h-3 ml-auto transition-transform ${showSnoozeOptions ? 'rotate-90' : ''}`} />
-                </button>
-                {showSnoozeOptions && (
-                  <div className="pl-8 border-t border-gray-100 dark:border-slate-700">
-                    <button
-                      className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onSnooze?.('1h');
-                        setIsOpen(false);
-                      }}
-                    >
-                      1 hour
-                    </button>
-                    <button
-                      className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onSnooze?.('1d');
-                        setIsOpen(false);
-                      }}
-                    >
-                      1 day
-                    </button>
-                    <button
-                      className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        onSnooze?.('1w');
-                        setIsOpen(false);
-                      }}
-                    >
-                      1 week
-                    </button>
-                  </div>
-                )}
-              </>
-            )}
-            <button
-              className="w-full text-left px-4 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700 flex items-center space-x-2"
-              onClick={(e) => {
-                e.stopPropagation();
-                onArchive();
-                setIsOpen(false);
-              }}
-            >
-              <Archive className="w-4 h-4" />
-              <span>Archive</span>
-            </button>
-            <button
-              className="w-full text-left px-4 py-2 text-sm text-red-600 dark:text-red-400 hover:bg-gray-100 dark:hover:bg-slate-700 flex items-center space-x-2"
-              onClick={(e) => {
-                e.stopPropagation();
-                closeMenu();
-                setPendingNotificationToDelete(notification.id);
-              }}
-            >
-              <span>Delete</span>
-            </button>
-          </div>
-        </div>
-      )}
-    </div>
+        <button
+          type="button"
+          className="p-1 hover:bg-gray-100 dark:hover:bg-slate-700 rounded"
+          onClick={(e) => {
+            e.stopPropagation();
+            setIsOpen((v) => !v);
+          }}
+        >
+          <MoreHorizontal className="w-4 h-4 text-gray-500 dark:text-gray-400" />
+        </button>
+      </DropdownMenu>
 
     <ConfirmModal
       open={pendingNotificationToDelete === notification.id}

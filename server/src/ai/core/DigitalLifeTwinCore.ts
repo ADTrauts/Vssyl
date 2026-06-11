@@ -28,6 +28,12 @@ import { fetchAccessibleActiveFiles } from '../../services/driveVisibilityServic
 import { AI_TOOL_DEFINITIONS } from '../tools/toolDefinitions';
 import type { AIToolName } from '../tools/toolDefinitions';
 import { getModel } from '../providers/modelCatalog';
+import {
+  finalizeRoutingEffectiveProvider,
+  resolveLlmFallback,
+  resolveVisionModelForProvider,
+  selectLlmProvider,
+} from '../providers/providerRouting';
 import { assembleAIContext } from '../context/AIContextAssembler';
 import type { AIAssembledContext } from '../context/AIContextAssembler';
 import {
@@ -1364,11 +1370,13 @@ export class DigitalLifeTwinCore {
       }
     }
     
-    const provider = this.selectAIProvider(
-      (analysis as any)?.complexity || 'medium',
-      query.query,
-      preferredProvider
-    );
+    const { provider: selectedProvider, routing: llmProviderRouting } = selectLlmProvider({
+      query: query.query,
+      complexity: (analysis as { complexity?: string })?.complexity || 'medium',
+      preferredProvider,
+      preferredModel: query.preferredModel,
+    });
+    let provider = selectedProvider;
 
     // Model selection: 1) request override (query.preferredModel) 2) user pref for this provider 3) vision block may override to vision-capable model when images present
     let resolvedModel: string | null = query.preferredModel && query.preferredModel.trim() ? query.preferredModel.trim() : null;
@@ -1419,44 +1427,40 @@ export class DigitalLifeTwinCore {
       options.onChunk = streamOptions.onChunk;
     }
 
-    // Phase 4: capability-aware vision — ensure vision model when images present; apply modelOverride for cloud providers
     const visionParts = options.visionImageParts as unknown[] | undefined;
     const hasVisionParts = Array.isArray(visionParts) && visionParts.length > 0;
-    let modelOverride: string | null = null;
-
-    if (hasVisionParts) {
-      const { getProviderCapabilities } = await import('../providers/capabilities');
-      const caps = getProviderCapabilities(provider as 'openai' | 'anthropic' | 'local');
-      if (caps.supportsVisionInput && caps.visionModel) {
-        const preferredSupportsVision = resolvedModel ? (getModel(resolvedModel)?.supportsVision ?? false) : false;
-        modelOverride = preferredSupportsVision && resolvedModel ? resolvedModel : caps.visionModel;
-        options.visionModelOverride = modelOverride;
-        await logger.info(`${VISION_PIPELINE_PREFIX} vision request → model`, {
-          operation: 'vision_pipeline_model_selection',
-          requestId: traceContext?.requestId,
-          conversationId: traceContext?.conversationId,
-          provider,
-          model: modelOverride,
-          visionPartsCount: visionParts.length,
-        });
-      } else {
-        await logger.info(`${VISION_PIPELINE_PREFIX} vision not supported by provider, using file summaries only`, {
-          operation: 'vision_pipeline_no_vision',
-          requestId: traceContext?.requestId,
-          conversationId: traceContext?.conversationId,
-          provider,
-        });
-        delete options.visionImageParts;
-      }
-    } else if (resolvedModel && (provider === 'openai' || provider === 'anthropic')) {
-      modelOverride = resolvedModel;
+    const visionResolution = resolveVisionModelForProvider(
+      provider,
+      resolvedModel,
+      hasVisionParts,
+      llmProviderRouting
+    );
+    if (visionResolution.stripVisionParts) {
+      delete options.visionImageParts;
+      await logger.info(`${VISION_PIPELINE_PREFIX} vision not supported by provider, using file summaries only`, {
+        operation: 'vision_pipeline_no_vision',
+        requestId: traceContext?.requestId,
+        conversationId: traceContext?.conversationId,
+        provider,
+      });
+    } else if (visionResolution.modelOverride && hasVisionParts) {
+      options.visionModelOverride = visionResolution.modelOverride;
+      await logger.info(`${VISION_PIPELINE_PREFIX} vision request → model`, {
+        operation: 'vision_pipeline_model_selection',
+        requestId: traceContext?.requestId,
+        conversationId: traceContext?.conversationId,
+        provider,
+        model: visionResolution.modelOverride,
+        visionPartsCount: visionParts.length,
+      });
     }
-
+    const modelOverride = visionResolution.modelOverride;
     if (modelOverride && (provider === 'openai' || provider === 'anthropic')) {
       options.modelOverride = modelOverride;
     }
 
     const ctxRecord = query.context as Record<string, unknown>;
+    ctxRecord.llmProviderRouting = llmProviderRouting;
     const pipelineOptions = ctxRecord.pipelineOptions as
       | { skipEnforcement?: boolean; adminDryRun?: boolean }
       | undefined;
@@ -1766,26 +1770,50 @@ export class DigitalLifeTwinCore {
       (metadata.code === 'RATE_LIMITED' || metadata.code === 'TEMP_UNAVAILABLE') &&
       (provider === 'openai' || provider === 'anthropic');
 
+    let effectiveProvider = provider;
     if (shouldFallback) {
-      const fallbackProvider = provider === 'openai' ? 'anthropic' : 'openai';
-      await logger.info(`${VISION_PIPELINE_PREFIX} provider fallback (${provider} → ${fallbackProvider})`, {
-        operation: 'vision_pipeline_fallback',
-        requestId: traceContext?.requestId,
-        conversationId: traceContext?.conversationId,
-        fromProvider: provider,
-        toProvider: fallbackProvider,
-        reason: metadata.code,
-      });
-      aiResponse = await this.callAIProvider(fallbackProvider, query.query, options);
+      const fallbackCode = typeof metadata.code === 'string' ? metadata.code : 'TEMP_UNAVAILABLE';
+      const fallbackResolution = resolveLlmFallback(
+        provider,
+        fallbackCode,
+        {
+          vision: hasVisionParts && !visionResolution.stripVisionParts,
+          toolCalls: Boolean(options.tools),
+          streaming: Boolean(streamOptions?.stream),
+        },
+        llmProviderRouting
+      );
+      if (fallbackResolution) {
+        const fallbackProvider = fallbackResolution.fallbackProvider;
+        await logger.info(`${VISION_PIPELINE_PREFIX} provider fallback (${provider} → ${fallbackProvider})`, {
+          operation: 'vision_pipeline_fallback',
+          requestId: traceContext?.requestId,
+          conversationId: traceContext?.conversationId,
+          fromProvider: provider,
+          toProvider: fallbackProvider,
+          reason: fallbackCode,
+        });
+        if (fallbackResolution.stripTools) {
+          delete options.tools;
+          delete options.messages;
+        }
+        if (fallbackResolution.stripVisionParts) {
+          delete options.visionImageParts;
+          delete options.visionModelOverride;
+        }
+        aiResponse = await this.callAIProvider(fallbackProvider, query.query, options);
+        effectiveProvider = fallbackProvider;
+        finalizeRoutingEffectiveProvider(llmProviderRouting, fallbackProvider);
+      }
     }
+    ctxRecord.llmProviderRouting = llmProviderRouting;
 
     const response = typeof aiResponse.response === 'string' ? aiResponse.response : String(aiResponse.response || '');
     const confidence = typeof aiResponse.confidence === 'number' ? aiResponse.confidence : 0.5;
     const reasoning = typeof aiResponse.reasoning === 'string' ? aiResponse.reasoning : "Generated based on your digital life patterns and personality";
     const finalMetadata = aiResponse.metadata && typeof aiResponse.metadata === 'object' ? aiResponse.metadata as Record<string, unknown> : {};
     const finalProviderErrored = Boolean(finalMetadata.error);
-    const usedVisionParts = hasVisionParts && !finalProviderErrored;
-    const effectiveProvider = shouldFallback ? (provider === 'openai' ? 'anthropic' : 'openai') : provider;
+    const usedVisionParts = hasVisionParts && !finalProviderErrored && !visionResolution.stripVisionParts;
 
     const assembledForQuality =
       options?.assembledContext && typeof options.assembledContext === 'object'
@@ -2261,31 +2289,6 @@ export class DigitalLifeTwinCore {
     }
     
     return Math.min(alignment, 1.0);
-  }
-
-  // Provider and settings methods
-  private selectAIProvider(
-    complexity: string, 
-    query: string, 
-    preferredProvider?: 'auto' | 'openai' | 'anthropic'
-  ): string {
-    // Always check sensitive content first (highest priority - security)
-    const sensitiveContent = this.containsSensitiveContent(query);
-    if (sensitiveContent) return 'local';
-    
-    // If user specified a provider preference, use it (unless sensitive content)
-    if (preferredProvider && preferredProvider !== 'auto') {
-      return preferredProvider;
-    }
-    
-    // Otherwise use existing intelligent selection logic
-    if (complexity === 'high') return 'anthropic';
-    return 'openai';
-  }
-
-  private containsSensitiveContent(query: string): boolean {
-    const sensitiveKeywords = ['password', 'ssn', 'credit card', 'bank', 'medical', 'health'];
-    return sensitiveKeywords.some(keyword => query.toLowerCase().includes(keyword));
   }
 
   /**

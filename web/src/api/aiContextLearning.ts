@@ -17,7 +17,7 @@ export interface PendingLearningFromTwin {
 
 export async function fetchPendingLearnings(token: string): Promise<PendingLearningItem[]> {
   const res = await authenticatedApiCall<{ success: boolean; data: PendingLearningItem[] }>(
-    '/api/ai/context/pending',
+    '/api/ai/user-context/pending',
     { method: 'GET' },
     token
   );
@@ -30,7 +30,7 @@ export async function reviewPendingLearning(
   action: 'promote' | 'dismiss'
 ): Promise<void> {
   await authenticatedApiCall(
-    `/api/ai/context/${id}/review`,
+    `/api/ai/user-context/${id}/review`,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },

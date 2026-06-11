@@ -1,181 +1,152 @@
 # Vssyl UX Certification Scorecard
 
-**Status:** Wave 0 foundation (2026-06-03)  
-**Usage:** Score modules during Wave 4–5 audits using [`UX_AUDIT_TEMPLATE.md`](./UX_AUDIT_TEMPLATE.md).  
-**No modules are certified in Wave 0.**
+**Status:** Wave 5A framework (2026-06-03)  
+**Supersedes:** Wave 0 numeric 0–5 rubric (preserved in [Appendix A](#appendix-a-legacy-numeric-rubric-wave-0))  
+**Standard:** [`UX_CERTIFICATION_STANDARD.md`](./UX_CERTIFICATION_STANDARD.md)  
+**Benchmark:** Drive / File Hub — [`audits/REFERENCE_MODULE_DRIVE.md`](./audits/REFERENCE_MODULE_DRIVE.md)
 
 ---
 
-## Certification levels
+## How to use
 
-| Level | Name | Meaning |
-|-------|------|---------|
-| **UX-L0** | Unreviewed | No UX audit; legacy patterns acceptable temporarily |
-| **UX-L1** | Basic compliance | Constitution followed; no critical a11y blockers |
-| **UX-L2** | Consistent module UX | Tokens, layout, components, states largely aligned |
-| **UX-L3** | Reference-quality UX | Other modules should copy this module’s UX patterns |
-| **Reference UX Module** | Canonical example | Formally designated in roadmap after council-style review |
+1. Copy category table into a module audit (`docs/ux/audits/[MODULE]_UX_SCORECARD.md`).
+2. Rate each category: **PASS**, **PASS WITH FINDINGS**, or **FAIL**.
+3. Document findings with ID, severity, and remediation wave.
+4. Apply level thresholds below for L1 / L2 / L3 / Reference designation.
 
-Architecture certification (L0–L3 code) is separate — see [`docs/architecture/CERTIFICATION_LEDGER.md`](../architecture/CERTIFICATION_LEDGER.md).
+**Worksheet:** [`UX_AUDIT_TEMPLATE.md`](./UX_AUDIT_TEMPLATE.md)
 
 ---
 
-## Scoring model
+## Category ratings
 
-Each category: **0–5** (integers only).
+| Rating | Definition |
+|--------|------------|
+| **PASS** | Meets standard for target level; no material gaps |
+| **PASS WITH FINDINGS** | Meets bar; documented exceptions or pending human verification |
+| **FAIL** | Violates standard; blocks certification at target level |
+
+---
+
+## Scoring categories
+
+| # | Category | What to evaluate |
+|---|----------|------------------|
+| 1 | **Interaction Consistency** | Confirm gates, trash flows, bulk actions, drag/DnD, keyboard deletes, feedback on success/failure |
+| 2 | **Layout Consistency** | Approved archetype; `WorkspaceSplitLayout` / `PlatformShell` / `PageHeader`+`PageToolbar` as appropriate |
+| 3 | **Navigation** | Hub landing, sidebar, breadcrumbs, deep links, context switch (personal/business) |
+| 4 | **Accessibility** | Labels, focus, keyboard paths, modal escape, contrast baseline, screen reader on primary flows |
+| 5 | **Mobile** | 375px usability; touch targets; overflow; responsive shell behavior |
+| 6 | **Cross-Module Integration** | Global trash, notifications, realtime, search, V_Link — no tenant leaks |
+| 7 | **Error Handling** | API failures surfaced; retry or clear messaging; no silent errors on primary actions |
+| 8 | **Empty States** | Intentional empty UI with guidance and optional CTA |
+| 9 | **Loading States** | Initial load, action-in-progress, skeleton/spinner patterns |
+| 10 | **Discoverability** | Primary actions visible; shortcuts documented match implementation; module entry obvious |
+| 11 | **Workflow Completion** | End-to-end journeys completable (create → manage → archive/delete) without dead ends |
+
+---
+
+## Level thresholds
+
+### UX-L1 — Certified
+
+| Rule | Threshold |
+|------|-----------|
+| Categories | **No FAIL** in categories 1, 3, 4, 7 |
+| Minimum PASS | At least **8 of 11** categories PASS |
+| PASS WITH FINDINGS | Allowed in categories 5, 6, 8, 9, 10, 11 |
+| Blockers | Zero native `prompt()`/`confirm()` on user paths; destructive actions confirmed |
+
+### UX-L1 — Certified with Findings
+
+Same as L1 Certified, but **3+** categories PASS WITH FINDINGS — findings must be documented with owner wave.
+
+### UX-L2 — Certified
+
+| Rule | Threshold |
+|------|-----------|
+| Prerequisite | UX-L1 Certified (or Certified with Findings) |
+| Categories | **No FAIL** in categories 1, 2, 3, 5, 7, 8, 9 |
+| Minimum PASS | At least **9 of 11** categories PASS |
+| Layout + primitives | Categories 2 and 5 must be **PASS** or **PASS WITH FINDINGS** (not FAIL) |
+| Menus | Category 1 includes menu primitive compliance |
+
+### UX-L2 — Certified with Findings
+
+L2 bar met; **2+** categories PASS WITH FINDINGS — typically mobile, a11y, or cross-module edges.
+
+### UX-L3 — Certified
+
+| Rule | Threshold |
+|------|-----------|
+| Prerequisite | UX-L2 Certified |
+| Categories | **No FAIL** in any category |
+| Minimum PASS | At least **9 of 11** categories **PASS** (not merely PASS WITH FINDINGS) |
+| Core quartet | Categories **1, 2, 4, 11** must be **PASS** |
+| Evidence | Manual QA matrix executed or explicitly waived by product |
+
+### UX-L3 — Certified with Findings
+
+L3 bar met; up to **2** categories may be PASS WITH FINDINGS if documented and non-blocking (e.g. mobile QA pending, advisory product stubs).
+
+### Reference Module designation
+
+| Rule | Threshold |
+|------|-----------|
+| Prerequisite | **UX-L3 Certified with Findings** minimum |
+| Program | Registered per [`REFERENCE_MODULE_PROGRAM.md`](./REFERENCE_MODULE_PROGRAM.md) |
+| Benchmark role | At least one category scored PASS at reference quality with audit rationale |
+| Council | Product + engineering sign-off on registration doc |
+
+**Current Reference UX Module #1:** Drive — see [`audits/REFERENCE_MODULE_DRIVE.md`](./audits/REFERENCE_MODULE_DRIVE.md).
+
+---
+
+## Certification decision matrix
+
+| Scorecard result | Level awarded | Reference eligible? |
+|------------------|---------------|---------------------|
+| All PASS at L1 bar | UX-L1 Certified | No |
+| L1 bar + findings | UX-L1 Certified with Findings | No |
+| All PASS at L2 bar | UX-L2 Certified | No |
+| L2 bar + findings | UX-L2 Certified with Findings | No |
+| L3 bar all PASS | UX-L3 Certified | Yes (pending registration) |
+| L3 bar + ≤2 findings | UX-L3 Certified with Findings | Yes (Drive model) |
+| Any FAIL below bar | Not certified | No |
+
+---
+
+## Drive benchmark quick reference
+
+Use Drive audits when scoring other modules:
+
+| Category | Drive evidence |
+|----------|----------------|
+| Interaction | 3B-1–3B-5 closeouts |
+| Layout | 3C-2 `WorkspaceSplitLayout` |
+| Navigation | `DriveSidebar`, business hub |
+| Accessibility | 3B-5 keyboard + trash a11y |
+| Menus | 3A-3 closeout |
+| Workflow | [`DRIVE_INTERACTION_MANUAL_QA_MATRIX.md`](./audits/DRIVE_INTERACTION_MANUAL_QA_MATRIX.md) |
+
+---
+
+## Appendix A — Legacy numeric rubric (Wave 0)
+
+Preserved for historical audits. **New certifications use PASS / PASS WITH FINDINGS / FAIL only.**
 
 | Score | Meaning |
 |-------|---------|
-| **0** | Missing or actively violates standard |
-| **1** | Ad hoc implementation; major gaps |
-| **2** | Partial compliance; inconsistent |
-| **3** | Acceptable; meets minimum bar (UX-L1 threshold) |
-| **4** | Strong; minor remediation |
-| **5** | Exemplary; suitable as reference for this category |
+| 0–5 per category | See Wave 0 definitions (tokens, typography, color, layout, components, interaction, a11y, dark, responsive, polish) |
 
-**UX-L1:** No category below 3; average ≥ 3.0.  
-**UX-L2:** No category below 3; at least 7 categories ≥ 4; average ≥ 3.8.  
-**UX-L3:** All categories ≥ 4; at least 5 categories = 5; average ≥ 4.2.
-
----
-
-## Categories
-
-### 1. Token compliance
-
-| Score | Definition |
-|-------|------------|
-| 0 | Module-local token file or pervasive raw hex |
-| 3 | Mix of legacy and some `--v-*` / semantic vars |
-| 5 | New UI exclusively uses shared token families |
-
-**Evidence:** Grep for hex in module; inspect `tokens.css` usage; Rule 11 compliance.
-
----
-
-### 2. Typography compliance
-
-| Score | Definition |
-|-------|------------|
-| 0 | Random font sizes/weights throughout |
-| 3 | Mostly consistent; some one-off headings |
-| 5 | Full type scale from [`DESIGN_TOKENS.md`](./DESIGN_TOKENS.md) |
-
-**Evidence:** Screenshot matrix; computed style audit on H1/body/caption.
-
----
-
-### 3. Color usage
-
-| Score | Definition |
-|-------|------------|
-| 0 | Illegible contrast; color-only state |
-| 3 | Meets `ui-standards.mdc` minimums; minor issues |
-| 5 | Semantic colors + dark mode verified; no contrast failures |
-
-**Evidence:** Contrast checks light/dark; state indicators not color-only.
-
----
-
-### 4. Layout compliance
-
-| Score | Definition |
-|-------|------------|
-| 0 | No recognizable archetype; broken mobile |
-| 3 | Correct archetype; minor region gaps |
-| 5 | Full archetype with optional regions used correctly |
-
-**Evidence:** Map to [`LAYOUT_PATTERNS.md`](./LAYOUT_PATTERNS.md); responsive screenshots.
-
----
-
-### 5. Component reuse
-
-| Score | Definition |
-|-------|------------|
-| 0 | Duplicated primitives; custom modals everywhere |
-| 3 | Shared components for primary patterns |
-| 5 | Shared primitives; no duplicate button/modal implementations |
-
-**Evidence:** Import audit from `shared/components`.
-
----
-
-### 6. Interaction consistency
-
-| Score | Definition |
-|-------|------------|
-| 0 | Missing loading/empty/error; chaotic feedback |
-| 3 | Core flows covered per [`INTERACTION_STANDARDS.md`](./INTERACTION_STANDARDS.md) |
-| 5 | Matches Drive/Chat-level polish for module operations |
-
-**Evidence:** Flow videos; empty/error path checklist.
-
----
-
-### 7. Accessibility
-
-| Score | Definition |
-|-------|------------|
-| 0 | Keyboard trap; no labels; contrast failures |
-| 3 | Checklist mostly pass; known minor issues documented |
-| 5 | WCAG AA verified on primary flows |
-
-**Evidence:** [`ACCESSIBILITY_STANDARDS.md`](./ACCESSIBILITY_STANDARDS.md) checklist results.
-
----
-
-### 8. Dark mode support
-
-| Score | Definition |
-|-------|------------|
-| 0 | Broken or unreadable in dark mode |
-| 3 | Usable; some hardcoded light surfaces |
-| 5 | All module surfaces tested; tokens adapt correctly |
-
-**Evidence:** Screenshot pairs light/dark for main views.
-
----
-
-### 9. Responsive behavior
-
-| Score | Definition |
-|-------|------------|
-| 0 | Unusable on mobile |
-| 3 | Core tasks possible; cramped or overflow issues |
-| 5 | Layout pattern mobile rules fully implemented |
-
-**Evidence:** Viewport 375px and 1280px screenshots.
-
----
-
-### 10. Visual polish
-
-| Score | Definition |
-|-------|------------|
-| 0 | Cluttered, misaligned, inconsistent spacing |
-| 3 | Professional; minor alignment/spacing issues |
-| 5 | Reference-quality spacing, elevation, motion |
-
-**Evidence:** Design review notes; comparison to Reference UX Module.
-
----
-
-## Reference UX Module designation
-
-Separate from per-module UX-L3:
-
-- Candidate identified in [`UX_MODERNIZATION_ROADMAP.md`](./UX_MODERNIZATION_ROADMAP.md)
-- Confirmed only after audit + remediation
-- Recorded in Memory Bank / UX ledger (future) when process exists
-
-**Current candidate (not certified):** Drive / File Hub.
+**Legacy thresholds:** L1 avg ≥3.0; L2 avg ≥3.8; L3 avg ≥4.2 — superseded by category PASS rules above.
 
 ---
 
 ## Related
 
-- [`UX_AUDIT_TEMPLATE.md`](./UX_AUDIT_TEMPLATE.md)
-- [`UX_CONSTITUTION.md`](./UX_CONSTITUTION.md)
+- [`UX_CERTIFICATION_STANDARD.md`](./UX_CERTIFICATION_STANDARD.md)
+- [`REFERENCE_MODULE_PROGRAM.md`](./REFERENCE_MODULE_PROGRAM.md)
+- [`audits/DRIVE_REFERENCE_UX_SCORECARD.md`](./audits/DRIVE_REFERENCE_UX_SCORECARD.md) (3B-6 pre-5A module scorecard)
 
-**Last updated:** 2026-06-03
+**Last updated:** 2026-06-03 (Wave 5A)

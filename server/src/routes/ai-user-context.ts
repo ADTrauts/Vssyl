@@ -5,7 +5,10 @@ import * as userAIContextController from '../controllers/userAIContextController
 const router: express.Router = express.Router();
 
 /**
- * GET /api/ai/context
+ * Canonical mount: /api/ai/user-context (Wave 1B).
+ * Legacy mount /api/ai/context retained for migration — do not use GET /api/ai/context (twin aggregate).
+ *
+ * GET /api/ai/user-context
  * Get all user-defined context entries, optionally filtered
  */
 router.get('/', authenticateJWT, userAIContextController.getUserAIContext);

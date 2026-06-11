@@ -1,12 +1,21 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { useSession } from 'next-auth/react';
-import { Button, Card, Badge, Spinner } from 'shared/components';
-import { Plus, List, LayoutGrid, Calendar, Filter, MoreVertical, Folder } from 'lucide-react';
+import { Button, Spinner, ConfirmModal, Popover } from 'shared/components';
+import { Plus, List, LayoutGrid, Calendar, Filter, Folder, CheckSquare } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { useDashboard } from '@/contexts/DashboardContext';
+import {
+  PageHeader,
+  PageToolbar,
+  WorkspaceSplitLayout,
+  WorkspaceSidebar,
+  WorkspaceMain,
+  WorkspaceSecondary,
+} from '@/components/layouts';
 import * as todoAPI from '@/api/todo';
+import type { TaskStatus, TaskPriority } from '@/api/todo';
 import { calendarAPI } from '@/api/calendar';
 import type { Task, TaskProject } from '@/api/todo';
 import type { EventItem } from '@/api/calendar';
@@ -52,8 +61,38 @@ export function TodoModule({ dashboardId, businessId, householdId }: TodoModuleP
   const [showTaskForm, setShowTaskForm] = useState(false);
   const [editingTask, setEditingTask] = useState<Task | null>(null);
   const [initialDueDate, setInitialDueDate] = useState<Date | undefined>(undefined);
+  const [pendingTaskToDelete, setPendingTaskToDelete] = useState<{ id: string; title: string } | null>(null);
+  const [isDeletingTask, setIsDeletingTask] = useState(false);
+  const [statusFilter, setStatusFilter] = useState<'all' | TaskStatus>('all');
+  const [priorityFilter, setPriorityFilter] = useState<'all' | TaskPriority>('all');
+  const [hideCompleted, setHideCompleted] = useState(false);
+  const [showFilterPopover, setShowFilterPopover] = useState(false);
 
   const effectiveDashboardId = dashboardId || currentDashboardId;
+
+  const filteredTasks = useMemo(() => {
+    return tasks.filter((task) => {
+      if (hideCompleted && task.status === 'DONE') return false;
+      if (statusFilter !== 'all' && task.status !== statusFilter) return false;
+      if (priorityFilter !== 'all' && task.priority !== priorityFilter) return false;
+      return true;
+    });
+  }, [tasks, hideCompleted, statusFilter, priorityFilter]);
+
+  const hasActiveFilters =
+    statusFilter !== 'all' || priorityFilter !== 'all' || hideCompleted;
+
+  const emptyFiltered = hasActiveFilters && tasks.length > 0 && filteredTasks.length === 0;
+  const emptyProjectScoped =
+    selectedProjectId !== null && filteredTasks.length === 0 && !emptyFiltered;
+
+  const activeCount = tasks.filter((t) => t.status !== 'DONE').length;
+  const completedCount = tasks.filter((t) => t.status === 'DONE').length;
+
+  const openTaskEditor = useCallback((task: Task) => {
+    setEditingTask(task);
+    setShowTaskForm(true);
+  }, []);
 
   const loadProjects = useCallback(async () => {
     if (!session?.accessToken || !effectiveDashboardId) return;
@@ -236,19 +275,33 @@ export function TodoModule({ dashboardId, businessId, householdId }: TodoModuleP
     }
   }, [session?.accessToken, loadTasks]);
 
-  const handleTaskDelete = useCallback(async (taskId: string) => {
-    if (!session?.accessToken) return;
+  const requestDeleteTask = useCallback((taskId: string) => {
+    const task =
+      tasks.find((t) => t.id === taskId) ??
+      (selectedTask?.id === taskId ? selectedTask : null);
+    if (!task) return;
+    setPendingTaskToDelete({ id: task.id, title: task.title });
+  }, [tasks, selectedTask]);
 
+  const executeDeleteTask = useCallback(async () => {
+    if (!pendingTaskToDelete || !session?.accessToken) return;
+
+    setIsDeletingTask(true);
     try {
-      await todoAPI.deleteTask(session.accessToken, taskId);
+      await todoAPI.deleteTask(session.accessToken, pendingTaskToDelete.id);
       await loadTasks();
-      setSelectedTask(null);
+      setSelectedTask((prev) =>
+        prev?.id === pendingTaskToDelete.id ? null : prev
+      );
+      setPendingTaskToDelete(null);
       toast.success('Task deleted');
     } catch (error) {
       console.error('Failed to delete task:', error);
       toast.error('Failed to delete task');
+    } finally {
+      setIsDeletingTask(false);
     }
-  }, [session?.accessToken, loadTasks]);
+  }, [pendingTaskToDelete, session?.accessToken, loadTasks]);
 
   if (!effectiveDashboardId) {
     return (
@@ -258,131 +311,207 @@ export function TodoModule({ dashboardId, businessId, householdId }: TodoModuleP
     );
   }
 
-  return (
-    <div className="flex flex-col h-full">
-      {/* Compact Header - Single Row */}
-      <div className="flex items-center gap-4 px-4 py-3 border-b bg-white dark:bg-slate-900">
-        {/* Title */}
-        <h1 className="text-xl font-bold whitespace-nowrap">To-Do</h1>
-        
-        {/* Quick Task Input - Inline */}
-        <div className="flex-1 max-w-md">
-          <QuickTaskInput
-            dashboardId={effectiveDashboardId}
-            businessId={businessId || undefined}
-            householdId={householdId || undefined}
-            onCreateTask={async (data) => {
-              await handleTaskCreate({ ...data, createCalendarEvent: false });
-            }}
-            disabled={loading}
-          />
-        </div>
+  const viewModeToggle = (
+    <div className="flex items-center gap-1 rounded-lg border border-gray-300 p-1 dark:border-slate-600">
+      <Button
+        variant={view === 'list' ? 'primary' : 'ghost'}
+        size="sm"
+        onClick={() => setView('list')}
+        title="List view"
+        aria-label="List view"
+      >
+        <List className="w-4 h-4" />
+      </Button>
+      <Button
+        variant={view === 'board' ? 'primary' : 'ghost'}
+        size="sm"
+        onClick={() => setView('board')}
+        title="Board view"
+        aria-label="Board view"
+      >
+        <LayoutGrid className="w-4 h-4" />
+      </Button>
+      <Button
+        variant={view === 'calendar' ? 'primary' : 'ghost'}
+        size="sm"
+        onClick={() => setView('calendar')}
+        title="Calendar view"
+        aria-label="Calendar view"
+      >
+        <Calendar className="w-4 h-4" />
+      </Button>
+    </div>
+  );
 
-        {/* View Toggle - Compact */}
-        <div className="flex items-center gap-1 border-r pr-4 mr-2">
-          <Button
-            variant={view === 'list' ? 'primary' : 'ghost'}
-            size="sm"
-            onClick={() => setView('list')}
-          >
-            <List className="w-4 h-4" />
-          </Button>
-          <Button
-            variant={view === 'board' ? 'primary' : 'ghost'}
-            size="sm"
-            onClick={() => setView('board')}
-          >
-            <LayoutGrid className="w-4 h-4" />
-          </Button>
-          <Button
-            variant={view === 'calendar' ? 'primary' : 'ghost'}
-            size="sm"
-            onClick={() => setView('calendar')}
-          >
-            <Calendar className="w-4 h-4" />
-          </Button>
-        </div>
-
-        {/* Task Counts - Compact */}
-        <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-          <span>{tasks.filter(t => t.status !== 'DONE').length} active</span>
-          <span className="text-gray-300">•</span>
-          <span>{tasks.filter(t => t.status === 'DONE').length} completed</span>
-        </div>
-
-        {/* Action Buttons */}
-        <div className="flex items-center gap-2 ml-auto">
-          <Button 
-            variant="primary" 
-            size="sm"
-            onClick={() => {
-              setEditingTask(null);
-              setShowTaskForm(true);
-            }}
-          >
-            <Plus className="w-4 h-4 mr-1" />
-            New Task
-          </Button>
-          <Button 
-            variant={showProjectManager ? 'primary' : 'ghost'} 
-            size="sm"
-            onClick={() => setShowProjectManager(!showProjectManager)}
-            title="Projects"
-          >
-            <Folder className="w-4 h-4" />
-          </Button>
-          <Button variant="ghost" size="sm" title="Filter">
-            <Filter className="w-4 h-4" />
-          </Button>
-          <Button variant="ghost" size="sm" title="More options">
-            <MoreVertical className="w-4 h-4" />
-          </Button>
-        </div>
-      </div>
-
-      {/* Main Content */}
-      <div className="flex-1 overflow-hidden flex relative">
-        {/* Project Manager Sidebar */}
-        {showProjectManager && (
-          <ProjectManager
-            isOpen={showProjectManager}
-            onClose={() => setShowProjectManager(false)}
-            dashboardId={effectiveDashboardId}
-            businessId={businessId || undefined}
-            selectedProjectId={selectedProjectId}
-            onProjectSelect={(projectId) => {
-              setSelectedProjectId(projectId);
-              // Reload tasks when project filter changes
-              setTimeout(() => loadTasks(), 100);
-            }}
-            onProjectsChange={() => {
-              loadProjects();
-              loadTasks();
-            }}
-          />
-        )}
-
-
-        <div className="flex-1 flex overflow-hidden">
-        {loading ? (
-          <div className="flex items-center justify-center flex-1">
-            <Spinner />
+  const filterPopover = (
+    <Popover
+      open={showFilterPopover}
+      onOpenChange={setShowFilterPopover}
+      panelLabel="Task filters"
+      content={
+        <div className="w-64 space-y-3">
+          <div>
+            <label className="mb-1 block text-xs font-medium text-gray-500 dark:text-gray-400">
+              Status
+            </label>
+            <select
+              value={statusFilter}
+              onChange={(e) => setStatusFilter(e.target.value as 'all' | TaskStatus)}
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-800"
+            >
+              <option value="all">All statuses</option>
+              <option value="TODO">To Do</option>
+              <option value="IN_PROGRESS">In Progress</option>
+              <option value="BLOCKED">Blocked</option>
+              <option value="REVIEW">Review</option>
+              <option value="DONE">Done</option>
+              <option value="CANCELLED">Cancelled</option>
+            </select>
           </div>
+          <div>
+            <label className="mb-1 block text-xs font-medium text-gray-500 dark:text-gray-400">
+              Priority
+            </label>
+            <select
+              value={priorityFilter}
+              onChange={(e) => setPriorityFilter(e.target.value as 'all' | TaskPriority)}
+              className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 dark:border-slate-600 dark:bg-slate-800"
+            >
+              <option value="all">All priorities</option>
+              <option value="URGENT">Urgent</option>
+              <option value="HIGH">High</option>
+              <option value="MEDIUM">Medium</option>
+              <option value="LOW">Low</option>
+            </select>
+          </div>
+          <label className="flex cursor-pointer select-none items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+            <input
+              type="checkbox"
+              className="rounded border-gray-300 dark:border-slate-600"
+              checked={hideCompleted}
+              onChange={(e) => setHideCompleted(e.target.checked)}
+            />
+            <span>Hide completed</span>
+          </label>
+          {hasActiveFilters ? (
+            <Button
+              variant="ghost"
+              size="sm"
+              className="w-full"
+              onClick={() => {
+                setStatusFilter('all');
+                setPriorityFilter('all');
+                setHideCompleted(false);
+              }}
+            >
+              Clear filters
+            </Button>
+          ) : null}
+        </div>
+      }
+    >
+      <Button
+        variant={hasActiveFilters ? 'primary' : 'secondary'}
+        size="sm"
+        title="Filter tasks"
+        aria-label="Filter tasks"
+      >
+        <Filter className="w-4 h-4" />
+      </Button>
+    </Popover>
+  );
+
+  return (
+    <div className="flex h-full min-h-0 flex-col">
+      <PageHeader
+        title="To-Do"
+        description={`${activeCount} active · ${completedCount} completed`}
+        icon={<CheckSquare className="h-6 w-6" />}
+        actions={
+          <>
+            <Button
+              variant="primary"
+              size="sm"
+              onClick={() => {
+                setEditingTask(null);
+                setShowTaskForm(true);
+              }}
+            >
+              <Plus className="w-4 h-4 mr-2" />
+              New Task
+            </Button>
+            <Button
+              variant={showProjectManager ? 'primary' : 'secondary'}
+              size="sm"
+              onClick={() => setShowProjectManager(!showProjectManager)}
+              title="Projects"
+              aria-label="Toggle projects panel"
+            >
+              <Folder className="w-4 h-4" />
+            </Button>
+          </>
+        }
+      />
+
+      <PageToolbar
+        leading={
+          <div className="w-full max-w-md">
+            <QuickTaskInput
+              dashboardId={effectiveDashboardId}
+              businessId={businessId || undefined}
+              householdId={householdId || undefined}
+              onCreateTask={async (data) => {
+                await handleTaskCreate({ ...data, createCalendarEvent: false });
+              }}
+              disabled={loading}
+            />
+          </div>
+        }
+        trailing={
+          <>
+            {viewModeToggle}
+            {filterPopover}
+          </>
+        }
+      />
+
+      <WorkspaceSplitLayout className="min-h-0 flex-1">
+        {showProjectManager ? (
+          <WorkspaceSidebar className="w-64 border-r border-gray-200 dark:border-slate-700">
+            <ProjectManager
+              isOpen
+              onClose={() => setShowProjectManager(false)}
+              dashboardId={effectiveDashboardId}
+              businessId={businessId || undefined}
+              selectedProjectId={selectedProjectId}
+              onProjectSelect={(projectId) => {
+                setSelectedProjectId(projectId);
+                setTimeout(() => loadTasks(), 100);
+              }}
+              onProjectsChange={() => {
+                loadProjects();
+                loadTasks();
+              }}
+            />
+          </WorkspaceSidebar>
+        ) : null}
+
+        {loading ? (
+          <WorkspaceMain className="flex items-center justify-center">
+            <Spinner />
+          </WorkspaceMain>
         ) : (
           <>
-            <div className="flex-1 overflow-auto min-w-0">
+            <WorkspaceMain overflow="auto" className="min-w-0">
               {view === 'list' && (
                 <TaskList
-                  tasks={tasks}
+                  tasks={filteredTasks}
                   projects={projects}
                   onTaskSelect={setSelectedTask}
                   onTaskComplete={handleTaskComplete}
                   onTaskReopen={handleTaskReopen}
-                  onTaskEdit={(task) => {
-                    setEditingTask(task);
-                    setShowTaskForm(true);
-                  }}
-                  onTaskDelete={handleTaskDelete}
+                  onTaskEdit={openTaskEditor}
+                  onTaskDelete={requestDeleteTask}
                   onViewAttachments={async (task) => {
                     console.log('[TodoModule] onViewAttachments called with task:', task.id, task.title);
                     // If task doesn't have full attachments loaded, fetch it
@@ -408,19 +537,18 @@ export function TodoModule({ dashboardId, businessId, householdId }: TodoModuleP
                     setEditingTask(null);
                     setShowTaskForm(true);
                   }}
+                  filtered={emptyFiltered}
+                  projectScoped={emptyProjectScoped}
                 />
               )}
               {view === 'board' && (
                 <TaskBoard
-                  tasks={tasks}
+                  tasks={filteredTasks}
                   onTaskSelect={setSelectedTask}
                   onTaskUpdate={handleTaskUpdate}
                   onTaskReopen={handleTaskReopen}
-                  onTaskEdit={(task) => {
-                    setEditingTask(task);
-                    setShowTaskForm(true);
-                  }}
-                  onTaskDelete={handleTaskDelete}
+                  onTaskEdit={openTaskEditor}
+                  onTaskDelete={requestDeleteTask}
                   onViewAttachments={async (task) => {
                     console.log('[TodoModule] onViewAttachments called with task:', task.id, task.title);
                     // If task doesn't have full attachments loaded, fetch it
@@ -446,11 +574,13 @@ export function TodoModule({ dashboardId, businessId, householdId }: TodoModuleP
                     setEditingTask(null);
                     setShowTaskForm(true);
                   }}
+                  filtered={emptyFiltered}
+                  projectScoped={emptyProjectScoped}
                 />
               )}
               {view === 'calendar' && (
                 <TaskCalendar
-                  tasks={tasks}
+                  tasks={filteredTasks}
                   calendarEvents={calendarEvents}
                   onTaskSelect={setSelectedTask}
                   onTaskCreate={(dueDate) => {
@@ -472,38 +602,34 @@ export function TodoModule({ dashboardId, businessId, householdId }: TodoModuleP
                   }}
                 />
               )}
-            </div>
+            </WorkspaceMain>
 
-            {/* Task Detail Panel - Always render but conditionally show */}
-            {selectedTask && (
-              <div className="w-96 min-w-[384px] max-w-[384px] flex-shrink-0 h-full overflow-hidden border-l border-gray-200 dark:border-slate-700">
+            {selectedTask ? (
+              <WorkspaceSecondary className="shrink min-w-0 w-full max-w-[min(100%,24rem)] md:max-w-xs lg:w-96 lg:max-w-[384px] lg:shrink-0 overflow-hidden border-l border-gray-200 dark:border-slate-700">
                 <TaskDetail
                   task={selectedTask}
                   onClose={() => setSelectedTask(null)}
                   onUpdate={async (data) => {
-                    // If data is a full Task object (from comment refresh), update selectedTask
                     if (data && typeof data === 'object' && 'id' in data && 'title' in data) {
                       setSelectedTask(data as Task);
                     } else {
-                      // Otherwise it's an UpdateTaskInput, handle normally
                       await handleTaskUpdate(selectedTask.id, data);
-                      // Refresh selected task after update
                       if (session?.accessToken) {
                         const updatedTask = await todoAPI.getTaskById(session.accessToken, selectedTask.id);
                         setSelectedTask(updatedTask);
                       }
                     }
                   }}
-                  onDelete={() => handleTaskDelete(selectedTask.id)}
+                  onDelete={() => requestDeleteTask(selectedTask.id)}
                   onComplete={() => handleTaskComplete(selectedTask.id)}
+                  onEdit={() => openTaskEditor(selectedTask)}
                   onRefresh={loadTasks}
                 />
-              </div>
-            )}
+              </WorkspaceSecondary>
+            ) : null}
           </>
         )}
-        </div>
-      </div>
+      </WorkspaceSplitLayout>
 
       {/* Attachment Viewer Modal */}
       {viewingAttachments && (
@@ -544,6 +670,21 @@ export function TodoModule({ dashboardId, businessId, householdId }: TodoModuleP
           }}
         />
       )}
+
+      <ConfirmModal
+        open={pendingTaskToDelete !== null}
+        onClose={() => setPendingTaskToDelete(null)}
+        onConfirm={executeDeleteTask}
+        title="Delete task?"
+        description={
+          pendingTaskToDelete
+            ? `Are you sure you want to delete "${pendingTaskToDelete.title}"?`
+            : undefined
+        }
+        variant="destructive"
+        confirmLabel="Delete"
+        loading={isDeletingTask}
+      />
     </div>
   );
 }

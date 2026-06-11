@@ -10,10 +10,7 @@ import UserAutocomplete from './UserAutocomplete';
 import { ChatUser } from 'shared/types/chat';
 import { useDashboard } from '../../contexts/DashboardContext';
 import { useChat } from '../../contexts/ChatContext';
-import { useGlobalTrash } from '../../contexts/GlobalTrashContext';
 import { useModuleFeatures } from '../../hooks/useFeatureGating';
-import { toast } from 'react-hot-toast';
-
 interface ChatLeftPanelProps {
   panelState: {
     activeConversationId: string | null;
@@ -40,7 +37,6 @@ export default function ChatLeftPanel({
   const { data: session } = useSession();
   const { currentDashboard, getDashboardType, currentDashboardId } = useDashboard();
   const { conversations, setActiveConversation, createConversation: createConversationFromContext } = useChat();
-  const { trashItem } = useGlobalTrash();
   
   // Enterprise feature gating
   const dashboardType = currentDashboard ? getDashboardType(currentDashboard) : 'personal';
@@ -208,28 +204,6 @@ export default function ChatLeftPanel({
       return 'Yesterday';
     } else {
       return date.toLocaleDateString([], { month: 'short', day: 'numeric' });
-    }
-  };
-
-  // Handle trashing a conversation
-  const handleTrashConversation = async (conversation: Conversation) => {
-    try {
-      await trashItem({
-        id: conversation.id,
-        name: getConversationName(conversation),
-        type: 'conversation',
-        moduleId: 'chat',
-        moduleName: 'Chat',
-        metadata: {
-          conversationType: conversation.type,
-          participantCount: conversation.participants?.length || 0,
-        },
-      });
-      
-      toast.success(`${getConversationName(conversation)} moved to trash`);
-    } catch (error) {
-      console.error('Failed to trash conversation:', error);
-      toast.error('Failed to move conversation to trash');
     }
   };
 
@@ -402,11 +376,9 @@ export default function ChatLeftPanel({
                       },
                     }));
                   }}
-                  onDragEnd={(e) => {
-                    // Check if dropped on global trash bin
-                    if (e.dataTransfer.dropEffect === 'move') {
-                      handleTrashConversation(conversation);
-                    }
+                  onDragEnd={() => {
+                    // Drag-to-trash confirm is gated by GlobalTrashBin (pendingMoveToTrashItem + ConfirmModal).
+                    // Do not trash here — immediate onDragEnd would bypass that gate (Drive 3B / 5B.1C parity).
                   }}
                   className="cursor-grab active:cursor-grabbing"
                 >

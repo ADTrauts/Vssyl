@@ -7,9 +7,9 @@ import {
   MENU_INNER_CLASS,
   renderMenuItem,
   type ContextMenuItem,
-} from './menuShared.js';
+} from './menuShared';
 
-export type { ContextMenuItem } from './menuShared.js';
+export type { ContextMenuItem } from './menuShared';
 
 interface ContextMenuProps {
   open: boolean;

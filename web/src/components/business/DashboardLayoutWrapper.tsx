@@ -28,6 +28,13 @@ import { usePositionAwareModules } from '../PositionAwareModuleProvider';
 import { useSidebarCustomization } from '../../contexts/SidebarCustomizationContext';
 import { SidebarCustomizationModal } from '../sidebar/SidebarCustomizationModal';
 import { SidebarFolderRenderer } from '../sidebar/SidebarFolderRenderer';
+import {
+  PlatformShell,
+  PlatformLeftSidebar,
+  PlatformRightRail,
+  PlatformRightRailModuleButton,
+  PlatformRightRailSpacer,
+} from '../layouts';
 import type { LeftSidebarConfig } from '../../types/sidebar';
 import BusinessWorkspaceContent from './BusinessWorkspaceContent';
 import { businessAPI } from '../../api/business';
@@ -421,67 +428,32 @@ function DashboardLayoutWrapper({ business, children }: DashboardLayoutWrapperPr
     );
   }
 
+  const sidebarBackground = isBusinessContext ? getSidebarStyles().backgroundColor : getBrandColor('neutralMid');
+
   return (
-    <div style={{ height: '100vh', width: '100vw', position: 'relative' }}>
-      {/* Global Header (shared tabs) */}
-      <GlobalHeaderTabs />
-      {/* Main content area below header */}
-      <div style={{ display: 'flex', flexGrow: 1, overflow: 'hidden', position: 'absolute', top: 64, left: 0, right: 0, bottom: 0 }}>
-        {/* Left Sidebar */}
-        <aside style={{
-          width: sidebarCollapsed ? 0 : 240,
-          background: isBusinessContext ? getSidebarStyles().backgroundColor : getBrandColor('neutralMid'),
-          display: 'flex',
-          flexDirection: 'column',
-          padding: '20px 0',
-          flexShrink: 0,
-          transition: 'width 0.2s ease-in-out',
-          position: 'relative',
-          height: '100%',
-          overflow: 'hidden',
-        }}>
-          {/* Collapse/Expand Arrow Button */}
-          <button
-            onClick={() => setSidebarCollapsed((v) => !v)}
-            aria-label={sidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
-            style={{
-              position: 'fixed',
-              top: '50%',
-              left: sidebarCollapsed ? 0 : 228,
-              transform: 'translateY(-50%)',
-              width: 28,
-              height: 28,
-              borderRadius: '50%',
-              background: '#444',
-              color: '#fff',
-              border: `1px solid ${isDark ? '#475569' : '#555'}`,
-              cursor: 'pointer',
-              zIndex: 1000,
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.08)',
-              transition: 'left 0.2s ease-in-out',
-            }}
+    <>
+      <PlatformShell
+        mode="business"
+        useNativePanels
+        useNativeHeader
+        header={<GlobalHeaderTabs />}
+        leftNav={
+          <PlatformLeftSidebar
+            collapsed={sidebarCollapsed}
+            onToggleCollapse={() => setSidebarCollapsed((v) => !v)}
+            backgroundColor={sidebarBackground}
+            customizeTextColor={isBusinessContext ? getSidebarStyles().color : '#fff'}
+            customizeBorderColor={isDark ? '#475569' : '#555'}
+            collapseButtonBorderColor={isDark ? '#475569' : '#555'}
+            customizeFooterPaddingTop={20}
+            onCustomizeClick={() => setShowCustomizationModal(true)}
           >
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-              <path d={sidebarCollapsed ? 'M9 18l6-6-6-6' : 'M15 18l-6-6 6-6'} stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
-            </svg>
-          </button>
-          
-          <div style={{ 
-            visibility: !sidebarCollapsed ? 'visible' : 'hidden', 
-            opacity: !sidebarCollapsed ? 1 : 0, 
-            transition: 'opacity 0.2s, visibility 0.2s' 
-          }}>
             <nav>
               <ul style={{ listStyle: 'none', padding: 0 }}>
                 {(() => {
-                  // Use effective config (saved or default) so all tabs use same folder-based sidebar
                   const config = effectiveLeftSidebarConfig;
                   if (!config) return null;
 
-                  // Render with folders and loose modules
                   const sortedFolders = [...config.folders].sort((a, b) => a.order - b.order);
                   const sortedLooseModules = [...config.looseModules].sort((a, b) => a.order - b.order);
                   const textColor = isBusinessContext ? getSidebarStyles().color : '#fff';
@@ -500,7 +472,6 @@ function DashboardLayoutWrapper({ business, children }: DashboardLayoutWrapperPr
 
                   return (
                     <>
-                      {/* Folders */}
                       {sortedFolders.map(folder => (
                         <SidebarFolderRenderer
                           key={folder.id}
@@ -517,7 +488,6 @@ function DashboardLayoutWrapper({ business, children }: DashboardLayoutWrapperPr
                         />
                       ))}
 
-                      {/* Loose Modules */}
                       {sortedLooseModules.map(moduleRef => {
                         const module = displayModules.find(m => m.id === moduleRef.id);
                         if (!module) return null;
@@ -544,256 +514,146 @@ function DashboardLayoutWrapper({ business, children }: DashboardLayoutWrapperPr
                             >
                               <Icon size={22} />
                               <span>{getModuleDisplayName(module.id, module.name)}</span>
-                      </button>
-                    </li>
-                  );
-                })}
+                            </button>
+                          </li>
+                        );
+                      })}
                     </>
                   );
                 })()}
               </ul>
             </nav>
-            <div style={{ marginTop: 'auto', paddingTop: '20px' }}>
-              <button 
-                onClick={() => setShowCustomizationModal(true)} 
-                style={{ 
-                  width: '100%', 
-                  background: 'none', 
-                  border: `1px solid ${isDark ? '#475569' : '#555'}`, 
-                  color: isBusinessContext ? getSidebarStyles().color : '#fff', 
-                  padding: '8px 0', 
-                  borderRadius: 6, 
-                  fontWeight: 600 
-                }}
-              >
-                Customize
-              </button>
-            </div>
-          </div>
-        </aside>
+          </PlatformLeftSidebar>
+        }
+        rightRail={
+          <PlatformRightRail backgroundColor={sidebarBackground}>
+            {displayModules.filter(m => m.id === 'dashboard').map(module => {
+              const Icon = MODULE_ICONS[module.id] || MODULE_ICONS.dashboard;
+              const isActive = currentModule === module.id;
+              return (
+                <PlatformRightRailModuleButton
+                  key={module.id}
+                  isActive={isActive}
+                  onClick={() => navigateToModule(module.id)}
+                  title={getModuleDisplayName(module.id, module.name)}
+                >
+                  <Icon size={22} />
+                </PlatformRightRailModuleButton>
+              );
+            })}
 
-        {/* Main Content */}
-        <main className="flex-1 overflow-y-auto h-full bg-gray-50 dark:bg-gray-900 text-gray-900 dark:text-gray-100 transition-colors duration-200" style={{
-          padding: 0,
-          paddingRight: 40, // Always account for fixed right sidebar (always visible)
-          marginLeft: 0,
-          transition: 'margin-left 0.2s ease-in-out, padding-right 0.2s ease-in-out',
-        }}>
-          {dashboardLoading ? (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', flexDirection: 'column' }}>
-              <Spinner size={32} />
-              <p style={{ marginTop: '1rem', fontSize: '0.875rem', color: mutedTextColor }}>Setting up workspace...</p>
-            </div>
-          ) : dashboardError ? (
-            <div style={{ padding: '1.5rem' }}>
-              <Alert type="error" title="Failed to Initialize Workspace">
-                {dashboardError}
-              </Alert>
-            </div>
-          ) : !businessDashboardId ? (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', flexDirection: 'column' }}>
-              <Spinner size={32} />
-              <p style={{ marginTop: '1rem', fontSize: '0.875rem', color: mutedTextColor }}>Initializing business workspace...</p>
-            </div>
-          ) : businessLoading ? (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', flexDirection: 'column' }}>
-              <Spinner size={32} />
-              <p style={{ marginTop: '1rem', fontSize: '0.875rem', color: mutedTextColor }}>Loading business information...</p>
-            </div>
-          ) : businessError ? (
-            <div style={{ padding: '1.5rem' }}>
-              <Alert type="error" title="Failed to Load Business">
-                {businessError}
-              </Alert>
-            </div>
-          ) : !effectiveBusiness ? (
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', flexDirection: 'column' }}>
-              <Spinner size={32} />
-              <p style={{ marginTop: '1rem', fontSize: '0.875rem', color: mutedTextColor }}>Loading business information...</p>
-            </div>
-          ) : shouldRenderNestedRoute ? (
-            <>{children}</>
-          ) : (
-            <BusinessWorkspaceContent 
-              business={effectiveBusiness}
-              currentModule={currentModule}
-              businessDashboardId={businessDashboardId}
-            />
-          )}
-        </main>
+            {(() => {
+              const rightSidebarContext = effectiveBusiness?.id || 'personal';
+              const rightSidebarConfig = getConfigForContext(rightSidebarContext);
+              const pinnedModuleIds = rightSidebarConfig?.pinnedModules
+                .sort((a, b) => a.order - b.order)
+                .map(m => m.id) || [];
 
-        {/* Right Quick-Access Sidebar */}
-        <aside style={{
-          width: 40,
-          background: isBusinessContext ? getSidebarStyles().backgroundColor : getBrandColor('neutralMid'),
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          padding: '10px 0',
-          gap: 12,
-          flexShrink: 0,
-          position: 'fixed',
-          right: 0,
-          top: 64,
-          height: 'calc(100vh - 64px)',
-          zIndex: 1000,
-          boxShadow: '0 0 8px rgba(0,0,0,0.04)',
-          transition: 'opacity 0.2s ease-in-out, visibility 0.2s ease-in-out',
-          overflow: 'hidden',
-          // Right sidebar should always be visible in workspace, regardless of left sidebar collapse state
-          visibility: 'visible',
-          opacity: 1,
-        }}>
-          {/* Fixed Top: Dashboard */}
-          {displayModules.filter(m => m.id === 'dashboard').map(module => {
-            const Icon = MODULE_ICONS[module.id] || MODULE_ICONS.dashboard;
-            const isActive = currentModule === module.id;
-            return (
-              <button
-                key={module.id}
-                className={`flex items-center justify-center w-10 h-10 my-1 rounded-lg transition-colors ${isActive ? 'bg-gray-800' : 'hover:bg-gray-700'} ${isActive ? 'text-white' : 'text-gray-300'}`}
-                style={{
-                  background: isActive ? '#1f2937' : 'transparent',
-                  color: isActive ? '#fff' : '#cbd5e1',
-                  border: 'none',
-                  outline: 'none',
-                  cursor: 'pointer',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  width: 40,
-                  height: 40,
-                  margin: '8px 0',
-                  borderRadius: 8,
-                  transition: 'background 0.18s cubic-bezier(.4,1.2,.6,1)',
-                }}
-                onClick={() => navigateToModule(module.id)}
-                title={getModuleDisplayName(module.id, module.name)}
-              >
-                <Icon size={22} />
-              </button>
-            );
-          })}
-          
-          {/* Customizable Middle: Pinned Modules */}
-          {(() => {
-            const rightSidebarContext = effectiveBusiness?.id || 'personal';
-            const rightSidebarConfig = getConfigForContext(rightSidebarContext);
-            const pinnedModuleIds = rightSidebarConfig?.pinnedModules
-              .sort((a, b) => a.order - b.order)
-              .map(m => m.id) || [];
-            
-            return pinnedModuleIds
-              .map(id => displayModules.find(m => m.id === id))
-              .filter((module): module is typeof displayModules[0] => module !== undefined)
-              .map(module => {
-                const Icon = MODULE_ICONS[module.id] || MODULE_ICONS.dashboard;
-                const isActive = currentModule === module.id;
-                return (
-                  <button
-                    key={module.id}
-                    className={`flex items-center justify-center w-10 h-10 my-1 rounded-lg transition-colors ${isActive ? 'bg-gray-800' : 'hover:bg-gray-700'} ${isActive ? 'text-white' : 'text-gray-300'}`}
-                    style={{
-                      background: isActive ? '#1f2937' : 'transparent',
-                      color: isActive ? '#fff' : '#cbd5e1',
-                      border: 'none',
-                      outline: 'none',
-                      cursor: 'pointer',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      width: 40,
-                      height: 40,
-                      margin: '8px 0',
-                      borderRadius: 8,
-                      transition: 'background 0.18s cubic-bezier(.4,1.2,.6,1)',
-                    }}
-                    onClick={() => navigateToModule(module.id)}
-                    title={getModuleDisplayName(module.id, module.name)}
-                  >
-                    <Icon size={22} />
-                  </button>
-                );
-              });
-          })()}
-          
-          {/* Spacer to push bottom items down */}
-          <div style={{ flex: 1 }} />
-          
-          {/* Fixed Bottom: AI Assistant, Modules, Trash */}
-          <button
-            className={`flex items-center justify-center w-10 h-10 my-1 rounded-lg transition-colors ${pathname?.startsWith('/ai-chat') || currentModule === 'ai' ? 'bg-purple-600' : 'hover:bg-gray-700'} ${pathname?.startsWith('/ai-chat') || currentModule === 'ai' ? 'text-white' : 'text-gray-300'}`}
-            style={{
-              background: pathname?.startsWith('/ai-chat') || currentModule === 'ai' ? '#9333ea' : 'transparent',
-              color: pathname?.startsWith('/ai-chat') || currentModule === 'ai' ? '#fff' : '#cbd5e1',
-              border: 'none',
-              outline: 'none',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              width: 40,
-              height: 40,
-              margin: '8px 0',
-              borderRadius: 8,
-              transition: 'background 0.18s cubic-bezier(.4,1.2,.6,1)',
-            }}
-            onClick={() => {
-              try {
-                // Stay in business context: open in-workspace AI (conversations scoped to business dashboard)
-                if (effectiveBusiness?.id) {
-                  router.push(`/business/${effectiveBusiness.id}/workspace?module=ai`);
-                } else {
-                  router.push('/ai-chat');
+              return pinnedModuleIds
+                .map(id => displayModules.find(m => m.id === id))
+                .filter((module): module is typeof displayModules[0] => module !== undefined)
+                .map(module => {
+                  const Icon = MODULE_ICONS[module.id] || MODULE_ICONS.dashboard;
+                  const isActive = currentModule === module.id;
+                  return (
+                    <PlatformRightRailModuleButton
+                      key={module.id}
+                      isActive={isActive}
+                      onClick={() => navigateToModule(module.id)}
+                      title={getModuleDisplayName(module.id, module.name)}
+                    >
+                      <Icon size={22} />
+                    </PlatformRightRailModuleButton>
+                  );
+                });
+            })()}
+
+            <PlatformRightRailSpacer />
+
+            <PlatformRightRailModuleButton
+              isActive={Boolean(pathname?.startsWith('/ai-chat') || currentModule === 'ai')}
+              variant="purple"
+              onClick={() => {
+                try {
+                  if (effectiveBusiness?.id) {
+                    router.push(`/business/${effectiveBusiness.id}/workspace?module=ai`);
+                  } else {
+                    router.push('/ai-chat');
+                  }
+                } catch (error) {
+                  console.error('Error navigating to AI chat:', error);
+                  window.location.href = effectiveBusiness?.id ? `/business/${effectiveBusiness.id}/workspace?module=ai` : '/ai-chat';
                 }
-              } catch (error) {
-                console.error('Error navigating to AI chat:', error);
-                window.location.href = effectiveBusiness?.id ? `/business/${effectiveBusiness.id}/workspace?module=ai` : '/ai-chat';
-              }
-            }}
-            title="AI Chat"
-          >
-            <Brain size={22} />
-          </button>
+              }}
+              title="AI Chat"
+            >
+              <Brain size={22} />
+            </PlatformRightRailModuleButton>
 
-          <VLinkSidebarButton />
-          
-          <button
-            className="flex items-center justify-center w-10 h-10 my-1 rounded-lg transition-colors hover:bg-gray-700 text-gray-300"
-            style={{
-              background: 'transparent',
-              color: '#cbd5e1',
-              border: 'none',
-              outline: 'none',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              width: 40,
-              height: 40,
-              margin: '8px 0',
-              borderRadius: 8,
-              transition: 'background 0.18s cubic-bezier(.4,1.2,.6,1)',
-            }}
-            onClick={() => router.push('/modules')}
-            title="Module Management"
-          >
-            <Package size={22} />
-          </button>
-          
-          {/* Global Trash Bin */}
-          <div className="mb-4">
-            <GlobalTrashBin />
+            <VLinkSidebarButton />
+
+            <PlatformRightRailModuleButton
+              isActive={false}
+              onClick={() => router.push('/modules')}
+              title="Module Management"
+            >
+              <Package size={22} />
+            </PlatformRightRailModuleButton>
+
+            <div className="mb-4">
+              <GlobalTrashBin />
+            </div>
+          </PlatformRightRail>
+        }
+      >
+        {dashboardLoading ? (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', flexDirection: 'column' }}>
+            <Spinner size={32} />
+            <p style={{ marginTop: '1rem', fontSize: '0.875rem', color: mutedTextColor }}>Setting up workspace...</p>
           </div>
-        </aside>
-      </div>
-      
-      {/* Sidebar Customization Modal */}
+        ) : dashboardError ? (
+          <div style={{ padding: '1.5rem' }}>
+            <Alert type="error" title="Failed to Initialize Workspace">
+              {dashboardError}
+            </Alert>
+          </div>
+        ) : !businessDashboardId ? (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', flexDirection: 'column' }}>
+            <Spinner size={32} />
+            <p style={{ marginTop: '1rem', fontSize: '0.875rem', color: mutedTextColor }}>Initializing business workspace...</p>
+          </div>
+        ) : businessLoading ? (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', flexDirection: 'column' }}>
+            <Spinner size={32} />
+            <p style={{ marginTop: '1rem', fontSize: '0.875rem', color: mutedTextColor }}>Loading business information...</p>
+          </div>
+        ) : businessError ? (
+          <div style={{ padding: '1.5rem' }}>
+            <Alert type="error" title="Failed to Load Business">
+              {businessError}
+            </Alert>
+          </div>
+        ) : !effectiveBusiness ? (
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '100vh', flexDirection: 'column' }}>
+            <Spinner size={32} />
+            <p style={{ marginTop: '1rem', fontSize: '0.875rem', color: mutedTextColor }}>Loading business information...</p>
+          </div>
+        ) : shouldRenderNestedRoute ? (
+          <>{children}</>
+        ) : (
+          <BusinessWorkspaceContent
+            business={effectiveBusiness}
+            currentModule={currentModule}
+            businessDashboardId={businessDashboardId}
+          />
+        )}
+      </PlatformShell>
+
       <SidebarCustomizationModal
         open={showCustomizationModal}
         onClose={() => setShowCustomizationModal(false)}
       />
-    </div>
+    </>
   );
 }
 
