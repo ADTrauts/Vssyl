@@ -62,7 +62,7 @@ Update Rules for techContext.md
 | Workspace runtime | `web/src/runtime/`, `realtimeClient.ts` | WR-Q1 provider; RT-Q1 single socket |
 | Tests | `server/src/auth/__tests__/`, `server/src/events/__tests__/`, `web/src/runtime/__tests__/` | Vitest |
 
-**CI (GitHub Actions `.github/workflows/ci.yml`):** `pnpm install` → build `shared` → `prisma migrate deploy` → `type-check` → `pnpm --filter vssyl-web test` → `pnpm test` (server). Lint not in CI.
+**CI (GitHub Actions `.github/workflows/ci.yml`):** `pnpm install` → build `shared` → `prisma migrate deploy` → `type-check` → `pnpm run build:web` (Next.js production compile) → `pnpm --filter vssyl-web test` → `pnpm test` (server). Lint not in CI. Root `verify:ci` mirrors type-check + `build:web` + server tests.
 
 **Prisma migration (prod):** `20260517000000_module_version_certification` — required before certification gate reads/writes version columns.
 

@@ -221,7 +221,7 @@ Metadata-only **`AIOrchestrationSnapshot`** per pass — no provider payloads, n
 
 #### Build order
 
-Server `tsc` requires compiled shared types. Root `pnpm type-check` and `pnpm verify:ci` run `build:shared` first; `vssyl-server` `pretest` / `pretype-check` build `vssyl-shared`.
+Server `tsc` requires compiled shared types. Root `pnpm type-check` runs `build:shared` first; `pnpm verify:ci` adds `build:web` (`next build`) after type-check for web compile safety (QA-ENV-04). `vssyl-server` `pretest` / `pretype-check` build `vssyl-shared`.
 
 #### Tests (representative)
 

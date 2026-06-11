@@ -1,5 +1,19 @@
 # Active Context - Vssyl Business Admin & AI Integration
 
+## QA-ENV-04 — Build validation hardening (June 2026) ✅
+
+**Status:** **RESOLVED** — platform reliability only; no certification or feature changes.
+
+**Gap closed:** `verify:ci` and GitHub Actions now run `pnpm run build:web` (`next build`) after `type-check` — catches bundler-only failures like QA-ENV-01.
+
+**Cloud Build:** Already ran `next build` in `web/Dockerfile.production`; no pipeline change.
+
+**New flow:** `pnpm verify:ci` = `type-check` → `build:web` → `test`.
+
+**Evidence:** [`QA_ENV_04_BUILD_VALIDATION_CLOSEOUT.md`](../docs/architecture/audits/QA_ENV_04_BUILD_VALIDATION_CLOSEOUT.md).
+
+---
+
 ## QA-ENV-01 — Environment blocker remediation (June 2026) ✅
 
 **Status:** **RESOLVED** — runtime/build investigation only; no QA re-run; no certification changes.

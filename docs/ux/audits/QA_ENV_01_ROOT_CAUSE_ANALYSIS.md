@@ -135,7 +135,7 @@ Root `package.json` `build` script runs `build:shared` then `vssyl-web build`. T
 |----|------|----------|-------|
 | QA-ENV-02 | `JWT_SECRET` missing — backend fails on `pnpm dev` | P1 for full-stack QA | Separate from QA-ENV-01; blocks API-backed cases |
 | QA-ENV-03 | Port 3000 conflict → dev on 3001 | Low | Document port when running QA |
-| QA-ENV-04 | `verify:ci` skips `next build` | Medium | Consider adding web compile to CI gate for shared import regressions |
+| QA-ENV-04 | `verify:ci` skips `next build` | Medium | **Resolved** — see [QA_ENV_04_BUILD_VALIDATION_CLOSEOUT.md](../../architecture/audits/QA_ENV_04_BUILD_VALIDATION_CLOSEOUT.md) |
 | QA-ENV-05 | Path aliases to `shared/src` vs `dist` dual consumption | Low | Document convention: extensionless relative imports in `shared/src` |
 
 ---

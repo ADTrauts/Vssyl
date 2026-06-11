@@ -43,6 +43,12 @@ jobs:
       - run: pnpm prisma:generate
       - run: pnpm exec prisma migrate deploy --schema prisma/schema.prisma
       - run: pnpm type-check
+      - name: Verify Next.js production compile
+        run: pnpm run build:web
+        env:
+          NODE_ENV: production
+          NEXTAUTH_SECRET: ci-nextauth-secret-must-be-at-least-32-chars
+          NEXTAUTH_URL: http://localhost:3000
       - name: Run web runtime tests
         run: pnpm --filter vssyl-web test
       - run: pnpm test

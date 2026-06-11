@@ -1,5 +1,21 @@
 # Block-on-Block Platform - Progress
 
+## QA-ENV-04 — Build validation hardening (June 2026) ✅
+
+**Status:** **RESOLVED** — CI / verify:ci gap closed.
+
+| Item | Outcome |
+|------|---------|
+| Gap | `type-check` PASS while `next build` FAIL (QA-ENV-01 class) |
+| Fix | `build:web` script; added to `verify:ci` + GitHub Actions CI |
+| Cloud Build | Already had `next build` — no change |
+| `verify:ci` | `type-check` → `build:web` → `test` |
+| Coverage | Calendar, Chat, Todo, Notifications routes + `ContextMenu`/`DropdownMenu` |
+
+**Evidence:** [`QA_ENV_04_BUILD_VALIDATION_CLOSEOUT.md`](../docs/architecture/audits/QA_ENV_04_BUILD_VALIDATION_CLOSEOUT.md)
+
+---
+
 ## QA-ENV-01 — Environment blocker remediation (June 2026) ✅
 
 **Status:** **RESOLVED** — investigation + minimal fix; no QA re-run in this wave.
