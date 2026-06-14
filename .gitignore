@@ -15,8 +15,8 @@ test-results/
 playwright-report/
 *.tsbuildinfo
 
-# Environment files
-.env
+# QA seed files (local test business/dashboard IDs — do not commit)
+**/qa-evidence/**/qa-seed.json
 server/.env
 .env.local
 .env.production

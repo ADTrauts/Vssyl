@@ -1,7 +1,7 @@
 {
   "executedAt": "2026-06-14T20:05:07.119Z",
   "matrix": "Part 2H",
-  "publisherBusinessId": "1edda378-17cd-47f4-a2f1-8cb9bf4fb355",
+  "publisherBusinessId": "[redacted-local-qa-seed]",
   "dashboardId": "2eb3a451-ec7b-48b7-b8a3-be727d9a64eb",
   "results": [
     {
@@ -145,7 +145,7 @@
       "result": "BLOCKED",
       "viewport": "D",
       "theme": "light",
-      "notes": "publisher hub not visible url=http://localhost:3000/business/1edda378-17cd-47f4-a2f1-8cb9bf4fb355/workspace/place",
+      "notes": "publisher hub not visible url=http://localhost:3000/business/[id]/workspace/place",
       "screenshot": "RWS-16-business-to-place-publisher-D-light-blocked.png"
     },
     {
@@ -226,7 +226,7 @@
       "result": "PASS",
       "viewport": "D",
       "theme": "light",
-      "notes": "Business calendar segment canonical url=http://localhost:3000/business/1edda378-17cd-47f4-a2f1-8cb9bf4fb355/workspace/calendar",
+      "notes": "Business calendar segment canonical url=http://localhost:3000/business/[id]/workspace/calendar",
       "screenshot": null
     },
     {

@@ -14,15 +14,25 @@ const EMAIL = 'qa-calendar-5g-exec-2026@test.com';
 const PASSWORD = 'TestPassword123!';
 
 const seedPath = path.join(__dirname, '../../../ux/audits/qa-evidence/5G-QA/place/qa-seed.json');
-let PUBLISHER_ID = '1edda378-17cd-47f4-a2f1-8cb9bf4fb355';
-if (fs.existsSync(seedPath)) {
-  try {
-    const seed = JSON.parse(fs.readFileSync(seedPath, 'utf8'));
-    if (seed.publisherBusinessId) PUBLISHER_ID = seed.publisherBusinessId;
-  } catch {
-    // Use default publisher id when seed is unreadable.
+
+function resolvePublisherBusinessId() {
+  if (process.env.QA_PUBLISHER_BUSINESS_ID) {
+    return process.env.QA_PUBLISHER_BUSINESS_ID;
   }
+  if (fs.existsSync(seedPath)) {
+    try {
+      const seed = JSON.parse(fs.readFileSync(seedPath, 'utf8'));
+      if (seed.publisherBusinessId) return seed.publisherBusinessId;
+    } catch {
+      // Fall through to error below.
+    }
+  }
+  throw new Error(
+    'Set QA_PUBLISHER_BUSINESS_ID or create docs/ux/audits/qa-evidence/5G-QA/place/qa-seed.json (local only — do not commit UUIDs).'
+  );
 }
+
+const PUBLISHER_ID = resolvePublisherBusinessId();
 
 fs.mkdirSync(SCREENSHOTS, { recursive: true });
 const results = [];

@@ -4,7 +4,7 @@
 **Program:** Reference Workspace Wave 2E — Cross-Surface QA  
 **Matrix:** RWS-01–27 (Part 2H)  
 **QA account:** `qa-calendar-5g-exec-2026@test.com`  
-**Publisher business:** `1edda378-17cd-47f4-a2f1-8cb9bf4fb355` (from `qa-seed.json`)  
+**Publisher business:** from `QA_PUBLISHER_BUSINESS_ID` env or local `qa-seed.json` (not committed)  
 **Personal dashboard:** `2eb3a451-ec7b-48b7-b8a3-be727d9a64eb`
 
 ---
