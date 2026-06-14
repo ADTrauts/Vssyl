@@ -41,9 +41,10 @@ import { businessAPI } from '../../api/business';
 import { useThemeColors } from '../../hooks/useThemeColors';
 import {
   buildBusinessWorkspaceModuleHref,
-  hasNestedWorkspaceRoute,
   resolveBusinessWorkspaceModule,
+  shouldRenderWorkspaceChildren,
 } from '../../lib/businessWorkspaceNavigation';
+import { useEnsureBusinessDashboard } from '../../hooks/useEnsureBusinessDashboard';
 
 interface Business {
   id: string;
@@ -86,27 +87,30 @@ function DashboardLayoutWrapper({ business, children }: DashboardLayoutWrapperPr
   const [localBusiness, setLocalBusiness] = useState<Business | null>(business);
   const [businessLoading, setBusinessLoading] = useState(false);
   const [businessError, setBusinessError] = useState<string | null>(null);
-  
-  // Business dashboard state - CRITICAL for data isolation
-  const [businessDashboardId, setBusinessDashboardId] = useState<string | null>(null);
-  const [dashboardLoading, setDashboardLoading] = useState(true);
-  const [dashboardError, setDashboardError] = useState<string | null>(null);
-  
-  // Update local business when prop changes
-  useEffect(() => {
-    if (business) {
-      setLocalBusiness(business);
-    }
-  }, [business]);
-  
+
   // Use local business if prop is null (fallback to loaded business)
   const effectiveBusiness = business || localBusiness;
+  const businessIdFromPath = pathname?.split('/business/')[1]?.split('/')[0] || null;
+  const effectiveBusinessId = effectiveBusiness?.id || businessIdFromPath;
+
+  const {
+    businessDashboardId,
+    loading: dashboardLoading,
+    error: dashboardError,
+  } = useEnsureBusinessDashboard(effectiveBusinessId ?? undefined, effectiveBusiness?.name);
   
   const { currentBranding, isBusinessContext, getSidebarStyles, getHeaderStyles } = useGlobalBranding();
   const { isDark } = useThemeColors();
   const { getFilteredModules } = usePositionAwareModules();
   const { getConfigForContext, getConfigForTab } = useSidebarCustomization();
   const mutedTextColor = isDark ? '#cbd5e1' : '#6b7280';
+
+  // Update local business when prop changes
+  useEffect(() => {
+    if (business) {
+      setLocalBusiness(business);
+    }
+  }, [business]);
   
   const [showCustomizationModal, setShowCustomizationModal] = useState(false);
   const [collapsedFolders, setCollapsedFolders] = useState<Set<string>>(new Set());
@@ -227,171 +231,6 @@ function DashboardLayoutWrapper({ business, children }: DashboardLayoutWrapperPr
     }
   }, [status, session, router]);
 
-  // CRITICAL: Ensure business dashboard exists for proper data isolation
-  useEffect(() => {
-    async function ensureBusinessDashboard() {
-      const isDev = process.env.NODE_ENV === 'development';
-      
-      // Extract businessId from pathname if business prop is null
-      const businessIdFromPath = pathname?.split('/business/')[1]?.split('/')[0] || null;
-      const effectiveBusinessId = effectiveBusiness?.id || businessIdFromPath;
-      
-      if (isDev) {
-        console.log('🚀 DashboardLayoutWrapper: ensureBusinessDashboard called', {
-          hasToken: !!session?.accessToken,
-          hasBusiness: !!effectiveBusiness,
-          businessIdFromProp: effectiveBusiness?.id,
-          businessIdFromPath,
-          effectiveBusinessId,
-          pathname
-        });
-      }
-      
-      if (!session?.accessToken || !effectiveBusinessId) {
-        if (isDev) {
-          console.log('⏸️ DashboardLayoutWrapper: Missing requirements, skipping', {
-            hasToken: !!session?.accessToken,
-            hasBusiness: !!effectiveBusiness,
-            effectiveBusinessId
-          });
-        }
-        setDashboardLoading(false);
-        return;
-      }
-
-      try {
-        if (isDev) {
-          console.log('🔄 DashboardLayoutWrapper: Starting dashboard initialization...');
-        }
-        setDashboardLoading(true);
-        setDashboardError(null);
-
-        // Fetch all user's dashboards
-        const dashboardsResponse = await fetch('/api/dashboard', {
-          headers: {
-            'Authorization': `Bearer ${session.accessToken}`,
-          },
-        });
-
-        if (!dashboardsResponse.ok) {
-          const errorText = await dashboardsResponse.text();
-          console.error('❌ DashboardLayoutWrapper: Dashboard API error:', {
-            status: dashboardsResponse.status,
-            statusText: dashboardsResponse.statusText,
-            errorText
-          });
-          throw new Error(`Failed to load dashboards: ${dashboardsResponse.status} - ${errorText}`);
-        }
-
-        const dashboardsData = await dashboardsResponse.json();
-        if (isDev) {
-          console.log('📊 DashboardLayoutWrapper: Dashboards data:', dashboardsData);
-        }
-        
-        // Extract all dashboards from the nested structure
-        const allDashboards = dashboardsData.dashboards ? [
-          ...(dashboardsData.dashboards.personal || []),
-          ...(dashboardsData.dashboards.business || []),
-          ...(dashboardsData.dashboards.educational || []),
-          ...(dashboardsData.dashboards.household || [])
-        ] : [];
-        
-        if (isDev) {
-          console.log('📊 DashboardLayoutWrapper: Total dashboards:', allDashboards.length);
-          console.log('🔍 DashboardLayoutWrapper: Business dashboards:', allDashboards.filter((d: any) => d.businessId).map((d: any) => ({ id: d.id, businessId: d.businessId, name: d.name })));
-          console.log('🔍 DashboardLayoutWrapper: Looking for business dashboard with businessId:', effectiveBusinessId);
-        }
-
-        // Find existing business dashboard
-        let businessDashboard = allDashboards.find((d: Record<string, any>) => d.businessId === effectiveBusinessId);
-
-        if (businessDashboard) {
-          if (isDev) {
-            console.log('✅ DashboardLayoutWrapper: Found existing business dashboard:', {
-              id: businessDashboard.id,
-              name: businessDashboard.name,
-              businessId: businessDashboard.businessId
-            });
-          }
-        } else {
-          if (isDev) {
-            console.log('🆕 DashboardLayoutWrapper: Creating new business dashboard for business:', effectiveBusinessId);
-          }
-          
-          // Create business dashboard
-          const createResponse = await fetch('/api/dashboard', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${session.accessToken}`,
-            },
-            body: JSON.stringify({
-              name: `${effectiveBusiness?.name || 'Business'} Workspace`,
-              businessId: effectiveBusinessId,
-              layout: {},
-              preferences: {},
-            }),
-          });
-
-          if (!createResponse.ok) {
-            const errorText = await createResponse.text();
-            console.error('❌ DashboardLayoutWrapper: Create dashboard failed:', {
-              status: createResponse.status,
-              errorText
-            });
-            throw new Error(`Failed to create business dashboard: ${createResponse.status} - ${errorText}`);
-          }
-
-          const createResponseData = await createResponse.json();
-          if (isDev) {
-            console.log('📦 DashboardLayoutWrapper: Create dashboard response:', createResponseData);
-          }
-          
-          // Handle both response formats: { dashboard: {...} } or just {...}
-          businessDashboard = createResponseData?.dashboard || createResponseData;
-          
-          if (!businessDashboard) {
-            throw new Error('Create dashboard response is empty');
-          }
-          
-          if (isDev) {
-            console.log('✅ DashboardLayoutWrapper: Created new business dashboard:', {
-              id: businessDashboard.id,
-              name: businessDashboard.name,
-              businessId: businessDashboard.businessId
-            });
-          }
-        }
-
-        // Set the dashboard ID
-        if (!businessDashboard?.id) {
-          console.error('❌ DashboardLayoutWrapper: Business dashboard missing id:', businessDashboard);
-          throw new Error('Business dashboard response missing id');
-        }
-        
-        if (isDev) {
-          console.log('🎯 DashboardLayoutWrapper: Setting businessDashboardId to:', businessDashboard.id);
-        }
-        setBusinessDashboardId(businessDashboard.id);
-        if (isDev) {
-          console.log('✅ DashboardLayoutWrapper: Business Dashboard Ready:', {
-            dashboardId: businessDashboard.id,
-            businessId: effectiveBusinessId,
-            dashboardName: businessDashboard.name,
-            timestamp: new Date().toISOString()
-          });
-        }
-
-      } catch (err) {
-        console.error('❌ DashboardLayoutWrapper: Failed to ensure business dashboard:', err);
-        setDashboardError(err instanceof Error ? err.message : 'Failed to initialize business dashboard');
-      } finally {
-        setDashboardLoading(false);
-      }
-    }
-
-    ensureBusinessDashboard();
-  }, [session?.accessToken, effectiveBusiness?.id, effectiveBusiness?.name, pathname]);
 
   useEffect(() => {
     setIsMobile(window.innerWidth < 700);
@@ -413,7 +252,7 @@ function DashboardLayoutWrapper({ business, children }: DashboardLayoutWrapperPr
   };
 
   const currentModule = resolveBusinessWorkspaceModule(pathname || '/', searchParams);
-  const shouldRenderNestedRoute = hasNestedWorkspaceRoute(pathname || '/');
+  const shouldRenderNestedRoute = shouldRenderWorkspaceChildren(pathname || '/');
   // Display name for sidebar: in business context show "Members" for members and connections (per CONNECTIONS_AND_MEMBERS_BUILD_PLAN Phase 2.1)
   const getModuleDisplayName = (moduleId: string, name: string) =>
     isBusinessContext && (moduleId === 'members' || moduleId === 'connections') ? 'Members' : name;
@@ -576,13 +415,15 @@ function DashboardLayoutWrapper({ business, children }: DashboardLayoutWrapperPr
               onClick={() => {
                 try {
                   if (effectiveBusiness?.id) {
-                    router.push(`/business/${effectiveBusiness.id}/workspace?module=ai`);
+                    router.push(buildBusinessWorkspaceModuleHref(effectiveBusiness.id, 'ai'));
                   } else {
                     router.push('/ai-chat');
                   }
                 } catch (error) {
                   console.error('Error navigating to AI chat:', error);
-                  window.location.href = effectiveBusiness?.id ? `/business/${effectiveBusiness.id}/workspace?module=ai` : '/ai-chat';
+                  window.location.href = effectiveBusiness?.id
+                    ? buildBusinessWorkspaceModuleHref(effectiveBusiness.id, 'ai')
+                    : '/ai-chat';
                 }
               }}
               title="AI Chat"

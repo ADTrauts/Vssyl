@@ -1,5 +1,590 @@
 # Block-on-Block Platform - Progress
 
+**Next:** WS-L2 certification review · registration doc draft · optional Business 1E (RWS-F1).
+
+---
+
+## Reference Workspace — Wave 2F Operation Matrix Re-Audit (June 2026) ✅
+
+**Status:** L2-B4 operation matrix re-audit — **complete**.
+
+| Metric | Value |
+|--------|-------|
+| L2-B4 | **Closed** |
+| WS-L2 process blockers | **0** |
+| Combined WS-L2 readiness | **~89%** |
+| Business matrix | Re-audited |
+| Personal matrix | Created |
+
+**Deliverables:** [`REFERENCE_WORKSPACE_OPERATION_MATRIX_REAUDIT.md`](../docs/architecture/audits/REFERENCE_WORKSPACE_OPERATION_MATRIX_REAUDIT.md)
+
+**Next:** WS-L2 certification review.
+
+---
+
+## Reference Workspace — Wave 2E Cross-Surface QA (June 2026) ✅
+
+**Status:** Part 2H cross-surface QA — **complete**.
+
+| Metric | Value |
+|--------|-------|
+| Matrix rows | **27** |
+| PASS (adjudicated) | **23** |
+| P0 FAIL | **1** (RWS-16) |
+| KNOWN-PWF | **3** |
+| L2-B3 | **Closed** |
+| WS-L2 blockers remaining | **1** (L2-B4) |
+| Combined WS-L2 (estimate) | **~87%** |
+
+**Deliverables:** [`REFERENCE_WORKSPACE_QA_EXECUTION_REPORT.md`](../docs/architecture/audits/REFERENCE_WORKSPACE_QA_EXECUTION_REPORT.md) · [`REFERENCE_WORKSPACE_QA_ADDENDUM.md`](../docs/architecture/audits/REFERENCE_WORKSPACE_QA_ADDENDUM.md)
+
+**Next:** Operation matrix re-audit · WS-L2 certification review.
+
+---
+
+## Personal Dashboard — Wave 2D Drift Enforcement (June 2026) ✅
+
+**Status:** Personal registry drift enforcement — **complete**.
+
+| Metric | Value |
+|--------|-------|
+| Drift tests | **15 PASS** |
+| L2-B2 | **Closed** |
+| Personal WS-L2 readiness | **86%** (was 79%) |
+| Combined WS-L2 readiness | **85%** (was 78%) |
+| WS-L2 blockers remaining | **2** (L2-B3, L2-B4) |
+| `pnpm type-check` | **PASS** |
+
+**Deliverables:** [`PERSONAL_DASHBOARD_WAVE_2D_CLOSEOUT.md`](../docs/architecture/audits/PERSONAL_DASHBOARD_WAVE_2D_CLOSEOUT.md) · `web/src/lib/__tests__/personalDashboardRegistryDrift.test.ts`
+
+**Next:** L2-B3 cross-surface QA · L2-B4 operation matrix · WS-L2 certification review.
+
+---
+
+## Business Workspace — Wave 1D Hygiene (June 2026) ✅
+
+**Status:** Orphan segment page cleanup — **complete**.
+
+| Metric | Value |
+|--------|-------|
+| Pages replaced | **4** (chat, calendar, ai, vlink) |
+| L2-B1 | **Closed** |
+| New tests | **4** (route hygiene) |
+| Business WS-L2 readiness | **88%** (was 82%) |
+| Combined WS-L2 readiness | **78%** (was 74%) |
+| `pnpm type-check` | **PASS** |
+
+**Deliverables:** [`BUSINESS_WORKSPACE_WAVE_1D_CLOSEOUT.md`](../docs/architecture/audits/BUSINESS_WORKSPACE_WAVE_1D_CLOSEOUT.md) · [`BUSINESS_WORKSPACE_ROUTE_INVENTORY.md`](../docs/architecture/BUSINESS_WORKSPACE_ROUTE_INVENTORY.md)
+
+**Next:** Personal 2D drift prep · WS-L2 certification review.
+
+---
+
+## Reference Workspace — WS-L2 Assessment (June 2026) ✅
+
+**Status:** **COMPLETE** — assessment only; no WS-L2 certification; no registration.
+
+| Metric | Value |
+|--------|-------|
+| Combined WS-L2 readiness | **74%** |
+| Business | **82%** |
+| Personal | **79%** |
+| WS-L2 blockers | **4** |
+| Registration prep | **May begin** (drafting) |
+
+**Deliverable:** [`REFERENCE_WORKSPACE_WS_L2_ASSESSMENT.md`](../docs/architecture/audits/REFERENCE_WORKSPACE_WS_L2_ASSESSMENT.md)
+
+**Next:** Wave **1D** · Personal **2D** · WS-L2 certification review (post-prerequisites).
+
+---
+
+## Personal Dashboard — WS-L1 Certification (June 2026) ✅
+
+**Status:** Personal Dashboard shell WS-L1 review — **complete**.
+
+| Metric | Value |
+|--------|-------|
+| Certification decision | **Certified with Findings** |
+| Charter criteria | **5/5 met** |
+| PD blockers closed | **10/10** |
+| Findings | **5** (F-1–F-5, non-blocking) |
+| Co-surface WS-L1 | **Both** Business + Personal |
+
+**Deliverable:** [`PERSONAL_DASHBOARD_WS_L1_CERTIFICATION_REVIEW.md`](../docs/architecture/audits/PERSONAL_DASHBOARD_WS_L1_CERTIFICATION_REVIEW.md)
+
+**Next:** Combined WS-L2 assessment · Business 1D · registration doc prep.
+
+---
+
+## Personal Dashboard — Wave 2C Standardization (June 2026) ✅
+
+**Status:** Personal Dashboard navigation enforcement — **complete**.
+
+| Metric | Value |
+|--------|-------|
+| Navigation helpers | `personalDashboardNavigation.ts` + `crossSurfaceNavigation.ts` |
+| Unit tests | **21** (15 personal + 6 cross-surface) |
+| PD engineering blockers closed | **8** (PD-1,3,4,6,7,9,10) |
+| `pnpm type-check` | **PASS** |
+| Personal WS-L1 | **Certification-ready** (review pending) |
+
+**Deliverables:** [`PERSONAL_DASHBOARD_WAVE_2C_CLOSEOUT.md`](../docs/architecture/audits/PERSONAL_DASHBOARD_WAVE_2C_CLOSEOUT.md)
+
+**Next:** Personal WS-L1 certification · Business **1D** · WS-L2 assessment.
+
+---
+
+## Personal Dashboard — Wave 2B Contract Package (June 2026) ✅
+
+**Status:** Personal Dashboard governance contracts — **complete**.
+
+| Metric | Value |
+|--------|-------|
+| Contract docs | **4** |
+| PD-2 / PD-5 / PD-8 | **Closed (governance)** |
+| WS-L2 governance | **Complete** |
+| Engineering handoff | **Wave 2C** |
+
+**Deliverables:** [`PERSONAL_DASHBOARD_ROUTING_CONTRACT.md`](../docs/architecture/PERSONAL_DASHBOARD_ROUTING_CONTRACT.md) · [`PERSONAL_DASHBOARD_WAVE_2B_CLOSEOUT.md`](../docs/architecture/audits/PERSONAL_DASHBOARD_WAVE_2B_CLOSEOUT.md)
+
+**Next:** Wave **2C** engineering · Business **1D** · **WS-L2** assessment.
+
+---
+
+## Personal Dashboard — Wave 2A Co-Surface Audit (June 2026) ✅
+
+**Status:** Personal Dashboard shell boundary audit — **complete**.
+
+| Metric | Value |
+|--------|-------|
+| P0 blockers | **0** |
+| P1 blockers | **4** (PD-1–PD-4) |
+| P2 blockers | **6** (PD-5–PD-10) |
+| Co-surface readiness | **Yes with findings** |
+| Personal WS-L1 | **Not certified** |
+
+**Deliverable:** [`PERSONAL_DASHBOARD_WAVE_2A_AUDIT.md`](../docs/architecture/audits/PERSONAL_DASHBOARD_WAVE_2A_AUDIT.md)
+
+**Next:** Wave **2B** personal routing contract · Business **1D** hygiene · **WS-L2** assessment.
+
+---
+
+## Business Workspace — WS-L1 Certification (June 2026) ✅
+
+**Status:** First formal Reference Workspace certification review — **complete**.
+
+| Metric | Value |
+|--------|-------|
+| Certification decision | **Certified with Findings** |
+| Requirements met | **11/11** remediation + **5/5** charter criteria |
+| Open WS-L1 blockers | **0** |
+| Registration readiness | **Eligible for prep** (not registration-ready) |
+| Findings | **4** (F-1 orphan pages · F-2 Personal Dashboard · F-3 query legacy · F-4 runtime scope) |
+
+**Deliverable:** [`BUSINESS_WORKSPACE_WS_L1_CERTIFICATION_REVIEW.md`](../docs/architecture/audits/BUSINESS_WORKSPACE_WS_L1_CERTIFICATION_REVIEW.md)
+
+**Next:** Wave **1D** · Personal Dashboard **2A** · **WS-L2** assessment.
+
+---
+
+## Business Workspace — Wave 1C Navigation Contracts (June 2026) ✅
+
+**Status:** WS-L1 routing enforcement — **complete**.
+
+| Metric | Value |
+|--------|-------|
+| Navigation contract tests | **PASS** |
+| Registry drift tests | **PASS** |
+| WS-L1 blockers resolved | **9 / 9** |
+| `pnpm type-check` | **PASS** |
+
+**Deliverable:** [`BUSINESS_WORKSPACE_WAVE_1C_CLOSEOUT.md`](../docs/architecture/audits/BUSINESS_WORKSPACE_WAVE_1C_CLOSEOUT.md) · [`WORKSPACE_ROUTING_CONTRACT.md`](../docs/architecture/WORKSPACE_ROUTING_CONTRACT.md)
+
+**Next:** WS-L1 reassessment (governance gate) · Wave 1D orphan route hygiene (optional).
+
+---
+
+## Business Workspace — Wave 1B Hub Cleanup (June 2026) ✅
+
+**Status:** WS-L1 remediation implementation — **complete**.
+
+| Metric | Value |
+|--------|-------|
+| Stub widgets removed | **3** |
+| Dead landings deleted | **4** |
+| WS-L1 blockers resolved | **6 / 9** |
+| `pnpm type-check` | **PASS** |
+
+**Deliverable:** [`BUSINESS_WORKSPACE_WAVE_1B_CLOSEOUT.md`](../docs/architecture/audits/BUSINESS_WORKSPACE_WAVE_1B_CLOSEOUT.md)
+
+---
+
+## Business Workspace — Wave 1A Boundary Audit (June 2026) ✅
+
+**Status:** Boundary and ownership audit — **complete**.
+
+| Metric | Value |
+|--------|-------|
+| Workspace contract | **v0.1 drafted** |
+| WS-L1 blockers | **9** (P0: stubs + dead landings) |
+| Active landings | **4** (Place, Todo, Calendar, AI) |
+| Dead landings | **4** (Notebook, HR, Scheduling, V_Link) |
+| Shell boundary leaks | Drive upload · stub widgets · members duplicate |
+
+**Deliverable:** [`BUSINESS_WORKSPACE_WAVE_1A_BOUNDARY_AUDIT.md`](../docs/architecture/audits/BUSINESS_WORKSPACE_WAVE_1A_BOUNDARY_AUDIT.md)
+
+**Next:** Wave **1B** hub standardization · Wave **1C** navigation contracts.
+
+---
+
+## Reference Workspace Program — Wave 6C Charter (June 2026) ✅
+
+**Status:** First formal Reference Workspace Program charter — **complete**.
+
+| Question | Verdict |
+|----------|---------|
+| Workspace reference track? | **Yes** — parallel to UX + Architecture |
+| Certification model | **WS-L1 / WS-L2 / WS-L3** |
+| Inaugural candidate | **Business Workspace** + Personal Dashboard shell |
+| Current maturity | **WS-L1** Stabilizing |
+| Place Publisher Hub | **UX #6** track — not workspace ref |
+
+**Deliverable:** [`REFERENCE_WORKSPACE_CHARTER_REVIEW.md`](../docs/architecture/audits/REFERENCE_WORKSPACE_CHARTER_REVIEW.md)
+
+**Next:** Business Workspace Wave **1A+**.
+
+---
+
+## UX Reference Program — Wave 6C Expansion Review (June 2026) ✅
+
+**Status:** Post-completion governance review — **complete**.
+
+| Question | Verdict |
+|----------|---------|
+| Original program complete? | **Yes** (#1–#5 + 56 patterns) |
+| UX #6? | **Approve governed expansion** |
+| Place → UX #6? | **Recommended** — not registered |
+| Reference Workspace? | **Parallel track approved** |
+| Domain slots? | **Annexes only** |
+
+**Deliverable:** [`UX_REFERENCE_PROGRAM_EXPANSION_REVIEW.md`](../docs/ux/audits/UX_REFERENCE_PROGRAM_EXPANSION_REVIEW.md)
+
+**Next:** **6B-Place-Ref6-Prep** · **6D-Place-Pattern-Extraction** · **6C-Reference-Workspace-Charter**.
+
+---
+
+## Place — Wave 6B-Place-Certification-Review (June 2026) ✅
+
+**Status:** First formal Place UX certification review — **complete**.
+
+| Award | Result |
+|-------|--------|
+| Scorecard | **11 PASS / 0 PWF / 0 FAIL** |
+| UX-L1 | **Certified** |
+| UX-L2 | **Certified** |
+| UX-L3 | **Certified** (strict) |
+| Reference UX #6 | **Eligible With Findings** — not designated |
+
+**Deliverables:** [`PLACE_UX_CERTIFICATION_REVIEW.md`](../docs/ux/audits/PLACE_UX_CERTIFICATION_REVIEW.md)
+
+**Next:** **6B-Place-Ref6-Prep**.
+
+---
+
+## Place — Wave 6B-Place-QA + R2 (June 2026) ✅
+
+**Status:** Part 2G manual QA — **27 PASS / 0 FAIL / 0 BLOCKED**.
+
+**P-13:** **Closed**. **PLC-QA-ENV-01:** Resolved.
+
+**Deliverables:** [`PLACE_QA_EXECUTION_REPORT_2026.md`](../docs/ux/audits/PLACE_QA_EXECUTION_REPORT_2026.md) · [`qa-evidence/5G-QA/place/`](../docs/ux/audits/qa-evidence/5G-QA/place/)
+
+---
+
+## Place — Wave 6B-Place-UX-D (June 2026) ✅
+
+**Status:** **COMPLETE** — final engineering wave before QA/certification review.
+
+| Metric | Value |
+|--------|-------|
+| Findings resolved | **P-6**, **P-9**, **P-11**, **P-12** partial; **P-13** prepared |
+| Projected scorecard | **7 PASS / 4 PWF / 0 FAIL** |
+| QA matrix rows | **27** (Part 2G) |
+| UX-L1 readiness | **86%** (projected) |
+| UX-L2 readiness | **82%** (projected) |
+| `pnpm type-check` | **PASS** |
+
+**Evidence:** [`PLACE_UX_BATCH_D_CLOSEOUT.md`](../docs/ux/audits/PLACE_UX_BATCH_D_CLOSEOUT.md)
+
+**Next:** QA re-run after **PLC-QA-ENV-01**; then certification review gate.
+
+---
+
+## Place — Wave 6B-Place-UX-C (June 2026) ✅
+
+**Status:** **COMPLETE** — consumer shell + mobile + EmptyState remediation.
+
+| Metric | Value |
+|--------|-------|
+| Findings resolved | **P-3**, **P-7** (eng), **P-10**, **P-5**; **P-11**, **P-12** partial |
+| Projected scorecard | **5 PASS / 6 PWF / 0 FAIL** |
+| UX-L1 readiness | **78%** (projected) |
+| UX-L2 readiness | **68%** (projected) |
+| `pnpm type-check` | **PASS** |
+
+**Evidence:** [`PLACE_UX_BATCH_C_CLOSEOUT.md`](../docs/ux/audits/PLACE_UX_BATCH_C_CLOSEOUT.md)
+
+**Next:** **6B-Place-UX-D**.
+
+---
+
+## Place — Wave 6B-Place-UX-B (June 2026) ✅
+
+**Status:** **COMPLETE** — interaction safety remediation.
+
+| Metric | Value |
+|--------|-------|
+| Findings resolved | **P-1**, **P-2**, **P-4**, **P-8**; **P-3** partial |
+| Projected scorecard | **3 PASS / 7 PWF / 1 FAIL** |
+| UX-L1 readiness | **62%** (projected) |
+| UX-L2 readiness | **45%** (projected) |
+| Native dialogs | **0** |
+| `pnpm type-check` | **PASS** |
+
+**Evidence:** [`PLACE_UX_BATCH_B_CLOSEOUT.md`](../docs/ux/audits/PLACE_UX_BATCH_B_CLOSEOUT.md)
+
+**Next:** **6B-Place-UX-C**.
+
+---
+
+## Place — Wave 6B UX Reference Assessment (June 2026) ✅
+
+**Status:** **COMPLETE** — assessment only; no engineering; not certified.
+
+| Metric | Value |
+|--------|-------|
+| Scorecard | **1 PASS / 7 PWF / 3 FAIL** |
+| UX-L1 readiness | **38%** |
+| UX-L2 readiness | **22%** |
+| UX-L3 readiness | **12%** |
+| Pattern reuse (Wave 6A) | **32%** |
+| Reference UX #6 | **Deferred** (conditional) |
+| Reference Workspace | **Ineligible** |
+| Architecture track | Reference Module **#5** (unchanged) |
+
+**Evidence:** [`PLACE_UX_BASELINE_AUDIT.md`](../docs/ux/audits/PLACE_UX_BASELINE_AUDIT.md) · [`PLACE_UX_SCORECARD.md`](../docs/ux/audits/PLACE_UX_SCORECARD.md)
+
+**Next:** **6B-Place-UX-B** interaction safety.
+
+---
+
+## UX Reference Program — Wave 6A Pattern Extraction (June 2026) ✅
+
+**Status:** **COMPLETE** — governance only; no source code changes.
+
+| Metric | Value |
+|--------|-------|
+| Patterns extracted | **56** (`UX-PAT-*`) |
+| Pattern standard documents | **9** |
+| UX references sourced | **5** (#1 Drive · #2 Notifications · #3 Todo · #4 AI · #5 Calendar) |
+| Program completion | Registration + extraction **complete** |
+| Remaining gaps | Chat UX ref · Place UX ref · partner enforcement |
+
+**Catalog:** [`UX_REFERENCE_PATTERN_CATALOG.md`](../docs/ux/UX_REFERENCE_PATTERN_CATALOG.md)
+
+**Closeout:** [`UX_REFERENCE_PROGRAM_CLOSEOUT.md`](../docs/ux/UX_REFERENCE_PROGRAM_CLOSEOUT.md)
+
+---
+
+## AI Experience — Reference UX #4 Registration (June 2026) ✅
+
+**Status:** **COMPLETE** — Reference UX **#4** designated.
+
+| Metric | Value |
+|--------|-------|
+| Registration decision | **Approved with Findings** |
+| Official holder | **AI Experience** (`ai` / `ai-chat`) |
+| UX-L3 | **Certified with Findings** (unchanged) |
+| Scorecard | **11 PASS / 0 PWF / 0 FAIL** |
+| Registration doc | [`REFERENCE_MODULE_AI.md`](../docs/ux/audits/REFERENCE_MODULE_AI.md) |
+
+**Evidence:** [`REFERENCE_MODULE_AI.md`](../docs/ux/audits/REFERENCE_MODULE_AI.md)
+
+---
+
+## AI Experience — Wave 5H-AI-Ref4-Prep (June 2026) ✅
+
+**Status:** **COMPLETE** — Reference UX #4 readiness (governance only).
+
+| Metric | Value |
+|--------|-------|
+| Registration recommendation | **Approved with Findings** (readiness) |
+| UX-L3 | **Certified with Findings** (unchanged) |
+| QA | Part 2F — 0 P0 FAIL |
+| UX #4 slot | **Vacant — reserved** |
+| Official holder | **None** — AI recommended at council |
+| Registration blockers | **0** |
+
+**Next:** **5H-AI-Ref4-Registration**
+
+**Evidence:** [`AI_EXPERIENCE_REFERENCE_UX4_READINESS_REVIEW.md`](../docs/ux/audits/AI_EXPERIENCE_REFERENCE_UX4_READINESS_REVIEW.md)
+
+---
+
+## AI Experience — Wave 5H-AI-L1L2-D (June 2026) ✅
+
+**Status:** **COMPLETE** — UX certification review (governance only).
+
+| Metric | Value |
+|--------|-------|
+| Scorecard | **11 PASS / 0 PWF / 0 FAIL** |
+| UX-L1 | **Certified** |
+| UX-L2 | **Certified** |
+| UX-L3 | **Certified with Findings** |
+| Reference UX #4 | **Approved with Findings** (registered) |
+| AI-9 | Non-scorecard architecture debt |
+| Open findings | R-AI-1–4, QA-ENV-02 |
+
+**Next:** **5H-AI-Ref4-Prep**
+
+**Evidence:** [`AI_EXPERIENCE_UX_CERTIFICATION_REVIEW_2026.md`](../docs/ux/audits/AI_EXPERIENCE_UX_CERTIFICATION_REVIEW_2026.md)
+
+---
+
+## AI Experience — Wave 5H-AI-UX-D (June 2026) ✅
+
+**Status:** **COMPLETE** — Part 2F QA (evidence only).
+
+| Metric | Value |
+|--------|-------|
+| QA matrix | **20 PASS / 0 FAIL / 2 BLOCKED** |
+| Scorecard (post-QA) | **11 PASS / 1 PWF / 0 FAIL** |
+| UX-L1 readiness | **95%** |
+| UX-L2 readiness | **92%** |
+| UX-L3 readiness | **38%** |
+| Closed | **AI-10**, **AI-11**, **AI-15** |
+| Deferred | **AI-9** (architectural debt) |
+| Certification | **None awarded** |
+
+**Next:** Formal UX-L1/L2 review
+
+**Evidence:** [`AI_EXPERIENCE_QA_EXECUTION_REPORT_2026.md`](../docs/ux/audits/AI_EXPERIENCE_QA_EXECUTION_REPORT_2026.md)
+
+---
+
+## AI Experience — Wave 5H-AI-UX-C (June 2026) ✅
+
+**Status:** **COMPLETE** — navigation + parity + QA prep (engineering only).
+
+| Metric | Value |
+|--------|-------|
+| Scorecard (projected) | **8 PASS / 3 PWF / 0 FAIL** |
+| UX-L1 readiness | **88%** |
+| UX-L2 readiness | **78%** |
+| UX-L3 readiness | **30%** |
+| Resolved | **AI-12**–**AI-14**, **AI-15** (prep) |
+| Prepared | **AI-10**, **AI-11** (Part 2F) |
+| Deferred | **AI-9** (architectural debt) |
+| Certification | **None awarded** |
+
+**Next:** **5H-AI-UX-D** (QA execution + review)
+
+**Evidence:** [`AI_EXPERIENCE_UX_BATCH5H_C_CLOSEOUT.md`](../docs/ux/audits/AI_EXPERIENCE_UX_BATCH5H_C_CLOSEOUT.md)
+
+---
+
+## AI Experience — Wave 5H-AI-UX-B (June 2026) ✅
+
+**Status:** **COMPLETE** — UX remediation (engineering only).
+
+| Metric | Value |
+|--------|-------|
+| Scorecard (projected) | **7 PASS / 4 PWF / 0 FAIL** |
+| UX-L1 readiness | **72%** |
+| UX-L2 readiness | **58%** |
+| UX-L3 readiness | **22%** |
+| Resolved | **AI-1**–**AI-8** |
+| Reference UX #4 | **Deferred** (conditional reserve) |
+| Certification | **None awarded** |
+
+**Next waves:** **5H-AI-UX-C** (light) · **5H-AI-UX-D** (QA + review)
+
+**Evidence:** [`AI_EXPERIENCE_UX_BATCH5H_B_CLOSEOUT.md`](../docs/ux/audits/AI_EXPERIENCE_UX_BATCH5H_B_CLOSEOUT.md)
+
+---
+
+## AI Experience — Wave 5H-AI-UX-A (June 2026) ✅
+
+**Status:** **COMPLETE** — UX audit baseline only.
+
+| Metric | Value |
+|--------|-------|
+| Scorecard | **3 PASS / 6 PWF / 2 FAIL** |
+| UX-L1 readiness | **42%** |
+| UX-L2 readiness | **28%** |
+| UX-L3 readiness | **15%** |
+| P1 findings | **AI-1**, **AI-2**, **AI-3** |
+| Reference UX #4 | **Deferred** (conditional reserve) |
+| Certification | **None awarded** |
+
+**Evidence:** [`AI_EXPERIENCE_UX_AUDIT_2026.md`](../docs/ux/audits/AI_EXPERIENCE_UX_AUDIT_2026.md)
+
+---
+
+## Reference UX #4 Strategic Review (June 2026) ✅
+
+**Status:** **COMPLETE** — governance only; no designation.
+
+| Field | Value |
+|-------|-------|
+| Recommended holder | **AI Experience** (reserved) |
+| Official holder | **AI Experience** — Reference UX **#4** |
+| Purpose | Twin/chat workspace UX archetype |
+| Next work | Optional **5H-AI-L3-Polish** (R-AI-3); registration maintenance |
+| Alternate candidate | Place (future slot expansion) |
+
+**Evidence:** [`REFERENCE_MODULE_AI.md`](../docs/ux/audits/REFERENCE_MODULE_AI.md)
+
+---
+
+## Todo — Reference UX #3 Registration (June 2026) ✅
+
+**Status:** **COMPLETE** — governance registration only.
+
+| Field | Value |
+|-------|-------|
+| Decision | **Approved with Findings** |
+| UX track | Reference UX **#3** (task workspace / list-board-calendar UX) |
+| Arch track | Reference Module **#4** (unchanged) |
+| UX-L3 | **Certified** (11 PASS / 0 PWF — unchanged) |
+| Carry-forward | T-6, T-10, T-12 (P3); R-TOD-1/2 (verification); QA-ENV-02 |
+
+**Evidence:** [`REFERENCE_MODULE_TODO.md`](../docs/ux/audits/REFERENCE_MODULE_TODO.md)
+
+---
+
+## Chat — Wave 5H-Chat-Reassess (June 2026) ✅
+
+**Status:** **COMPLETE** — assessment only; certification unchanged.
+
+| Metric | Value |
+|--------|-------|
+| Scorecard | **6 PASS / 5 PWF / 0 FAIL** (5B.3 — unchanged) |
+| UX-L1 | **Certified with Findings** |
+| UX-L2 readiness | **52%** |
+| UX-L3 readiness | **28%** |
+| Open findings | **C-5**, **C-6**, **C-8**, **C-9** (partial) |
+| Arch Reference #2 | **Retain** |
+| UX Reference path | **Not viable** near-term |
+| Engineering to L2 CwF | **Medium** (3–5 days) |
+| QA to L2 CwF | **Medium** (~4h + evidence) |
+
+**Next waves (when prioritized):** **5H-Chat-L2** → **5G-QA-EXEC** Part 2E → **5H-Chat-L2-D**.
+
+**Evidence:** [`CHAT_UX_MODERNIZATION_REASSESSMENT.md`](../docs/ux/audits/CHAT_UX_MODERNIZATION_REASSESSMENT.md)
+
+---
+
 ## QA-ENV-04 — Build validation hardening (June 2026) ✅
 
 **Status:** **RESOLVED** — CI / verify:ci gap closed.
@@ -35,25 +620,199 @@
 
 ---
 
-## Calendar — Wave 5G-QA-EXEC (June 2026) ⚠️
+## Todo — Wave 5G-Todo-L3-D (June 2026) ✅
 
-**Status:** **ATTEMPTED — BLOCKED** (session 2026-06-03) — no certification promotion.
+**Status:** **COMPLETE** — UX-L3 certification review.
+
+| Metric | Value |
+|--------|-------|
+| Scorecard | **11 PASS / 0 PWF / 0 FAIL** |
+| UX-L1 | **Certified** |
+| UX-L2 | **Certified** (upgraded from CwF) |
+| UX-L3 | **Certified** (first award) |
+| Reference UX #3 | **Approved with Findings** |
+| T-11 | **Resolved** |
+
+**Evidence:** [`TODO_UX_L3_CERTIFICATION_REVIEW.md`](../docs/ux/audits/TODO_UX_L3_CERTIFICATION_REVIEW.md)
+
+---
+
+## Todo — Wave 5G-QA-EXEC Part 2C (June 2026) ✅
+
+**Status:** **COMPLETE** — T-11 closable; no certification change.
+
+| Metric | Value |
+|--------|-------|
+| PASS / FAIL / BLOCKED / N/A / KNOWN-PWF | **25 / 0 / 2 / 1 / 2** |
+| P0 FAIL | **0** |
+| T-11 | **Closable** |
+| Projected at L3-D | **10–11 PASS / 0–1 PWF** |
+| T-11 | **Resolved** |
+
+**Evidence:** [`TODO_QA_EXECUTION_REPORT_2026.md`](../docs/ux/audits/TODO_QA_EXECUTION_REPORT_2026.md)
+
+---
+
+## Todo — Wave 5G-Todo-L3 Prep (June 2026) ✅
+
+**Status:** **COMPLETE** — readiness audit only.
+
+| Metric | Value |
+|--------|-------|
+| Scorecard | **9 PASS / 2 PWF / 0 FAIL** |
+| UX-L3 readiness | **74%** |
+| Primary gate | **T-11** (Part 2C QA) |
+| Engineering to L3 | **0–3 days** (contingency only) |
+| QA to L3 | **~4 hours** |
+| Reference UX #3 | **Moderate** viability post-L3 |
+
+**Evidence:** [`TODO_UX_L3_READINESS_REVIEW.md`](../docs/ux/audits/TODO_UX_L3_READINESS_REVIEW.md)
+
+---
+
+## Notifications — Reference UX #2 Registration (June 2026) ✅
+
+**Status:** **COMPLETE** — governance registration only.
+
+| Field | Value |
+|-------|-------|
+| Decision | **Approved with Findings** |
+| UX track | Reference UX **#2** (Notifications inbox UX) |
+| Arch track | Reference Module **#2** = **Chat** (unchanged) |
+| Prior UX #2 candidate | Chat — **Rejected** (5B.3) |
+
+**Evidence:** [`REFERENCE_MODULE_NOTIFICATIONS.md`](../docs/ux/audits/REFERENCE_MODULE_NOTIFICATIONS.md)
+
+---
+
+## Notifications — Wave 5G-Notifications-D (June 2026) ✅
+
+**Status:** **COMPLETE** — UX-L3 certification review.
+
+| Metric | Value |
+|--------|-------|
+| Scorecard | **11 PASS / 1 PWF / 0 FAIL** |
+| UX-L1 | **Certified** (upgraded from CwF) |
+| UX-L2 | **Certified** (upgraded from CwF) |
+| UX-L3 | **Certified with Findings** (first award) |
+| Reference UX #2 | **Approved with Findings** (registered) |
+| N-6 | **Resolved** |
+
+**Evidence:** [`NOTIFICATIONS_UX_L3_CERTIFICATION_REVIEW.md`](../docs/ux/audits/NOTIFICATIONS_UX_L3_CERTIFICATION_REVIEW.md)
+
+---
+
+## Calendar — Wave 5G-Calendar-D (June 2026) ✅
+
+**Status:** **COMPLETE** — UX-L3 certification review.
+
+| Metric | Value |
+|--------|-------|
+| Scorecard | **11 PASS / 0 PWF / 0 FAIL** |
+| UX-L1 | **Certified** |
+| UX-L2 | **Certified** (upgraded from CwF) |
+| UX-L3 | **Certified** (first award) |
+| Reference UX #5 | **Approved with Findings** |
+| E-14 | **Resolved** |
+
+**Evidence:** [`CALENDAR_UX_L3_CERTIFICATION_REVIEW.md`](../docs/ux/audits/CALENDAR_UX_L3_CERTIFICATION_REVIEW.md)
+
+---
+
+## Calendar — Reference UX #5 Registration (June 2026) ✅
+
+**Status:** **COMPLETE** — governance registration only.
+
+| Field | Value |
+|-------|-------|
+| Decision | **Approved with Findings** |
+| UX track | Reference UX **#5** (Calendar scheduling UX) |
+| Arch track | Reference Module **#3** unchanged; Arch **#5** = Place |
+
+**Evidence:** [`REFERENCE_MODULE_CALENDAR.md`](../docs/ux/audits/REFERENCE_MODULE_CALENDAR.md)
+
+---
+
+## Notifications — Wave 5G-QA-EXEC Part 2B (June 2026) ✅
+
+**Status:** **COMPLETE** — superseded by 5G-Notifications-D.
+
+| Metric | Value |
+|--------|-------|
+| PASS / FAIL / BLOCKED / N/A | **18 / 0 / 0 / 2** |
+| P0 FAIL | **0** |
+| N-6 | **Resolved** |
+
+**Evidence:** [`NOTIFICATIONS_QA_EXECUTION_REPORT_2026.md`](../docs/ux/audits/NOTIFICATIONS_QA_EXECUTION_REPORT_2026.md)
+
+---
+
+## Notifications — Wave 5G-Notifications L3 Remediation (June 2026) ✅
+
+**Status:** **COMPLETE** — N-2/N-5/N-7 engineering.
+
+**Evidence:** [`NOTIFICATIONS_L3_REMEDIATION_BATCH5G_CLOSEOUT.md`](../docs/ux/audits/NOTIFICATIONS_L3_REMEDIATION_BATCH5G_CLOSEOUT.md)
+
+---
+
+## Notifications — Wave 5G-Notifications-L3 Prep (June 2026) ✅
+
+**Status:** **COMPLETE** — readiness audit only.
+
+| Metric | Value |
+|--------|-------|
+| Scorecard (pre-5G) | **9 PASS / 4 PWF / 0 FAIL** |
+| UX-L3 readiness | **65%** |
+| Reference UX #2 | **Strong candidate** |
+
+**Evidence:** [`NOTIFICATIONS_UX_L3_READINESS_REVIEW.md`](../docs/ux/audits/NOTIFICATIONS_UX_L3_READINESS_REVIEW.md)
+
+---
+
+## Calendar — Wave 5G-QA-EXEC-R3 (June 2026) ✅
+
+**Status:** **COMPLETE** — E-14 evidence; superseded by 5G-Calendar-D.
+
+**Evidence:** [`CALENDAR_QA_EXEC_R3_REPORT_2026.md`](../docs/ux/audits/CALENDAR_QA_EXEC_R3_REPORT_2026.md)
+
+---
+
+## Calendar — Wave 5G-QA-EXEC-R2 (June 2026) ✅
+
+**Status:** **COMPLETE** — targeted QA; no certification.
 
 | Item | Outcome |
 |------|---------|
-| Cases in scope | **24** (CAL-01–24) |
-| PASS | **0** |
-| FAIL | **0** |
-| BLOCKED | **24** |
-| P0 BLOCKED | **16** |
-| P1 BLOCKED | **8** |
-| QA-ENV-01 | **Resolved** (post-session) — see above |
-| E-14 | **Open** |
+| Cases | CAL-06, CAL-08, CAL-14, CAL-16, CAL-22 |
+| PASS | **5 / 5** |
+| P0 blockers (scope) | **Closed** |
+| E-14 | **Closable** — R3 full matrix |
 | 5G-Calendar-D ready | **No** |
 
-**Evidence:** [`CALENDAR_QA_EXECUTION_REPORT_2026.md`](../docs/ux/audits/CALENDAR_QA_EXECUTION_REPORT_2026.md)
+**Evidence:** [`CALENDAR_QA_EXEC_R2_REPORT_2026.md`](../docs/ux/audits/CALENDAR_QA_EXEC_R2_REPORT_2026.md)
 
-**Next:** Re-run 5G-QA-EXEC → 5G-Calendar-D.
+**Next:** Resume CAL-01–24 → human sign-off → 5G-Calendar-D.
+
+---
+
+## Calendar — Wave 5G-Calendar-QA-Remediation (June 2026) ✅
+
+**Status:** **COMPLETE** — engineering; validated by R2.
+
+**Evidence:** [`CALENDAR_QA_REMEDIATION_BATCH5G_CLOSEOUT.md`](../docs/ux/audits/CALENDAR_QA_REMEDIATION_BATCH5G_CLOSEOUT.md)
+
+---
+
+## Calendar — Wave 5G-QA-EXEC Re-run (June 2026) ⚠️
+
+**Status:** **PARTIAL** — prior evidence; superseded for P0 interaction blockers by remediation wave.
+
+| Item | Outcome |
+|------|---------|
+| PASS / FAIL / BLOCKED | **9 / 5 / 9** (+ 1 N/A) |
+| P0 FAIL (prior) | CAL-08, CAL-14, CAL-16, CAL-22 (+ CAL-06 P1) |
+
+**Evidence:** [`CALENDAR_QA_EXECUTION_REPORT_2026.md`](../docs/ux/audits/CALENDAR_QA_EXECUTION_REPORT_2026.md)
 
 ---
 

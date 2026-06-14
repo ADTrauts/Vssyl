@@ -1,12 +1,7 @@
-'use client';
-
-import { useEffect } from 'react';
-import { useRouter } from 'next/navigation';
-
-export default function BusinessVLinkRedirect({ params }: { params: { id: string } }) {
-  const router = useRouter();
-  useEffect(() => {
-    router.replace(`/business/${params.id}/workspace?module=vlink`);
-  }, [router, params.id]);
+/**
+ * Segment URL `/workspace/vlink` is rendered by `BusinessWorkspaceContent` (switch mount).
+ * This page is not mounted when `shouldRenderWorkspaceChildren` is false.
+ */
+export default function BusinessWorkspaceVLinkPage() {
   return null;
 }

@@ -1,45 +1,19 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
-import { useSession } from 'next-auth/react';
-import { useRouter } from 'next/navigation';
-import { useDashboard } from '../../contexts/DashboardContext';
+import React from 'react';
 import { CalendarProvider } from '../../contexts/CalendarContext';
-import { Card, Button, Spinner, Alert } from 'shared/components';
-import { 
-  LayoutDashboard, 
-  Folder, 
-  MessageSquare, 
-  Calendar,
-  BarChart3,
-  Users,
-  Brain,
-  Plus,
-  Settings
-} from 'lucide-react';
-
-// Import existing widgets
-import ChatWidget from '../widgets/ChatWidget';
-import DriveWidget from '../widgets/DriveWidget';
-import AIWidget from '../widgets/AIWidget';
-
-// Import module wrappers for full-page modules
+import AIWorkspaceLanding from '../ai/AIWorkspaceLanding';
 import ChatModuleWrapper from '../chat/ChatModuleWrapper';
-import DriveModuleWrapper from '../drive/DriveModuleWrapper';
 import CalendarWorkspaceLanding from '../calendar/CalendarWorkspaceLanding';
 import { NotebookShell } from '../notebook/NotebookShell';
 import TodoWorkspaceLanding from '../todo/TodoWorkspaceLanding';
 import PlaceWorkspaceLanding from '../place/PlaceWorkspaceLanding';
 import { VLinkModule } from '../vlink/VLinkModule';
-import DriveSidebar from '../../app/drive/DriveSidebar';
-import { DriveCreateFolderModal } from '../drive/DriveCreateFolderModal';
-import {
-  WorkspaceSplitLayout,
-  WorkspaceSidebar,
-  WorkspaceMain,
-} from '../layouts';
+import DriveWorkspaceLanding from '../drive/DriveWorkspaceLanding';
 import HRLayout from '../hr/HRLayout';
 import SchedulingLayout from '../scheduling/SchedulingLayout';
+import BusinessWorkspaceHubPanel from './BusinessWorkspaceHubPanel';
+import BusinessWorkspaceModuleRedirect from './BusinessWorkspaceModuleRedirect';
 import { getModuleDefinition, normalizeModuleId } from '../../runtime/modules/moduleRegistry';
 
 interface Business {
@@ -61,496 +35,33 @@ interface BusinessWorkspaceContentProps {
   businessDashboardId: string | null;
 }
 
-// Business-specific widgets
-function BusinessDashboardWidget() {
-  const [stats, setStats] = useState({
-    members: 0,
-    files: 0,
-    conversations: 0,
-    events: 0,
-    storageUsed: 0
-  });
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    // TODO: Load business stats
-    setTimeout(() => {
-      setStats({
-        members: 25,
-        files: 156,
-        conversations: 342,
-        events: 28,
-        storageUsed: 2.4
-      });
-      setLoading(false);
-    }, 1000);
-  }, []);
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center p-8">
-        <Spinner size={32} />
-      </div>
-    );
-  }
-
-  return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Business Overview</h1>
-          <p className="text-gray-700 dark:text-gray-300">Your business workspace at a glance</p>
-        </div>
-        <Button>
-          <Plus className="w-4 h-4 mr-2" />
-          Add Widget
-        </Button>
-      </div>
-
-      {/* Quick Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-        <Card className="p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-700 dark:text-gray-300">Members</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{stats.members}</p>
-            </div>
-            <Users className="w-6 h-6 text-gray-400" />
-          </div>
-        </Card>
-        <Card className="p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-700 dark:text-gray-300">Files</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{stats.files}</p>
-            </div>
-            <Folder className="w-6 h-6 text-gray-400" />
-          </div>
-        </Card>
-        <Card className="p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-700 dark:text-gray-300">Conversations</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{stats.conversations}</p>
-            </div>
-            <MessageSquare className="w-6 h-6 text-gray-400" />
-          </div>
-        </Card>
-        <Card className="p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-700 dark:text-gray-300">Events</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{stats.events}</p>
-            </div>
-            <Calendar className="w-6 h-6 text-gray-400" />
-          </div>
-        </Card>
-        <Card className="p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-700 dark:text-gray-300">Storage Used</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{stats.storageUsed} GB</p>
-            </div>
-            <BarChart3 className="w-6 h-6 text-gray-400" />
-          </div>
-        </Card>
-      </div>
-
-      {/* Quick Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card className="p-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Recent Activity</h3>
-          <div className="space-y-3">
-            <div className="flex items-center space-x-3">
-              <div className="w-2 h-2 bg-blue-500 rounded-full"></div>
-              <span className="text-sm text-gray-700 dark:text-gray-300">New member joined</span>
-            </div>
-            <div className="flex items-center space-x-3">
-              <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-              <span className="text-sm text-gray-700 dark:text-gray-300">File uploaded</span>
-            </div>
-            <div className="flex items-center space-x-3">
-              <div className="w-2 h-2 bg-yellow-500 rounded-full"></div>
-              <span className="text-sm text-gray-700 dark:text-gray-300">Meeting scheduled</span>
-            </div>
-          </div>
-        </Card>
-        <Card className="p-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Team Members</h3>
-          <div className="space-y-3">
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-blue-500 rounded-full flex items-center justify-center text-white text-sm font-medium">JD</div>
-              <div>
-                <p className="text-sm font-medium text-gray-900 dark:text-gray-100">John Doe</p>
-                <p className="text-xs text-gray-600 dark:text-gray-400">Admin</p>
-              </div>
-            </div>
-            <div className="flex items-center space-x-3">
-              <div className="w-8 h-8 bg-green-500 rounded-full flex items-center justify-center text-white text-sm font-medium">JS</div>
-              <div>
-                <p className="text-sm font-medium text-gray-900 dark:text-gray-100">Jane Smith</p>
-                <p className="text-xs text-gray-600 dark:text-gray-400">Manager</p>
-              </div>
-            </div>
-          </div>
-        </Card>
-        <Card className="p-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Quick Actions</h3>
-          <div className="space-y-2">
-            <Button variant="secondary" className="w-full justify-start">
-              <Users className="w-4 h-4 mr-2" />
-              Invite Member
-            </Button>
-            <Button variant="secondary" className="w-full justify-start">
-              <Folder className="w-4 h-4 mr-2" />
-              Upload File
-            </Button>
-            <Button variant="secondary" className="w-full justify-start">
-              <Calendar className="w-4 h-4 mr-2" />
-              Schedule Meeting
-            </Button>
-          </div>
-        </Card>
-      </div>
-    </div>
-  );
-}
-
-function BusinessAnalyticsWidget() {
-  const [analytics, setAnalytics] = useState({
-    activeMembers: 18,
-    totalFiles: 156,
-    totalMessages: 342,
-    storageUsed: 2.4
-  });
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    // TODO: Load business analytics
-    setTimeout(() => {
-      setLoading(false);
-    }, 1000);
-  }, []);
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center p-8">
-        <Spinner size={32} />
-      </div>
-    );
-  }
-
-  return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Business Analytics</h1>
-          <p className="text-gray-700 dark:text-gray-300">Insights into your business activity</p>
-        </div>
-        <Button>
-          <Settings className="w-4 h-4 mr-2" />
-          Export Data
-        </Button>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Card className="p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-700 dark:text-gray-300">Active Members</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{analytics.activeMembers}</p>
-            </div>
-            <Users className="w-8 h-8 text-blue-500" />
-          </div>
-        </Card>
-        <Card className="p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-700 dark:text-gray-300">Total Files</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{analytics.totalFiles}</p>
-            </div>
-            <Folder className="w-8 h-8 text-green-500" />
-          </div>
-        </Card>
-        <Card className="p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-700 dark:text-gray-300">Messages</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{analytics.totalMessages}</p>
-            </div>
-            <MessageSquare className="w-8 h-8 text-purple-500" />
-          </div>
-        </Card>
-        <Card className="p-4">
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="text-sm text-gray-700 dark:text-gray-300">Storage Used</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{analytics.storageUsed} GB</p>
-            </div>
-            <BarChart3 className="w-8 h-8 text-indigo-500" />
-          </div>
-        </Card>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <Card className="p-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Activity Over Time</h3>
-          <div className="h-64 flex items-center justify-center text-gray-600 dark:text-gray-400">
-            <p>Chart placeholder - Activity over time</p>
-          </div>
-        </Card>
-        <Card className="p-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Top Users</h3>
-          <div className="space-y-3">
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-blue-100 dark:bg-blue-900/40 rounded-full flex items-center justify-center">
-                  <span className="text-sm font-medium text-blue-600">#1</span>
-                </div>
-                <div>
-                  <p className="font-medium text-gray-900 dark:text-gray-100">John Doe</p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">45 activities</p>
-                </div>
-              </div>
-            </div>
-            <div className="flex items-center justify-between">
-              <div className="flex items-center space-x-3">
-                <div className="w-8 h-8 bg-green-100 dark:bg-green-900/40 rounded-full flex items-center justify-center">
-                  <span className="text-sm font-medium text-green-600">#2</span>
-                </div>
-                <div>
-                  <p className="font-medium text-gray-900 dark:text-gray-100">Jane Smith</p>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">38 activities</p>
-                </div>
-              </div>
-            </div>
-          </div>
-        </Card>
-      </div>
-    </div>
-  );
-}
-
-interface BusinessMember {
-  id: number;
-  name: string;
-  role: string;
-  email: string;
-}
-
-function BusinessMembersWidget() {
-  const [members, setMembers] = useState<BusinessMember[]>([]);
-  const [loading, setLoading] = useState(true);
-
-  useEffect(() => {
-    // TODO: Load business members
-    setTimeout(() => {
-      setMembers([
-        { id: 1, name: 'John Doe', role: 'Admin', email: 'john@company.com' },
-        { id: 2, name: 'Jane Smith', role: 'Manager', email: 'jane@company.com' },
-        { id: 3, name: 'Mike Johnson', role: 'Employee', email: 'mike@company.com' }
-      ]);
-      setLoading(false);
-    }, 1000);
-  }, []);
-
-  if (loading) {
-    return (
-      <div className="flex items-center justify-center p-8">
-        <Spinner size={32} />
-      </div>
-    );
-  }
-
-  return (
-    <div className="p-6 space-y-6">
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Team Members</h1>
-          <p className="text-gray-700 dark:text-gray-300">Manage your business team</p>
-        </div>
-        <Button>
-          <Plus className="w-4 h-4 mr-2" />
-          Invite Member
-        </Button>
-      </div>
-
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
-          <Card className="p-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">All Members</h3>
-            <div className="space-y-3">
-              {members.map((member) => (
-                <div key={member.id} className="flex items-center justify-between p-3 border border-gray-200 dark:border-slate-600 rounded-lg">
-                  <div className="flex items-center space-x-3">
-                    <div className="w-10 h-10 bg-blue-500 rounded-full flex items-center justify-center text-white font-medium">
-                      {member.name.split(' ').map((n: string) => n[0]).join('')}
-                    </div>
-                    <div>
-                      <p className="font-medium text-gray-900 dark:text-gray-100">{member.name}</p>
-                      <p className="text-sm text-gray-600 dark:text-gray-400">{member.email}</p>
-                    </div>
-                  </div>
-                  <span className={`px-2 py-1 text-xs rounded-full ${
-                    member.role === 'Admin' ? 'bg-red-100 dark:bg-red-900/30 text-red-800 dark:text-red-300' :
-                    member.role === 'Manager' ? 'bg-blue-100 dark:bg-blue-900/30 text-blue-800 dark:text-blue-300' :
-                    'bg-green-100 dark:bg-green-900/30 text-green-800 dark:text-green-300'
-                  }`}>
-                    {member.role}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </Card>
-        </div>
-        <div>
-          <Card className="p-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Team Stats</h3>
-            <div className="space-y-4">
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-700 dark:text-gray-300">Total Members</span>
-                <span className="font-medium text-gray-900 dark:text-gray-100">{members.length}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-700 dark:text-gray-300">Admins</span>
-                <span className="font-medium text-gray-900 dark:text-gray-100">{members.filter((m) => m.role === 'Admin').length}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-700 dark:text-gray-300">Managers</span>
-                <span className="font-medium text-gray-900 dark:text-gray-100">{members.filter((m) => m.role === 'Manager').length}</span>
-              </div>
-              <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-700 dark:text-gray-300">Employees</span>
-                <span className="font-medium text-gray-900 dark:text-gray-100">{members.filter((m) => m.role === 'Employee').length}</span>
-              </div>
-            </div>
-          </Card>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-export default function BusinessWorkspaceContent({ business, currentModule, businessDashboardId }: BusinessWorkspaceContentProps) {
-  const { data: session } = useSession();
-  const { currentDashboard, navigateToDashboard } = useDashboard();
-  const router = useRouter();
-  const [refreshTrigger, setRefreshTrigger] = useState(0);
-  const [selectedFolder, setSelectedFolder] = useState<any>(null);
-  const [createFolderOpen, setCreateFolderOpen] = useState(false);
-  const [isCreatingFolder, setIsCreatingFolder] = useState(false);
-
-  // File upload handler for Drive
-  const handleFileUpload = useCallback(() => {
-    const input = document.createElement('input');
-    input.type = 'file';
-    input.multiple = true;
-    input.onchange = async (e) => {
-      const target = e.target as HTMLInputElement;
-      const files = target.files;
-      if (!files || !session?.accessToken) return;
-
-      try {
-        for (let i = 0; i < files.length; i++) {
-          const file = files[i];
-          const formData = new FormData();
-          formData.append('file', file);
-          if (businessDashboardId) formData.append('dashboardId', businessDashboardId);
-
-          await fetch('/api/drive/files', {
-            method: 'POST',
-            headers: { 'Authorization': `Bearer ${session.accessToken}` },
-            body: formData,
-          });
-        }
-        
-        setRefreshTrigger(prev => prev + 1);
-      } catch (error) {
-        console.error('Upload failed:', error);
-      }
-    };
-    input.click();
-  }, [session, businessDashboardId]);
-
-  const requestCreateFolder = useCallback(() => {
-    if (!session?.accessToken) return;
-    setCreateFolderOpen(true);
-  }, [session?.accessToken]);
-
-  const executeCreateFolder = useCallback(async (name: string) => {
-    if (!session?.accessToken) return;
-
-    try {
-      setIsCreatingFolder(true);
-      const response = await fetch('/api/drive/folders', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${session.accessToken}`,
-        },
-        body: JSON.stringify({
-          name,
-          dashboardId: businessDashboardId || null,
-          parentId: null,
-        }),
-      });
-
-      if (!response.ok) {
-        console.error('Failed to create folder');
-        return;
-      }
-
-      setRefreshTrigger(prev => prev + 1);
-      setCreateFolderOpen(false);
-    } catch (error) {
-      console.error('Failed to create folder');
-    } finally {
-      setIsCreatingFolder(false);
-    }
-  }, [session, businessDashboardId]);
-
-  const handleContextSwitch = useCallback(async (dashboardId: string) => {
-    await navigateToDashboard(dashboardId);
-    router.push(`/business/${business.id}/workspace?module=drive`);
-  }, [navigateToDashboard, router, business.id]);
-
+export default function BusinessWorkspaceContent({
+  business,
+  currentModule,
+  businessDashboardId,
+}: BusinessWorkspaceContentProps) {
   const renderModuleContent = () => {
-    // Read-only contract lookup for metadata; switch rendering unchanged.
     const _moduleContract = getModuleDefinition(normalizeModuleId(currentModule));
     void _moduleContract;
 
+    const membersHref = `/business/${business.id}/workspace/members`;
+    const analyticsHref = `/business/${business.id}/workspace/analytics`;
+
     switch (currentModule) {
       case 'dashboard':
-        return <BusinessDashboardWidget />;
+        return <BusinessWorkspaceHubPanel businessName={business.name} />;
       case 'drive':
         return (
-          <WorkspaceSplitLayout>
-            <WorkspaceSidebar>
-              <DriveSidebar
-                onNewFolder={requestCreateFolder}
-                onFileUpload={handleFileUpload}
-                onFolderUpload={handleFileUpload}
-                onContextSwitch={handleContextSwitch}
-                onFolderSelect={setSelectedFolder}
-                selectedFolderId={selectedFolder?.id}
-                lockedDashboardId={businessDashboardId || undefined}
-              />
-            </WorkspaceSidebar>
-            <WorkspaceMain overflow="hidden">
-              <DriveModuleWrapper
-                className="h-full"
-                refreshTrigger={refreshTrigger}
-                dashboardId={businessDashboardId}
-                businessId={business.id}
-              />
-            </WorkspaceMain>
-          </WorkspaceSplitLayout>
+          <DriveWorkspaceLanding
+            dashboardId={businessDashboardId}
+            businessId={business.id}
+            className="h-full"
+          />
         );
       case 'chat':
         return (
-          <ChatModuleWrapper 
+          <ChatModuleWrapper
             className="h-full"
-            refreshTrigger={refreshTrigger}
             businessId={business.id}
             dashboardId={businessDashboardId}
           />
@@ -569,17 +80,14 @@ export default function BusinessWorkspaceContent({ business, currentModule, busi
       case 'scheduling':
         return <SchedulingLayout businessId={business.id} />;
       case 'analytics':
-        return <BusinessAnalyticsWidget />;
+        return <BusinessWorkspaceModuleRedirect href={analyticsHref} />;
       case 'members':
-        return <BusinessMembersWidget />;
       case 'connections':
-        // Business context: "Connections" → same as Members (per CONNECTIONS_AND_MEMBERS_BUILD_PLAN Phase 2.1)
-        return <BusinessMembersWidget />;
+        return <BusinessWorkspaceModuleRedirect href={membersHref} />;
       case 'ai':
         return (
-          <AIWidget
-            id="business-ai"
-            dashboardId={businessDashboardId ?? undefined}
+          <AIWorkspaceLanding
+            dashboardId={businessDashboardId}
             dashboardType="business"
             dashboardName={business.name}
           />
@@ -602,27 +110,11 @@ export default function BusinessWorkspaceContent({ business, currentModule, busi
       case 'place':
         return <PlaceWorkspaceLanding businessId={business.id} />;
       case 'vlink':
-        return (
-          <VLinkModule
-            dashboardId={businessDashboardId}
-          />
-        );
+        return <VLinkModule dashboardId={businessDashboardId} />;
       default:
-        return <BusinessDashboardWidget />;
+        return <BusinessWorkspaceHubPanel businessName={business.name} />;
     }
   };
 
-  return (
-    <>
-      <div className="h-full">
-        {renderModuleContent()}
-      </div>
-      <DriveCreateFolderModal
-        open={createFolderOpen}
-        onClose={() => setCreateFolderOpen(false)}
-        onSubmit={executeCreateFolder}
-        loading={isCreatingFolder}
-      />
-    </>
-  );
+  return <div className="h-full">{renderModuleContent()}</div>;
 }

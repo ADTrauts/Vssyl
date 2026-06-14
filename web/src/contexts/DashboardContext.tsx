@@ -6,6 +6,14 @@ import { useSession } from 'next-auth/react';
 import { getDashboards } from '../api/dashboard';
 import { getUserPreference, setUserPreference } from '../api/user';
 import { Dashboard } from 'shared/types';
+import {
+  buildPersonalDashboardSwitchHref,
+  buildMembersNavigationHref,
+} from '../lib/crossSurfaceNavigation';
+import {
+  buildPersonalModuleHref,
+  resolvePersonalDashboardModule,
+} from '../lib/personalDashboardNavigation';
 
 interface BusinessDashboard extends Dashboard {
   business?: {
@@ -135,22 +143,9 @@ export function DashboardProvider({ children }: DashboardProviderProps) {
   // Debug logging only in development (moved to useEffect to prevent infinite logging)
   // Removed debug logs to clean up console output
 
-  // Get current module from pathname
+  // Get current module from pathname (personal shell only)
   const getCurrentModule = (): string | null => {
-    const segments = pathname?.split('/').filter(Boolean) || [];
-    if (segments.length === 0) return null;
-    
-    // Ignore business routes - they are completely separate
-    if (segments[0] === 'business') {
-      return null;
-    }
-    
-    // Skip 'dashboard' if we're on a dashboard page
-    if (segments[0] === 'dashboard') {
-      return segments.length > 1 ? 'dashboard' : null;
-    }
-    
-    return segments[0];
+    return resolvePersonalDashboardModule(pathname || '/', searchParams);
   };
 
   // Get dashboard ID from URL params or pathname
@@ -236,14 +231,7 @@ export function DashboardProvider({ children }: DashboardProviderProps) {
     }
     
     const currentModule = getCurrentModule();
-    
-    if (currentModule && currentModule !== 'dashboard') {
-      // If we're in a module, navigate to that module with the new dashboard
-      router.push(`/${currentModule}?dashboard=${dashboardId}`);
-    } else {
-      // If we're on dashboard page or no module, navigate to dashboard
-      router.push(`/dashboard/${dashboardId}`);
-    }
+    router.push(buildPersonalDashboardSwitchHref(dashboardId, currentModule));
   };
 
   const navigateToModule = (module: string, dashboardId?: string) => {
@@ -251,29 +239,30 @@ export function DashboardProvider({ children }: DashboardProviderProps) {
     if (pathname?.startsWith('/business/')) {
       return;
     }
-    
+
     const targetDashboardId = dashboardId || currentDashboard?.id;
     const targetDashboard = targetDashboardId ? getDashboardById(targetDashboardId) : null;
-    
-    // Special handling for member management
+
     if (module === 'members' || module === 'connections') {
-      if (targetDashboard && 'business' in targetDashboard && targetDashboard.business && typeof targetDashboard.business === 'object' && 'id' in targetDashboard.business) {
-        // Business context: route to business members page
-        router.push(`/business/${(targetDashboard.business as any).id}/workspace/members`);
-        return;
-      } else {
-        // Personal context: route to member management page
-        router.push('/member');
-        return;
-      }
+      const businessId =
+        targetDashboard &&
+        'business' in targetDashboard &&
+        targetDashboard.business &&
+        typeof targetDashboard.business === 'object' &&
+        'id' in targetDashboard.business
+          ? (targetDashboard.business as { id: string }).id
+          : null;
+      router.push(
+        buildMembersNavigationHref({
+          businessId,
+          dashboardId: targetDashboardId,
+          personal: !businessId,
+        })
+      );
+      return;
     }
-    
-    // Default routing for other modules
-    if (targetDashboardId) {
-      router.push(`/${module}?dashboard=${targetDashboardId}`);
-    } else {
-      router.push(`/${module}`);
-    }
+
+    router.push(buildPersonalModuleHref(module, targetDashboardId));
   };
 
   const getDashboardById = (id: string): (Dashboard | BusinessDashboard | EducationalDashboard | HouseholdDashboard) | undefined => {

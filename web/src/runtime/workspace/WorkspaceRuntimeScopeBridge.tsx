@@ -18,14 +18,14 @@ import {
   type ModulePermissionSource,
 } from './permissionSnapshotBridge';
 import type { PermissionSnapshot } from './types';
+import { PERSONAL_DEFAULT_MODULE_PERMISSIONS } from '../../lib/personalDashboardContracts';
 
-const PERSONAL_DEFAULT_MODULES: ModulePermissionSource[] = [
-  { id: 'dashboard', permissions: ['view'] },
-  { id: 'drive', permissions: ['view', 'upload', 'delete'] },
-  { id: 'chat', permissions: ['view', 'send'] },
-  { id: 'calendar', permissions: ['view', 'create'] },
-  { id: 'connections', permissions: ['view', 'manage'] },
-];
+const PERSONAL_DEFAULT_MODULES: ModulePermissionSource[] = PERSONAL_DEFAULT_MODULE_PERMISSIONS.map(
+  (entry) => ({
+    id: entry.id,
+    permissions: [...entry.permissions],
+  })
+);
 
 export interface WorkspaceRuntimeScopeBridgeProps {
   children: React.ReactNode;

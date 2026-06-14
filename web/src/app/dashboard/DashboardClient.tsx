@@ -41,6 +41,7 @@ import { DashboardSkeleton } from '../../components/SkeletonComponents';
 import { Modal } from 'shared/components';
 import HouseholdMemberManager from '../../components/household/HouseholdMemberManager';
 import { isHouseholdRosterManager } from '../../lib/householdPermissions';
+import { isRegisteredWidgetType } from '../../lib/personalDashboardNavigation';
 
 
 interface DashboardClientProps {
@@ -79,6 +80,15 @@ function WidgetContentRenderer({
 }) {
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const widgetConfig = widget.config as any;
+  const normalizedType = widget.type === 'notes' ? 'notebook' : widget.type;
+
+  if (!isRegisteredWidgetType(normalizedType)) {
+    return (
+      <div className="flex items-center justify-center h-full text-gray-600 dark:text-gray-400 text-sm">
+        Unknown widget type: {widget.type}
+      </div>
+    );
+  }
 
   switch (widget.type) {
     case 'chat':

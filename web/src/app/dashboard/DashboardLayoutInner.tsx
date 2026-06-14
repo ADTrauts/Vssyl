@@ -44,6 +44,13 @@ import {
 } from '../../components/layouts';
 import type { LeftSidebarConfig } from '../../types/sidebar';
 import { MODULE_ICONS } from '../../config/moduleIcons';
+import { buildPersonalToBusinessHref } from '../../lib/crossSurfaceNavigation';
+import {
+  buildPersonalAIQuickHref,
+  buildPersonalDashboardHref,
+  buildPersonalDashboardHubHref,
+  resolvePersonalDashboardModule,
+} from '../../lib/personalDashboardNavigation';
 
 // Add CSS styles for enhanced drag and drop UX
 const dragStyles = `
@@ -380,7 +387,7 @@ export function DashboardLayoutInner({ children }: { children: React.ReactNode }
         });
         
         // Navigate to the new dashboard which will show the build out modal
-        router.push(`/dashboard/${newDashboard.id}`);
+        router.push(buildPersonalDashboardHref(newDashboard.id));
         return;
       }
       // Note: Do not force a full reload here; it would close the invitation modal.
@@ -398,7 +405,7 @@ export function DashboardLayoutInner({ children }: { children: React.ReactNode }
   };
 
   const handleSwitchToWork = (businessId: string) => {
-    router.push(`/business/${businessId}/workspace`);
+    router.push(buildPersonalToBusinessHref(businessId));
   };
 
   // Handle AI button click
@@ -453,10 +460,10 @@ export function DashboardLayoutInner({ children }: { children: React.ReactNode }
         const remainingDashboards = allDashboards.filter(d => d.id !== selectedDashboard.id);
         if (remainingDashboards.length > 0) {
           // Navigate to the first remaining dashboard
-          router.push(`/dashboard/${remainingDashboards[0].id}`);
+          router.push(buildPersonalDashboardHref(remainingDashboards[0].id));
         } else {
           // No dashboards left, go to dashboard creation
-          router.push('/dashboard');
+          router.push(buildPersonalDashboardHubHref());
         }
       }
       
@@ -580,7 +587,7 @@ export function DashboardLayoutInner({ children }: { children: React.ReactNode }
       
       // If this was the current dashboard, redirect to main dashboard
       if (currentDashboardId === dashboard.id) {
-        router.push(`/dashboard/${mainPersonalDashboard.id}`);
+        router.push(buildPersonalDashboardHref(mainPersonalDashboard.id));
       }
       
       toast.success(`${dashboard.name} moved to trash`);
@@ -995,7 +1002,7 @@ export function DashboardLayoutInner({ children }: { children: React.ReactNode }
                       const textColor = (showWorkTab || isBusinessContext)
                         ? getSidebarStyles().color
                         : (isDark ? '#e2e8f0' : '#ffffff');
-                      const activeModuleId = pathname?.split('/')[1] || null;
+                      const activeModuleId = resolvePersonalDashboardModule(pathname || '/');
 
                       const handleToggleCollapse = (folderId: string) => {
                         setCollapsedFolders(prev => {
@@ -1037,7 +1044,7 @@ export function DashboardLayoutInner({ children }: { children: React.ReactNode }
                                 return null;
                               }
                               const Icon = (MODULE_ICONS as Record<string, typeof LayoutDashboard>)[module.id] || LayoutDashboard;
-                              const isActive = pathname?.startsWith(`/${module.id}`);
+                              const isActive = activeModuleId === module.id;
                               return (
                                 <li key={module.id} style={{ marginBottom: 8 }}>
                                   <button
@@ -1079,7 +1086,8 @@ export function DashboardLayoutInner({ children }: { children: React.ReactNode }
         >
           {getRightSidebarModules.top.map(module => {
             const Icon = (MODULE_ICONS as Record<string, typeof LayoutDashboard>)[module.id] || LayoutDashboard;
-            const isActive = pathname?.startsWith(`/${module.id}`) ?? false;
+            const activeModuleId = resolvePersonalDashboardModule(pathname || '/');
+            const isActive = activeModuleId === module.id;
             return (
               <PlatformRightRailModuleButton
                 key={module.id}
@@ -1094,7 +1102,8 @@ export function DashboardLayoutInner({ children }: { children: React.ReactNode }
 
           {getRightSidebarModules.middle.map(module => {
             const Icon = (MODULE_ICONS as Record<string, typeof LayoutDashboard>)[module.id] || LayoutDashboard;
-            const isActive = pathname?.startsWith(`/${module.id}`) ?? false;
+            const activeModuleId = resolvePersonalDashboardModule(pathname || '/');
+            const isActive = activeModuleId === module.id;
             return (
               <PlatformRightRailModuleButton
                 key={module.id}
@@ -1110,14 +1119,15 @@ export function DashboardLayoutInner({ children }: { children: React.ReactNode }
           <PlatformRightRailSpacer />
 
           <PlatformRightRailModuleButton
-            isActive={pathname?.startsWith('/ai-chat') ?? false}
+            isActive={resolvePersonalDashboardModule(pathname || '/') === 'ai'}
             variant="purple"
             onClick={() => {
+              const href = buildPersonalAIQuickHref();
               try {
-                router.push('/ai-chat');
+                router.push(href);
               } catch (error) {
                 console.error('Error navigating to AI chat:', error);
-                window.location.href = '/ai-chat';
+                window.location.href = href;
               }
             }}
             title="AI Chat"

@@ -1,0 +1,261 @@
+{
+  "executedAt": "2026-06-14T20:05:07.119Z",
+  "matrix": "Part 2H",
+  "publisherBusinessId": "1edda378-17cd-47f4-a2f1-8cb9bf4fb355",
+  "dashboardId": "2eb3a451-ec7b-48b7-b8a3-be727d9a64eb",
+  "results": [
+    {
+      "id": "RWS-01",
+      "pri": "P0",
+      "result": "PASS",
+      "viewport": "D",
+      "theme": "light",
+      "notes": "Business workspace hub loads under segment URL",
+      "screenshot": "RWS-01-business-shell-D-light.png"
+    },
+    {
+      "id": "RWS-02",
+      "pri": "P0",
+      "result": "PASS",
+      "viewport": "D",
+      "theme": "light",
+      "notes": "Business Drive segment route renders module interior",
+      "screenshot": "RWS-02-business-drive-D-light.png"
+    },
+    {
+      "id": "RWS-03",
+      "pri": "P0",
+      "result": "PASS",
+      "viewport": "D",
+      "theme": "light",
+      "notes": "Business chat segment — no stub page",
+      "screenshot": "RWS-03-business-chat-D-light.png"
+    },
+    {
+      "id": "RWS-04",
+      "pri": "P1",
+      "result": "PASS",
+      "viewport": "D",
+      "theme": "light",
+      "notes": "Business sidebar/segment reflects Drive module",
+      "screenshot": null
+    },
+    {
+      "id": "RWS-05",
+      "pri": "P0",
+      "result": "PASS",
+      "viewport": "D",
+      "theme": "light",
+      "notes": "Personal dashboard grid loads",
+      "screenshot": "RWS-05-personal-dashboard-D-light.png"
+    },
+    {
+      "id": "RWS-06",
+      "pri": "P0",
+      "result": "PASS",
+      "viewport": "D",
+      "theme": "light",
+      "notes": "Personal Drive module route scoped with ?dashboard=",
+      "screenshot": "RWS-06-personal-drive-scoped-D-light.png"
+    },
+    {
+      "id": "RWS-07",
+      "pri": "P0",
+      "result": "FAIL",
+      "viewport": "D",
+      "theme": "light",
+      "notes": "dashboard return url=http://localhost:3000/drive?dashboard=2eb3a451-ec7b-48b7-b8a3-be727d9a64eb",
+      "screenshot": null
+    },
+    {
+      "id": "RWS-08",
+      "pri": "P0",
+      "result": "PASS",
+      "viewport": "D",
+      "theme": "light",
+      "notes": "Personal shell reflects Drive as active module",
+      "screenshot": "RWS-08-personal-active-module-D-light.png"
+    },
+    {
+      "id": "RWS-09",
+      "pri": "P0",
+      "result": "PASS",
+      "viewport": "D",
+      "theme": "light",
+      "notes": "Business → Personal lands on /dashboard",
+      "screenshot": "RWS-09-business-to-personal-D-light.png"
+    },
+    {
+      "id": "RWS-10",
+      "pri": "P0",
+      "result": "PASS",
+      "viewport": "D",
+      "theme": "light",
+      "notes": "Personal grid — no business workspace URL segment",
+      "screenshot": null
+    },
+    {
+      "id": "RWS-11",
+      "pri": "P0",
+      "result": "FAIL",
+      "viewport": "D",
+      "theme": "light",
+      "notes": "Work tab did not render embed",
+      "screenshot": null
+    },
+    {
+      "id": "RWS-12",
+      "pri": "P0",
+      "result": "PASS",
+      "viewport": "D",
+      "theme": "light",
+      "notes": "Personal → Business segment workspace URL",
+      "screenshot": "RWS-12-personal-to-business-D-light.png"
+    },
+    {
+      "id": "RWS-13",
+      "pri": "P1",
+      "result": "KNOWN-PWF",
+      "viewport": "D",
+      "theme": "light",
+      "notes": "Work auth/branded dashboard not active — deferred work-token path",
+      "screenshot": null
+    },
+    {
+      "id": "RWS-14",
+      "pri": "P0",
+      "result": "FAIL",
+      "viewport": "D",
+      "theme": "light",
+      "notes": "clicked=false placeTabs=false sidebars=true",
+      "screenshot": "RWS-14-place-tab-embed-D-light-fail.png"
+    },
+    {
+      "id": "RWS-15",
+      "pri": "P0",
+      "result": "PASS",
+      "viewport": "D",
+      "theme": "light",
+      "notes": "Personal → Place consumer /place route",
+      "screenshot": "RWS-15-personal-to-place-D-light.png"
+    },
+    {
+      "id": "RWS-16",
+      "pri": "P0",
+      "result": "BLOCKED",
+      "viewport": "D",
+      "theme": "light",
+      "notes": "publisher hub not visible url=http://localhost:3000/business/1edda378-17cd-47f4-a2f1-8cb9bf4fb355/workspace/place",
+      "screenshot": "RWS-16-business-to-place-publisher-D-light-blocked.png"
+    },
+    {
+      "id": "RWS-17",
+      "pri": "P1",
+      "result": "PASS",
+      "viewport": "D",
+      "theme": "light",
+      "notes": "Dual-surface: business user can open consumer /place",
+      "screenshot": null
+    },
+    {
+      "id": "RWS-18",
+      "pri": "P0",
+      "result": "PASS",
+      "viewport": "D",
+      "theme": "light",
+      "notes": "Module route uses ?dashboard= scope (sidebar/widget convergence)",
+      "screenshot": "RWS-18-widget-escalation-drive-D-light.png"
+    },
+    {
+      "id": "RWS-19",
+      "pri": "P0",
+      "result": "PASS",
+      "viewport": "D",
+      "theme": "light",
+      "notes": "AI quick entry resolves to /ai-chat family",
+      "screenshot": "RWS-19-ai-rail-D-light.png"
+    },
+    {
+      "id": "RWS-20",
+      "pri": "P0",
+      "result": "PASS",
+      "viewport": "D",
+      "theme": "light",
+      "notes": "Module → dashboard tab returns to grid",
+      "screenshot": "RWS-20-module-to-dashboard-D-light.png"
+    },
+    {
+      "id": "RWS-21",
+      "pri": "P1",
+      "result": "KNOWN-PWF",
+      "viewport": "D",
+      "theme": "light",
+      "notes": "Mid-flow dashboard switch — contract-tested in personalDashboardNavigation.test.ts; manual UI path deferred",
+      "screenshot": null
+    },
+    {
+      "id": "RWS-22",
+      "pri": "P0",
+      "result": "PASS",
+      "viewport": "D",
+      "theme": "light",
+      "notes": "Personal PlatformShell header tabs + chrome",
+      "screenshot": "RWS-22-personal-platformshell-D-light.png"
+    },
+    {
+      "id": "RWS-23",
+      "pri": "P0",
+      "result": "FAIL",
+      "viewport": "D",
+      "theme": "light",
+      "notes": "header=false nav=true",
+      "screenshot": null
+    },
+    {
+      "id": "RWS-24",
+      "pri": "P1",
+      "result": "PASS",
+      "viewport": "D",
+      "theme": "light",
+      "notes": "Personal module hops retain ?dashboard= scope",
+      "screenshot": null
+    },
+    {
+      "id": "RWS-25",
+      "pri": "P1",
+      "result": "PASS",
+      "viewport": "D",
+      "theme": "light",
+      "notes": "Business calendar segment canonical url=http://localhost:3000/business/1edda378-17cd-47f4-a2f1-8cb9bf4fb355/workspace/calendar",
+      "screenshot": null
+    },
+    {
+      "id": "RWS-26",
+      "pri": "P0",
+      "result": "PASS",
+      "viewport": "M",
+      "theme": "light",
+      "notes": "Mobile 375px personal shell navigable",
+      "screenshot": "RWS-26-mobile-personal-shell-M-light.png"
+    },
+    {
+      "id": "RWS-27",
+      "pri": "P0",
+      "result": "KNOWN-PWF",
+      "viewport": "B",
+      "theme": "light",
+      "notes": "Global trash=true notifications=false (D fallback when M chrome differs)",
+      "screenshot": "RWS-27-global-surfaces-D-light.png"
+    }
+  ],
+  "summary": {
+    "total": 27,
+    "pass": 19,
+    "fail": 4,
+    "blocked": 1,
+    "na": 0,
+    "knownPwf": 3,
+    "p0Fail": 4,
+    "p1Fail": 0
+  }
+}
