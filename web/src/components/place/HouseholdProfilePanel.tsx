@@ -122,7 +122,12 @@ export default function HouseholdProfilePanel({ householdId, onClose }: Househol
           <Home className="w-5 h-5 text-amber-700" />
           <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Household</h2>
         </div>
-        <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 dark:bg-slate-700 transition-colors">
+        <button
+          type="button"
+          onClick={onClose}
+          className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 dark:bg-slate-700 transition-colors"
+          aria-label="Close household profile"
+        >
           <X className="w-5 h-5 text-gray-700 dark:text-gray-300" />
         </button>
       </div>

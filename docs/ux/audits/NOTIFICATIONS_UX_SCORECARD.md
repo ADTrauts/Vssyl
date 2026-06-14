@@ -1,7 +1,7 @@
 # Notifications Module UX Scorecard (Wave 5C)
 
-**Status:** Re-certified (Wave 5C.2)  
-**Date:** 2026-06-03  
+**Status:** **5G-Notifications-D authoritative** (UX-L3 Certified with Findings)  
+**Date:** 2026-06-12  
 **Module:** Notifications (`/notifications`, settings sub-route)  
 **Benchmark:** Drive / File Hub — Reference UX Module #1  
 **Framework:** [`UX_CERTIFICATION_SCORECARD.md`](../UX_CERTIFICATION_SCORECARD.md) (Wave 5A)  
@@ -32,18 +32,18 @@
 
 ---
 
-## Category results (5C.2 authoritative)
+## Category results (5G-Notifications-D authoritative)
 
 | # | Category | Rating | Rationale |
 |---|----------|--------|-----------|
 | 1 | **Interaction Consistency** | **PASS** | Per-row + bulk delete on `ConfirmModal` (5C.1). Archive/snooze/mark-read immediate (acceptable). Zero native dialogs. |
 | 2 | **Layout Consistency** | **PASS** | Management archetype: `PageHeader` + `PageToolbar` (3C-6). Fits `PlatformShell` via `DashboardLayout`. Settings sub-route retains own chrome (N-3). |
 | 3 | **Navigation** | **PASS** | `/notifications` + `/notifications/settings`. Category sidebar. Cross-module deep links. Global bell entry. |
-| 4 | **Accessibility** | **PASS WITH FINDINGS** | Keyboard j/k/Space/Enter/Escape. **Findings:** Row overflow lacks `aria-label` (N-7); no human WCAG audit (N-6). |
-| 5 | **Mobile** | **PASS WITH FINDINGS** | Responsive flex; scrollable list. **Findings:** Fixed `w-64` sidebar may crowd 375px (N-5); manual QA not signed (N-6). |
+| 4 | **Accessibility** | **PASS** | NTF-16/17/11/12 **PASS** (Part 2B); N-7 aria remediated (5G). N-6 closed. |
+| 5 | **Mobile** | **PASS** | NTF-09 **PASS** at 375px; mobile category sheet (5G; N-5 **resolved**). |
 | 6 | **Cross-Module Integration** | **PASS** | Rich routing to chat/drive/place/business/AI; socket realtime; metadata quick actions. |
-| 7 | **Error Handling** | **PASS WITH FINDINGS** | Settings uses `toast`; main feed errors often `console.error` only (N-2). |
-| 8 | **Empty States** | **PASS WITH FINDINGS** | Category-specific local `EmptyState`. Not shared primitive (N-4). |
+| 7 | **Error Handling** | **PASS** | Feed actions use `toast.error` via `showNotificationActionError` (5G; N-2 **resolved**). Settings already used toast. |
+| 8 | **Empty States** | **PASS WITH FINDINGS** | NTF-13 behavior **PASS**; local `EmptyState` vs shared primitive (N-4) — P3 deferred. |
 | 9 | **Loading States** | **PASS** | Initial spinner; load-more pagination. |
 | 10 | **Discoverability** | **PASS** | Header actions, toolbar filters, view toggles, selection mode, category counts. |
 | 11 | **Workflow Completion** | **PASS** | Core flows completable post N-1 fix. N-8 grouped-view affordance is P3 — not a dead-end. |
@@ -105,23 +105,23 @@
 
 ---
 
-## Level awards (5C.2)
+## Level awards (5G-Notifications-D)
 
 | Level | Decision |
 |-------|----------|
-| **UX-L1** | **Certified with Findings** |
-| **UX-L2** | **Certified with Findings** (9/11 PASS) |
-| **UX-L3** | **Not certified** |
-| **Reference UX slot** | **Not eligible** |
+| **UX-L1** | **Certified** (upgraded from CwF) |
+| **UX-L2** | **Certified** (upgraded from CwF) |
+| **UX-L3** | **Certified with Findings** (first award) |
+| **Reference UX #2** | **Eligible With Findings** — not registered |
 
 ### Threshold detail
 
 | Target | Result |
 |--------|--------|
-| L1 CwF | ✅ 9 PASS; 4 PWF; no L1 blockers |
-| L1 Certified (8 PASS, <3 PWF) | ❌ 4 PWF triggers CwF |
-| L2 CwF (≥9 PASS) | ✅ 9 PASS; 4 PWF documented |
-| L3 | ❌ Core quartet cat 4 PWF + QA (N-6) |
+| L1 Certified (8 PASS, <3 PWF) | ✅ 11 PASS; 1 PWF |
+| L2 Certified (≥9 PASS, cats 2+5 not FAIL) | ✅ 11 PASS; cats 4+5 upgraded |
+| L3 CwF (≥9 PASS, core quartet, ≤2 PWF, QA) | ✅ N-6 closed; cat 8 PWF only |
+| L3 Certified (strict, all PASS) | ❌ cat 8 PWF (N-4) |
 
 ---
 
@@ -130,23 +130,23 @@
 | ID | Finding | Severity |
 |----|---------|----------|
 | N-1 | Bulk delete lacks `ConfirmModal` | **Resolved** (5C.1) |
-| N-2 | Main page API errors often `console.error` only | P2 |
+| N-2 | Main page API errors often `console.error` only | **Resolved** (5G) |
 | N-3 | Settings page not on `PageHeader` (3C-6 deferred) | P3 |
 | N-4 | Local `EmptyState` vs shared primitive | P3 |
-| N-5 | Fixed sidebar width — mobile crowding | P2 |
-| N-6 | Manual QA matrix not executed (3A-4B, 3C-6) | Process |
-| N-7 | Row overflow trigger lacks `aria-label` | P3 |
+| N-5 | Fixed sidebar width — mobile crowding | **Resolved** (5G) |
+| N-6 | Manual QA matrix not executed (3A-4B, 3C-6) | **Resolved** (5G-QA-EXEC) |
+| N-7 | Row overflow trigger lacks `aria-label` | **Resolved** (5G) |
 | N-8 | Grouped view: no per-notification delete in collapsed rows | P3 |
 
 ---
 
 ## Summary metrics
 
-| Metric | Wave 5C | Wave 5C.2 |
-|--------|---------|------------|
-| PASS | 7 | **9** |
-| PASS WITH FINDINGS | 4 | **4** |
-| FAIL | 0 | **0** |
+| Metric | Wave 5C | Wave 5C.2 | Wave 5G-Notifications-D |
+|--------|---------|------------|-------------------------|
+| PASS | 7 | **9** | **11** |
+| PASS WITH FINDINGS | 4 | **4** | **1** |
+| FAIL | 0 | **0** | **0** |
 
 ---
 
@@ -164,5 +164,8 @@
 | 5C | Initial audit — 7 PASS / 4 PWF; UX-L1 CwF |
 | 5C.1 | N-1 resolved — [`NOTIFICATIONS_INTERACTION_SAFETY_BATCH5C1_CLOSEOUT.md`](./NOTIFICATIONS_INTERACTION_SAFETY_BATCH5C1_CLOSEOUT.md) |
 | 5C.2 | Re-cert — 9 PASS / 4 PWF; UX-L2 CwF — [`NOTIFICATIONS_UX_RECERTIFICATION_2026.md`](./NOTIFICATIONS_UX_RECERTIFICATION_2026.md) |
+| 5G | L3 remediation — N-2/N-5/N-7 resolved — [`NOTIFICATIONS_L3_REMEDIATION_BATCH5G_CLOSEOUT.md`](./NOTIFICATIONS_L3_REMEDIATION_BATCH5G_CLOSEOUT.md) |
+| 5G-QA-EXEC | Part 2B — 18 PASS / 0 FAIL — [`NOTIFICATIONS_QA_EXECUTION_REPORT_2026.md`](./NOTIFICATIONS_QA_EXECUTION_REPORT_2026.md) |
+| 5G-Notifications-D | L3 certification review — **11 PASS / 1 PWF** — [`NOTIFICATIONS_UX_L3_CERTIFICATION_REVIEW.md`](./NOTIFICATIONS_UX_L3_CERTIFICATION_REVIEW.md) |
 
-**Last updated:** 2026-06-03 (Wave 5C.2 re-certification)
+**Last updated:** 2026-06-12 (Wave 5G-Notifications-D authoritative)

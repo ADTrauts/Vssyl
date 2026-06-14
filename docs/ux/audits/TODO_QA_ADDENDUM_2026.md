@@ -1,9 +1,10 @@
-# Todo QA Certification Addendum (Wave 5G-QA-D)
+# Todo QA Certification Addendum (Wave 5G-QA-EXEC)
 
 **Status:** **Complete** — no level change  
-**Date:** 2026-06-03  
+**Date:** 2026-06-12  
 **Module:** Todo (`todo`)  
 **Parent:** [`PLATFORM_QA_CERTIFICATION_ADDENDUM_2026.md`](./PLATFORM_QA_CERTIFICATION_ADDENDUM_2026.md)  
+**Execution report:** [`TODO_QA_EXECUTION_REPORT_2026.md`](./TODO_QA_EXECUTION_REPORT_2026.md)  
 **Prior cert:** [`TODO_UX_RECERTIFICATION_2026_5G.md`](./TODO_UX_RECERTIFICATION_2026_5G.md) — **UX-L2 CwF** (9 PASS / 2 PWF)
 
 ---
@@ -12,30 +13,30 @@
 
 | Field | Value |
 |-------|-------|
-| **Overall** | **NOT EXECUTED** |
-| **Matrix section** | Part 2C (TODO-01–30) |
-| **Sign-off** | Unsigned |
+| **Overall** | **EXECUTED** (Part 2C) |
+| **Matrix section** | TODO-01–30 |
+| **Sign-off** | Agent session complete; **human sign-off pending** for **5G-Todo-L3-D** |
 
 ---
 
 ## P0 / P1 results
 
-| Tier | PASS | FAIL | KNOWN-PWF | BLOCKED |
-|------|------|------|-----------|---------|
-| P0 | — | — | — | — |
-| P1 | — | — | — | — |
+| Tier | PASS | FAIL | BLOCKED | N/A | KNOWN-PWF |
+|------|------|------|---------|-----|-----------|
+| P0 | **22** | **0** | **1** | **1** | **0** |
+| P1 | **3** | **0** | **1** | **0** | **2** |
 
 ---
 
-## Known findings (unchanged)
+## Process findings
 
-| ID | Status | Notes |
-|----|--------|-------|
-| **T-11** | **Open** | Process gate |
-| T-7 | Partial (5G) | Responsive width; sheet deferred |
-| T-12 | Open | Keyboard — cat 4 |
-| T-6 | Open | Board compact menu — KNOWN-PWF candidate |
-| T-10 | Open | P3 |
+| ID | Pre-QA | Post-QA |
+|----|--------|---------|
+| **T-11** | Open | **Closable** — matrix executed; 0 FAIL |
+| **T-9** | Resolved (5G) | **Cleared** — TODO-24 PASS |
+| **T-7** | Partial (5G) | **Cleared** — TODO-14/15 PASS |
+| **T-12** | Open (P3) | Open — TODO-18 KNOWN-PWF |
+| **T-6** | Open (P3) | Open — TODO-28 KNOWN-PWF |
 
 ---
 
@@ -47,38 +48,39 @@
 
 ## Certification impact
 
-| Field | Before | After |
-|-------|--------|-------|
+| Field | Before | After (this addendum) |
+|-------|--------|------------------------|
 | UX-L1 | Certified | **Unchanged** |
 | UX-L2 | Certified with Findings | **Unchanged** |
 | UX-L3 | Not certified | **Unchanged** |
-| PASS / PWF / FAIL | 9 / 2 / 0 | **9 / 2 / 0** |
+| PASS / PWF / FAIL | 9 / 2 / 0 | **9 / 2 / 0** (projected **10–11 / 0–1 / 0** at L3-D) |
 
-### Category reassessment
+### Category reassessment (for 5G-Todo-L3-D only)
 
-| Cat | Status | Change? |
-|-----|--------|---------|
-| **4** Accessibility | PWF | **No** — T-11 + T-12 open |
-| **5** Mobile | PWF | **No** — T-11 + T-7 partial |
+| Cat | Pre-QA | QA evidence | Recommended at L3-D |
+|-----|--------|-------------|---------------------|
+| **4** Accessibility | PWF | TODO-24/25/17 PASS; TODO-18 KNOWN-PWF | **PASS** |
+| **5** Mobile | PWF | TODO-14/15 PASS | **PASS** |
 
-### L3 eligibility
+### L3 eligibility (post-D, not awarded here)
 
 | Rule | Result |
 |------|--------|
-| L2 CwF | ✅ |
-| Core quartet cat 4 PASS | ❌ |
-| Manual QA executed | ❌ **T-11** |
-| **L3 eligible** | **No** |
+| L2 CwF prerequisite | ✅ |
+| Core quartet cat 4 PASS | ✅ (recommended post-QA) |
+| Manual QA executed | ✅ **T-11 closable** |
+| PWF ≤ 2 for L3 CwF | ✅ projected (0–1 PWF) |
+| **L3 D review eligible** | **Yes** |
 
 ---
 
 ## Remaining blockers
 
-1. Execute TODO-* P0 rows at **D** and **M** (TODO-14, TODO-15 critical for T-11/T-7)  
-2. Close **T-11** via sign-off  
-3. Optional engineering: T-12 shortcuts, T-7 mobile sheet for cat 4/5 PASS  
-4. Todo L3 re-cert after QA closure  
+1. Human sign-off on evidence package  
+2. **5G-Todo-L3-D** certification review (documentation-only)  
+3. **T-12** / **T-6** remain documented P3 (non-blocking)  
+4. **TODO-02** / **TODO-22** BLOCKED — verification gaps only
 
 ---
 
-**Last updated:** 2026-06-03
+**Last updated:** 2026-06-12 (Wave 5G-QA-EXEC Part 2C)

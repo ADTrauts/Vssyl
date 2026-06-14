@@ -1,7 +1,7 @@
 # Platform Module Certification Ledger
 
 **Version:** 1.0.0  
-**Last updated:** 2026-06-03 (AI Platform L3 readiness review)  
+**Last updated:** 2026-06-12 (Reference UX #3 Todo registration; UX #4 AI Experience 2026-06-03)  
 **Status:** Active — executive dashboard for platform architecture health  
 **Owner:** Platform Engineering / Architecture Governance
 
@@ -88,8 +88,8 @@ Vssyl certifies modules against **two authorities simultaneously**. A module is 
 |--------|-----------|---------------------------|---------------------|---------------------|--------|----------|
 | **File Hub** | `drive` | **High** | **High** | **4 — Reference Implementation** | Certified | [FH Reference Review](./audits/FILE_HUB_REFERENCE_IMPLEMENTATION_REVIEW.md), [Maturity Assessment](./audits/FILE_HUB_MATURITY_ASSESSMENT.md) |
 | **Chat** | `chat` | **High** | **High** | **3 — Certified** | **Reference Module #2** (Level 3) | [CHAT_LEVEL3_CERTIFICATION_REVIEW](./audits/CHAT_LEVEL3_CERTIFICATION_REVIEW.md), [CHAT_OPERATION_MATRIX](./audits/CHAT_OPERATION_MATRIX.md) |
-| **Calendar** | `calendar` | **High** | **High** | **3 — Certified** | **Reference Module #3** (Level 3) | [CALENDAR_LEVEL3_CERTIFICATION_REVIEW](./audits/CALENDAR_LEVEL3_CERTIFICATION_REVIEW.md) |
-| **Todo** | `todo` | **High** | **High** | **3 — Certified** | **Reference Module #4** (Level 3) | [TODO_LEVEL3_CERTIFICATION_REVIEW](./audits/TODO_LEVEL3_CERTIFICATION_REVIEW.md), [TODO_OPERATION_MATRIX](./audits/TODO_OPERATION_MATRIX.md) |
+| **Calendar** | `calendar` | **High** | **High** | **3 — Certified** | **Reference Module #3** (Arch L3) · **Reference UX #5** (Approved w/ Findings, 2026-06-03) | [CALENDAR_LEVEL3_CERTIFICATION_REVIEW](./audits/CALENDAR_LEVEL3_CERTIFICATION_REVIEW.md), [REFERENCE_MODULE_CALENDAR](../ux/audits/REFERENCE_MODULE_CALENDAR.md) |
+| **Todo** | `todo` | **High** | **High** | **3 — Certified** | **Reference Module #4** (Arch L3) · **Reference UX #3** (Approved w/ Findings, 2026-06-12) | [TODO_LEVEL3_CERTIFICATION_REVIEW](./audits/TODO_LEVEL3_CERTIFICATION_REVIEW.md), [REFERENCE_MODULE_TODO](../ux/audits/REFERENCE_MODULE_TODO.md) |
 | **Notebook** | `notebook` | **High** | **Partial** | **3 — Certified** | **Composition module** (2026-06-02) — not Reference #5 | [NOTEBOOK_LEVEL3_CERTIFICATION_REVIEW](./audits/NOTEBOOK_LEVEL3_CERTIFICATION_REVIEW.md), [NOTEBOOK_OPERATION_MATRIX](./audits/NOTEBOOK_OPERATION_MATRIX.md) |
 | **Notes** | `notes` | **Partial** | **Low** | **2 — Sub-domain** | **Dependency** of Notebook L3 — page storage; Global Trash handler | `notes*Service`; `notes:page` entity; no separate product L3 |
 | **Place** | `place` | **Partial** | **Partial** | **3 — Certified** | **Reference Module #5** (Level 3) — Wave **4B** council 2026-06-02 | [PLACE_REFERENCE_COUNCIL_REVIEW](./audits/PLACE_REFERENCE_COUNCIL_REVIEW.md), [PLACE_PATTERN_GUIDE](./PLACE_PATTERN_GUIDE.md), [PLACE_COMMERCE_BOUNDARY](./PLACE_COMMERCE_BOUNDARY.md), [PLACE_LEVEL3_CERTIFICATION_REVIEW](./audits/PLACE_LEVEL3_CERTIFICATION_REVIEW.md) |
@@ -244,6 +244,10 @@ Waves align with [`PLATFORM_MODULE_MODERNIZATION_ROADMAP.md`](../plans/PLATFORM_
 
 **Calendar Phase 4 (2026-06-01):** [`CALENDAR_LEVEL3_CERTIFICATION_REVIEW.md`](./audits/CALENDAR_LEVEL3_CERTIFICATION_REVIEW.md) — **Level 3 Certified**; **Reference Module #3**.
 
+**Calendar UX (2026-06-03):** Waves 3C-7 + 5G-QA + **5G-Calendar-D** — **UX-L3 Certified** (11 PASS / 0 PWF). **Reference UX #5** registered — [`REFERENCE_MODULE_CALENDAR.md`](../ux/audits/REFERENCE_MODULE_CALENDAR.md) — **Approved with Findings**. Independent of Architecture Reference #5 (Place).
+
+**Notifications UX (2026-06-12):** Waves 3A-4B + 3C-6 + 5C + 5G + **5G-QA-EXEC** + **5G-Notifications-D** — **UX-L3 Certified with Findings** (11 PASS / 1 PWF). **Reference UX #2** registered — [`REFERENCE_MODULE_NOTIFICATIONS.md`](../ux/audits/REFERENCE_MODULE_NOTIFICATIONS.md) — **Approved with Findings**. Independent of Architecture Reference #2 (Chat). Chat **UX Reference #2 Rejected** (5B.3).
+
 **Todo Phase 0 (2026-06-01):** [TODO_CONSTITUTIONAL_AUDIT](./audits/TODO_CONSTITUTIONAL_AUDIT.md), [TODO_OPERATION_MATRIX](./audits/TODO_OPERATION_MATRIX.md), [TODO_SERVICE_EXTRACTION_PLAN](./audits/TODO_SERVICE_EXTRACTION_PLAN.md). Copy patterns from [REFERENCE_MODULE_CATALOG.md](./REFERENCE_MODULE_CATALOG.md).
 
 **Todo Phase 1B (2026-06-02):** Core task write layer — `todoPermissionService`, `todoPolicyDual`, `todoTaskService`, `services/todo/{errors,types,includes}`; controller delegates create/update/complete/reopen/soft-delete; `todo:task.*` policy actions; 15 unit tests.
@@ -261,6 +265,10 @@ Waves align with [`PLATFORM_MODULE_MODERNIZATION_ROADMAP.md`](../plans/PLATFORM_
 **Todo Phase 2 (2026-06-02):** `todoTrashService` + Global Trash handler; `todo:task` platform entity; `todoVlinkAccessService` / `todoVlinkLifecycleService`; manifest truth (`vlink`, `search`, `realtime`, `globalActivity`, `todo_assigned`); domain events `todo.task.restored` / `todo.task.permanentlyDeleted`. See [TODO_PHASE2_TRASH_ENTITY_VLINK](./audits/TODO_PHASE2_TRASH_ENTITY_VLINK.md).
 
 **Todo Phase 3 (2026-06-02):** [`TODO_LEVEL3_CERTIFICATION_REVIEW.md`](./audits/TODO_LEVEL3_CERTIFICATION_REVIEW.md) — **Level 3 Certified**; **Reference Module #4**.
+
+**Todo UX (2026-06-12):** Waves 5D + 5G + **5G-QA-EXEC** + **5G-Todo-L3-D** — **UX-L3 Certified** (11 PASS / 0 PWF). **Reference UX #3** registered — [`REFERENCE_MODULE_TODO.md`](../ux/audits/REFERENCE_MODULE_TODO.md) — **Approved with Findings**. Independent of Architecture Reference #4 (same module, code track).
+
+**AI Experience UX (2026-06-03):** Waves 5H-AI-UX-A/B/C/D + **5H-AI-L1L2-D** + **5H-AI-Ref4-Prep/Registration** — **UX-L3 Certified with Findings** (11 PASS / 0 PWF). **Reference UX #4** registered — [`REFERENCE_MODULE_AI.md`](../ux/audits/REFERENCE_MODULE_AI.md) — **Approved with Findings**. Independent of AI Platform L2 architecture certification and program type #4 Reference AI Module.
 
 **Place Phase 1B (2026-06-03):** Core graph write layer — `placePermissionService`, `placePolicyDual`, `placeService`, `placeRealtimeService`; graph PE actions; thin core graph controllers.
 
@@ -350,7 +358,7 @@ Waves align with [`PLATFORM_MODULE_MODERNIZATION_ROADMAP.md`](../plans/PLATFORM_
 | **1E** | [AI_PLATFORM_WAVE_1E_PROVIDER_CAPABILITY_CLOSEOUT.md](./audits/AI_PLATFORM_WAVE_1E_PROVIDER_CAPABILITY_CLOSEOUT.md) | Provider routing **PASS** |
 | **L2** | [AI_PLATFORM_LEVEL2_CERTIFICATION_REVIEW.md](./audits/AI_PLATFORM_LEVEL2_CERTIFICATION_REVIEW.md) | **Level 2 — Platform Compliant** (APPROVED WITH FINDINGS) |
 
-**Next:** **Defer AI L3** per [AI_PLATFORM_LEVEL3_READINESS_REVIEW](./audits/AI_PLATFORM_LEVEL3_READINESS_REVIEW.md) — UX **5G-QA** + Calendar/Notifications L3 first. AI L3 prep (stub policy, matrix C, legacy closure) when capacity allows.
+**Next:** **Defer AI Platform L3** per [AI_PLATFORM_LEVEL3_READINESS_REVIEW](./audits/AI_PLATFORM_LEVEL3_READINESS_REVIEW.md). UX: Drive **#1**, Notifications **#2**, Todo **#3**, **AI Experience #4**, Calendar **#5** registered; Chat L2 path when prioritized.
 
 ---
 
@@ -358,6 +366,10 @@ Waves align with [`PLATFORM_MODULE_MODERNIZATION_ROADMAP.md`](../plans/PLATFORM_
 
 | Date | Change |
 |------|--------|
+| 2026-06-03 | **Reference UX #4 AI Experience** — Approved with Findings — [REFERENCE_MODULE_AI](../ux/audits/REFERENCE_MODULE_AI.md) |
+| 2026-06-12 | **Reference UX #3 Todo** — Approved with Findings — [REFERENCE_MODULE_TODO](../ux/audits/REFERENCE_MODULE_TODO.md) |
+| 2026-06-12 | **Reference UX #2 Notifications** — Approved with Findings — [REFERENCE_MODULE_NOTIFICATIONS](../ux/audits/REFERENCE_MODULE_NOTIFICATIONS.md) |
+| 2026-06-03 | **Reference UX #5 Calendar** — Approved with Findings — [REFERENCE_MODULE_CALENDAR](../ux/audits/REFERENCE_MODULE_CALENDAR.md) |
 | 2026-06-03 | AI Platform **L3 readiness + ROI review** — defer L3; prioritize UX certification — [AI_PLATFORM_LEVEL3_READINESS_REVIEW](./audits/AI_PLATFORM_LEVEL3_READINESS_REVIEW.md) |
 | 2026-06-03 | AI Platform **Level 2 — Platform Compliant** — formal L2 certification review (APPROVED WITH FINDINGS) |
 | 2026-05-31 | Ledger v1.0 — initial population from modernization roadmap + File Hub FH-6 certification |

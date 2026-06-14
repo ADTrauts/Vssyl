@@ -122,4 +122,13 @@ See **`.cursor/rules/runtime-state-boundaries.mdc`** and `web/src/runtime/worksp
 - [ ] Runtime unit tests under `web/src/runtime/**/__tests__`
 - [ ] No cross-tenant leakage when switching workspace context
 
-**Last updated:** 2026-05-17 (platform hardening closeout — RT-Q1/WR-Q1 + CI web tests)
+## Personal Dashboard widget boundaries (Wave 2B)
+
+Widget projection rules for the personal grid are governed separately from business hub mounting:
+
+- [PERSONAL_DASHBOARD_WIDGET_CONTRACT.md](./PERSONAL_DASHBOARD_WIDGET_CONTRACT.md) — allowed/forbidden widget responsibilities
+- [PERSONAL_DASHBOARD_ROUTING_CONTRACT.md](./PERSONAL_DASHBOARD_ROUTING_CONTRACT.md) — grid vs module-route vs tab-embed
+
+**Rule unchanged:** `WidgetContentRenderer` maps widget **type** only; modules own interiors on full routes.
+
+**Last updated:** 2026-06-03 (Personal Dashboard Wave 2C cross-link)

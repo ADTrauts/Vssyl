@@ -3,6 +3,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { Spinner, Card } from 'shared/components';
+import { PlaceInsightsEmptyState } from './PlaceEmptyStates';
+import { placeActionError, placeActionSuccess } from './placeUxFeedback';
 import { getPersonalAnalytics, exportPlaceData } from '@/api/placeAnalytics';
 import type { PersonalAnalytics } from '@/api/placeAnalytics';
 import {
@@ -19,14 +21,21 @@ export default function PlaceAnalyticsDashboard() {
   const [period, setPeriod] = useState('month');
   const [exporting, setExporting] = useState(false);
 
+  const [loadError, setLoadError] = useState<string | null>(null);
+
   const fetchAnalytics = useCallback(async () => {
     if (!token) return;
     setLoading(true);
+    setLoadError(null);
     try {
       const data = await getPersonalAnalytics(period, token);
       setAnalytics(data);
-    } catch { /* */ }
-    finally { setLoading(false); }
+    } catch (error: unknown) {
+      setLoadError('Could not load analytics');
+      placeActionError('Could not load analytics', error);
+    } finally {
+      setLoading(false);
+    }
   }, [token, period]);
 
   useEffect(() => { fetchAnalytics(); }, [fetchAnalytics]);
@@ -42,8 +51,12 @@ export default function PlaceAnalyticsDashboard() {
       a.download = `vssyl-place-export-${new Date().toISOString().split('T')[0]}.json`;
       a.click();
       URL.revokeObjectURL(url);
-    } catch { /* */ }
-    finally { setExporting(false); }
+      placeActionSuccess('Export started');
+    } catch (error: unknown) {
+      placeActionError('Could not export Place data', error);
+    } finally {
+      setExporting(false);
+    }
   };
 
   if (loading) {
@@ -54,14 +67,19 @@ export default function PlaceAnalyticsDashboard() {
     );
   }
 
-  if (!analytics) {
+  if (loadError && !analytics) {
     return (
-      <div className="text-center py-16 px-4">
-        <BarChart3 className="w-10 h-10 mx-auto mb-3 text-gray-400" />
-        <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">No analytics data yet</p>
-        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Start using your Main Street and analytics will appear.</p>
+      <div className="px-4 py-8 text-center">
+        <p className="text-sm text-red-700 dark:text-red-300" role="alert">{loadError}</p>
+        <button type="button" onClick={() => void fetchAnalytics()} className="mt-2 text-sm font-semibold text-indigo-600 underline">
+          Retry
+        </button>
       </div>
     );
+  }
+
+  if (!analytics) {
+    return <PlaceInsightsEmptyState />;
   }
 
   const maxGrowth = Math.max(...analytics.network.weeklyGrowth, 1);

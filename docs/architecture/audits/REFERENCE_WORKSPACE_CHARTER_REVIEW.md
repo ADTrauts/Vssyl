@@ -1,12 +1,12 @@
 # Reference Workspace Program Charter Review (Wave 6C)
 
-**Status:** **Complete** — governance and architecture review; **WS-L1 issued** · **WS-L2 assessed** (2026-06-03)  
+**Status:** **Complete** — governance and architecture review; **WS-L1 issued** · **WS-L2 Certified with Findings** · **Registered Approved with Findings** (2026-06-14)  
 **Date:** 2026-06-14  
 **Wave:** 6C-Reference-Workspace-Charter  
 **Program:** [`REFERENCE_MODULE_PROGRAM.md`](../../ux/REFERENCE_MODULE_PROGRAM.md)  
 **Prior expansion review:** [`UX_REFERENCE_PROGRAM_EXPANSION_REVIEW.md`](../../ux/audits/UX_REFERENCE_PROGRAM_EXPANSION_REVIEW.md)
 
-> **No designation awards. No certifications. No council action. No engineering.**
+> **Reference Workspace registered (Approved with Findings). No engineering in this review.**
 
 ---
 
@@ -58,7 +58,10 @@ The platform already operates six distinguishable workspace archetypes. **`Works
 | [`PERSONAL_DASHBOARD_WAVE_2B_CLOSEOUT.md`](./PERSONAL_DASHBOARD_WAVE_2B_CLOSEOUT.md) | Personal contract package — routing, widget, XWS, contexts (2026-06-14) |
 | [`PERSONAL_DASHBOARD_WAVE_2C_CLOSEOUT.md`](./PERSONAL_DASHBOARD_WAVE_2C_CLOSEOUT.md) | Personal standardization — navigation SSOT, tests, shell wiring (2026-06-03) |
 | [`PERSONAL_DASHBOARD_WS_L1_CERTIFICATION_REVIEW.md`](./PERSONAL_DASHBOARD_WS_L1_CERTIFICATION_REVIEW.md) | Personal WS-L1 Certified with Findings (2026-06-03) |
-| [`REFERENCE_WORKSPACE_WS_L2_ASSESSMENT.md`](./REFERENCE_WORKSPACE_WS_L2_ASSESSMENT.md) | Combined WS-L2 assessment — **74% readiness, no certification** (2026-06-03) |
+| [`REFERENCE_WORKSPACE_WS_L2_ASSESSMENT.md`](./REFERENCE_WORKSPACE_WS_L2_ASSESSMENT.md) | Combined WS-L2 assessment — **74% → 89%** (2026-06-03) |
+| [`REFERENCE_WORKSPACE_WS_L2_CERTIFICATION_REVIEW.md`](./REFERENCE_WORKSPACE_WS_L2_CERTIFICATION_REVIEW.md) | Combined WS-L2 certification — **Certified with Findings** (2026-06-14) |
+| [`REFERENCE_WORKSPACE_PLATFORM_SHELL.md`](../REFERENCE_WORKSPACE_PLATFORM_SHELL.md) | Registration prep package — **Approved with Findings** (2026-06-14) |
+| [`REFERENCE_WORKSPACE_REGISTRATION_REVIEW.md`](./REFERENCE_WORKSPACE_REGISTRATION_REVIEW.md) | Inaugural registration — **Approved with Findings** (2026-06-14) |
 | [`PERSONAL_DASHBOARD_ROUTING_CONTRACT.md`](../PERSONAL_DASHBOARD_ROUTING_CONTRACT.md) | Personal routing SSOT (Wave 2B, enforced 2C) |
 
 ---
@@ -290,7 +293,8 @@ Reference Module Program
 | **Q2–Q3 2026** | **Personal WS-L1** ✅ | **Certified with Findings** — [PERSONAL_DASHBOARD_WS_L1_CERTIFICATION_REVIEW.md](./PERSONAL_DASHBOARD_WS_L1_CERTIFICATION_REVIEW.md) |
 | **Q2–Q3 2026** | **WS-L2 assessment** ✅ | **74% combined readiness** — [REFERENCE_WORKSPACE_WS_L2_ASSESSMENT.md](./REFERENCE_WORKSPACE_WS_L2_ASSESSMENT.md) |
 | **Q3 2026** | **WS-L2 prerequisites** | Wave **1D** · Personal drift test · cross-surface QA |
-| **Q3–Q4 2026** | **Reference Workspace registration** | `REFERENCE_WORKSPACE_PLATFORM_SHELL.md` — requires **WS-L2 certification** |
+| **Q2 2026** | **WS-L2 certification** ✅ | **Certified with Findings** — [`REFERENCE_WORKSPACE_WS_L2_CERTIFICATION_REVIEW.md`](./REFERENCE_WORKSPACE_WS_L2_CERTIFICATION_REVIEW.md) |
+| **Q3–Q4 2026** | **Reference Workspace registration** | `REFERENCE_WORKSPACE_PLATFORM_SHELL.md` draft · WS-L3 prep |
 | **Parallel** | **6B-Place-Ref6-Prep** | UX #6 — publisher/consumers patterns |
 | **2027** | **Portal annex** | Admin Portal pattern guide (if ops shell stabilizes) |
 
@@ -307,9 +311,9 @@ Reference Module Program
 3. ~~**1C**~~ — Navigation contract tests — **Done** (2026-06-14)
 4. ~~**WS-L1**~~ — Certification review — **Certified with Findings** (2026-06-14)
 
-**Follow-on:** ~~**2E** cross-surface QA~~ **2E Done** · ~~**2F** operation matrix~~ **2F Done** · WS-L2 certification review · registration doc draft
+**Follow-on:** ~~registration review~~ **Done** · optional Business 1E (RWS-F1) · pattern annex (GOV-1) · WS-L3 readiness (separate wave)
 
-**Not next:** Reference Workspace registration (requires WS-L2), Admin Portal shell rewrite, merging workspace into UX #6.
+**Not next:** WS-L3 certification in same wave · merging workspace into UX #6 · Admin Portal inaugural registration.
 
 ---
 
@@ -330,7 +334,56 @@ Reference Module Program
 | **Business Workspace** | **WS-L1** | **Certified with Findings** | [BUSINESS_WORKSPACE_WS_L1_CERTIFICATION_REVIEW.md](./BUSINESS_WORKSPACE_WS_L1_CERTIFICATION_REVIEW.md) |
 | **Personal Dashboard shell** | **WS-L1** | **Certified with Findings** | [PERSONAL_DASHBOARD_WS_L1_CERTIFICATION_REVIEW.md](./PERSONAL_DASHBOARD_WS_L1_CERTIFICATION_REVIEW.md) |
 
-**Registration readiness:** Eligible for Reference Workspace **prep** — both co-surfaces WS-L1 certified; **WS-L2 assessed at 74%** — certification deferred; registration doc drafting may begin.
+**Registration readiness:** Eligible for Reference Workspace **prep** — both co-surfaces WS-L1 certified; WS-L2 **Certified with Findings** (2026-06-14); registration doc drafting **may proceed**; designation review blocked.
+
+---
+
+## WS-L2 certification record (2026-06-14)
+
+| Surface | Level | Decision | Review |
+|---------|-------|----------|--------|
+| **Business Workspace** | **WS-L2** | **Certified with Findings** | [REFERENCE_WORKSPACE_WS_L2_CERTIFICATION_REVIEW.md](./REFERENCE_WORKSPACE_WS_L2_CERTIFICATION_REVIEW.md) §1 |
+| **Personal Dashboard shell** | **WS-L2** | **Certified with Findings** | [REFERENCE_WORKSPACE_WS_L2_CERTIFICATION_REVIEW.md](./REFERENCE_WORKSPACE_WS_L2_CERTIFICATION_REVIEW.md) §2 |
+| **Combined Reference Workspace Program** | **WS-L2** | **Certified with Findings** | [REFERENCE_WORKSPACE_WS_L2_CERTIFICATION_REVIEW.md](./REFERENCE_WORKSPACE_WS_L2_CERTIFICATION_REVIEW.md) §3–4 |
+
+**Readiness at certification:** Combined **~89%** · Business **90%** · Personal **88%**
+
+**Open findings:** RWS-F1 (Place segment 404) · B-F2/B-F3 · P-F2–P-F5 · 3 KNOWN-PWF QA items
+
+**Registration readiness:** Prep **complete** — REG-B2 closed (2026-06-14). Formal registration review may open **Approved with Findings**. Designation award blocked on REG-B3 partial + RWS-F1.
+
+**`REFERENCE_WORKSPACE_PLATFORM_SHELL.md`:** ✅ **Drafted** — [REFERENCE_WORKSPACE_PLATFORM_SHELL.md](../REFERENCE_WORKSPACE_PLATFORM_SHELL.md)
+
+---
+
+## Registration record (2026-06-14)
+
+| Field | Value |
+|-------|-------|
+| **Decision** | **Approved with Findings** |
+| **Holder** | Reference Workspace Platform Shell — **hybrid** (Business Workspace + Personal Dashboard shell) |
+| **Program type** | Reference Workspace Module #3 (inaugural) |
+| **Open findings** | 12 (RWS-F1 primary) |
+| **REG-B1** | ✅ Closed |
+| **REG-B2** | ✅ Closed |
+| **REG-B3** | 🟡 Partial — waived for CwF registration |
+
+**Review:** [REFERENCE_WORKSPACE_REGISTRATION_REVIEW.md](./REFERENCE_WORKSPACE_REGISTRATION_REVIEW.md)  
+**Specification:** [REFERENCE_WORKSPACE_PLATFORM_SHELL.md](../REFERENCE_WORKSPACE_PLATFORM_SHELL.md)
+
+---
+
+## Registration prep record (2026-06-14)
+
+| Gate | Status |
+|------|--------|
+| REG-B1 WS-L2 certified | ✅ Closed |
+| REG-B2 Registration shell doc | ✅ **Closed** — platform shell prep package |
+| REG-B3 WS-L3 items | 🟡 Partial — pattern annex open |
+| Prep recommendation | **Approved with Findings** |
+| Designation award | ❌ Not this wave |
+
+**Review:** [REFERENCE_WORKSPACE_PLATFORM_SHELL.md](../REFERENCE_WORKSPACE_PLATFORM_SHELL.md)
 
 ---
 
@@ -341,8 +394,8 @@ Reference Module Program
 | Combined WS-L2 readiness | **74%** |
 | Business Workspace | **82%** |
 | Personal Dashboard | **79%** |
-| WS-L2 certification | **Not awarded** |
-| WS-L2 certification review | **May proceed** — all L2-B1–B4 closed |
+| WS-L2 certification | ✅ **Certified with Findings** (2026-06-14) |
+| WS-L2 certification review | ✅ **Complete** — [REFERENCE_WORKSPACE_WS_L2_CERTIFICATION_REVIEW.md](./REFERENCE_WORKSPACE_WS_L2_CERTIFICATION_REVIEW.md) |
 | Registration prep | **May begin** (governance drafting only) |
 
 **Review:** [REFERENCE_WORKSPACE_WS_L2_ASSESSMENT.md](./REFERENCE_WORKSPACE_WS_L2_ASSESSMENT.md)
@@ -391,12 +444,12 @@ Reference Module Program
 | Personal WS-L1 certification | ✅ **Certified with Findings** |
 | Business WS-L1 certification | ✅ **Certified with Findings** |
 | Combined WS-L2 assessment | ✅ **Complete — 85%** (post-2D) |
-| Combined WS-L2 certification | ⏳ **Deferred** — 2 blockers (L2-B3, L2-B4) |
-| Registration doc | ⏳ Drafting may begin |
+| Combined WS-L2 certification | ✅ **Certified with Findings** (2026-06-14) |
+| Registration doc | ⏳ Drafting **may proceed** |
 | Business orphan route hygiene | ✅ **1D complete** |
 | Personal registry drift enforcement | ✅ **2D complete** |
 
-**WS-L2 verdict:** **85% combined readiness** (post-2D) — certification review may open after L2-B3 + L2-B4. Registration prep (governance drafting) may proceed.
+**WS-L2 verdict:** ✅ **Certified with Findings** (2026-06-14) — **~89%** combined readiness at certification. Registration prep (governance drafting) may proceed; designation review blocked.
 
 Detail: [REFERENCE_WORKSPACE_WS_L2_ASSESSMENT.md](./REFERENCE_WORKSPACE_WS_L2_ASSESSMENT.md) · [PERSONAL_DASHBOARD_WAVE_2D_CLOSEOUT.md](./PERSONAL_DASHBOARD_WAVE_2D_CLOSEOUT.md)
 
@@ -423,4 +476,4 @@ Detail: [PERSONAL_DASHBOARD_WAVE_2D_CLOSEOUT.md](./PERSONAL_DASHBOARD_WAVE_2D_CL
 
 ---
 
-**Last updated:** 2026-06-14 (Wave 2F — L2-B4 closed; 0 WS-L2 process blockers)
+**Last updated:** 2026-06-14 (Inaugural Reference Workspace Registration — Approved with Findings)

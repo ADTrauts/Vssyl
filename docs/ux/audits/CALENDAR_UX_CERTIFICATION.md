@@ -1,12 +1,13 @@
-# Calendar Module UX Certification (Wave 3C-7D)
+# Calendar Module UX Certification (Wave 5G-Calendar-D)
 
-**Status:** **Complete — UX-L1 Certified; UX-L2 Certified with Findings**  
+**Status:** **Complete — UX-L1 Certified; UX-L2 Certified; UX-L3 Certified**  
 **Date:** 2026-06-03  
-**Mode:** Re-certification (documentation only)  
-**Program:** UX Modernization Wave 5E + 5E.1 + 5E.2 + 5E.3 + **3C-7A/B/C/D**  
+**Mode:** Certification review (documentation only)  
+**Program:** UX Modernization Wave 5E + 3C-7 + 5G-QA + **5G-Calendar-D**  
 **Benchmark:** Drive / File Hub — Reference UX Module #1  
 **Scorecard:** [`CALENDAR_UX_SCORECARD.md`](./CALENDAR_UX_SCORECARD.md)  
-**Re-certification:** [`CALENDAR_UX_RECERTIFICATION_2026_3C7D.md`](./CALENDAR_UX_RECERTIFICATION_2026_3C7D.md)
+**Review:** [`CALENDAR_UX_L3_CERTIFICATION_REVIEW.md`](./CALENDAR_UX_L3_CERTIFICATION_REVIEW.md)  
+**Prior:** [`CALENDAR_UX_RECERTIFICATION_2026_3C7D.md`](./CALENDAR_UX_RECERTIFICATION_2026_3C7D.md)
 
 ---
 
@@ -15,39 +16,45 @@
 | Field | Value |
 |-------|-------|
 | **UX-L1** | **Certified** |
-| **UX-L2** | **Certified with Findings** |
-| **UX-L3** | **Not certified** |
-| **Reference UX module slot** | **Not eligible** |
+| **UX-L2** | **Certified** |
+| **UX-L3** | **Certified** |
+| **Reference UX #5** | **Eligible With Findings** (no designation) |
 
 ### Rationale
 
-Wave **3C-7D** re-certification after the full **3C-7** modernization program (shell, consolidation, polish) on top of **5E.1–5E.3**: **9 PASS / 2 PWF / 0 FAIL** — up from **6 PASS / 5 PWF** at 5E.3.
+Wave **5G-Calendar-D** re-certification after E-14 manual QA execution (R1 → R2 → R3): **11 PASS / 0 PWF / 0 FAIL** — up from **9 PASS / 2 PWF** at 3C-7D.
 
-**UX-L1 Certified** — 9 PASS exceeds ≥8 threshold; only 2 PWF (<3 CwF threshold); L1 blockers clear.
+**UX-L1 Certified** — 11 PASS exceeds ≥8 threshold; 0 PWF; L1 blockers clear. Unchanged award; strengthened metrics.
 
-**UX-L2 Certified with Findings** — meets ≥9 PASS per official threshold; categories 4 and 5 remain PWF (E-14 manual QA). Mirrors Notifications 5C.2 L2 CwF precedent.
+**UX-L2 Certified** — upgraded from L2 CwF. Cats 4 and 5 upgraded to PASS eliminates the 2 PWF categories that previously required Certified with Findings. Meets ≥9 PASS; cats 2 and 5 strict PASS.
 
-**UX-L3** blocked: category 4 (Accessibility) PWF; E-14 manual QA matrix not executed.
+**UX-L3 Certified** — first Calendar L3 award. Prerequisite L2 Certified now met. Core quartet (cats 1, 2, 4, 11) all PASS. E-14 closed with 0 product FAIL on exercisable P0 rows.
 
-**Reference eligibility:** Requires UX-L3 CwF minimum — not met.
+**Reference UX #5:** Meets L3 minimum for registration prep. Designation **not awarded** — `REFERENCE_MODULE_CALENDAR.md` absent; council not convened; matrix BLOCKED rows documented.
 
 ---
 
-## 2. Scorecard summary (3C-7D authoritative)
+## 2. Scorecard summary (5G-Calendar-D authoritative)
 
-| # | Category | Wave 5E | Wave 5E.3 | Wave 3C-7D |
-|---|----------|---------|-----------|------------|
-| 1 | Interaction Consistency | **FAIL** | **PASS** | **PASS** |
-| 2 | Layout Consistency | PWF | PWF | **PASS** |
-| 3 | Navigation | PWF | PWF | **PASS** |
-| 4 | Accessibility | PWF | PWF | PWF |
-| 5 | Mobile | PWF | PWF | PWF |
-| 6 | Cross-Module Integration | **PASS** | **PASS** | **PASS** |
-| 7 | Error Handling | PWF | **PASS** | **PASS** |
-| 8 | Empty States | PWF | PWF | **PASS** |
-| 9 | Loading States | **PASS** | **PASS** | **PASS** |
-| 10 | Discoverability | PWF | **PASS** | **PASS** |
-| 11 | Workflow Completion | **FAIL** | **PASS** | **PASS** |
+| # | Category | 3C-7D | 5G-Calendar-D |
+|---|----------|-------|---------------|
+| 1 | Interaction Consistency | **PASS** | **PASS** |
+| 2 | Layout Consistency | **PASS** | **PASS** |
+| 3 | Navigation | **PASS** | **PASS** |
+| 4 | Accessibility | PWF | **PASS** |
+| 5 | Mobile | PWF | **PASS** |
+| 6 | Cross-Module Integration | **PASS** | **PASS** |
+| 7 | Error Handling | **PASS** | **PASS** |
+| 8 | Empty States | **PASS** | **PASS** |
+| 9 | Loading States | **PASS** | **PASS** |
+| 10 | Discoverability | **PASS** | **PASS** |
+| 11 | Workflow Completion | **PASS** | **PASS** |
+
+| Metric | 3C-7D | 5G-Calendar-D |
+|--------|-------|---------------|
+| **PASS** | 9 | **11** |
+| **PWF** | 2 | **0** |
+| **FAIL** | 0 | **0** |
 
 ---
 
@@ -55,42 +62,40 @@ Wave **3C-7D** re-certification after the full **3C-7** modernization program (s
 
 | ID | Status | Blocks L3? |
 |----|--------|------------|
-| E-1–E-5, E-9, E-15 | **Resolved** (5E) | — |
-| E-6, E-7 | **Resolved** (3C-7A) | — |
-| E-8, E-10, E-16 | **Resolved** (3C-7B) | E-10 strict PASS pending E-14 |
-| E-11, E-12, E-13 | **Resolved** (3C-7C) | — |
-| E-14 Manual QA | **Open** | **Yes** |
+| E-1–E-16 (engineering) | **Resolved** | — |
+| **E-14** Manual QA | **Resolved** (R3) | — |
+| QA-ENV-02 | **Open** (env) | No |
+| CAL-03 BLOCKED | **Open** (business data) | No |
+| CAL-05/10 BLOCKED | **Open** (drag automation) | No |
+| CAL-19 BLOCKED | **Open** (todo scope) | No |
 | Widget/enterprise shells | **Certified exception** | — |
-| Month modal inline buttons | **Certified exception** | — |
 
 ---
 
-## 4. Engineering waves
+## 4. Engineering + QA waves
 
 | Wave | Status |
 |------|--------|
-| 5E Initial audit | **Complete** |
-| 5E.1 Interaction safety | **Complete** |
-| 5E.2 Month workflow parity | **Complete** |
-| 5E.3 Re-certification | **Complete** — UX-L1 CwF |
-| 3C-7A Shell + hub | **Complete** |
-| 3C-7B Consolidation + mobile | **Complete** |
-| 3C-7C Polish | **Complete** |
-| **3C-7D Re-certification** | **Complete** — UX-L1 Certified; UX-L2 CwF |
+| 5E.1–5E.3 Interaction + workflow | **Complete** |
+| 3C-7A/B/C Layout modernization | **Complete** |
+| 3C-7D Re-certification | **Complete** — UX-L2 CwF |
+| 5G-Calendar-QA-Remediation | **Complete** |
+| 5G-QA-EXEC R1/R2/R3 | **Complete** — E-14 closed |
+| **5G-Calendar-D** | **Complete** — **UX-L3 Certified** |
 
 ### Recommended next
 
-1. **E-14 manual QA matrix** — L3 path
-2. **Chat L2** / **Todo L2** peer modernization
-3. **Reference UX #5** (Calendar) — only after L3 + registration
+1. Draft **`REFERENCE_MODULE_CALENDAR.md`** registration artifact
+2. Council review for Reference UX #5 designation
+3. Optional: human QA on CAL-03 (business hub) with seeded business account
 
 ---
 
 ## Related
 
 - [`CALENDAR_UX_SCORECARD.md`](./CALENDAR_UX_SCORECARD.md)
-- [`CALENDAR_UX_RECERTIFICATION_2026_3C7D.md`](./CALENDAR_UX_RECERTIFICATION_2026_3C7D.md)
-- [`CALENDAR_LAYOUT_MODERNIZATION_PLAN.md`](../CALENDAR_LAYOUT_MODERNIZATION_PLAN.md)
+- [`CALENDAR_UX_L3_CERTIFICATION_REVIEW.md`](./CALENDAR_UX_L3_CERTIFICATION_REVIEW.md)
+- [`CALENDAR_QA_EXEC_R3_REPORT_2026.md`](./CALENDAR_QA_EXEC_R3_REPORT_2026.md)
 - [`UX_MODERNIZATION_ROADMAP.md`](../UX_MODERNIZATION_ROADMAP.md)
 
-**Last updated:** 2026-06-03 (Wave 3C-7D — authoritative certification)
+**Last updated:** 2026-06-03 (Wave 5G-Calendar-D — authoritative certification)

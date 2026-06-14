@@ -421,6 +421,7 @@ export async function listMeetingsForUser(userId: string, status?: string) {
 
   const where: Prisma.PlaceMeetingPlaceWhereInput = {
     OR: [{ creatorId: uid }, { invites: { some: { inviteeId: uid } } }],
+    trashedAt: null,
   };
 
   if (status) {

@@ -131,7 +131,8 @@ Re-register or re-audit when:
 | Reference Architecture | Strong candidate / file hub code reference |
 | Reference Workspace | N/A (product module) |
 | Reference AI | Partial (AI context providers exist; not AI reference) |
-| Reference Calendar | N/A |
+| Reference UX #2 (Notifications) | [`REFERENCE_MODULE_NOTIFICATIONS.md`](./REFERENCE_MODULE_NOTIFICATIONS.md) — Approved with Findings |
+| Reference UX #5 (Calendar) | [`REFERENCE_MODULE_CALENDAR.md`](./REFERENCE_MODULE_CALENDAR.md) — Approved with Findings |
 
 ---
 

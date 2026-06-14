@@ -1,5 +1,41 @@
 # Active Context - Vssyl Business Admin & AI Integration
 
+## Reference Workspace — Registration Review (June 2026) ✅
+
+**Status:** **COMPLETE** — inaugural registration review; governance only; no engineering.
+
+**Outcome:** **Approved with Findings**. Reference Workspace Platform Shell **registered** (hybrid holder: Business Workspace + Personal Dashboard shell). **12** open findings. REG-B3 partial waived.
+
+**Deliverables:** [`REFERENCE_WORKSPACE_REGISTRATION_REVIEW.md`](../docs/architecture/audits/REFERENCE_WORKSPACE_REGISTRATION_REVIEW.md)
+
+**Next:** Optional Business 1E (RWS-F1) · pattern annex (GOV-1) · WS-L3 readiness (separate wave).
+
+---
+
+## Reference Workspace — Registration Prep (June 2026) ✅
+
+**Status:** **COMPLETE** — governance and documentation only; no designation; no engineering.
+
+**Outcome:** `REFERENCE_WORKSPACE_PLATFORM_SHELL.md` drafted. Prep recommendation **Approved with Findings**. REG-B2 **closed**. REG-B3 **partial** (pattern annex). RWS-F1 remains.
+
+**Deliverables:** [`REFERENCE_WORKSPACE_PLATFORM_SHELL.md`](../docs/architecture/REFERENCE_WORKSPACE_PLATFORM_SHELL.md)
+
+**Next:** Formal registration review (council) · optional Business 1E (RWS-F1) · WS-L3 readiness review.
+
+---
+
+## Reference Workspace — WS-L2 Certification Review (June 2026) ✅
+
+**Status:** **COMPLETE** — governance and certification only; no registration; no engineering.
+
+**Outcome:** Combined Reference Workspace Program **WS-L2 Certified with Findings**. Business **90%** · Personal **88%** · Combined **~89%**. **0** process blockers · **12** open findings (RWS-F1 primary).
+
+**Deliverables:** [`REFERENCE_WORKSPACE_WS_L2_CERTIFICATION_REVIEW.md`](../docs/architecture/audits/REFERENCE_WORKSPACE_WS_L2_CERTIFICATION_REVIEW.md) · updated charter · module catalog · UX roadmap
+
+**Next:** `REFERENCE_WORKSPACE_PLATFORM_SHELL.md` draft · optional Business 1E (RWS-F1) · WS-L3 readiness review.
+
+---
+
 ## Reference Workspace — Wave 2F Operation Matrix Re-Audit (June 2026) ✅
 
 **Status:** **COMPLETE** — governance only; no WS-L2 certification; no registration.

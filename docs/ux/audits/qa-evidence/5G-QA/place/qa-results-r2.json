@@ -1,0 +1,161 @@
+{
+  "wave": "R2",
+  "executedAt": "2026-06-14T12:20:53.964Z",
+  "migration": "20260603140000_place_listing_meeting_trash_vlink applied",
+  "total": 15,
+  "pass": 15,
+  "fail": 0,
+  "blocked": 0,
+  "results": [
+    {
+      "id": "PLC-04",
+      "pri": "P0",
+      "result": "PASS",
+      "viewport": "D",
+      "theme": "light",
+      "notes": "PlaceWorkspaceLanding + PageHeader",
+      "screenshot": "PLC-04-D-light-R2.png",
+      "wave": "R2"
+    },
+    {
+      "id": "PLC-06",
+      "pri": "P1",
+      "result": "PASS",
+      "viewport": "D",
+      "theme": "light",
+      "notes": "Listing save exercised in publisher editor",
+      "screenshot": "PLC-06-D-light-R2.png",
+      "wave": "R2"
+    },
+    {
+      "id": "PLC-08",
+      "pri": "P1",
+      "result": "PASS",
+      "viewport": "D",
+      "theme": "light",
+      "notes": "Follow added graph node",
+      "screenshot": "PLC-08-D-light-R2.png",
+      "wave": "R2"
+    },
+    {
+      "id": "PLC-09",
+      "pri": "P1",
+      "result": "PASS",
+      "viewport": "D",
+      "theme": "light",
+      "notes": "BusinessProfilePanel opened from node list",
+      "screenshot": "PLC-09-D-light-R2.png",
+      "wave": "R2"
+    },
+    {
+      "id": "PLC-24",
+      "pri": "P0",
+      "result": "PASS",
+      "viewport": "D",
+      "theme": "light",
+      "notes": "Keyboard node list with labeled buttons",
+      "screenshot": "PLC-24-D-light-R2.png",
+      "wave": "R2"
+    },
+    {
+      "id": "PLC-05",
+      "pri": "P0",
+      "result": "PASS",
+      "viewport": "D",
+      "theme": "light",
+      "notes": "Meeting created and listed",
+      "screenshot": "PLC-05-D-light-R2.png",
+      "wave": "R2"
+    },
+    {
+      "id": "PLC-16",
+      "pri": "P0",
+      "result": "PASS",
+      "viewport": "D",
+      "theme": "light",
+      "notes": "PlaceCalendarLinkModal linked meeting",
+      "screenshot": "PLC-16-D-light-R2.png",
+      "wave": "R2"
+    },
+    {
+      "id": "PLC-17",
+      "pri": "P1",
+      "result": "PASS",
+      "viewport": "D",
+      "theme": "light",
+      "notes": "On calendar badge visible",
+      "screenshot": "PLC-17-D-light-R2.png",
+      "wave": "R2"
+    },
+    {
+      "id": "PLC-10",
+      "pri": "P0",
+      "result": "PASS",
+      "viewport": "D",
+      "theme": "light",
+      "notes": "Meeting trashed via ConfirmModal",
+      "screenshot": "PLC-10-D-light-R2.png",
+      "wave": "R2"
+    },
+    {
+      "id": "PLC-12",
+      "pri": "P0",
+      "result": "PASS",
+      "viewport": "D",
+      "theme": "light",
+      "notes": "Meeting restored",
+      "screenshot": "PLC-12-D-light-R2.png",
+      "wave": "R2"
+    },
+    {
+      "id": "PLC-14",
+      "pri": "P0",
+      "result": "PASS",
+      "viewport": "D",
+      "theme": "light",
+      "notes": "Permanent delete confirmed",
+      "screenshot": "PLC-14-D-light-R2.png",
+      "wave": "R2"
+    },
+    {
+      "id": "PLC-11",
+      "pri": "P0",
+      "result": "PASS",
+      "viewport": "D",
+      "theme": "light",
+      "notes": "Listing danger zone trash confirm exercised",
+      "screenshot": "PLC-11-D-light-R2.png",
+      "wave": "R2"
+    },
+    {
+      "id": "PLC-13",
+      "pri": "P0",
+      "result": "PASS",
+      "viewport": "D",
+      "theme": "light",
+      "notes": "Listing restore from global trash; hub loads",
+      "screenshot": "PLC-13-D-light-R2.png",
+      "wave": "R2"
+    },
+    {
+      "id": "PLC-20",
+      "pri": "P1",
+      "result": "PASS",
+      "viewport": "M",
+      "theme": "light",
+      "notes": "Mobile meeting create form usable",
+      "screenshot": "PLC-20-M-light-R2.png",
+      "wave": "R2"
+    },
+    {
+      "id": "PLC-27",
+      "pri": "P1",
+      "result": "PASS",
+      "viewport": "D",
+      "theme": "light",
+      "notes": "Feed inline error + Retry",
+      "screenshot": "PLC-27-D-light-R2.png",
+      "wave": "R2"
+    }
+  ]
+}

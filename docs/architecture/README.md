@@ -19,6 +19,7 @@ Complement (not replace) `memory-bank/systemPatterns.md` for product-level archi
 | Policy Engine (v1) | [POLICY_ENGINE.md](./POLICY_ENGINE.md) | `policy-engine.mdc` |
 | Domain event bus | [DOMAIN_EVENTS.md](./DOMAIN_EVENTS.md) | `domain-events.mdc` |
 | Workspace runtime + module contracts | [WORKSPACE_RUNTIME_AND_MODULE_CONTRACTS.md](./WORKSPACE_RUNTIME_AND_MODULE_CONTRACTS.md) | `workspace-runtime.mdc`, `runtime-state-boundaries.mdc` |
+| **Reference Workspace Program** | [audits/REFERENCE_WORKSPACE_CHARTER_REVIEW.md](./audits/REFERENCE_WORKSPACE_CHARTER_REVIEW.md) | `module-development.mdc` (hub pattern) |
 | **AI platform overview (diagram hub)** | [AI_PLATFORM_OVERVIEW.md](./AI_PLATFORM_OVERVIEW.md) | — |
 | Digital Life Twin prompt path | [AI_TWIN_PROMPT_PIPELINE.md](./AI_TWIN_PROMPT_PIPELINE.md) | — |
 | AI context assembly | [AI_CONTEXT_ASSEMBLY.md](./AI_CONTEXT_ASSEMBLY.md) | — |
@@ -39,6 +40,14 @@ Complement (not replace) `memory-bank/systemPatterns.md` for product-level archi
 
 **Copy guide:** [REFERENCE_MODULE_CATALOG.md](./REFERENCE_MODULE_CATALOG.md) — which patterns to take from which module.
 
+**Reference programs (parallel tracks):**
+
+| Track | Doc | Inaugural candidate |
+|-------|-----|---------------------|
+| Architecture Reference Modules | [REFERENCE_MODULE_CATALOG.md](./REFERENCE_MODULE_CATALOG.md) | Place #5 (L3) |
+| UX Reference Modules | [../ux/REFERENCE_MODULE_PROGRAM.md](../ux/REFERENCE_MODULE_PROGRAM.md) | #1–#5 registered; #6 Place eligible |
+| **Reference Workspace** | [audits/REFERENCE_WORKSPACE_CHARTER_REVIEW.md](./audits/REFERENCE_WORKSPACE_CHARTER_REVIEW.md) | Business Workspace + Personal Dashboard shell (WS-L1) |
+
 Pattern catalog: [`../guides/MODULE_REFERENCE_PATTERNS_FROM_FILE_HUB.md`](../guides/MODULE_REFERENCE_PATTERNS_FROM_FILE_HUB.md). Executive status: [`CERTIFICATION_LEDGER.md`](./CERTIFICATION_LEDGER.md).
 
 **Module audits (Phase 0):** [`audits/`](./audits/) — e.g. [TODO_CONSTITUTIONAL_AUDIT.md](./audits/TODO_CONSTITUTIONAL_AUDIT.md), [TODO_OPERATION_MATRIX.md](./audits/TODO_OPERATION_MATRIX.md), [TODO_SERVICE_EXTRACTION_PLAN.md](./audits/TODO_SERVICE_EXTRACTION_PLAN.md).
@@ -57,4 +66,4 @@ Pattern catalog: [`../guides/MODULE_REFERENCE_PATTERNS_FROM_FILE_HUB.md`](../gui
 | [NOTEBOOK_LINK_ACCESS_RULES.md](./NOTEBOOK_LINK_ACCESS_RULES.md) | Phase 3A — authorization |
 | [NOTEBOOK_LINK_IMPLEMENTATION_PLAN.md](./NOTEBOOK_LINK_IMPLEMENTATION_PLAN.md) | Phase 3B scope |
 
-**Last updated:** 2026-06-01
+**Last updated:** 2026-06-14 (Reference Workspace Program charter)

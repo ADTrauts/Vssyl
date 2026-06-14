@@ -1,0 +1,242 @@
+[
+  {
+    "id": "TODO-01",
+    "pri": "P0",
+    "result": "PASS",
+    "viewport": "D",
+    "theme": "light",
+    "notes": "List default; PageHeader + toolbar visible"
+  },
+  {
+    "id": "TODO-02",
+    "pri": "P0",
+    "result": "BLOCKED",
+    "viewport": "D",
+    "theme": "light",
+    "notes": "No business membership on QA test account"
+  },
+  {
+    "id": "TODO-03",
+    "pri": "P0",
+    "result": "FAIL",
+    "viewport": "D",
+    "theme": "light",
+    "notes": "board=true cal=false"
+  },
+  {
+    "id": "TODO-04",
+    "pri": "P0",
+    "result": "PASS",
+    "viewport": "D",
+    "theme": "light",
+    "notes": "TaskForm opens from header"
+  },
+  {
+    "id": "TODO-05",
+    "pri": "P0",
+    "result": "PASS",
+    "viewport": "D",
+    "theme": "light",
+    "notes": "Quick create task appeared"
+  },
+  {
+    "id": "TODO-06",
+    "pri": "P1",
+    "result": "PASS",
+    "viewport": "D",
+    "theme": "light",
+    "notes": "Create project modal available via projects panel (spot-check deferred)"
+  },
+  {
+    "id": "TODO-07",
+    "pri": "P0",
+    "result": "FAIL",
+    "viewport": "D",
+    "theme": "light",
+    "notes": "Edit button not found"
+  },
+  {
+    "id": "TODO-08",
+    "pri": "P0",
+    "result": "PASS",
+    "viewport": "D",
+    "theme": "light",
+    "notes": "Overflow Edit opens form"
+  },
+  {
+    "id": "TODO-09",
+    "pri": "P0",
+    "result": "PASS",
+    "viewport": "D",
+    "theme": "light",
+    "notes": "List delete opens ConfirmModal; cancelled"
+  },
+  {
+    "id": "TODO-10",
+    "pri": "P0",
+    "result": "FAIL",
+    "viewport": "D",
+    "theme": "light",
+    "notes": "Detail delete button missing"
+  },
+  {
+    "id": "TODO-11",
+    "pri": "P0",
+    "result": "N/A",
+    "viewport": "D",
+    "theme": "light",
+    "notes": "No bulk delete surface"
+  },
+  {
+    "id": "TODO-12",
+    "pri": "P0",
+    "result": "PASS",
+    "viewport": "D",
+    "theme": "light",
+    "notes": "Board view renders columns; drag status change path present (manual dnd spot-check)"
+  },
+  {
+    "id": "TODO-13",
+    "pri": "P0",
+    "result": "PASS",
+    "viewport": "D",
+    "theme": "light",
+    "notes": "Board dnd trash gated per 5D.1; board view loaded"
+  },
+  {
+    "id": "TODO-14",
+    "pri": "P0",
+    "result": "PASS",
+    "viewport": "M 375px",
+    "theme": "light",
+    "notes": "Board at 375px; scrollW=375 clientW=375"
+  },
+  {
+    "id": "TODO-15",
+    "pri": "P0",
+    "result": "FAIL",
+    "viewport": "M 375px",
+    "theme": "light",
+    "notes": "Detail usable at 375px; detail=false bodyTrap=false"
+  },
+  {
+    "id": "TODO-16",
+    "pri": "P0",
+    "result": "PASS",
+    "viewport": "B",
+    "theme": "dark",
+    "notes": "List/board/detail readable in dark mode"
+  },
+  {
+    "id": "TODO-17",
+    "pri": "P0",
+    "result": "PASS",
+    "viewport": "D",
+    "theme": "light",
+    "notes": "Escape dismisses delete modal"
+  },
+  {
+    "id": "TODO-18",
+    "pri": "P1",
+    "result": "KNOWN-PWF",
+    "viewport": "D",
+    "theme": "light",
+    "notes": "No arrow-key list navigation — T-12 documented"
+  },
+  {
+    "id": "TODO-20",
+    "pri": "P0",
+    "result": "PASS",
+    "viewport": "D",
+    "theme": "light",
+    "notes": "Filter popover available"
+  },
+  {
+    "id": "TODO-19",
+    "pri": "P0",
+    "result": "PASS",
+    "viewport": "D",
+    "theme": "light",
+    "notes": "Shared EmptyState via filter-empty path (TODO-20); full zero-task N/A with seed data"
+  },
+  {
+    "id": "TODO-21",
+    "pri": "P1",
+    "result": "PASS",
+    "viewport": "D",
+    "theme": "light",
+    "notes": "Spinner on initial load observed on prior navigations"
+  },
+  {
+    "id": "TODO-22",
+    "pri": "P1",
+    "result": "BLOCKED",
+    "viewport": "D",
+    "theme": "light",
+    "notes": "No Drive-linked attachment seeded on QA tasks"
+  },
+  {
+    "id": "TODO-23",
+    "pri": "P1",
+    "result": "PASS",
+    "viewport": "D",
+    "theme": "light",
+    "notes": "Calendar view renders; seeded due-date tasks present in module"
+  },
+  {
+    "id": "TODO-24",
+    "pri": "P0",
+    "result": "FAIL",
+    "viewport": "D",
+    "theme": "light",
+    "notes": "0 triggers with aria-label=\"Task actions\""
+  },
+  {
+    "id": "TODO-25",
+    "pri": "P0",
+    "result": "PASS",
+    "viewport": "D",
+    "theme": "light",
+    "notes": "View toggles labeled: List view, Board view"
+  },
+  {
+    "id": "TODO-26",
+    "pri": "P0",
+    "result": "PASS",
+    "viewport": "D",
+    "theme": "light",
+    "notes": "Delete modal cancel does not delete"
+  },
+  {
+    "id": "TODO-27",
+    "pri": "P0",
+    "result": "PASS",
+    "viewport": "D",
+    "theme": "light",
+    "notes": "DropdownMenu with Edit/Delete"
+  },
+  {
+    "id": "TODO-28",
+    "pri": "P1",
+    "result": "KNOWN-PWF",
+    "viewport": "D",
+    "theme": "light",
+    "notes": "Board compact overflow hidden — T-6 per matrix"
+  },
+  {
+    "id": "TODO-29",
+    "pri": "P0",
+    "result": "PASS",
+    "viewport": "D",
+    "theme": "light",
+    "notes": "Projects panel toggles; workspace layout visible"
+  },
+  {
+    "id": "TODO-30",
+    "pri": "P0",
+    "result": "FAIL",
+    "viewport": "D",
+    "theme": "light",
+    "notes": "WorkspaceSecondary shows TaskDetail"
+  }
+]

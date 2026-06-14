@@ -246,6 +246,7 @@ export function CalendarDayView(props: CalendarViewBaseProps = {}) {
                 <input type="checkbox" checked={myEventsOnly} onChange={(e) => setMyEventsOnly(e.target.checked)} />
                 My events
               </label>
+              <CalendarShortcutsHelp />
             </>
           }
         />

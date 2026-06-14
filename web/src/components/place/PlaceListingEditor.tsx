@@ -1,10 +1,14 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Card, Button, Input, Spinner } from 'shared/components';
+import { Card, Button, Input, Spinner, ConfirmModal, DropdownMenu } from 'shared/components';
+import type { ContextMenuItem } from 'shared/components';
+import { PlaceListingLinksEmptyState } from './PlaceEmptyStates';
+import { useGlobalTrash } from '@/contexts/GlobalTrashContext';
+import { placeActionError, placeActionSuccess } from './placeUxFeedback';
 import { getListing, upsertListing, addLink, updateLink, deleteLink, uploadCoverImage, deleteCoverImage, uploadAvatarImage, deleteAvatarImage } from '@/api/placeListing';
 import type { PlaceListing, InteractionLink } from '@/api/placeListing';
-import { MapPin, Plus, Trash2, ExternalLink, Eye, EyeOff, Save, GripVertical, CheckCircle2, AlertCircle, ImageIcon } from 'lucide-react';
+import { Plus, Trash2, ExternalLink, Save, GripVertical, CheckCircle2, AlertCircle, ImageIcon, MoreHorizontal } from 'lucide-react';
 
 const CATEGORIES = [
   { value: 'RESTAURANT', label: 'Restaurants & Dining' },
@@ -42,6 +46,7 @@ interface PlaceListingEditorProps {
 }
 
 export function PlaceListingEditor({ businessId, token, compact = false }: PlaceListingEditorProps) {
+  const { trashItem } = useGlobalTrash();
   const [listing, setListing] = useState<PlaceListing | null>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -65,6 +70,14 @@ export function PlaceListingEditor({ businessId, token, compact = false }: Place
   const [removingAvatar, setRemovingAvatar] = useState(false);
   const coverInputRef = React.useRef<HTMLInputElement>(null);
   const avatarInputRef = React.useRef<HTMLInputElement>(null);
+  const [openLinkMenuId, setOpenLinkMenuId] = useState<string | null>(null);
+
+  const [pendingDeleteLink, setPendingDeleteLink] = useState<{ id: string; label: string } | null>(null);
+  const [isDeletingLink, setIsDeletingLink] = useState(false);
+  const [pendingRemoveCover, setPendingRemoveCover] = useState(false);
+  const [pendingRemoveAvatar, setPendingRemoveAvatar] = useState(false);
+  const [pendingTrashListing, setPendingTrashListing] = useState(false);
+  const [isTrashingListing, setIsTrashingListing] = useState(false);
 
   const fetchListing = useCallback(async () => {
     if (!token) return;
@@ -81,8 +94,9 @@ export function PlaceListingEditor({ businessId, token, compact = false }: Place
         setIsEnabled(data.isEnabled);
         setIsPublished(data.isPublished);
       }
-    } catch {
+    } catch (error: unknown) {
       setMessage({ type: 'error', text: 'Failed to load listing' });
+      placeActionError('Failed to load listing', error);
     } finally {
       setLoading(false);
     }
@@ -135,15 +149,102 @@ export function PlaceListingEditor({ businessId, token, compact = false }: Place
     }
   };
 
-  const handleDeleteLink = async (linkId: string) => {
-    if (!token) return;
+  const requestDeleteLink = (linkId: string, label: string) => {
+    setPendingDeleteLink({ id: linkId, label });
+    setOpenLinkMenuId(null);
+  };
+
+  const executeDeleteLink = async () => {
+    if (!token || !pendingDeleteLink) return;
+    setIsDeletingLink(true);
     try {
-      await deleteLink(businessId, linkId, token);
+      await deleteLink(businessId, pendingDeleteLink.id, token);
+      setPendingDeleteLink(null);
       await fetchListing();
-    } catch {
+      placeActionSuccess('Interaction link removed');
+    } catch (error: unknown) {
       setMessage({ type: 'error', text: 'Failed to delete link' });
+      placeActionError('Failed to delete link', error);
+    } finally {
+      setIsDeletingLink(false);
     }
   };
+
+  const executeRemoveCover = async () => {
+    if (!token) return;
+    try {
+      setRemovingCover(true);
+      setMessage(null);
+      await deleteCoverImage(businessId, token);
+      setListing(prev => prev ? { ...prev, coverImage: null } : null);
+      setMessage({ type: 'success', text: 'Cover image removed' });
+      setPendingRemoveCover(false);
+    } catch (error: unknown) {
+      setMessage({ type: 'error', text: 'Failed to remove cover image' });
+      placeActionError('Failed to remove cover image', error);
+    } finally {
+      setRemovingCover(false);
+    }
+  };
+
+  const executeRemoveAvatar = async () => {
+    if (!token) return;
+    try {
+      setRemovingAvatar(true);
+      setMessage(null);
+      await deleteAvatarImage(businessId, token);
+      setListing(prev => prev ? { ...prev, avatarImage: null } : null);
+      setMessage({ type: 'success', text: 'Thumbnail image removed' });
+      setPendingRemoveAvatar(false);
+    } catch (error: unknown) {
+      setMessage({ type: 'error', text: 'Failed to remove thumbnail image' });
+      placeActionError('Failed to remove thumbnail image', error);
+    } finally {
+      setRemovingAvatar(false);
+    }
+  };
+
+  const executeTrashListing = async () => {
+    if (!listing?.id) return;
+    setIsTrashingListing(true);
+    try {
+      await trashItem({
+        id: listing.id,
+        name: displayName || 'Place listing',
+        type: 'listing',
+        moduleId: 'place',
+        moduleName: 'Place',
+        metadata: { businessId },
+      });
+      setPendingTrashListing(false);
+      setListing(null);
+      setMessage({ type: 'success', text: 'Listing moved to trash. Restore it from the global trash bin.' });
+      placeActionSuccess('Listing moved to trash');
+      window.dispatchEvent(new CustomEvent('placeItemTrashed', {
+        detail: { moduleId: 'place', type: 'listing', id: listing.id },
+      }));
+    } catch (error: unknown) {
+      setMessage({ type: 'error', text: 'Failed to move listing to trash' });
+      placeActionError('Failed to move listing to trash', error);
+    } finally {
+      setIsTrashingListing(false);
+    }
+  };
+
+  const buildLinkMenuItems = (link: InteractionLink): ContextMenuItem[] => [
+    {
+      label: link.isActive ? 'Hide link' : 'Show link',
+      onClick: () => {
+        void handleToggleLink(link);
+        setOpenLinkMenuId(null);
+      },
+    },
+    {
+      label: 'Delete link',
+      destructive: true,
+      onClick: () => requestDeleteLink(link.id, link.label),
+    },
+  ];
 
   const handleToggleLink = async (link: InteractionLink) => {
     if (!token) return;
@@ -180,19 +281,12 @@ export function PlaceListingEditor({ businessId, token, compact = false }: Place
     }
   };
 
-  const handleCoverRemove = async () => {
-    if (!token) return;
-    try {
-      setRemovingCover(true);
-      setMessage(null);
-      await deleteCoverImage(businessId, token);
-      setListing(prev => prev ? { ...prev, coverImage: null } : null);
-      setMessage({ type: 'success', text: 'Cover image removed' });
-    } catch {
-      setMessage({ type: 'error', text: 'Failed to remove cover image' });
-    } finally {
-      setRemovingCover(false);
-    }
+  const handleCoverRemove = () => {
+    setPendingRemoveCover(true);
+  };
+
+  const handleAvatarRemove = () => {
+    setPendingRemoveAvatar(true);
   };
 
   const handleAvatarUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -220,20 +314,6 @@ export function PlaceListingEditor({ businessId, token, compact = false }: Place
     }
   };
 
-  const handleAvatarRemove = async () => {
-    if (!token) return;
-    try {
-      setRemovingAvatar(true);
-      setMessage(null);
-      await deleteAvatarImage(businessId, token);
-      setListing(prev => prev ? { ...prev, avatarImage: null } : null);
-      setMessage({ type: 'success', text: 'Thumbnail image removed' });
-    } catch {
-      setMessage({ type: 'error', text: 'Failed to remove thumbnail image' });
-    } finally {
-      setRemovingAvatar(false);
-    }
-  };
 
   if (!token) {
     return (
@@ -253,18 +333,6 @@ export function PlaceListingEditor({ businessId, token, compact = false }: Place
 
   return (
     <div className="space-y-6">
-      {!compact && (
-        <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-lg bg-indigo-100 flex items-center justify-center">
-            <MapPin className="w-5 h-5 text-indigo-600" />
-          </div>
-          <div>
-            <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">Vssyl Place Listing</h2>
-            <p className="text-sm text-gray-600 dark:text-gray-400">Manage how your business appears on Vssyl Place</p>
-          </div>
-        </div>
-      )}
-
       {message && (
         <div className={`flex items-center gap-2 p-3 rounded-lg text-sm ${message.type === 'success' ? 'bg-green-50 text-green-800' : 'bg-red-50 text-red-800'}`}>
           {message.type === 'success' ? <CheckCircle2 className="w-4 h-4" /> : <AlertCircle className="w-4 h-4" />}
@@ -465,7 +533,7 @@ export function PlaceListingEditor({ businessId, token, compact = false }: Place
             Add ways for users to interact with your business — order food, visit your website, follow on social media, etc.
           </p>
 
-          {listing?.interactionLinks && listing.interactionLinks.length > 0 && (
+          {listing?.interactionLinks && listing.interactionLinks.length > 0 ? (
             <div className="space-y-2">
               {listing.interactionLinks.map((link) => (
                 <div key={link.id} className="flex items-center gap-3 p-3 rounded-lg border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800">
@@ -478,15 +546,22 @@ export function PlaceListingEditor({ businessId, token, compact = false }: Place
                     </div>
                     <p className="text-xs text-gray-600 dark:text-gray-400 truncate">{link.url}</p>
                   </div>
-                  <button onClick={() => handleToggleLink(link)} className="p-1.5 rounded hover:bg-gray-200 transition-colors" title={link.isActive ? 'Hide' : 'Show'}>
-                    {link.isActive ? <Eye className="w-4 h-4 text-gray-700 dark:text-gray-300" /> : <EyeOff className="w-4 h-4 text-gray-700 dark:text-gray-300" />}
-                  </button>
-                  <button onClick={() => handleDeleteLink(link.id)} className="p-1.5 rounded hover:bg-red-100 transition-colors" title="Delete">
-                    <Trash2 className="w-4 h-4 text-red-600" />
-                  </button>
+                  <DropdownMenu
+                    open={openLinkMenuId === link.id}
+                    onOpenChange={open => setOpenLinkMenuId(open ? link.id : null)}
+                    items={buildLinkMenuItems(link)}
+                    menuLabel={`Actions for ${link.label}`}
+                    align="end"
+                  >
+                    <Button type="button" variant="ghost" size="sm" aria-label={`Actions for ${link.label}`}>
+                      <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenu>
                 </div>
               ))}
             </div>
+          ) : (
+            <PlaceListingLinksEmptyState />
           )}
 
           <div className="p-4 rounded-lg border border-dashed border-gray-300 dark:border-slate-600 space-y-3">
@@ -516,6 +591,71 @@ export function PlaceListingEditor({ businessId, token, compact = false }: Place
         <ExternalLink className="w-4 h-4 inline-block mr-1 align-middle" />
         Users will see your listing after your business is verified and the listing is published.
       </p>
+
+      {listing?.id && (
+        <Card className="border-red-200 dark:border-red-900">
+          <div className="flex flex-col gap-3 p-5 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h3 className="text-sm font-semibold text-red-800 dark:text-red-300">Danger zone</h3>
+              <p className="mt-1 text-sm text-gray-600 dark:text-gray-400">
+                Move this listing to trash. You can restore it from the global trash bin.
+              </p>
+            </div>
+            <Button variant="secondary" size="sm" className="text-red-700 border-red-200 hover:bg-red-50 dark:text-red-300 dark:border-red-800 dark:hover:bg-red-950" onClick={() => setPendingTrashListing(true)}>
+              <Trash2 className="mr-2 h-4 w-4" />
+              Move listing to trash
+            </Button>
+          </div>
+        </Card>
+      )}
+
+      <ConfirmModal
+        open={pendingDeleteLink !== null}
+        onClose={() => setPendingDeleteLink(null)}
+        onConfirm={executeDeleteLink}
+        title="Delete interaction link?"
+        description={
+          pendingDeleteLink
+            ? `Remove "${pendingDeleteLink.label}" from your listing?`
+            : undefined
+        }
+        variant="destructive"
+        confirmLabel="Delete"
+        loading={isDeletingLink}
+      />
+
+      <ConfirmModal
+        open={pendingRemoveCover}
+        onClose={() => setPendingRemoveCover(false)}
+        onConfirm={executeRemoveCover}
+        title="Remove cover image?"
+        description="This will remove your listing cover image. You can upload a new one anytime."
+        variant="destructive"
+        confirmLabel="Remove"
+        loading={removingCover}
+      />
+
+      <ConfirmModal
+        open={pendingRemoveAvatar}
+        onClose={() => setPendingRemoveAvatar(false)}
+        onConfirm={executeRemoveAvatar}
+        title="Remove thumbnail image?"
+        description="This will remove your listing thumbnail. You can upload a new one anytime."
+        variant="destructive"
+        confirmLabel="Remove"
+        loading={removingAvatar}
+      />
+
+      <ConfirmModal
+        open={pendingTrashListing}
+        onClose={() => setPendingTrashListing(false)}
+        onConfirm={executeTrashListing}
+        title="Move listing to trash?"
+        description="This unpublishes your storefront and moves the listing to trash. Restore it anytime from the global trash bin."
+        variant="destructive"
+        confirmLabel="Move to trash"
+        loading={isTrashingListing}
+      />
     </div>
   );
 }

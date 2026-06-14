@@ -12,6 +12,8 @@ import {
   TabsTrigger,
   TabsContent,
 } from 'shared/components';
+import { PageHeader } from '@/components/layouts';
+import AIExperienceNavLinks from '../../components/ai/AIExperienceNavLinks';
 import {
   Brain,
   BookOpen,
@@ -251,36 +253,30 @@ export default function AIPage() {
   const showMoreContent = activeTab === 'more' || moreMenuOpen;
 
   return (
-    <div className="container mx-auto p-6 space-y-6">
-      <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-        <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-3">
-            <Brain className="h-8 w-8 text-purple-600" />
-            AI Identity
-          </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-2 max-w-xl">
-            How I behave, learn, and remember for you — adaptive, transparent, and always yours to
-            shape.
-          </p>
-        </div>
-        <div className="flex flex-wrap gap-2 shrink-0">
-          <Button
-            variant="ghost"
-            size="sm"
-            onClick={() => {
-              clearAIIdentityTourSeen();
-              setTourReplayToken((n) => n + 1);
-              navigateToTab('identity');
-            }}
-          >
-            Tour
-          </Button>
-          <Button variant="secondary" size="sm" onClick={() => router.push('/ai-chat')}>
-            Open chat
-          </Button>
-        </div>
-      </div>
+    <div className="flex min-h-0 flex-1 flex-col">
+      <PageHeader
+        title="AI Identity"
+        description="How I behave, learn, and remember for you — adaptive, transparent, and always yours to shape."
+        icon={<Brain className="h-8 w-8 text-purple-600" />}
+        actions={
+          <>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => {
+                clearAIIdentityTourSeen();
+                setTourReplayToken((n) => n + 1);
+                navigateToTab('identity');
+              }}
+            >
+              Tour
+            </Button>
+            <AIExperienceNavLinks currentSurface="identity-page" variant="compact" />
+          </>
+        }
+      />
 
+      <div className="flex-1 overflow-auto px-6 py-6 space-y-6">
       <AIIdentityTour
         key={tourReplayToken}
         enabled={tourEnabled}
@@ -406,6 +402,7 @@ export default function AIPage() {
           )}
         </TabsContent>
       </Tabs>
+      </div>
     </div>
   );
 }

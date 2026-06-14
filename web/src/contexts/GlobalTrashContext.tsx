@@ -6,7 +6,7 @@ import { useSession } from 'next-auth/react';
 export interface TrashedItem {
   id: string;
   name: string;
-  type: 'file' | 'folder' | 'conversation' | 'dashboard_tab' | 'module' | 'message' | 'ai_conversation' | 'event' | 'task';
+  type: 'file' | 'folder' | 'conversation' | 'dashboard_tab' | 'module' | 'message' | 'ai_conversation' | 'event' | 'task' | 'note' | 'listing' | 'meeting';
   moduleId: string;
   moduleName: string;
   trashedAt: string;

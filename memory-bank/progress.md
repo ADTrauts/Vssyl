@@ -1,6 +1,66 @@
 # Block-on-Block Platform - Progress
 
-**Next:** WS-L2 certification review · registration doc draft · optional Business 1E (RWS-F1).
+**Next:** Optional Business 1E (RWS-F1) · pattern annex (GOV-1) · WS-L3 readiness (separate wave).
+
+---
+
+## Reference Workspace — Registration Review (June 2026) ✅
+
+**Status:** Inaugural Reference Workspace registration review — **complete**.
+
+| Metric | Value |
+|--------|-------|
+| Decision | **Approved with Findings** |
+| Holder | Platform Shell — **hybrid** (Business + Personal) |
+| Program type | Reference Workspace Module #3 (inaugural) |
+| Open findings | **12** (RWS-F1 primary) |
+| REG-B1 / B2 | ✅ Closed |
+| REG-B3 | 🟡 Partial — waived for CwF |
+| Official program asset | ✅ **Yes** |
+
+**Deliverables:** [`REFERENCE_WORKSPACE_REGISTRATION_REVIEW.md`](../docs/architecture/audits/REFERENCE_WORKSPACE_REGISTRATION_REVIEW.md)
+
+**Next:** Business 1E · pattern annex · WS-L3 readiness.
+
+---
+
+## Reference Workspace — Registration Prep (June 2026) ✅
+
+**Status:** Registration preparation package — **complete**.
+
+| Metric | Value |
+|--------|-------|
+| Prep recommendation | **Approved with Findings** |
+| REG-B1 | ✅ Closed (WS-L2) |
+| REG-B2 | ✅ **Closed** (platform shell doc) |
+| REG-B3 | 🟡 Partial (pattern annex) |
+| RWS-F1 | ⏳ Open |
+| Designation award | ❌ Not this wave |
+
+**Deliverables:** [`REFERENCE_WORKSPACE_PLATFORM_SHELL.md`](../docs/architecture/REFERENCE_WORKSPACE_PLATFORM_SHELL.md)
+
+**Next:** Council registration review · WS-L3 prep.
+
+---
+
+## Reference Workspace — WS-L2 Certification Review (June 2026) ✅
+
+**Status:** First formal combined WS-L2 certification review — **complete**.
+
+| Metric | Value |
+|--------|-------|
+| Decision | **WS-L2 Certified with Findings** |
+| Business Workspace | **90%** |
+| Personal Dashboard | **88%** |
+| Combined readiness | **~89%** |
+| Process blockers | **0** |
+| Open findings | **12** (RWS-F1 primary) |
+| Registration | Prep eligible — not registration-ready |
+| Platform shell doc | **May be drafted** |
+
+**Deliverables:** [`REFERENCE_WORKSPACE_WS_L2_CERTIFICATION_REVIEW.md`](../docs/architecture/audits/REFERENCE_WORKSPACE_WS_L2_CERTIFICATION_REVIEW.md)
+
+**Next:** Registration doc draft · WS-L3 readiness review.
 
 ---
 

@@ -1,0 +1,186 @@
+[
+  {
+    "id": "AI-01",
+    "pri": "P0",
+    "result": "PASS",
+    "viewport": "D",
+    "theme": "light",
+    "notes": "PageHeader + PageToolbar search visible"
+  },
+  {
+    "id": "AI-02",
+    "pri": "P0",
+    "result": "PASS",
+    "viewport": "D",
+    "theme": "light",
+    "notes": "PageHeader + tabs render"
+  },
+  {
+    "id": "AI-03",
+    "pri": "P0",
+    "result": "PASS",
+    "viewport": "D",
+    "theme": "light",
+    "notes": "Navigated to /ai from chat"
+  },
+  {
+    "id": "AI-04",
+    "pri": "P0",
+    "result": "PASS",
+    "viewport": "D",
+    "theme": "light",
+    "notes": "Open chat nav present; navigated to /ai-chat"
+  },
+  {
+    "id": "AI-05",
+    "pri": "P0",
+    "result": "PASS",
+    "viewport": "D",
+    "theme": "light",
+    "notes": "AIChatDropdown open with nav links"
+  },
+  {
+    "id": "AI-06",
+    "pri": "P0",
+    "result": "BLOCKED",
+    "viewport": "D",
+    "theme": "light",
+    "notes": "No business membership on QA test account"
+  },
+  {
+    "id": "AI-07",
+    "pri": "P0",
+    "result": "PASS",
+    "viewport": "D",
+    "theme": "light",
+    "notes": "ConfirmModal cancel retains conversation"
+  },
+  {
+    "id": "AI-08",
+    "pri": "P0",
+    "result": "PASS",
+    "viewport": "D",
+    "theme": "light",
+    "notes": "ConfirmModal Move to trash button visible"
+  },
+  {
+    "id": "AI-09",
+    "pri": "P0",
+    "result": "PASS",
+    "viewport": "D",
+    "theme": "light",
+    "notes": "AIWidget delegates to AIChatModule; same requestDeleteConversation path (code review + 5H-C)"
+  },
+  {
+    "id": "AI-10",
+    "pri": "P1",
+    "result": "PASS",
+    "viewport": "D",
+    "theme": "light",
+    "notes": "Drag sets trash payload; GlobalTrashBin pendingMoveToTrashItem → ConfirmModal"
+  },
+  {
+    "id": "AI-11",
+    "pri": "P0",
+    "result": "PASS",
+    "viewport": "D",
+    "theme": "light",
+    "notes": "Row DropdownMenu: pin, rename, delete present"
+  },
+  {
+    "id": "AI-12",
+    "pri": "P0",
+    "result": "PASS",
+    "viewport": "D",
+    "theme": "light",
+    "notes": "Header conversation options menu with Delete"
+  },
+  {
+    "id": "AI-13",
+    "pri": "P0",
+    "result": "PASS",
+    "viewport": "D",
+    "theme": "light",
+    "notes": "AIChatDropdown buildConversationMenuItems + ConfirmModal (code + AI-05)"
+  },
+  {
+    "id": "AI-14",
+    "pri": "P0",
+    "result": "PASS",
+    "viewport": "D",
+    "theme": "light",
+    "notes": "Escape dismisses ConfirmModal without trash"
+  },
+  {
+    "id": "AI-15",
+    "pri": "P0",
+    "result": "PASS",
+    "viewport": "M 375px",
+    "theme": "light",
+    "notes": "Mobile sheet opens from menu bar"
+  },
+  {
+    "id": "AI-16",
+    "pri": "P0",
+    "result": "BLOCKED",
+    "viewport": "M 375px",
+    "theme": "light",
+    "notes": "QA row not visible in sheet"
+  },
+  {
+    "id": "AI-17",
+    "pri": "P0",
+    "result": "PASS",
+    "viewport": "M 375px",
+    "theme": "light",
+    "notes": "Attach + send controls reachable at 375px"
+  },
+  {
+    "id": "AI-20",
+    "pri": "P1",
+    "result": "PASS",
+    "viewport": "M 375px",
+    "theme": "light",
+    "notes": "Open/Close conversations panel aria-label (AI-15 screenshot)"
+  },
+  {
+    "id": "AI-18",
+    "pri": "P0",
+    "result": "PASS",
+    "viewport": "D",
+    "theme": "light",
+    "notes": "aria-label on attach, voice, send"
+  },
+  {
+    "id": "AI-19",
+    "pri": "P0",
+    "result": "PASS",
+    "viewport": "D",
+    "theme": "light",
+    "notes": "menuLabel on DropdownMenu (code); row label on hover"
+  },
+  {
+    "id": "AI-20",
+    "pri": "P1",
+    "result": "PASS",
+    "viewport": "M 375px",
+    "theme": "light",
+    "notes": "Open/Close conversations panel aria-label (AI-15 screenshot)"
+  },
+  {
+    "id": "AI-21",
+    "pri": "P0",
+    "result": "PASS",
+    "viewport": "D",
+    "theme": "light",
+    "notes": "AIChatEmptyState sidebar variant on filter miss"
+  },
+  {
+    "id": "AI-22",
+    "pri": "P0",
+    "result": "PASS",
+    "viewport": "D",
+    "theme": "light",
+    "notes": "Welcome state when no thread selected"
+  }
+]

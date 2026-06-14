@@ -21,8 +21,11 @@ import {
   List,
   Layers,
   Zap,
-  MapPin
+  MapPin,
+  Menu,
+  X
 } from 'lucide-react';
+import { toast } from 'react-hot-toast';
 import { Avatar, Button, Badge, ConfirmModal, DropdownMenu, ContextMenuItem } from 'shared/components';
 import { PageHeader, PageToolbar } from '../../components/layouts';
 import { useSafeSession } from '../../lib/useSafeSession';
@@ -81,6 +84,11 @@ const LEGACY_TYPE_MAPPING: Record<string, string> = {
   'notes_shared': 'notes',
 };
 
+function showNotificationActionError(message: string, error: unknown) {
+  console.error(message, error);
+  toast.error(message);
+}
+
 export default function NotificationsPage() {
   const { session, status, mounted } = useSafeSession();
   const router = useRouter();
@@ -107,7 +115,19 @@ export default function NotificationsPage() {
   const [showArchived, setShowArchived] = useState(false);
   const [pendingBulkDelete, setPendingBulkDelete] = useState(false);
   const [isBulkDeleting, setIsBulkDeleting] = useState(false);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const limit = 50;
+
+  const closeMobileSidebar = useCallback(() => setMobileSidebarOpen(false), []);
+
+  useEffect(() => {
+    if (!mobileSidebarOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') closeMobileSidebar();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [mobileSidebarOpen, closeMobileSidebar]);
 
   // Load module notification types on mount
   useEffect(() => {
@@ -189,7 +209,7 @@ export default function NotificationsPage() {
           setPage(1);
         }
       } catch (error) {
-        console.error('Failed to load notifications:', error);
+        showNotificationActionError('Failed to load notifications. Please try again.', error);
         // Fallback to mock data if API fails
         setNotifications([
           {
@@ -279,7 +299,9 @@ export default function NotificationsPage() {
         // Reload groups when new notification arrives
         getGroupedNotifications(limit).then(response => {
           setGroups(response.groups);
-        }).catch(console.error);
+        }).catch((error) => {
+          showNotificationActionError('Failed to refresh notification groups.', error);
+        });
       } else {
         // Add new notification to the top of the list
         setNotifications(prev => [notification, ...prev]);
@@ -291,7 +313,9 @@ export default function NotificationsPage() {
         // Reload groups when notification is updated
         getGroupedNotifications(limit).then(response => {
           setGroups(response.groups);
-        }).catch(console.error);
+        }).catch((error) => {
+          showNotificationActionError('Failed to refresh notification groups.', error);
+        });
       } else {
         // Update notification read status
         setNotifications(prev => 
@@ -307,7 +331,9 @@ export default function NotificationsPage() {
         // Reload groups when notification is deleted
         getGroupedNotifications(limit).then(response => {
           setGroups(response.groups);
-        }).catch(console.error);
+        }).catch((error) => {
+          showNotificationActionError('Failed to refresh notification groups.', error);
+        });
       } else {
         // Remove deleted notification
         setNotifications(prev => 
@@ -591,7 +617,7 @@ export default function NotificationsPage() {
           console.log('Unknown action:', action);
       }
     } catch (error) {
-      console.error('Error handling quick action:', error);
+      showNotificationActionError('Failed to complete notification action. Please try again.', error);
     }
   };
 
@@ -689,7 +715,7 @@ export default function NotificationsPage() {
         prev.map(n => n.id === notificationId ? { ...n, read: true } : n)
       );
     } catch (error) {
-      console.error('Failed to mark notification as read:', error);
+      showNotificationActionError('Failed to mark notification as read.', error);
     }
   };
 
@@ -700,7 +726,7 @@ export default function NotificationsPage() {
         prev.map(n => ({ ...n, read: true }))
       );
     } catch (error) {
-      console.error('Failed to mark all notifications as read:', error);
+      showNotificationActionError('Failed to mark all notifications as read.', error);
     }
   };
 
@@ -709,7 +735,7 @@ export default function NotificationsPage() {
       await archiveNotification(notificationId);
       setNotifications(prev => prev.filter(n => n.id !== notificationId));
     } catch (error) {
-      console.error('Failed to archive notification:', error);
+      showNotificationActionError('Failed to archive notification.', error);
     }
   };
 
@@ -718,7 +744,7 @@ export default function NotificationsPage() {
       await deleteNotification(notificationId);
       setNotifications(prev => prev.filter(n => n.id !== notificationId));
     } catch (error) {
-      console.error('Failed to delete notification:', error);
+      showNotificationActionError('Failed to delete notification.', error);
     }
   };
 
@@ -750,7 +776,7 @@ export default function NotificationsPage() {
       setSelectedNotifications(new Set());
       setSelectionMode(false);
     } catch (error) {
-      console.error('Failed to archive notifications:', error);
+      showNotificationActionError('Failed to archive notifications.', error);
     }
   };
 
@@ -770,7 +796,7 @@ export default function NotificationsPage() {
       setSelectionMode(false);
       setPendingBulkDelete(false);
     } catch (error) {
-      console.error('Failed to delete notifications:', error);
+      showNotificationActionError('Failed to delete notifications.', error);
     } finally {
       setIsBulkDeleting(false);
     }
@@ -787,7 +813,7 @@ export default function NotificationsPage() {
       setSelectedNotifications(new Set());
       setSelectionMode(false);
     } catch (error) {
-      console.error('Failed to mark notifications as read:', error);
+      showNotificationActionError('Failed to mark notifications as read.', error);
     }
   };
 
@@ -803,7 +829,7 @@ export default function NotificationsPage() {
       setHasMore(response.notifications.length === limit);
       setPage(prev => prev + 1);
     } catch (error) {
-      console.error('Failed to load more notifications:', error);
+      showNotificationActionError('Failed to load more notifications.', error);
     }
   };
 
@@ -812,10 +838,17 @@ export default function NotificationsPage() {
   if (!session?.user) return null;
 
   const unreadCount = notifications.filter((n) => !n.read).length;
+  const selectedCategoryLabel =
+    categories.find((category) => category.id === selectedCategory)?.label ?? 'All';
 
   const viewModeToggle = (
-    <div className="flex items-center space-x-1 border border-gray-300 dark:border-slate-600 rounded-lg p-1">
+    <div
+      className="flex items-center space-x-1 border border-gray-300 dark:border-slate-600 rounded-lg p-1"
+      role="group"
+      aria-label="Notification view mode"
+    >
       <button
+        type="button"
         onClick={() => setViewMode('list')}
         className={`p-1.5 rounded transition-colors ${
           viewMode === 'list'
@@ -823,10 +856,13 @@ export default function NotificationsPage() {
             : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700'
         }`}
         title="List View"
+        aria-label="List view"
+        aria-pressed={viewMode === 'list'}
       >
         <List className="w-4 h-4" />
       </button>
       <button
+        type="button"
         onClick={() => setViewMode('grouped')}
         className={`p-1.5 rounded transition-colors ${
           viewMode === 'grouped'
@@ -834,6 +870,8 @@ export default function NotificationsPage() {
             : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-700'
         }`}
         title="Grouped View"
+        aria-label="Grouped view"
+        aria-pressed={viewMode === 'grouped'}
       >
         <Layers className="w-4 h-4" />
       </button>
@@ -883,7 +921,7 @@ export default function NotificationsPage() {
             setSelectedNotifications(new Set());
             setSelectionMode(false);
           } catch (error) {
-            console.error('Failed to bulk snooze:', error);
+            showNotificationActionError('Failed to snooze notifications.', error);
           }
         }}
         disabled={selectedNotifications.size === 0}
@@ -932,6 +970,7 @@ export default function NotificationsPage() {
               variant="secondary"
               size="sm"
               onClick={() => router.push('/notifications/settings')}
+              aria-label="Notification settings"
             >
               <Settings className="w-4 h-4" />
             </Button>
@@ -939,14 +978,58 @@ export default function NotificationsPage() {
         }
       />
 
-      <div className="flex min-h-0 flex-1">
+      <div className="flex shrink-0 items-center gap-2 border-b border-gray-200 bg-white px-4 py-2 dark:border-slate-700 dark:bg-slate-800 md:hidden">
+        <Button
+          type="button"
+          variant="ghost"
+          size="sm"
+          onClick={() => setMobileSidebarOpen(true)}
+          aria-label="Open notification categories"
+        >
+          <Menu className="h-5 w-5" />
+        </Button>
+        <span className="text-sm font-semibold text-gray-900 dark:text-gray-100">
+          {selectedCategoryLabel}
+        </span>
+      </div>
+
+      <div className="relative flex min-h-0 flex-1">
+        {mobileSidebarOpen ? (
+          <button
+            type="button"
+            className="fixed inset-0 z-40 bg-black/40 md:hidden"
+            aria-label="Close categories panel"
+            onClick={closeMobileSidebar}
+          />
+        ) : null}
         {/* Left Sidebar - Categories */}
-        <div className="w-64 bg-white dark:bg-slate-800 border-r border-gray-200 dark:border-slate-700 p-4">
-          <div className="space-y-1">
+        <div
+          className={`w-64 shrink-0 bg-white dark:bg-slate-800 border-r border-gray-200 dark:border-slate-700 p-4 ${
+            mobileSidebarOpen
+              ? 'fixed inset-y-0 left-0 z-50 flex flex-col shadow-xl md:relative md:shadow-none'
+              : 'hidden md:flex md:flex-col'
+          }`}
+        >
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            className="absolute right-2 top-2 z-10 md:hidden"
+            onClick={closeMobileSidebar}
+            aria-label="Close categories panel"
+          >
+            <X className="h-4 w-4" />
+          </Button>
+          <div className="space-y-1 overflow-y-auto pt-8 md:pt-0">
             {categories.map((category) => (
               <button
                 key={category.id}
-                onClick={() => setSelectedCategory(category.id)}
+                type="button"
+                onClick={() => {
+                  setSelectedCategory(category.id);
+                  closeMobileSidebar();
+                }}
+                aria-current={selectedCategory === category.id ? 'page' : undefined}
                 className={`w-full flex items-center justify-between px-3 py-2 rounded-lg text-left transition-colors ${
                   selectedCategory === category.id
                     ? 'bg-blue-50 text-blue-700 border border-blue-200'
@@ -971,7 +1054,7 @@ export default function NotificationsPage() {
         </div>
 
         {/* Main Content - Notification List */}
-        <div className="flex min-h-0 flex-1 flex-col">
+        <div className="flex min-h-0 min-w-0 flex-1 flex-col">
           <PageToolbar
             leading={
               <>
@@ -1077,6 +1160,10 @@ export default function NotificationsPage() {
                       >
                         {/* Group Header */}
                         <div
+                          role="button"
+                          tabIndex={0}
+                          aria-expanded={isExpanded}
+                          aria-label={`${group.title}, ${group.count} notifications`}
                           className="p-4 cursor-pointer"
                           onClick={() => {
                             setExpandedGroups(prev => {
@@ -1088,6 +1175,20 @@ export default function NotificationsPage() {
                               }
                               return next;
                             });
+                          }}
+                          onKeyDown={(e) => {
+                            if (e.key === 'Enter' || e.key === ' ') {
+                              e.preventDefault();
+                              setExpandedGroups(prev => {
+                                const next = new Set(prev);
+                                if (next.has(group.id)) {
+                                  next.delete(group.id);
+                                } else {
+                                  next.add(group.id);
+                                }
+                                return next;
+                              });
+                            }
                           }}
                         >
                           <div className="flex items-start space-x-3">
@@ -1152,7 +1253,7 @@ export default function NotificationsPage() {
                                     g.id === group.id ? { ...g, isRead: true } : g
                                   ));
                                 } catch (error) {
-                                  console.error('Failed to mark group as read:', error);
+                                  showNotificationActionError('Failed to mark group as read.', error);
                                 }
                               }}
                             >
@@ -1171,7 +1272,7 @@ export default function NotificationsPage() {
                                 await archiveMultipleNotifications(ids);
                                 setGroups(prev => prev.filter(g => g.id !== group.id));
                               } catch (error) {
-                                console.error('Failed to archive group:', error);
+                                showNotificationActionError('Failed to archive group.', error);
                               }
                             }}
                           >
@@ -1305,7 +1406,7 @@ export default function NotificationsPage() {
                                       await snoozeNotification(notification.id, duration);
                                       setNotifications(prev => prev.filter(n => n.id !== notification.id));
                                     } catch (error) {
-                                      console.error('Failed to snooze notification:', error);
+                                      showNotificationActionError('Failed to snooze notification.', error);
                                     }
                                   }}
                                   onUnsnooze={async () => {
@@ -1320,7 +1421,7 @@ export default function NotificationsPage() {
                                       });
                                       setNotifications(response.notifications);
                                     } catch (error) {
-                                      console.error('Failed to unsnooze notification:', error);
+                                      showNotificationActionError('Failed to unsnooze notification.', error);
                                     }
                                   }}
                                 />
@@ -1548,16 +1649,19 @@ function NotificationActionsMenu({ notification, onArchive, onDelete, onMarkAsRe
         menuLabel="Notification actions"
         align="end"
       >
-        <button
+        <Button
           type="button"
-          className="p-1 hover:bg-gray-100 dark:hover:bg-slate-700 rounded"
+          variant="ghost"
+          size="sm"
+          className="h-8 w-8 p-0"
+          aria-label="Notification actions"
           onClick={(e) => {
             e.stopPropagation();
             setIsOpen((v) => !v);
           }}
         >
           <MoreHorizontal className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-        </button>
+        </Button>
       </DropdownMenu>
 
     <ConfirmModal

@@ -1,5 +1,6 @@
 'use client';
 import React, { useState, useEffect, useMemo, useCallback } from 'react';
+import { createPortal } from 'react-dom';
 import { useSession } from 'next-auth/react';
 import { Button, ConfirmModal } from 'shared/components';
 import { RecurrenceScopeModal, type RecurrenceScope } from './RecurrenceScopeModal';
@@ -364,15 +365,68 @@ export default function EventDrawer({ isOpen, onClose, onCreated, onUpdated, con
     await persistEvent(false);
   };
 
-  return (
-    <div className={`fixed inset-0 z-40 ${isOpen ? '' : 'pointer-events-none'}`}>
-      {/* Backdrop */}
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKeyDown = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      if (pendingDeleteScope) {
+        setPendingDeleteScope(false);
+        setPendingEventDelete(null);
+        e.preventDefault();
+        return;
+      }
+      if (pendingEventDelete !== null) {
+        setPendingEventDelete(null);
+        e.preventDefault();
+        return;
+      }
+      if (pendingSkipOccurrence) {
+        setPendingSkipOccurrence(false);
+        e.preventDefault();
+        return;
+      }
+      if (showConflictConfirm) {
+        setShowConflictConfirm(false);
+        e.preventDefault();
+        return;
+      }
+      if (pendingFindTimeSlot !== null) {
+        setPendingFindTimeSlot(null);
+        e.preventDefault();
+        return;
+      }
+      onClose();
+      e.preventDefault();
+    };
+    window.addEventListener('keydown', onKeyDown);
+    return () => window.removeEventListener('keydown', onKeyDown);
+  }, [
+    isOpen,
+    onClose,
+    pendingDeleteScope,
+    pendingEventDelete,
+    pendingSkipOccurrence,
+    showConflictConfirm,
+    pendingFindTimeSlot,
+  ]);
+
+  if (!isOpen || typeof document === 'undefined') {
+    return null;
+  }
+
+  const drawer = (
+    <div
+      className="fixed inset-0 z-[100]"
+      role="dialog"
+      aria-modal="true"
+      aria-label={eventToEdit ? 'Edit event' : 'New event'}
+    >
       <div
-        className={`absolute inset-0 bg-black transition-opacity ${isOpen ? 'opacity-30' : 'opacity-0'}`}
+        className="absolute inset-0 bg-black/30"
+        aria-hidden="true"
         onClick={onClose}
       />
-      {/* Panel */}
-      <div className={`absolute right-0 top-0 h-full w-full max-w-md bg-white shadow-xl transition-transform ${isOpen ? 'translate-x-0' : 'translate-x-full'}`}>
+      <div className="pointer-events-auto absolute right-0 top-0 h-full w-full max-w-md bg-white shadow-xl dark:bg-slate-900">
         <div className="p-4 border-b flex items-center justify-between">
           <div className="font-semibold">{eventToEdit ? 'Edit Event' : 'New Event'}</div>
           <button onClick={onClose} className="text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300">✕</button>
@@ -891,5 +945,7 @@ export default function EventDrawer({ isOpen, onClose, onCreated, onUpdated, con
       />
     </div>
   );
+
+  return createPortal(drawer, document.body);
 }
 

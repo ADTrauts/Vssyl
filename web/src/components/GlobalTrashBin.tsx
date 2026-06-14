@@ -131,6 +131,14 @@ export default function GlobalTrashBin({ className = '', onItemTrashed }: Global
         return '🤖';
       case 'event':
         return '📅';
+      case 'task':
+        return '✅';
+      case 'note':
+        return '📝';
+      case 'listing':
+        return '🏪';
+      case 'meeting':
+        return '📍';
       default:
         return '📄';
     }
@@ -220,6 +228,10 @@ export default function GlobalTrashBin({ className = '', onItemTrashed }: Global
 
     if (itemData.moduleId === 'drive') {
       window.dispatchEvent(new CustomEvent('driveItemTrashed', { detail: itemData }));
+    }
+
+    if (itemData.moduleId === 'place') {
+      window.dispatchEvent(new CustomEvent('placeItemTrashed', { detail: itemData }));
     }
   };
 

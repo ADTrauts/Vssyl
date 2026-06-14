@@ -23,79 +23,37 @@ function getInitials(name: string): string {
 
 const BusinessNode = memo(function BusinessNode({ data }: NodeProps) {
   const nodeData = data as unknown as BusinessNodeData;
-  const size = 56;
+  const accent = nodeData.color || '#546E7A';
 
   return (
     <div
       role="button"
       aria-label={`Business: ${nodeData.label}${nodeData.verified ? ' (verified)' : ''}`}
       tabIndex={0}
-      style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        gap: 6,
-        cursor: 'pointer',
-        position: 'relative',
-      }}
+      className="relative flex cursor-pointer flex-col items-center gap-1.5"
     >
-      {/* Square node — businesses are squares in Mini Metro style; show cover/logo when available */}
-      <div style={{ position: 'relative' }}>
+      <div className="relative">
         <div
+          className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-lg border-[3px] border-white/90 shadow-sm transition-transform group-hover:scale-105 dark:border-slate-200/90"
           style={{
-            width: size,
-            height: size,
-            borderRadius: 8,
-            background: nodeData.imageUrl ? 'transparent' : (nodeData.color || '#546E7A'),
-            border: '3px solid rgba(255,255,255,0.9)',
-            boxShadow: `0 2px 12px ${nodeData.color || '#546E7A'}40, 0 1px 3px rgba(0,0,0,0.1)`,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            overflow: 'hidden',
-            transition: 'transform 0.15s ease, box-shadow 0.15s ease',
-          }}
-          onMouseEnter={(e) => {
-            (e.currentTarget as HTMLElement).style.transform = 'scale(1.1)';
-          }}
-          onMouseLeave={(e) => {
-            (e.currentTarget as HTMLElement).style.transform = 'scale(1)';
+            backgroundColor: nodeData.imageUrl ? 'transparent' : accent,
+            boxShadow: `0 2px 12px ${accent}40, 0 1px 3px rgba(0,0,0,0.1)`,
           }}
         >
           {nodeData.imageUrl ? (
-            <img
-              src={nodeData.imageUrl}
-              alt=""
-              style={{
-                width: '100%',
-                height: '100%',
-                objectFit: 'cover',
-              }}
-            />
+            <img src={nodeData.imageUrl} alt="" className="h-full w-full object-cover" />
           ) : (
-            <span style={{ fontSize: 18, color: '#fff', fontWeight: 700, letterSpacing: 1 }}>
+            <span className="text-lg font-bold tracking-wide text-white">
               {getInitials(nodeData.label || '')}
             </span>
           )}
         </div>
 
-        {/* Verification badge */}
         {nodeData.verified && (
           <div
-            style={{
-              position: 'absolute',
-              top: -4,
-              right: -4,
-              width: 18,
-              height: 18,
-              borderRadius: '50%',
-              background: '#16a34a',
-              border: '2px solid #fff',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-            }}
+            className="absolute -right-1 -top-1 flex h-[18px] w-[18px] items-center justify-center rounded-full border-2 border-white bg-green-600 dark:border-slate-900"
             title="Verified business"
+            aria-hidden
           >
             <svg width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="#fff" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
               <polyline points="20 6 9 17 4 12" />
@@ -104,26 +62,12 @@ const BusinessNode = memo(function BusinessNode({ data }: NodeProps) {
         )}
       </div>
 
-      {/* Label */}
-      <div
-        style={{
-          fontSize: 11,
-          fontWeight: 600,
-          color: '#374151',
-          maxWidth: 80,
-          textAlign: 'center',
-          overflow: 'hidden',
-          textOverflow: 'ellipsis',
-          whiteSpace: 'nowrap',
-          lineHeight: 1.2,
-        }}
-      >
+      <div className="max-w-[80px] truncate text-center text-[11px] font-semibold leading-tight text-gray-700 dark:text-gray-300">
         {nodeData.label}
       </div>
 
-      {/* Connection handles */}
-      <Handle type="target" position={Position.Top} style={{ opacity: 0, width: 1, height: 1 }} />
-      <Handle type="source" position={Position.Bottom} style={{ opacity: 0, width: 1, height: 1 }} />
+      <Handle type="target" position={Position.Top} className="!h-px !w-px !opacity-0" />
+      <Handle type="source" position={Position.Bottom} className="!h-px !w-px !opacity-0" />
     </div>
   );
 });

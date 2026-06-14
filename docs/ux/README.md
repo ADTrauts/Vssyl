@@ -4,7 +4,7 @@ Cross-cutting **visual and interaction standards** for Vssyl. Complements archit
 
 **Agent enforcement:** `.cursor/rules/ux-standards.mdc` (short) + `.cursor/rules/ui-standards.mdc` (shared components).
 
-**Last updated:** 2026-06-03 (Wave 5A certification framework)
+**Last updated:** 2026-06-03 (Wave 6A pattern extraction complete)
 
 ---
 
@@ -21,6 +21,10 @@ Cross-cutting **visual and interaction standards** for Vssyl. Complements archit
 | [UX_CERTIFICATION_STANDARD.md](./UX_CERTIFICATION_STANDARD.md) | UX-L1 / L2 / L3 certification definitions (Wave 5A) |
 | [UX_CERTIFICATION_SCORECARD.md](./UX_CERTIFICATION_SCORECARD.md) | 11-category PASS/FAIL scorecard + level thresholds |
 | [REFERENCE_MODULE_PROGRAM.md](./REFERENCE_MODULE_PROGRAM.md) | Reference UX / Architecture / Workspace / AI / Calendar slots |
+| [UX_REFERENCE_PATTERN_CATALOG.md](./UX_REFERENCE_PATTERN_CATALOG.md) | **56** canonical UX patterns from references #1–#5 (Wave 6A) |
+| [UX_REFERENCE_PROGRAM_CLOSEOUT.md](./UX_REFERENCE_PROGRAM_CLOSEOUT.md) | Wave 6A program closeout + future-module matrix |
+| [audits/PLACE_UX_BASELINE_AUDIT.md](./audits/PLACE_UX_BASELINE_AUDIT.md) | Wave 6B Place first UX assessment |
+| [patterns/](./patterns/) | Authoritative UX pattern standards by category |
 | [audits/REFERENCE_MODULE_DRIVE.md](./audits/REFERENCE_MODULE_DRIVE.md) | Reference UX Module #1 registration (Drive) |
 | [UX_AUDIT_TEMPLATE.md](./UX_AUDIT_TEMPLATE.md) | Module review worksheet (aligned to scorecard) |
 | [UX_MODERNIZATION_ROADMAP.md](./UX_MODERNIZATION_ROADMAP.md) | Waves 0–5; reference UX candidate |
@@ -58,4 +62,5 @@ Cross-cutting **visual and interaction standards** for Vssyl. Complements archit
 | New page or layout | `LAYOUT_PATTERNS.md` |
 | Module UX review | `UX_AUDIT_TEMPLATE.md` + `UX_CERTIFICATION_SCORECARD.md` |
 | Modernization planning | `UX_MODERNIZATION_ROADMAP.md`, `COMPONENT_INVENTORY.md` |
+| New module UX (copy targets) | `UX_REFERENCE_PATTERN_CATALOG.md` → `patterns/` |
 | Wave 2 planning | `COMPONENT_INVENTORY.md` (after `audits/WAVE1_QA_CLOSEOUT.md`) |

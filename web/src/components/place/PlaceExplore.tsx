@@ -2,8 +2,14 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
-import { Search, MapPin, Plus, Check, ShieldCheck, X, ThumbsDown, Info } from 'lucide-react';
-import { Spinner } from 'shared/components';
+import { Search, MapPin, SlidersHorizontal, X } from 'lucide-react';
+import { Spinner, ConfirmModal, Button } from 'shared/components';
+import { PlaceDiscoveryCard } from './PlaceDiscoveryCard';
+import { placeActionError } from './placeUxFeedback';
+import {
+  PlaceExploreSearchEmptyState,
+  PlaceExploreSuggestionsEmptyState,
+} from './PlaceEmptyStates';
 import {
   explorePlaces,
   getLocalSuggestions,
@@ -23,239 +29,6 @@ const CATEGORIES: { value: string; label: string; color: string }[] = [
   { value: 'HEALTH_WELLNESS', label: 'Health & Wellness', color: '#EC407A' },
   { value: 'ENTERTAINMENT', label: 'Entertainment', color: '#7E57C2' },
 ];
-
-// ============================================================================
-// Suggestion Card (reusable)
-// ============================================================================
-
-function SuggestionCard({
-  listing,
-  reason,
-  isFollowing,
-  actionLoading,
-  onToggleFollow,
-  onDismiss,
-}: {
-  listing: PlaceListingWithBusiness;
-  reason: string;
-  isFollowing: boolean;
-  actionLoading: boolean;
-  onToggleFollow: () => void;
-  onDismiss: (reason: string) => void;
-}) {
-  const [showWhyTooltip, setShowWhyTooltip] = useState(false);
-
-  return (
-    <div
-      style={{
-        background: '#fff',
-        border: '1px solid #E5E7EB',
-        borderRadius: 12,
-        overflow: 'hidden',
-        transition: 'box-shadow 0.15s, border-color 0.15s',
-        position: 'relative',
-      }}
-      onMouseEnter={(e) => {
-        (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 16px rgba(0,0,0,0.08)';
-        (e.currentTarget as HTMLElement).style.borderColor = '#C7D2FE';
-      }}
-      onMouseLeave={(e) => {
-        (e.currentTarget as HTMLElement).style.boxShadow = 'none';
-        (e.currentTarget as HTMLElement).style.borderColor = '#E5E7EB';
-      }}
-    >
-      {listing.coverImage ? (
-        <div style={{ height: 72, overflow: 'hidden' }}>
-          <img src={listing.coverImage} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-        </div>
-      ) : (
-        <div style={{ height: 4, background: listing.nodeColor || '#6366f1' }} />
-      )}
-      <div style={{ padding: 16 }}>
-        {/* Dismiss / not interested */}
-        <div style={{ position: 'absolute', top: 10, right: 10, display: 'flex', gap: 4 }}>
-          <button
-            onClick={() => setShowWhyTooltip(!showWhyTooltip)}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2, opacity: 0.5 }}
-            aria-label="Why this suggestion"
-          >
-            <Info size={14} />
-          </button>
-          <button
-            onClick={() => onDismiss('not_interested')}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2, opacity: 0.5 }}
-            aria-label="Not interested"
-          >
-            <ThumbsDown size={14} />
-          </button>
-          <button
-            onClick={() => onDismiss('dismissed')}
-            style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 2, opacity: 0.5 }}
-            aria-label="Dismiss"
-          >
-            <X size={14} />
-          </button>
-        </div>
-
-        {/* Why tooltip */}
-        {showWhyTooltip && (
-          <div style={{
-            position: 'absolute', top: 30, right: 10, zIndex: 10,
-            background: '#1F2937', color: '#fff', fontSize: 12, padding: '6px 10px',
-            borderRadius: 6, maxWidth: 200, boxShadow: '0 4px 12px rgba(0,0,0,0.15)',
-          }}>
-            {reason}
-          </div>
-        )}
-
-        {/* Business info — thumb: avatar, then cover, then logo */}
-        <div style={{ display: 'flex', alignItems: 'start', gap: 12, marginBottom: 10 }}>
-          {(listing.avatarImage ?? listing.coverImage ?? listing.business.logo) ? (
-            <img src={listing.avatarImage ?? listing.coverImage ?? listing.business.logo ?? ''} alt="" style={{ width: 40, height: 40, borderRadius: 8, objectFit: 'cover', border: '1px solid #E5E7EB' }} />
-          ) : (
-            <div style={{
-              width: 40, height: 40, borderRadius: 8,
-              background: listing.nodeColor || '#6366f1',
-              display: 'flex', alignItems: 'center', justifyContent: 'center',
-              color: '#fff', fontWeight: 700, fontSize: 16,
-            }}>
-              {(listing.displayName || listing.business.name).charAt(0).toUpperCase()}
-            </div>
-          )}
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 4 }}>
-              <span style={{ fontSize: 14, fontWeight: 700, color: '#111827', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {listing.displayName || listing.business.name}
-              </span>
-              {listing.business.einVerified && (
-                <span title="Verified"><ShieldCheck size={14} color="#16a34a" /></span>
-              )}
-            </div>
-            {listing.shortDescription && (
-              <p style={{ fontSize: 12, color: '#6B7280', marginTop: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {listing.shortDescription}
-              </p>
-            )}
-          </div>
-        </div>
-
-        {/* Reason chip */}
-        <div style={{
-          fontSize: 11, padding: '3px 8px', borderRadius: 8,
-          background: '#F3F4F6', color: '#6B7280', display: 'inline-block', marginBottom: 10,
-        }}>
-          {reason}
-        </div>
-
-        {/* Follow button */}
-        <button
-          onClick={onToggleFollow}
-          disabled={actionLoading}
-          style={{
-            width: '100%', padding: '7px 0', borderRadius: 8,
-            border: isFollowing ? '1px solid #E5E7EB' : '1px solid #4F46E5',
-            background: isFollowing ? '#F9FAFB' : '#4F46E5',
-            color: isFollowing ? '#374151' : '#fff',
-            fontSize: 13, fontWeight: 600, cursor: 'pointer',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-            transition: 'all 0.15s',
-          }}
-        >
-          {actionLoading ? (
-            <Spinner size={14} />
-          ) : isFollowing ? (
-            <><Check size={14} /> On Your Main Street</>
-          ) : (
-            <><Plus size={14} /> Add to Main Street</>
-          )}
-        </button>
-      </div>
-    </div>
-  );
-}
-
-// ============================================================================
-// Listing Card (for search results, same style as before)
-// ============================================================================
-
-function ListingCard({
-  listing,
-  isFollowing,
-  actionLoading,
-  onToggleFollow,
-}: {
-  listing: PlaceListingWithBusiness;
-  isFollowing: boolean;
-  actionLoading: boolean;
-  onToggleFollow: () => void;
-}) {
-  return (
-    <div
-      style={{
-        background: '#fff', border: '1px solid #E5E7EB', borderRadius: 12, overflow: 'hidden',
-        transition: 'box-shadow 0.15s, border-color 0.15s',
-      }}
-      onMouseEnter={(e) => { (e.currentTarget as HTMLElement).style.boxShadow = '0 4px 16px rgba(0,0,0,0.08)'; (e.currentTarget as HTMLElement).style.borderColor = '#C7D2FE'; }}
-      onMouseLeave={(e) => { (e.currentTarget as HTMLElement).style.boxShadow = 'none'; (e.currentTarget as HTMLElement).style.borderColor = '#E5E7EB'; }}
-    >
-      {listing.coverImage ? (
-        <div style={{ height: 80, overflow: 'hidden' }}>
-          <img src={listing.coverImage} alt="" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-        </div>
-      ) : (
-        <div style={{ height: 4, background: listing.nodeColor || '#6366f1' }} />
-      )}
-      <div style={{ padding: 16 }}>
-        <div style={{ display: 'flex', alignItems: 'start', gap: 12, marginBottom: 12 }}>
-          {(listing.avatarImage ?? listing.coverImage ?? listing.business.logo) ? (
-            <img src={listing.avatarImage ?? listing.coverImage ?? listing.business.logo ?? ''} alt="" style={{ width: 44, height: 44, borderRadius: 8, objectFit: 'cover', border: '1px solid #E5E7EB' }} />
-          ) : (
-            <div style={{
-              width: 44, height: 44, borderRadius: 8, background: listing.nodeColor || '#6366f1',
-              display: 'flex', alignItems: 'center', justifyContent: 'center', color: '#fff', fontWeight: 700, fontSize: 18,
-            }}>
-              {(listing.displayName || listing.business.name).charAt(0).toUpperCase()}
-            </div>
-          )}
-          <div style={{ flex: 1, minWidth: 0 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <span style={{ fontSize: 15, fontWeight: 700, color: '#111827', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {listing.displayName || listing.business.name}
-              </span>
-              {listing.business.einVerified && <span title="Verified"><ShieldCheck size={16} color="#16a34a" /></span>}
-            </div>
-            {listing.shortDescription && (
-              <p style={{ fontSize: 13, color: '#6B7280', marginTop: 2, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                {listing.shortDescription}
-              </p>
-            )}
-          </div>
-        </div>
-        {listing.tags.length > 0 && (
-          <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: 12 }}>
-            {listing.tags.slice(0, 3).map(tag => (
-              <span key={tag} style={{ fontSize: 11, padding: '2px 8px', borderRadius: 10, background: '#F3F4F6', color: '#4B5563' }}>{tag}</span>
-            ))}
-          </div>
-        )}
-        <button
-          onClick={onToggleFollow}
-          disabled={actionLoading}
-          style={{
-            width: '100%', padding: '8px 0', borderRadius: 8,
-            border: isFollowing ? '1px solid #E5E7EB' : '1px solid #4F46E5',
-            background: isFollowing ? '#F9FAFB' : '#4F46E5',
-            color: isFollowing ? '#374151' : '#fff',
-            fontSize: 13, fontWeight: 600, cursor: 'pointer',
-            display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 6,
-          }}
-        >
-          {actionLoading ? <Spinner size={14} /> : isFollowing ? <><Check size={14} /> On Your Main Street</> : <><Plus size={14} /> Add to Main Street</>}
-        </button>
-      </div>
-    </div>
-  );
-}
 
 // ============================================================================
 // Main Explore Component
@@ -281,6 +54,32 @@ export default function PlaceExplore() {
   const [suggestionsLoading, setSuggestionsLoading] = useState(true);
 
   const [actionLoadingId, setActionLoadingId] = useState<string | null>(null);
+  const [pendingUnfollow, setPendingUnfollow] = useState<{
+    businessId: string;
+    nodeId: string;
+    name: string;
+  } | null>(null);
+  const [mobileFiltersOpen, setMobileFiltersOpen] = useState(false);
+
+  const closeMobileFilters = useCallback(() => setMobileFiltersOpen(false), []);
+
+  useEffect(() => {
+    if (!mobileFiltersOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') closeMobileFilters();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [mobileFiltersOpen, closeMobileFilters]);
+
+  const activeCategoryLabel = activeCategory
+    ? CATEGORIES.find(c => c.value === activeCategory)?.label ?? 'Filtered'
+    : 'All categories';
+
+  const selectCategory = (value: string | null) => {
+    handleCategoryClick(value);
+    closeMobileFilters();
+  };
 
   // Load suggestions on mount
   useEffect(() => {
@@ -299,8 +98,8 @@ export default function PlaceExplore() {
           setLocationLabel(`${localRes.location.city}, ${localRes.location.region}`);
           setForYouSuggestions(forYouRes.data);
         }
-      } catch {
-        // Silently fail
+      } catch (error: unknown) {
+        placeActionError('Could not load suggestions', error);
       } finally {
         if (!cancelled) setSuggestionsLoading(false);
       }
@@ -318,7 +117,9 @@ export default function PlaceExplore() {
       const result = await explorePlaces({ search: search || undefined, category: category || undefined, limit: 30 }, token);
       setSearchResults(result.data);
       setSearchTotal(result.pagination.total);
-    } catch { /* */ } finally { setSearchLoading(false); }
+    } catch (error: unknown) {
+      placeActionError('Search failed', error);
+    } finally { setSearchLoading(false); }
   }, [token]);
 
   const handleSearch = (e: React.FormEvent) => {
@@ -350,14 +151,31 @@ export default function PlaceExplore() {
 
   const handleToggleFollow = async (listing: PlaceListingWithBusiness) => {
     const businessId = listing.business.id;
-    setActionLoadingId(businessId);
     if (isFollowingBiz(businessId)) {
       const nodeId = getNodeId(businessId);
-      if (nodeId) await removeNode(nodeId);
-    } else {
-      await addNode('BUSINESS', businessId, listing.displayName || listing.business.name);
+      if (nodeId) {
+        setPendingUnfollow({
+          businessId,
+          nodeId,
+          name: listing.displayName || listing.business.name,
+        });
+      }
+      return;
     }
+    setActionLoadingId(businessId);
+    await addNode('BUSINESS', businessId, listing.displayName || listing.business.name);
     setActionLoadingId(null);
+  };
+
+  const executeUnfollow = async () => {
+    if (!pendingUnfollow) return;
+    setActionLoadingId(pendingUnfollow.businessId);
+    try {
+      await removeNode(pendingUnfollow.nodeId);
+      setPendingUnfollow(null);
+    } finally {
+      setActionLoadingId(null);
+    }
   };
 
   const handleDismiss = async (businessId: string, reason: string) => {
@@ -366,97 +184,182 @@ export default function PlaceExplore() {
       await dismissSuggestion(businessId, reason, token);
       setLocalSuggestions(prev => prev.filter(s => s.listing.business.id !== businessId));
       setForYouSuggestions(prev => prev.filter(s => s.listing.business.id !== businessId));
-    } catch { /* */ }
+    } catch (error: unknown) {
+      placeActionError('Could not dismiss suggestion', error);
+    }
   };
 
   return (
-    <div style={{ padding: 32, maxWidth: 960, margin: '0 auto' }}>
-      {/* Search bar */}
-      <form onSubmit={handleSearch} style={{
-        display: 'flex', alignItems: 'center', gap: 12, padding: '12px 20px',
-        background: '#fff', border: '2px solid #E5E7EB', borderRadius: 12, marginBottom: 24,
-      }}>
-        <Search size={20} color="#9CA3AF" />
-        <input
-          type="text"
-          value={searchQuery}
-          onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Search businesses, restaurants, services..."
-          style={{ flex: 1, border: 'none', outline: 'none', fontSize: 16, color: '#111827', background: 'transparent' }}
-          aria-label="Search businesses"
-        />
-        {(searchQuery || isSearching) && (
-          <button type="button" onClick={clearSearch} style={{ background: 'none', border: 'none', color: '#9CA3AF', cursor: 'pointer', fontSize: 18 }}>
-            &times;
-          </button>
-        )}
-      </form>
+    <>
+      <div className="mx-auto max-w-4xl p-4 md:p-8">
+        <form
+          onSubmit={handleSearch}
+          className="mb-4 flex items-center gap-3 rounded-xl border-2 border-gray-200 bg-white px-4 py-3 dark:border-slate-600 dark:bg-slate-800 md:mb-6"
+        >
+          <Search size={20} className="shrink-0 text-gray-400" aria-hidden />
+          <input
+            type="search"
+            value={searchQuery}
+            onChange={e => setSearchQuery(e.target.value)}
+            placeholder="Search businesses, restaurants, services..."
+            className="min-w-0 flex-1 border-none bg-transparent text-base text-gray-900 outline-none dark:text-gray-100"
+            aria-label="Search businesses"
+          />
+          {(searchQuery || isSearching) && (
+            <button
+              type="button"
+              onClick={clearSearch}
+              className="text-lg text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+              aria-label="Clear search"
+            >
+              &times;
+            </button>
+          )}
+        </form>
 
-      {/* Category chips */}
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, marginBottom: 28 }}>
-        <button
-          onClick={() => handleCategoryClick(null)}
-          style={{
-            padding: '6px 16px', borderRadius: 20,
-            border: activeCategory === null ? '2px solid #4F46E5' : '2px solid #E5E7EB',
-            background: activeCategory === null ? '#EEF2FF' : '#fff',
-            color: activeCategory === null ? '#4338CA' : '#374151',
-            fontSize: 13, fontWeight: 600, cursor: 'pointer',
-          }}
-        >All</button>
-        {CATEGORIES.map(cat => (
+        {/* Mobile filter bar (MOB-001) */}
+        <div className="mb-4 flex items-center gap-2 md:hidden">
+          <Button
+            type="button"
+            variant="ghost"
+            size="sm"
+            onClick={() => setMobileFiltersOpen(true)}
+            aria-label="Open category filters"
+          >
+            <SlidersHorizontal className="h-4 w-4" />
+          </Button>
+          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{activeCategoryLabel}</span>
+        </div>
+
+        {mobileFiltersOpen ? (
           <button
-            key={cat.value}
-            onClick={() => handleCategoryClick(activeCategory === cat.value ? null : cat.value)}
-            style={{
-              padding: '6px 16px', borderRadius: 20,
-              border: activeCategory === cat.value ? `2px solid ${cat.color}` : '2px solid #E5E7EB',
-              background: activeCategory === cat.value ? `${cat.color}12` : '#fff',
-              color: activeCategory === cat.value ? cat.color : '#374151',
-              fontSize: 13, fontWeight: 600, cursor: 'pointer',
-            }}
-          >{cat.label}</button>
-        ))}
-      </div>
+            type="button"
+            className="fixed inset-0 z-40 bg-black/40 md:hidden"
+            aria-label="Close category filters"
+            onClick={closeMobileFilters}
+          />
+        ) : null}
 
-      {/* SEARCH RESULTS MODE */}
-      {isSearching ? (
-        searchLoading ? (
-          <div style={{ display: 'flex', justifyContent: 'center', padding: 60 }}><Spinner size={32} /></div>
-        ) : searchResults.length === 0 ? (
-          <div style={{ padding: 48, background: '#F9FAFB', border: '2px dashed #D1D5DB', borderRadius: 12, textAlign: 'center' }}>
-            <p style={{ fontSize: 16, fontWeight: 600, color: '#374151', marginBottom: 4 }}>No businesses found</p>
-            <p style={{ fontSize: 14, color: '#6B7280' }}>Try a different search or category.</p>
+        <aside
+          className={`z-50 w-[min(300px,88vw)] shrink-0 border-r border-gray-200 bg-white p-4 dark:border-slate-700 dark:bg-slate-800 ${
+            mobileFiltersOpen
+              ? 'fixed inset-y-0 right-0 flex flex-col shadow-xl md:hidden'
+              : 'hidden'
+          }`}
+          aria-label="Category filters"
+          aria-hidden={!mobileFiltersOpen}
+        >
+          <div className="mb-3 flex items-center justify-between">
+            <h2 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Categories</h2>
+            <Button
+              type="button"
+              variant="ghost"
+              size="sm"
+              onClick={closeMobileFilters}
+              aria-label="Close category filters"
+            >
+              <X className="h-4 w-4" />
+            </Button>
+          </div>
+          <div className="flex flex-col gap-2 overflow-y-auto">
+            <button
+              type="button"
+              onClick={() => selectCategory(null)}
+              className={`rounded-lg px-3 py-2 text-left text-sm font-medium ${
+                activeCategory === null
+                  ? 'bg-indigo-50 text-indigo-700 dark:bg-indigo-950 dark:text-indigo-200'
+                  : 'text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-slate-700'
+              }`}
+            >
+              All
+            </button>
+            {CATEGORIES.map(cat => (
+              <button
+                key={cat.value}
+                type="button"
+                onClick={() => selectCategory(activeCategory === cat.value ? null : cat.value)}
+                className={`rounded-lg px-3 py-2 text-left text-sm font-medium ${
+                  activeCategory === cat.value
+                    ? 'text-gray-900 dark:text-gray-100'
+                    : 'text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-slate-700'
+                }`}
+                style={activeCategory === cat.value ? { backgroundColor: `${cat.color}18`, color: cat.color } : undefined}
+              >
+                {cat.label}
+              </button>
+            ))}
+          </div>
+        </aside>
+
+        {/* Desktop category chips */}
+        <div className="mb-6 hidden flex-wrap gap-2 md:flex md:mb-7">
+          <button
+            type="button"
+            onClick={() => handleCategoryClick(null)}
+            className={`rounded-full border-2 px-4 py-1.5 text-sm font-semibold transition-colors ${
+              activeCategory === null
+                ? 'border-indigo-600 bg-indigo-50 text-indigo-700 dark:border-indigo-400 dark:bg-indigo-950 dark:text-indigo-200'
+                : 'border-gray-200 bg-white text-gray-700 dark:border-slate-600 dark:bg-slate-800 dark:text-gray-300'
+            }`}
+          >
+            All
+          </button>
+          {CATEGORIES.map(cat => (
+            <button
+              key={cat.value}
+              type="button"
+              onClick={() => handleCategoryClick(activeCategory === cat.value ? null : cat.value)}
+              className="rounded-full border-2 px-4 py-1.5 text-sm font-semibold transition-colors"
+              style={{
+                borderColor: activeCategory === cat.value ? cat.color : undefined,
+                backgroundColor: activeCategory === cat.value ? `${cat.color}12` : undefined,
+                color: activeCategory === cat.value ? cat.color : undefined,
+              }}
+            >
+              {cat.label}
+            </button>
+          ))}
+        </div>
+
+        {isSearching ? (
+          searchLoading ? (
+            <div className="flex justify-center py-16">
+              <Spinner size={32} />
+            </div>
+          ) : searchResults.length === 0 ? (
+            <PlaceExploreSearchEmptyState />
+          ) : (
+            <>
+              <p className="mb-4 text-sm text-gray-600 dark:text-gray-400">
+                {searchTotal} result{searchTotal !== 1 ? 's' : ''}
+              </p>
+              <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                {searchResults.map(listing => (
+                  <PlaceDiscoveryCard
+                    key={listing.id}
+                    listing={listing}
+                    isFollowing={isFollowingBiz(listing.business.id)}
+                    actionLoading={actionLoadingId === listing.business.id}
+                    onToggleFollow={() => handleToggleFollow(listing)}
+                    variant="search"
+                  />
+                ))}
+              </div>
+            </>
+          )
+        ) : suggestionsLoading ? (
+          <div className="flex justify-center py-16">
+            <Spinner size={32} />
           </div>
         ) : (
-          <>
-            <p style={{ fontSize: 13, color: '#6B7280', marginBottom: 16 }}>{searchTotal} result{searchTotal !== 1 ? 's' : ''}</p>
-            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: 16 }}>
-              {searchResults.map(listing => (
-                <ListingCard
-                  key={listing.id}
-                  listing={listing}
-                  isFollowing={isFollowingBiz(listing.business.id)}
-                  actionLoading={actionLoadingId === listing.business.id}
-                  onToggleFollow={() => handleToggleFollow(listing)}
-                />
-              ))}
-            </div>
-          </>
-        )
-      ) : (
-        /* DISCOVERY MODE (default) */
-        suggestionsLoading ? (
-          <div style={{ display: 'flex', justifyContent: 'center', padding: 60 }}><Spinner size={32} /></div>
-        ) : (
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 36 }}>
+          <div className="flex flex-col gap-9">
             {/* For You section */}
             {forYouSuggestions.length > 0 && (
               <section>
-                <h2 style={{ fontSize: 20, fontWeight: 700, color: '#111827', marginBottom: 16 }}>For You</h2>
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 16 }}>
+                <h2 className="mb-4 text-xl font-bold text-gray-900 dark:text-gray-100">For You</h2>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   {forYouSuggestions.map(s => (
-                    <SuggestionCard
+                    <PlaceDiscoveryCard
                       key={s.listing.id}
                       listing={s.listing}
                       reason={s.reason}
@@ -464,6 +367,7 @@ export default function PlaceExplore() {
                       actionLoading={actionLoadingId === s.listing.business.id}
                       onToggleFollow={() => handleToggleFollow(s.listing)}
                       onDismiss={(reason) => handleDismiss(s.listing.business.id, reason)}
+                      variant="suggestion"
                     />
                   ))}
                 </div>
@@ -472,28 +376,24 @@ export default function PlaceExplore() {
 
             {/* Near You section */}
             <section>
-              <h2 style={{ fontSize: 20, fontWeight: 700, color: '#111827', marginBottom: 4 }}>
-                <MapPin size={20} style={{ display: 'inline', verticalAlign: 'middle', marginRight: 8 }} />
+              <h2 className="mb-1 flex items-center gap-2 text-xl font-bold text-gray-900 dark:text-gray-100">
+                <MapPin size={20} aria-hidden />
                 Near You
               </h2>
               {locationLabel && (
-                <p style={{ fontSize: 13, color: '#6B7280', marginBottom: 16 }}>{locationLabel}</p>
+                <p className="mb-4 text-sm text-gray-600 dark:text-gray-400">{locationLabel}</p>
               )}
               {localSuggestions.length === 0 ? (
-                <div style={{
-                  padding: 40, background: '#F9FAFB', border: '2px dashed #D1D5DB', borderRadius: 12, textAlign: 'center', color: '#6B7280',
-                }}>
-                  <p style={{ fontSize: 16, fontWeight: 600, color: '#374151', marginBottom: 8 }}>
+                <p className="rounded-xl border-2 border-dashed border-gray-300 bg-gray-50 p-8 text-center text-sm text-gray-600 dark:border-slate-600 dark:bg-slate-800 dark:text-gray-400">
+                  <span className="mb-2 block text-base font-semibold text-gray-800 dark:text-gray-200">
                     No local businesses yet
-                  </p>
-                  <p style={{ fontSize: 14 }}>
-                    Businesses near you will appear here as they join Vssyl Place.
-                  </p>
-                </div>
+                  </span>
+                  Businesses near you will appear here as they join Vssyl Place.
+                </p>
               ) : (
-                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(260px, 1fr))', gap: 16 }}>
+                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   {localSuggestions.map(s => (
-                    <SuggestionCard
+                    <PlaceDiscoveryCard
                       key={s.listing.id}
                       listing={s.listing}
                       reason={s.reason}
@@ -501,6 +401,7 @@ export default function PlaceExplore() {
                       actionLoading={actionLoadingId === s.listing.business.id}
                       onToggleFollow={() => handleToggleFollow(s.listing)}
                       onDismiss={(reason) => handleDismiss(s.listing.business.id, reason)}
+                      variant="suggestion"
                     />
                   ))}
                 </div>
@@ -509,22 +410,26 @@ export default function PlaceExplore() {
 
             {/* Empty state when both are empty */}
             {forYouSuggestions.length === 0 && localSuggestions.length === 0 && (
-              <div style={{
-                padding: 48, background: '#F9FAFB', border: '2px dashed #D1D5DB',
-                borderRadius: 12, textAlign: 'center',
-              }}>
-                <MapPin size={32} color="#9CA3AF" style={{ margin: '0 auto 12px' }} />
-                <p style={{ fontSize: 16, fontWeight: 600, color: '#374151', marginBottom: 4 }}>
-                  No suggestions yet
-                </p>
-                <p style={{ fontSize: 14, color: '#6B7280' }}>
-                  Try searching above, or check back as more businesses join Vssyl Place.
-                </p>
-              </div>
+              <PlaceExploreSuggestionsEmptyState />
             )}
           </div>
-        )
-      )}
+        )}
     </div>
+
+    <ConfirmModal
+      open={pendingUnfollow !== null}
+      onClose={() => setPendingUnfollow(null)}
+      onConfirm={executeUnfollow}
+      title="Remove from Main Street?"
+      description={
+        pendingUnfollow
+          ? `Remove ${pendingUnfollow.name} from your neighborhood?`
+          : undefined
+      }
+      variant="destructive"
+      confirmLabel="Remove"
+      loading={pendingUnfollow !== null && actionLoadingId === pendingUnfollow.businessId}
+    />
+  </>
   );
 }

@@ -5,6 +5,10 @@ import { useSession } from 'next-auth/react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import { Brain, Send, Plus, Archive, Pin, Trash2, MessageSquare, Sparkles, Bot, User, Search, MoreVertical, Check, X, Share2, Edit, Folder, Paperclip, ImageIcon, Mic, Square, Volume2, HelpCircle, Building2 } from 'lucide-react';
 import { Button, Spinner, ConfirmModal, DropdownMenu, ContextMenuItem } from 'shared/components';
+import { PageHeader, PageToolbar } from '@/components/layouts';
+import AIChatPageShell from './AIChatPageShell';
+import AIChatEmptyState from './AIChatEmptyState';
+import AIExperienceNavLinks from './AIExperienceNavLinks';
 import AIMessageContent from './AIMessageContent';
 import AIAssistantMessageBody from './AIAssistantMessageBody';
 import { type StructuredAIResponse } from './AIResponseRenderer';
@@ -187,7 +191,7 @@ export default function AIChatWorkspace({
   const [showArchived, setShowArchived] = useState(false);
   const [selectedConversation, setSelectedConversation] = useState<AIConversation | null>(null);
   const [showMoreMenu, setShowMoreMenu] = useState(false);
-  const [embeddedMoreMenuId, setEmbeddedMoreMenuId] = useState<string | false>(false);
+  const [mobileSidebarOpen, setMobileSidebarOpen] = useState(false);
   const [conversationError, setConversationError] = useState<string | null>(null);
   const [authError, setAuthError] = useState<string | null>(null);
   const [selectedProvider, setSelectedProvider] = useState<AIProvider>('auto');
@@ -567,6 +571,7 @@ export default function AIChatWorkspace({
         setConversation(conversationItems);
         setCurrentConversationId(conversationId);
         setSelectedConversation(response.data);
+        setMobileSidebarOpen(false);
       } else {
         setConversationError('Failed to load conversation messages. Please try again.');
         console.error('API returned error:', response);
@@ -1404,32 +1409,6 @@ export default function AIChatWorkspace({
     ? conversations.find(c => c.id === pendingConversationToTrash)
     : undefined;
 
-  const handleDeleteConversation = async (conversationId: string) => {
-    if (!session?.accessToken) return;
-    const conv = conversations.find((c) => c.id === conversationId);
-    if (!conv) return;
-    try {
-      await trashItem({
-        id: conv.id,
-        name: conv.title || 'Untitled Conversation',
-        type: 'ai_conversation',
-        moduleId: 'ai-chat',
-        moduleName: 'AI Chat',
-        metadata: {
-          dashboardId: effectiveDashboardId,
-        },
-      });
-      toast.success(`${conv.title || 'Conversation'} moved to trash`);
-      setConversations((prev) => prev.filter((c) => c.id !== conversationId));
-      if (currentConversationId === conversationId) {
-        handleNewConversation();
-      }
-    } catch (error) {
-      console.error('Failed to move conversation to trash:', error);
-      toast.error('Failed to move conversation to trash');
-    }
-  };
-
   const handleRenameConversation = async (conversationId: string, newTitle: string) => {
     if (!session?.accessToken || !newTitle.trim()) return;
 
@@ -1626,450 +1605,118 @@ export default function AIChatWorkspace({
   const regularConversations = filteredConversations.filter(c => !c.isPinned);
   const recentConversations = regularConversations;
 
-  if (isEmbedded && isLoadingConversations) {
-    return (
-      <div className="flex items-center justify-center h-full">
-        <Spinner size={32} />
-      </div>
-    );
-  }
-
-  if (isEmbedded) {
-    return (
-      <div className="flex h-full bg-white dark:bg-slate-900">
-        <div className="w-80 border-r border-gray-200 dark:border-slate-700 flex flex-col">
-          <div className="p-4 border-b border-gray-200 dark:border-slate-700">
+  return (
+    <>
+    <div className="flex h-full min-h-0 flex-col bg-gray-50 dark:bg-slate-800">
+      {!isEmbedded ? (
+        <PageHeader
+          title="AI Assistant"
+          description={`Chat with your AI twin in ${effectiveDashboardName}`}
+          icon={<Brain className="h-6 w-6 text-purple-600" />}
+          actions={
+            <>
+              <AIExperienceNavLinks currentSurface="chat-page" variant="compact" />
+              <Button onClick={handleNewConversation} size="sm" variant="primary">
+                <Plus className="h-4 w-4 mr-2" />
+                New conversation
+              </Button>
+            </>
+          }
+        />
+      ) : null}
+      {!isEmbedded ? (
+        <PageToolbar
+          leading={
+            <div className="relative w-full max-w-md">
+              <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-gray-400" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search conversations..."
+                aria-label="Search conversations"
+                className="w-full rounded-lg border border-gray-300 py-2 pl-10 pr-3 text-sm focus:border-purple-500 focus:outline-none focus:ring-2 focus:ring-purple-500 dark:border-slate-600"
+              />
+            </div>
+          }
+          trailing={
+            <Button
+              variant="secondary"
+              size="sm"
+              onClick={() => setShowArchived(!showArchived)}
+              aria-label={showArchived ? 'Show active conversations' : 'Show archived conversations'}
+            >
+              <Archive className="h-4 w-4 mr-2" />
+              {showArchived ? 'Show active' : 'Show archived'}
+            </Button>
+          }
+        />
+      ) : null}
+      <AIChatPageShell
+        mobileSidebarOpen={mobileSidebarOpen}
+        onMobileSidebarOpenChange={setMobileSidebarOpen}
+        mobileBarLabel="AI conversations"
+        sidebar={
+      <div className="flex h-full min-h-0 flex-col bg-white dark:bg-slate-900">
+        {/* Sidebar Header */}
+        <div className="p-4 border-b border-gray-100 dark:border-slate-700">
+          {isEmbedded ? (
             <div className="flex items-center justify-between mb-4">
-              <h1 className="text-xl font-semibold text-gray-900 dark:text-gray-100 flex items-center">
-                <Brain className="h-6 w-6 mr-2 text-purple-600" />
-                AI Assistant
-              </h1>
-              <Button onClick={handleNewConversation} size="sm" variant="primary" className="px-3 py-1">
-                <Plus className="h-4 w-4 mr-1" />
-                New Chat
+              <div className="flex items-center space-x-2">
+                <Brain className="h-6 w-6 text-purple-600" />
+                <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">AI Assistant</h2>
+              </div>
+              <Button
+                onClick={handleNewConversation}
+                size="sm"
+                variant="primary"
+                className="px-3 py-2"
+                aria-label="New conversation"
+              >
+                <Plus className="h-4 w-4" />
               </Button>
             </div>
+          ) : null}
+
+          {isEmbedded ? (
+            <div className="mb-3">
+              <AIExperienceNavLinks variant="compact" currentSurface="embedded" />
+            </div>
+          ) : null}
+
+          {isEmbedded ? (
             <div className="relative">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
               <input
                 type="text"
-                placeholder="Search conversations..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
+                placeholder="Search conversations..."
+                aria-label="Search conversations"
+                className="w-full pl-10 pr-3 py-2 text-sm border border-gray-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
               />
             </div>
-            <div className="mt-3">
-              <Button
-                onClick={() => setShowArchived(!showArchived)}
-                variant="ghost"
-                size="sm"
-                className={`w-full justify-start ${showArchived ? 'bg-gray-100' : ''}`}
-              >
-                <Archive className="h-4 w-4 mr-2" />
-                {showArchived ? 'Show Active' : 'Show Archived'}
-              </Button>
-            </div>
-          </div>
-          {authError && (
-            <div className="px-4 py-2 bg-red-50 border-b border-red-200">
-              <div className="flex items-center space-x-2">
-                <div className="h-2 w-2 bg-red-500 rounded-full" />
-                <p className="text-sm text-red-700">{authError}</p>
-                <button onClick={() => setAuthError(null)} className="ml-auto text-red-400 hover:text-red-600">
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-            </div>
-          )}
-          {conversationError && (
-            <div className="px-4 py-2 bg-yellow-50 border-b border-yellow-200">
-              <div className="flex items-center space-x-2">
-                <div className="h-2 w-2 bg-yellow-500 rounded-full" />
-                <p className="text-sm text-yellow-700">{conversationError}</p>
-                <button onClick={() => setConversationError(null)} className="ml-auto text-yellow-400 hover:text-yellow-600">
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-            </div>
-          )}
-          <div className="flex-1 overflow-y-auto p-4">
-            {pinnedConversations.length > 0 && (
-              <div className="mb-6">
-                <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3 flex items-center">
-                  <Pin className="h-4 w-4 mr-1" />
-                  Pinned
-                </h3>
-                <div className="space-y-2">
-                  {pinnedConversations.map((conv) => (
-                    <div
-                      key={conv.id}
-                      onClick={() => loadConversationMessages(conv.id)}
-                      className={`p-3 rounded-lg cursor-pointer transition-colors ${
-                        selectedConversation?.id === conv.id
-                          ? 'bg-purple-100 border border-purple-200'
-                          : 'hover:bg-gray-50 border border-transparent'
-                      }`}
-                    >
-                      <div className="flex items-start justify-between">
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{conv.title}</p>
-                          <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                            {conv.messageCount} messages • {new Date(conv.lastMessageAt).toLocaleDateString()}
-                          </p>
-                        </div>
-                        <div className="flex items-center space-x-1">
-                          <button
-                            onClick={(e) => { e.stopPropagation(); void handlePinConversation(conv.id); }}
-                            className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-400"
-                          >
-                            <Pin className="h-3 w-3" />
-                          </button>
-                          <button
-                            onClick={(e) => { e.stopPropagation(); setEmbeddedMoreMenuId(conv.id); }}
-                            className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-400"
-                          >
-                            <MoreVertical className="h-3 w-3" />
-                          </button>
-                        </div>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            )}
-            <div>
-              <h3 className="text-sm font-medium text-gray-500 dark:text-gray-400 mb-3 flex items-center">
-                <MessageSquare className="h-4 w-4 mr-1" />
-                Recent
-              </h3>
-              <div className="space-y-2">
-                {recentConversations.map((conv) => (
-                  <div
-                    key={conv.id}
-                    onClick={() => loadConversationMessages(conv.id)}
-                    className={`p-3 rounded-lg cursor-pointer transition-colors ${
-                      selectedConversation?.id === conv.id
-                        ? 'bg-purple-100 border border-purple-200'
-                        : 'hover:bg-gray-50 border border-transparent'
-                    }`}
-                  >
-                    <div className="flex items-start justify-between">
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{conv.title}</p>
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
-                          {conv.messageCount} messages • {new Date(conv.lastMessageAt).toLocaleDateString()}
-                        </p>
-                      </div>
-                      <div className="flex items-center space-x-1">
-                        <button
-                          onClick={(e) => { e.stopPropagation(); void handlePinConversation(conv.id); }}
-                          className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-400"
-                        >
-                          <Pin className="h-3 w-3" />
-                        </button>
-                        <button
-                          onClick={(e) => { e.stopPropagation(); setEmbeddedMoreMenuId(conv.id); }}
-                          className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-400"
-                        >
-                          <MoreVertical className="h-3 w-3" />
-                        </button>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-            {filteredConversations.length === 0 && (
-              <div className="text-center py-8">
-                <MessageSquare className="h-12 w-12 mx-auto text-gray-300 mb-3" />
-                <p className="text-gray-500 dark:text-gray-400 text-sm">
-                  {showArchived ? 'No archived conversations' : 'No conversations yet'}
-                </p>
-                {!showArchived && (
-                  <Button onClick={handleNewConversation} variant="ghost" size="sm" className="mt-2">
-                    Start your first conversation
-                  </Button>
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-        <div className="flex-1 flex flex-col">
-          {selectedConversation && (
-            <div className="p-4 border-b border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800">
-              <div className="flex items-center justify-between">
-                <div>
-                  <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{selectedConversation.title}</h2>
-                  <p className="text-sm text-gray-500 dark:text-gray-400">
-                    {selectedConversation.messageCount} messages • Created {new Date(selectedConversation.createdAt).toLocaleDateString()}
-                  </p>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <Button
-                    onClick={() => void handlePinConversation(selectedConversation.id)}
-                    variant="ghost"
-                    size="sm"
-                    className={selectedConversation.isPinned ? 'text-purple-600' : ''}
-                  >
-                    <Pin className="h-4 w-4 mr-1" />
-                    {selectedConversation.isPinned ? 'Pinned' : 'Pin'}
-                  </Button>
-                  <Button onClick={() => void handleArchiveConversation(selectedConversation.id)} variant="ghost" size="sm">
-                    <Archive className="h-4 w-4 mr-1" />
-                    Archive
-                  </Button>
-                  <Button
-                    onClick={() => void handleDeleteConversation(selectedConversation.id)}
-                    variant="ghost"
-                    size="sm"
-                    className="text-red-600 hover:text-red-700"
-                  >
-                    <Trash2 className="h-4 w-4 mr-1" />
-                    Delete
-                  </Button>
-                </div>
-              </div>
-            </div>
-          )}
-          <div
-            className={`flex-1 overflow-y-auto p-4 space-y-4 relative ${isDragging ? 'border-2 border-dashed border-purple-400 bg-purple-50' : ''}`}
-            onDragOver={handleDragOver}
-            onDragLeave={handleDragLeave}
-            onDrop={handleDrop}
-          >
-            {isDragging && (
-              <div className="absolute inset-0 flex items-center justify-center bg-purple-50/80 z-10 pointer-events-none">
-                <div className="text-center">
-                  <Paperclip className="h-12 w-12 mx-auto text-purple-600 mb-2" />
-                  <p className="text-lg font-semibold text-purple-900">Drop files here to attach</p>
-                </div>
-              </div>
-            )}
-            {conversation.length === 0 ? (
-              <div className="text-center py-12">
-                <Brain className="h-16 w-16 mx-auto text-gray-300 mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">What&apos;s on your mind today?</h3>
-                <p className="text-gray-500 dark:text-gray-400 mb-6">
-                  I can help you with tasks, answer questions, and assist with your digital life.
-                </p>
-                <Button onClick={handleNewConversation} variant="primary" size="lg">
-                  <Plus className="h-5 w-5 mr-2" />
-                  Start New Conversation
-                </Button>
-              </div>
-            ) : (
-              <>
-                {conversation.map((item) => (
-                  <div key={item.id} className="space-y-2">
-                    {item.type === 'user' && (
-                      <div className="flex justify-end">
-                        <div className="bg-blue-600 text-white rounded-lg px-4 py-2 max-w-2xl">
-                          <p className="text-sm">{item.content}</p>
-                          {item.attachments?.fileIds && item.attachments.fileIds.length > 0 && (
-                            <div className="mt-2 pt-2 border-t border-blue-500/30 flex flex-wrap gap-2">
-                              {item.attachments.fileIds.map((fileId: string) => {
-                                const fileDetail = fileDetailsCache[fileId] || attachedFiles.find((f) => f.id === fileId);
-                                const fileName = fileDetail?.name || `File ${fileId.slice(0, 8)}...`;
-                                return (
-                                  <div key={fileId} className="inline-flex items-center px-2 py-1 rounded bg-blue-500/20 border border-blue-400/30">
-                                    <Paperclip className="h-3 w-3 mr-1" />
-                                    <span className="text-xs">{fileName}</span>
-                                  </div>
-                                );
-                              })}
-                            </div>
-                          )}
-                        </div>
-                      </div>
-                    )}
-                    {item.type === 'ai' && (
-                      <div className="flex justify-start">
-                        <div className="bg-gray-100 dark:bg-slate-700 rounded-2xl px-4 py-3 max-w-2xl">
-                          <div className="flex items-start space-x-3">
-                            <Bot className="h-5 w-5 text-purple-600 mt-1 flex-shrink-0" />
-                            <div className="flex-1 min-w-0">
-                              <AIAssistantMessageBody
-                                content={item.content}
-                                structured={item.structured}
-                                confidence={item.confidence}
-                                textColor="text-gray-800 dark:text-gray-100"
-                                showOrchestrationDetails={showAIDetails}
-                                onAction={(action) => {
-                                  if (action.href) {
-                                    if (action.href.startsWith('http')) window.open(action.href, '_blank');
-                                    else router.push(action.href);
-                                  } else if (action.fileId) {
-                                    router.push(`/drive?file=${encodeURIComponent(action.fileId)}`);
-                                  }
-                                }}
-                              />
-                              {item.fileIssues && item.fileIssues.length > 0 && (
-                                <div className="mt-2 pt-2 border-t border-gray-200 dark:border-slate-700">
-                                  <p className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Attachment issues</p>
-                                  <ul className="text-xs text-gray-600 dark:text-gray-400 space-y-0.5">
-                                    {item.fileIssues.map((issue, i) => (
-                                      <li key={issue.fileId || i}>{issue.details || 'File'}: {issue.message}</li>
-                                    ))}
-                                  </ul>
-                                </div>
-                              )}
-                              {item.usedVisionParts && (
-                                <p className="mt-2 text-xs text-gray-500 dark:text-gray-400 italic">Image used in this reply</p>
-                              )}
-                            </div>
-                          </div>
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ))}
-                <div ref={conversationEndRef} />
-              </>
-            )}
-            {isAILoading && (
-              <div className="flex justify-start">
-                <div className="bg-gray-100 dark:bg-slate-700 rounded-2xl px-4 py-3">
-                  <AIThinkingIndicator message="Thinking..." iconSize={20} />
-                </div>
-              </div>
-            )}
-          </div>
-          <div className="p-4 border-t border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900">
-            {isUploadingFiles && (
-              <div className="mb-2">
-                <div className="flex items-center gap-2">
-                  <Spinner size={14} />
-                  <span className="text-sm text-gray-700 dark:text-gray-300">Uploading…</span>
-                  {uploadProgress != null && uploadProgress >= 0 && (
-                    <span className="text-sm text-gray-600 dark:text-gray-400">{uploadProgress}%</span>
-                  )}
-                </div>
-                <div className="mt-1 h-1.5 w-full max-w-xs bg-gray-200 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-purple-500 transition-all duration-300"
-                    style={{ width: uploadProgress != null && uploadProgress >= 0 ? `${uploadProgress}%` : '30%' }}
-                  />
-                </div>
-              </div>
-            )}
-            {attachedFiles.length > 0 && (
-              <div className="mb-2 flex flex-wrap gap-2 items-center">
-                {attachedFiles.map((file) => (
-                  <div key={file.id} className="inline-flex items-center px-2 py-1 rounded-full bg-purple-50 border border-purple-200 max-w-xs">
-                    <Paperclip className="h-3 w-3 text-purple-600 mr-1" />
-                    <span className="text-xs text-gray-800 truncate">{file.name}</span>
-                    <button
-                      type="button"
-                      onClick={() => setAttachedFiles((prev) => prev.filter((f) => f.id !== file.id))}
-                      className="ml-1 text-purple-500 hover:text-purple-700"
-                    >
-                      <X className="h-3 w-3" />
-                    </button>
-                  </div>
-                ))}
-                <span className="text-xs text-gray-600 dark:text-gray-400">
-                  {attachedFiles.length}/{MAX_ATTACHMENTS} files
-                </span>
-              </div>
-            )}
-            <div className="flex items-center gap-2 border border-gray-300 dark:border-slate-600 rounded-2xl px-4 py-3 bg-white dark:bg-slate-900 focus-within:ring-2 focus-within:ring-purple-500 focus-within:border-purple-500 transition-all">
-              <button
-                type="button"
-                onClick={() => fileInputRef.current?.click()}
-                disabled={isAILoading || isUploadingFiles || attachedFiles.length >= MAX_ATTACHMENTS}
-                className="p-2 hover:bg-gray-100 dark:hover:bg-slate-800 dark:bg-slate-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                title="Attach files"
-              >
-                <Paperclip className="h-5 w-5 text-gray-500 dark:text-gray-400" />
-              </button>
-              <input
-                ref={fileInputRef}
-                type="file"
-                multiple
-                onChange={handleFileInputChange}
-                className="hidden"
-                disabled={isAILoading || isUploadingFiles || attachedFiles.length >= MAX_ATTACHMENTS}
-              />
-              <textarea
-                ref={inputRef}
-                value={inputValue}
-                onChange={(e) => setInputValue(e.target.value)}
-                onKeyDown={handleKeyPress}
-                placeholder="Ask your AI assistant anything..."
-                className="flex-1 border-0 focus:outline-none resize-none text-sm py-1 min-h-[24px] max-h-[120px] overflow-y-auto"
-                rows={1}
-                disabled={isAILoading}
-              />
-              <Button
-                onClick={() => void handleAIQuery()}
-                disabled={(!inputValue.trim() && attachedFiles.length === 0) || isAILoading || isUploadingFiles}
-                size="sm"
-                variant="primary"
-                className="px-4 py-2 rounded-lg flex-shrink-0"
-              >
-                {isAILoading ? <Spinner size={16} /> : <Send className="w-4 h-4" />}
-              </Button>
-            </div>
-            <p className="text-xs text-gray-500 dark:text-gray-400 text-center mt-2">
-              Press Enter to send • Up to {MAX_ATTACHMENTS} files • Large files (500KB+) summarized only
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-  }
+          ) : null}
 
-  return (
-    <>
-    <div className="h-full flex bg-gray-50 dark:bg-slate-800">
-      {/* Sidebar - Conversations List */}
-      <div className="w-80 bg-white dark:bg-slate-900 border-r border-gray-200 dark:border-slate-700 flex flex-col">
-        {/* Sidebar Header */}
-        <div className="p-4 border-b border-gray-100">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center space-x-2">
-              <Brain className="h-6 w-6 text-purple-600" />
-              <h1 className="text-xl font-bold text-gray-900 dark:text-gray-100">AI Assistant</h1>
-            </div>
-            <Button
-              onClick={handleNewConversation}
-              size="sm"
-              variant="primary"
-              className="px-3 py-2"
+          {isEmbedded ? (
+            <button
+              type="button"
+              onClick={() => setShowArchived(!showArchived)}
+              aria-label={showArchived ? 'Show active conversations' : 'Show archived conversations'}
+              className="mt-3 w-full flex items-center justify-center space-x-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 dark:bg-slate-700 rounded-lg transition-colors"
             >
-              <Plus className="h-4 w-4" />
-            </Button>
-          </div>
+              <Archive className="h-4 w-4" />
+              <span>{showArchived ? 'Show Active' : 'Show Archived'}</span>
+            </button>
+          ) : null}
 
-          {/* Search */}
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search conversations..."
-              className="w-full pl-10 pr-3 py-2 text-sm border border-gray-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-purple-500"
-            />
-          </div>
-
-          {/* Archive Toggle */}
-          <button
-            onClick={() => setShowArchived(!showArchived)}
-            className="mt-3 w-full flex items-center justify-center space-x-2 px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 dark:bg-slate-700 rounded-lg transition-colors"
-          >
-            <Archive className="h-4 w-4" />
-            <span>{showArchived ? 'Show Active' : 'Show Archived'}</span>
-          </button>
-
-          {/* Phase 7: AI Suggestions */}
-          {loadingSuggestions && (
+          {/* Phase 7: AI Suggestions (page variant) */}
+          {!isEmbedded && loadingSuggestions && (
             <div className="mt-3 flex items-center justify-center py-2">
               <Spinner size={20} />
             </div>
           )}
-          {!loadingSuggestions && aiSuggestions.length > 0 && (
+          {!isEmbedded && !loadingSuggestions && aiSuggestions.length > 0 && (
             <div className="mt-3 border-t border-gray-100 pt-3">
               <div className="px-2 py-1 text-xs font-semibold text-gray-600 dark:text-gray-400 uppercase flex items-center gap-1">
                 <Sparkles className="h-3.5 w-3" />
@@ -2128,8 +1775,10 @@ export default function AIChatWorkspace({
               <div className="h-2 w-2 bg-red-500 rounded-full"></div>
               <p className="text-sm text-red-700">{authError}</p>
               <button
+                type="button"
                 onClick={() => setAuthError(null)}
                 className="ml-auto text-red-400 hover:text-red-600"
+                aria-label="Dismiss authentication error"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -2143,8 +1792,10 @@ export default function AIChatWorkspace({
               <div className="h-2 w-2 bg-yellow-500 rounded-full"></div>
               <p className="text-sm text-yellow-700">{conversationError}</p>
               <button
+                type="button"
                 onClick={() => setConversationError(null)}
                 className="ml-auto text-yellow-400 hover:text-yellow-600"
+                aria-label="Dismiss conversation error"
               >
                 <X className="h-4 w-4" />
               </button>
@@ -2212,6 +1863,7 @@ export default function AIChatWorkspace({
                               handleRenameConversation(conv.id, renameValue);
                             }}
                             className="p-1 text-green-600 hover:text-green-700"
+                            aria-label="Save conversation title"
                           >
                             <Check className="h-4 w-4" />
                           </button>
@@ -2222,6 +1874,7 @@ export default function AIChatWorkspace({
                               setRenameValue('');
                             }}
                             className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-400"
+                            aria-label="Cancel rename"
                           >
                             <X className="h-4 w-4" />
                           </button>
@@ -2258,6 +1911,7 @@ export default function AIChatWorkspace({
                                   );
                                 }}
                                 className="p-1 hover:bg-gray-200 rounded transition-colors"
+                                aria-label={`Conversation actions for ${conv.title}`}
                               >
                                 <MoreVertical className="h-4 w-4 text-gray-600 dark:text-gray-400" />
                               </button>
@@ -2324,6 +1978,7 @@ export default function AIChatWorkspace({
                               handleRenameConversation(conv.id, renameValue);
                             }}
                             className="p-1 text-green-600 hover:text-green-700"
+                            aria-label="Save conversation title"
                           >
                             <Check className="h-4 w-4" />
                           </button>
@@ -2334,6 +1989,7 @@ export default function AIChatWorkspace({
                               setRenameValue('');
                             }}
                             className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-400"
+                            aria-label="Cancel rename"
                           >
                             <X className="h-4 w-4" />
                           </button>
@@ -2367,6 +2023,7 @@ export default function AIChatWorkspace({
                                   );
                                 }}
                                 className="p-1 hover:bg-gray-200 rounded transition-colors"
+                                aria-label={`Conversation actions for ${conv.title}`}
                               >
                                 <MoreVertical className="h-4 w-4 text-gray-600 dark:text-gray-400" />
                               </button>
@@ -2381,23 +2038,21 @@ export default function AIChatWorkspace({
 
               {/* Empty State */}
               {filteredConversations.length === 0 && !isLoadingConversations && (
-                <div className="text-center py-12 px-4">
-                  <MessageSquare className="h-12 w-12 mx-auto text-gray-300 mb-3" />
-                  <p className="text-gray-500 dark:text-gray-400 text-sm">
-                    {searchQuery ? 'No conversations found' : 'No conversations yet'}
-                  </p>
-                  <p className="text-gray-400 text-xs mt-1">
-                    {!searchQuery && 'Start a new conversation to get started'}
-                  </p>
-                </div>
+                <AIChatEmptyState
+                  variant="sidebar"
+                  searchQuery={searchQuery}
+                  showArchived={showArchived}
+                  onAction={handleNewConversation}
+                />
               )}
             </>
           )}
         </div>
       </div>
-
-      {/* Main Chat Area */}
-      <div className="flex-1 flex flex-col">
+        }
+      >
+        {/* Main Chat Area */}
+        <div className="flex min-h-0 flex-1 flex-col bg-white dark:bg-slate-900">
         {/* Chat Header */}
         <div className="bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-700 px-4 py-2 flex items-center gap-3 min-h-0">
           {selectedConversation ? (
@@ -2505,16 +2160,7 @@ export default function AIChatWorkspace({
             </div>
           )}
           {conversation.length === 0 && !selectedConversation ? (
-            <div className="text-center py-16">
-              <Brain className="h-16 w-16 mx-auto text-gray-300 mb-4" />
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">
-                What's on your mind today?
-              </h3>
-              <p className="text-gray-500 dark:text-gray-400 max-w-md mx-auto">
-                Ask me anything about your digital life. I can help you schedule meetings, 
-                organize files, analyze data, and much more.
-              </p>
-            </div>
+            <AIChatEmptyState variant="thread-welcome" />
           ) : (
             <>
               {conversation.map((item) => (
@@ -2918,6 +2564,7 @@ export default function AIChatWorkspace({
                       setAttachedFiles((prev) => prev.filter((f) => f.id !== file.id))
                     }
                     className="ml-1 text-purple-500 hover:text-purple-700"
+                    aria-label={`Remove attachment ${file.name}`}
                   >
                     <X className="h-3 w-3" />
                   </button>
@@ -2941,6 +2588,7 @@ export default function AIChatWorkspace({
               disabled={isAILoading || isUploadingFiles || attachedFiles.length >= MAX_ATTACHMENTS}
               className="p-1.5 hover:bg-gray-100 dark:hover:bg-slate-800 dark:bg-slate-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               title="Attach files"
+              aria-label="Attach files"
             >
               <Paperclip className="h-4 w-4 text-gray-600 dark:text-gray-400" />
             </button>
@@ -2951,6 +2599,7 @@ export default function AIChatWorkspace({
               disabled={isAILoading || isGeneratingImage}
               className="p-1.5 hover:bg-gray-100 dark:hover:bg-slate-800 dark:bg-slate-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               title="Generate image"
+              aria-label="Generate image"
             >
               <ImageIcon className="h-4 w-4 text-gray-600 dark:text-gray-400" />
             </button>
@@ -2962,6 +2611,7 @@ export default function AIChatWorkspace({
                 disabled={isAILoading || isEditingImage}
                 className="p-1.5 hover:bg-gray-100 dark:hover:bg-slate-800 dark:bg-slate-700 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 title="Edit image (e.g. remove background)"
+                aria-label="Edit attached image"
               >
                 <Edit className="h-4 w-4 text-gray-600 dark:text-gray-400" />
               </button>
@@ -2973,6 +2623,7 @@ export default function AIChatWorkspace({
               disabled={isAILoading || isTranscribing}
               className={`p-1.5 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed ${isRecording ? 'bg-red-100 hover:bg-red-200 text-red-600' : 'hover:bg-gray-100 text-gray-600'}`}
               title={isRecording ? 'Stop recording' : 'Voice input'}
+              aria-label={isRecording ? 'Stop voice recording' : 'Start voice input'}
             >
               {isRecording ? (
                 <Square className="h-4 w-4 fill-current" />
@@ -3012,6 +2663,7 @@ export default function AIChatWorkspace({
               size="sm"
               variant="primary"
               className="px-3 py-1.5 rounded-lg flex-shrink-0"
+              aria-label="Send message"
             >
               {isAILoading ? <Spinner size={16} /> : <Send className="w-4 h-4" />}
             </Button>
@@ -3023,7 +2675,8 @@ export default function AIChatWorkspace({
           </p>
         </div>
       </div>
-      </div>
+        </div>
+      </AIChatPageShell>
     </div>
 
     <ConfirmModal

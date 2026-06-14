@@ -33,6 +33,7 @@ import { toast } from 'react-hot-toast';
 import { uploadFile, uploadFileWithProgress, listFiles, type File as DriveFile } from '../../api/drive';
 import { getSuggestions, acceptSuggestion, dismissSuggestion, type AISuggestionItem } from '../../api/aiSuggestions';
 import AmbientSuggestionCard from '../ai/AmbientSuggestionCard';
+import AIExperienceNavLinks from '../ai/AIExperienceNavLinks';
 
 const MAX_ATTACHMENTS = 10;
 
@@ -1176,22 +1177,16 @@ export default function AIChatDropdown({
               <Plus className="h-4 w-4 mr-1" />
               New
             </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                router.push('/ai-chat');
-                onClose(); // Close the dropdown when navigating
-              }}
-              className="px-2 py-1 text-xs text-purple-600 hover:text-purple-700"
-              title="Open full chat interface"
-            >
-              <ExternalLink className="h-4 w-4 mr-1" />
-              Full Chat
-            </Button>
+            <AIExperienceNavLinks
+              variant="compact"
+              currentSurface="header-dropdown"
+              onNavigate={onClose}
+            />
             <button
+              type="button"
               onClick={onClose}
               className="p-1 text-gray-400 hover:text-gray-600 dark:hover:text-gray-400"
+              aria-label="Close AI chat panel"
             >
               <X className="h-4 w-4" />
             </button>

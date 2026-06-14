@@ -3,6 +3,8 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
 import { Spinner } from 'shared/components';
+import { PlaceFeedEmptyState } from './PlaceEmptyStates';
+import { placeActionError } from './placeUxFeedback';
 import { getActivityFeed } from '@/api/placeAnalytics';
 import type { FeedItem } from '@/api/placeAnalytics';
 import {
@@ -43,15 +45,22 @@ export default function PlaceActivityFeed() {
   const [loading, setLoading] = useState(true);
   const [total, setTotal] = useState(0);
 
+  const [loadError, setLoadError] = useState<string | null>(null);
+
   const fetchFeed = useCallback(async () => {
     if (!token) return;
     setLoading(true);
+    setLoadError(null);
     try {
       const result = await getActivityFeed({ limit: 50 }, token);
       setItems(result.data);
       setTotal(result.pagination.total);
-    } catch { /* */ }
-    finally { setLoading(false); }
+    } catch (error: unknown) {
+      setLoadError('Could not load activity feed');
+      placeActionError('Could not load activity feed', error);
+    } finally {
+      setLoading(false);
+    }
   }, [token]);
 
   useEffect(() => { fetchFeed(); }, [fetchFeed]);
@@ -64,14 +73,19 @@ export default function PlaceActivityFeed() {
     );
   }
 
-  if (items.length === 0) {
+  if (loadError) {
     return (
-      <div className="text-center py-16 px-4">
-        <Zap className="w-10 h-10 mx-auto mb-3 text-gray-400" />
-        <p className="text-lg font-semibold text-gray-900 dark:text-gray-100">Your activity feed is empty</p>
-        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Follow businesses, connect with people, and your activity will show here.</p>
+      <div className="px-4 py-8 text-center">
+        <p className="text-sm text-red-700 dark:text-red-300" role="alert">{loadError}</p>
+        <button type="button" onClick={() => void fetchFeed()} className="mt-2 text-sm font-semibold text-indigo-600 underline">
+          Retry
+        </button>
       </div>
     );
+  }
+
+  if (items.length === 0) {
+    return <PlaceFeedEmptyState />;
   }
 
   return (

@@ -247,7 +247,7 @@ UX reference slots live under `docs/ux/audits/` per [`REFERENCE_MODULE_PROGRAM.m
 | **Inbox / feed modules** | **Notifications UX #2** | Drive #1 (workspace), Calendar #5 (time-grid) | Management-page archetype; cross-module routing hub |
 | **Dashboard** | File Hub (manifest, activity), Chat (realtime widgets) | — | Widget registry, composition (not full module CRUD) |
 | **Analytics** | File Hub (activity vs analytics separation) | — | Read-only / derived metrics; often N/A trash |
-| **Business Workspace** | Notebook (composition), File Hub (manifest) | [WORKSPACE_ROUTING_CONTRACT.md](./WORKSPACE_ROUTING_CONTRACT.md) | **Platform shell** — segment navigation, CI drift tests; **not** Reference #6 ([Wave 1C closeout](./audits/BUSINESS_WORKSPACE_WAVE_1C_CLOSEOUT.md)) |
+| **Business Workspace** | Notebook (composition), File Hub (manifest) | [WORKSPACE_ROUTING_CONTRACT.md](./WORKSPACE_ROUTING_CONTRACT.md) | **Registered** Reference Workspace hub — segment navigation, CI drift tests |
 
 ### Notebook — composition module (Phases 1–6.5 shipped; Phase 7 audit 2026-06-02)
 
@@ -300,18 +300,20 @@ Use this catalog when filling **“reference module pattern to copy”** columns
 | Todo (Phase 0) | [TODO_LEVEL3_CERTIFICATION_REVIEW.md](./audits/TODO_LEVEL3_CERTIFICATION_REVIEW.md) | [TODO_CONSTITUTIONAL_AUDIT.md](./audits/TODO_CONSTITUTIONAL_AUDIT.md) |
 | Notebook (L3) | [NOTEBOOK_LEVEL3_CERTIFICATION_REVIEW.md](./audits/NOTEBOOK_LEVEL3_CERTIFICATION_REVIEW.md) | [NOTEBOOK_CONSTITUTIONAL_AUDIT.md](./audits/NOTEBOOK_CONSTITUTIONAL_AUDIT.md), [NOTEBOOK_OPERATION_MATRIX.md](./audits/NOTEBOOK_OPERATION_MATRIX.md) |
 | Place (Reference #5) | [PLACE_REFERENCE_COUNCIL_REVIEW.md](./audits/PLACE_REFERENCE_COUNCIL_REVIEW.md) | [PLACE_PATTERN_GUIDE.md](./PLACE_PATTERN_GUIDE.md), [PLACE_COMMERCE_BOUNDARY.md](./PLACE_COMMERCE_BOUNDARY.md), [PLACE_REFERENCE_IMPLEMENTATION_REVIEW.md](./audits/PLACE_REFERENCE_IMPLEMENTATION_REVIEW.md) |
-| Reference Workspace | [REFERENCE_WORKSPACE_CHARTER_REVIEW.md](./audits/REFERENCE_WORKSPACE_CHARTER_REVIEW.md) | [REFERENCE_WORKSPACE_WS_L2_ASSESSMENT.md](./audits/REFERENCE_WORKSPACE_WS_L2_ASSESSMENT.md) |
+| Reference Workspace | [REFERENCE_WORKSPACE_REGISTRATION_REVIEW.md](./audits/REFERENCE_WORKSPACE_REGISTRATION_REVIEW.md) | [REFERENCE_WORKSPACE_PLATFORM_SHELL.md](./REFERENCE_WORKSPACE_PLATFORM_SHELL.md) |
 | AI Platform (cross-cutting) | [AI_PLATFORM_CERTIFICATION_STRATEGY.md](./AI_PLATFORM_CERTIFICATION_STRATEGY.md) | [AI_PLATFORM_CONSTITUTION.md](./AI_PLATFORM_CONSTITUTION.md), [AI_PLATFORM_OPERATION_MATRIX.md](./AI_PLATFORM_OPERATION_MATRIX.md), [audits/AI_PLATFORM_CONSTITUTIONAL_AUDIT.md](./audits/AI_PLATFORM_CONSTITUTIONAL_AUDIT.md) |
 
 ---
 
 ### Personal Dashboard — platform shell (WS-L1 Certified with Findings, 2026-06-03)
 
-**Reference Workspace co-surface** — dashboard archetype (widget grid + module routes). **WS-L1 Certified with Findings**.
+**Reference Workspace co-surface** — dashboard archetype (widget grid + module routes). **WS-L1 + WS-L2 Certified with Findings** · **Registered Approved with Findings** (2026-06-14).
 
 | Pattern | Status | Key artifacts |
 |---------|--------|----------------|
 | WS-L1 certification | ✅ **Certified with Findings** | [PERSONAL_DASHBOARD_WS_L1_CERTIFICATION_REVIEW.md](./audits/PERSONAL_DASHBOARD_WS_L1_CERTIFICATION_REVIEW.md) |
+| WS-L2 certification | ✅ **Certified with Findings** | [REFERENCE_WORKSPACE_WS_L2_CERTIFICATION_REVIEW.md](./audits/REFERENCE_WORKSPACE_WS_L2_CERTIFICATION_REVIEW.md) |
+| Registration | ✅ **Approved with Findings** (co-surface) | [REFERENCE_WORKSPACE_REGISTRATION_REVIEW.md](./audits/REFERENCE_WORKSPACE_REGISTRATION_REVIEW.md) |
 | Routing contract | ✅ | [PERSONAL_DASHBOARD_ROUTING_CONTRACT.md](./PERSONAL_DASHBOARD_ROUTING_CONTRACT.md) |
 | Widget boundary | ✅ | [PERSONAL_DASHBOARD_WIDGET_CONTRACT.md](./PERSONAL_DASHBOARD_WIDGET_CONTRACT.md) |
 | Cross-surface map | ✅ | [CROSS_SURFACE_TRANSITIONS.md](./CROSS_SURFACE_TRANSITIONS.md) |
@@ -322,17 +324,19 @@ Use this catalog when filling **“reference module pattern to copy”** columns
 | Registry drift CI | ✅ | `personalDashboardRegistryDrift.test.ts` (15 tests, Wave 2D) |
 | Widget escalation in components | 🟡 Finding F-2 | Shell API ready; module interiors deferred |
 
-**WS-L2 readiness:** **86%** (post-2D) — [PERSONAL_DASHBOARD_WAVE_2D_CLOSEOUT.md](./audits/PERSONAL_DASHBOARD_WAVE_2D_CLOSEOUT.md)
+**WS-L2 readiness:** **88%** — **WS-L2 Certified with Findings** (2026-06-14) — [REFERENCE_WORKSPACE_WS_L2_CERTIFICATION_REVIEW.md](./audits/REFERENCE_WORKSPACE_WS_L2_CERTIFICATION_REVIEW.md)
 
 **Evidence:** [PERSONAL_DASHBOARD_WAVE_2A_AUDIT.md](./audits/PERSONAL_DASHBOARD_WAVE_2A_AUDIT.md), [PERSONAL_DASHBOARD_WAVE_2B_CLOSEOUT.md](./audits/PERSONAL_DASHBOARD_WAVE_2B_CLOSEOUT.md), [PERSONAL_DASHBOARD_WAVE_2C_CLOSEOUT.md](./audits/PERSONAL_DASHBOARD_WAVE_2C_CLOSEOUT.md), [PERSONAL_DASHBOARD_WAVE_2D_CLOSEOUT.md](./audits/PERSONAL_DASHBOARD_WAVE_2D_CLOSEOUT.md).
 
-### Business Workspace — platform shell (WS-L1 Certified with Findings, 2026-06-14)
+### Business Workspace — platform shell (WS-L1 + WS-L2 + Registered, 2026-06-14)
 
-**Reference Workspace Program** — **not** UX slot #6, **not** architecture Reference #6. Inaugural **Reference Workspace** candidate — **WS-L1 Certified with Findings**.
+**Reference Workspace Program** — **not** UX slot #6, **not** architecture Reference #6. **Registered holder** (hub archetype) — **Approved with Findings**.
 
 | Pattern | Status | Key artifacts |
 |---------|--------|----------------|
 | WS-L1 certification | ✅ **Certified with Findings** | [BUSINESS_WORKSPACE_WS_L1_CERTIFICATION_REVIEW.md](./audits/BUSINESS_WORKSPACE_WS_L1_CERTIFICATION_REVIEW.md) |
+| WS-L2 certification | ✅ **Certified with Findings** | [REFERENCE_WORKSPACE_WS_L2_CERTIFICATION_REVIEW.md](./audits/REFERENCE_WORKSPACE_WS_L2_CERTIFICATION_REVIEW.md) |
+| Registration | ✅ **Approved with Findings** (co-surface) | [REFERENCE_WORKSPACE_REGISTRATION_REVIEW.md](./audits/REFERENCE_WORKSPACE_REGISTRATION_REVIEW.md) |
 | Module mount switch | ✅ | `BusinessWorkspaceContent.tsx` (authoritative) |
 | Navigation single source | ✅ | `businessWorkspaceNavigation.ts` + `businessWorkspaceContracts.ts` |
 | Segment URL canonical | ✅ | `buildBusinessWorkspaceModuleHref` — all mounted modules |
@@ -345,25 +349,28 @@ Use this catalog when filling **“reference module pattern to copy”** columns
 | Orphan segment pages | ✅ **Closed (1D)** | — |
 | Route hygiene CI | ✅ | `businessWorkspaceRouteHygiene.test.ts` |
 
-**WS-L2 readiness:** **88%** (post-1D) — [BUSINESS_WORKSPACE_WAVE_1D_CLOSEOUT.md](./audits/BUSINESS_WORKSPACE_WAVE_1D_CLOSEOUT.md)
+**WS-L2 readiness:** **90%** — **WS-L2 Certified with Findings** (2026-06-14) — [REFERENCE_WORKSPACE_WS_L2_CERTIFICATION_REVIEW.md](./audits/REFERENCE_WORKSPACE_WS_L2_CERTIFICATION_REVIEW.md)
 
 **Canonical entries:** [WORKSPACE_ROUTING_CONTRACT.md](./WORKSPACE_ROUTING_CONTRACT.md) §5.
 
-**Personal Dashboard shell:** `DashboardLayoutInner` — co-surface; **WS-L1 Certified with Findings** · **WS-L2 86%** (post-2D).
+**Personal Dashboard shell:** `DashboardLayoutInner` — co-surface; **Registered Approved with Findings** (2026-06-14).
 
-### Reference Workspace Program — combined (2026-06-03)
+### Reference Workspace Program — combined (registered 2026-06-14)
 
 | Metric | Value |
 |--------|-------|
 | WS-L1 | Both co-surfaces certified |
-| WS-L2 assessment | **~89% combined** (post-2F) — no certification |
-| WS-L2 blockers | **0** (process) · findings RWS-F1, B-F3 remain |
-| Cross-surface QA | ✅ Part 2H executed — [REFERENCE_WORKSPACE_QA_EXECUTION_REPORT.md](./audits/REFERENCE_WORKSPACE_QA_EXECUTION_REPORT.md) |
-| Registration | Prep may begin; review blocked |
+| WS-L2 | ✅ **Certified with Findings** |
+| Registration | ✅ **Approved with Findings** — [REFERENCE_WORKSPACE_REGISTRATION_REVIEW.md](./audits/REFERENCE_WORKSPACE_REGISTRATION_REVIEW.md) |
+| Holder model | **Hybrid** — Platform Shell + Business (hub) + Personal (dashboard) |
+| WS-L2 readiness at certification | **~89%** combined |
+| Open findings | **12** (RWS-F1 primary) |
+| Cross-surface QA | ✅ Part 2H — [REFERENCE_WORKSPACE_QA_EXECUTION_REPORT.md](./audits/REFERENCE_WORKSPACE_QA_EXECUTION_REPORT.md) |
+| Platform shell spec | [REFERENCE_WORKSPACE_PLATFORM_SHELL.md](./REFERENCE_WORKSPACE_PLATFORM_SHELL.md) |
 
-**Evidence:** [REFERENCE_WORKSPACE_WS_L2_ASSESSMENT.md](./audits/REFERENCE_WORKSPACE_WS_L2_ASSESSMENT.md) · [BUSINESS_WORKSPACE_WAVE_1D_CLOSEOUT.md](./audits/BUSINESS_WORKSPACE_WAVE_1D_CLOSEOUT.md) · [PERSONAL_DASHBOARD_WAVE_2D_CLOSEOUT.md](./audits/PERSONAL_DASHBOARD_WAVE_2D_CLOSEOUT.md)
+**Evidence:** [REFERENCE_WORKSPACE_REGISTRATION_REVIEW.md](./audits/REFERENCE_WORKSPACE_REGISTRATION_REVIEW.md) · [REFERENCE_WORKSPACE_WS_L2_CERTIFICATION_REVIEW.md](./audits/REFERENCE_WORKSPACE_WS_L2_CERTIFICATION_REVIEW.md) · [REFERENCE_WORKSPACE_OPERATION_MATRIX_REAUDIT.md](./audits/REFERENCE_WORKSPACE_OPERATION_MATRIX_REAUDIT.md)
 
-**Evidence:** [BUSINESS_WORKSPACE_CONSTITUTIONAL_AUDIT.md](./audits/BUSINESS_WORKSPACE_CONSTITUTIONAL_AUDIT.md), [BUSINESS_WORKSPACE_WAVE_1A_BOUNDARY_AUDIT.md](./audits/BUSINESS_WORKSPACE_WAVE_1A_BOUNDARY_AUDIT.md), [BUSINESS_WORKSPACE_WAVE_1B_CLOSEOUT.md](./audits/BUSINESS_WORKSPACE_WAVE_1B_CLOSEOUT.md), [BUSINESS_WORKSPACE_WAVE_1C_CLOSEOUT.md](./audits/BUSINESS_WORKSPACE_WAVE_1C_CLOSEOUT.md), [BUSINESS_WORKSPACE_WS_L1_CERTIFICATION_REVIEW.md](./audits/BUSINESS_WORKSPACE_WS_L1_CERTIFICATION_REVIEW.md), [PERSONAL_DASHBOARD_WAVE_2A_AUDIT.md](./audits/PERSONAL_DASHBOARD_WAVE_2A_AUDIT.md), [PERSONAL_DASHBOARD_WAVE_2C_CLOSEOUT.md](./audits/PERSONAL_DASHBOARD_WAVE_2C_CLOSEOUT.md), [PERSONAL_DASHBOARD_WS_L1_CERTIFICATION_REVIEW.md](./audits/PERSONAL_DASHBOARD_WS_L1_CERTIFICATION_REVIEW.md), [REFERENCE_WORKSPACE_CHARTER_REVIEW.md](./audits/REFERENCE_WORKSPACE_CHARTER_REVIEW.md).
+**Prior evidence:** [BUSINESS_WORKSPACE_CONSTITUTIONAL_AUDIT.md](./audits/BUSINESS_WORKSPACE_CONSTITUTIONAL_AUDIT.md), [BUSINESS_WORKSPACE_WAVE_1A_BOUNDARY_AUDIT.md](./audits/BUSINESS_WORKSPACE_WAVE_1A_BOUNDARY_AUDIT.md), [BUSINESS_WORKSPACE_WAVE_1B_CLOSEOUT.md](./audits/BUSINESS_WORKSPACE_WAVE_1B_CLOSEOUT.md), [BUSINESS_WORKSPACE_WAVE_1C_CLOSEOUT.md](./audits/BUSINESS_WORKSPACE_WAVE_1C_CLOSEOUT.md), [BUSINESS_WORKSPACE_WS_L1_CERTIFICATION_REVIEW.md](./audits/BUSINESS_WORKSPACE_WS_L1_CERTIFICATION_REVIEW.md), [PERSONAL_DASHBOARD_WAVE_2A_AUDIT.md](./audits/PERSONAL_DASHBOARD_WAVE_2A_AUDIT.md), [PERSONAL_DASHBOARD_WAVE_2C_CLOSEOUT.md](./audits/PERSONAL_DASHBOARD_WAVE_2C_CLOSEOUT.md), [PERSONAL_DASHBOARD_WS_L1_CERTIFICATION_REVIEW.md](./audits/PERSONAL_DASHBOARD_WS_L1_CERTIFICATION_REVIEW.md), [REFERENCE_WORKSPACE_CHARTER_REVIEW.md](./audits/REFERENCE_WORKSPACE_CHARTER_REVIEW.md).
 
 ### Domain pattern annexes (Wave 6C — no numbered UX slots)
 
@@ -373,8 +380,8 @@ Use this catalog when filling **“reference module pattern to copy”** columns
 | **Scheduling** | Calendar UX #5 | Time-grid already covered |
 | **Marketplace (partner)** | Nearest built-in archetype + `moduleSpecs.md` | Partner pipeline doc — not UX slot |
 | **Analytics** | Notifications UX #2 (feed/dashboard cards) | Annex when certification matures |
-| **Business Workspace** | Reference Workspace track | Platform shell — not product `moduleId` |
+| **Business Workspace** | Reference Workspace **registered** holder (hub) | Platform shell orchestration — [REFERENCE_WORKSPACE_REGISTRATION_REVIEW.md](./audits/REFERENCE_WORKSPACE_REGISTRATION_REVIEW.md) |
 
 ---
 
-*Last updated: 2026-06-03 (Personal Dashboard Wave 2D drift enforcement)*
+*Last updated: 2026-06-14 (Inaugural Reference Workspace Registration — Approved with Findings)*

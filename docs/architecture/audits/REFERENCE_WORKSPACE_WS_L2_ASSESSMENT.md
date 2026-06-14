@@ -333,3 +333,5 @@ Registration prep (not registration) may begin **in parallel** with WS-L2 prereq
 **Post-2E update (2026-06-14):** L2-B3 closed via [REFERENCE_WORKSPACE_QA_EXECUTION_REPORT.md](./REFERENCE_WORKSPACE_QA_EXECUTION_REPORT.md). Combined readiness **~87%** · finding **RWS-F1**.
 
 **Post-2F update (2026-06-14):** L2-B4 closed via [REFERENCE_WORKSPACE_OPERATION_MATRIX_REAUDIT.md](./REFERENCE_WORKSPACE_OPERATION_MATRIX_REAUDIT.md). Combined readiness **~89%** · **0 WS-L2 process blockers** · certification review may proceed.
+
+**Post-certification (2026-06-14):** WS-L2 **Certified with Findings** via [REFERENCE_WORKSPACE_WS_L2_CERTIFICATION_REVIEW.md](./REFERENCE_WORKSPACE_WS_L2_CERTIFICATION_REVIEW.md). Supersedes §6 deferral. Assessment remains historical baseline; certification is authoritative for WS-L2 status.

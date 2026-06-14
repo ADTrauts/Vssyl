@@ -18,11 +18,15 @@ export function CalendarShortcutsHelp() {
 
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
-      const tag = (e.target as HTMLElement)?.tagName;
+      const target = e.target as HTMLElement | null;
+      const tag = target?.tagName;
       if (tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT') return;
-      if (e.key === '?' && !e.metaKey && !e.ctrlKey && !e.altKey) {
+      if (target?.isContentEditable) return;
+      const isHelpKey =
+        e.key === '?' || (e.shiftKey && (e.key === '/' || e.code === 'Slash'));
+      if (isHelpKey && !e.metaKey && !e.ctrlKey && !e.altKey) {
         e.preventDefault();
-        setOpen(true);
+        setOpen((prev) => !prev);
       }
     };
     window.addEventListener('keydown', onKey);
@@ -44,7 +48,9 @@ export function CalendarShortcutsHelp() {
       <Modal open={open} onClose={() => setOpen(false)} title="Calendar Keyboard Shortcuts" size="medium">
         <Keyboard className="mb-2 h-5 w-5 text-gray-600 dark:text-gray-400" aria-hidden="true" />
         <p className="mb-4 text-sm text-gray-600 dark:text-gray-400">
-          Shortcuts are active on the <strong>Day</strong> view when focus is not in a text field.
+          View and action shortcuts are active when focus is not in a text field. Press{' '}
+          <kbd className="rounded bg-gray-100 px-1.5 py-0.5 text-xs dark:bg-slate-700">?</kbd> to
+          toggle this panel from any calendar view.
         </p>
         <div className="space-y-4">
           <div>

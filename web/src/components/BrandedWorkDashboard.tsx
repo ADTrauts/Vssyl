@@ -25,6 +25,7 @@ import { useBusinessBranding, BusinessBrandingProvider, BrandedHeader, BrandedBu
 import { getBusiness } from '../api/business';
 import { EmployeeAIAssistant } from './work/EmployeeAIAssistant';
 import { getModuleDisplayName, normalizeModuleId } from '../runtime/modules/moduleRegistry';
+import { buildBusinessWorkspaceModuleHref } from '../lib/businessWorkspaceNavigation';
 import { MODULE_ICONS } from '../config/moduleIcons';
 
 interface Business {
@@ -117,13 +118,8 @@ export default function BrandedWorkDashboard({
       // Show a lightweight inline warning but proceed to open landing
       console.warn('No explicit permission for module, proceeding to landing for validation:', module);
     }
-    
-    // Navigate to the unified workspace route using query param (consistent with sidebar)
-    if (module === 'dashboard') {
-      router.push(`/business/${businessId}/workspace`);
-    } else {
-      router.push(`/business/${businessId}/workspace?module=${routeId}`);
-    }
+
+    router.push(buildBusinessWorkspaceModuleHref(businessId, routeId));
     setError(null);
   };
 

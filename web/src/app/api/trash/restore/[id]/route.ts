@@ -16,12 +16,14 @@ export async function POST(
     const baseUrl = process.env.BACKEND_URL || 
                     process.env.NEXT_PUBLIC_API_BASE_URL || 
                     (isDevelopment ? 'http://localhost:5000' : 'https://vssyl-server-235369681725.us-central1.run.app');
+    const bodyText = await request.text();
     const response = await fetch(`${baseUrl}/api/trash/restore/${params.id}`, {
       method: 'POST',
       headers: {
         'Authorization': authHeader,
         'Content-Type': 'application/json',
       },
+      body: bodyText || undefined,
     });
 
     const data = await response.json();

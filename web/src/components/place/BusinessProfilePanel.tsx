@@ -6,7 +6,8 @@ import { getBusinessProfile } from '@/api/placeListing';
 import type { PlaceListingWithBusiness } from '@/api/placeListing';
 import { trackClick } from '@/api/placeTransaction';
 import { usePlace } from '../../contexts/PlaceContext';
-import { Spinner } from 'shared/components';
+import { Spinner, ConfirmModal } from 'shared/components';
+import { PlaceProfileNoListingEmptyState } from './PlaceEmptyStates';
 import { X, ExternalLink, ShieldCheck, MapPin, Users, Plus, Check, Eye, EyeOff } from 'lucide-react';
 
 interface BusinessProfilePanelProps {
@@ -25,6 +26,7 @@ export default function BusinessProfilePanel({ businessId, onClose }: BusinessPr
   const [actionLoading, setActionLoading] = useState(false);
   const [followVisible, setFollowVisible] = useState(false);
   const [visibilityLoading, setVisibilityLoading] = useState(false);
+  const [pendingUnfollow, setPendingUnfollow] = useState(false);
 
   const isFollowing = place?.nodes.some(n => n.nodeType === 'BUSINESS' && n.entityId === businessId);
   const existingNode = place?.nodes.find(n => n.nodeType === 'BUSINESS' && n.entityId === businessId);
@@ -81,11 +83,19 @@ export default function BusinessProfilePanel({ businessId, onClose }: BusinessPr
     setActionLoading(false);
   };
 
-  const handleUnfollow = async () => {
+  const requestUnfollow = () => {
+    setPendingUnfollow(true);
+  };
+
+  const executeUnfollow = async () => {
     if (!existingNode) return;
     setActionLoading(true);
-    await removeNode(existingNode.id);
-    setActionLoading(false);
+    try {
+      await removeNode(existingNode.id);
+      setPendingUnfollow(false);
+    } finally {
+      setActionLoading(false);
+    }
   };
 
   return (
@@ -93,7 +103,12 @@ export default function BusinessProfilePanel({ businessId, onClose }: BusinessPr
       {/* Header */}
       <div className="flex items-center justify-between p-4 border-b border-gray-100">
         <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Business Profile</h2>
-        <button onClick={onClose} className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 dark:bg-slate-700 transition-colors">
+        <button
+          type="button"
+          onClick={onClose}
+          className="p-1.5 rounded-lg hover:bg-gray-100 dark:hover:bg-slate-800 dark:bg-slate-700 transition-colors"
+          aria-label="Close business profile"
+        >
           <X className="w-5 h-5 text-gray-700 dark:text-gray-300" />
         </button>
       </div>
@@ -113,9 +128,7 @@ export default function BusinessProfilePanel({ businessId, onClose }: BusinessPr
         )}
 
         {!loading && !error && !profile && (
-          <div className="p-6 text-center text-gray-700 dark:text-gray-300">
-            <p>This business has not set up their Place listing yet.</p>
-          </div>
+          <PlaceProfileNoListingEmptyState />
         )}
 
         {profile && (
@@ -178,7 +191,7 @@ export default function BusinessProfilePanel({ businessId, onClose }: BusinessPr
 
             {/* Follow / unfollow */}
             <button
-              onClick={isFollowing ? handleUnfollow : handleFollow}
+              onClick={isFollowing ? requestUnfollow : handleFollow}
               disabled={actionLoading}
               className={`w-full py-2.5 rounded-lg text-sm font-medium transition-colors flex items-center justify-center gap-2 ${
                 isFollowing
@@ -250,6 +263,21 @@ export default function BusinessProfilePanel({ businessId, onClose }: BusinessPr
           </div>
         )}
       </div>
+
+      <ConfirmModal
+        open={pendingUnfollow}
+        onClose={() => setPendingUnfollow(false)}
+        onConfirm={executeUnfollow}
+        title="Remove from Main Street?"
+        description={
+          profile
+            ? `Remove ${profile.displayName || profile.business.name} from your neighborhood?`
+            : 'Remove this business from your neighborhood?'
+        }
+        variant="destructive"
+        confirmLabel="Remove"
+        loading={actionLoading}
+      />
     </div>
   );
 }

@@ -1,49 +1,32 @@
-# QA Environment Blocker — Calendar 5G-QA-EXEC
+# QA Environment — Calendar 5G-QA-EXEC (Re-run)
 
-**Date:** 2026-06-03  
-**Finding ID:** **QA-ENV-01** (new — discovered during execution)  
-**Severity:** **P0** for QA session (not a Calendar UX certification finding)
-
----
-
-## Symptom
-
-Navigating to `http://localhost:3000/calendar/month` or `http://localhost:3001/calendar/month` renders **Failed to compile** instead of the Calendar module.
-
-## Error
-
-```
-Module not found: Can't resolve './menuShared.js'
-```
-
-**Source:** `shared/src/components/ContextMenu.tsx` (and `DropdownMenu.tsx`) import `./menuShared.js`.
-
-**On disk:** `shared/src/components/menuShared.tsx` exists.
-
-## Reproduction steps
-
-1. `pnpm dev` from repo root (builds shared via script, starts web on :3000 or :3001).
-2. Open `/calendar/month` in browser.
-3. Next.js turbo compile fails before calendar UI loads.
-
-## Mitigation attempted (no code changes)
-
-| Step | Outcome |
-|------|---------|
-| `pnpm build:shared` | PASS — `pnpm type-check` PASS |
-| Restart `pnpm dev` after build | Compile error persists on calendar route |
-| Alternate port :3001 | Same error |
-
-## Impact on 5G-QA-EXEC
-
-- **All CAL-01–CAL-24 cases:** **BLOCKED**
-- **E-14:** **Cannot close** without runnable environment or staging deploy
-- **Recommended unblock:** Engineering fix for Next.js shared import resolution **or** execute matrix on **staging** (`https://vssyl.com`) with QA credentials
-
-## Scope note
-
-This blocker is **outside** Calendar UX findings E-1–E-16. It is a **platform dev/staging readiness** issue discovered at QA execution time.
+**Date:** 2026-06-12  
+**Finding ID:** **QA-ENV-01** — **RESOLVED** (prior session)  
+**Status:** Environment **functional** for re-run
 
 ---
 
-*Documented for Wave 5G-QA-EXEC evidence package.*
+## Re-run environment
+
+| Item | Value |
+|------|-------|
+| **Target** | Local dev `http://localhost:3000` |
+| **Commit** | `b393ab4f` |
+| **Web** | Next.js 14.1 turbo — calendar routes **compile** |
+| **API** | `http://localhost:5000` (JWT via inline env for QA session) |
+| **Auth** | QA account `qa-calendar-5g-exec-2026@test.com` (registered session) |
+| **NEXTAUTH_URL** | `http://localhost:3000` (required — default 3000 mismatch caused login timeout on :3001) |
+
+## Prior blocker (resolved)
+
+QA-ENV-01 (`menuShared.js`) fixed in `cc81dc19` / `b393ab4f`. Calendar UI loads in dev and production compile.
+
+## Session notes
+
+- Staging (`https://vssyl.com`) returned blank shell in automated browser (auth/session); not used for matrix.
+- Event seed: 1 event via API (`[QA] Calendar Event 5G`) after UI Create overlay blocked pointer events.
+- Residual env: `.env` lacks `JWT_SECRET`; backend started with inline env for QA only (**QA-ENV-02**).
+
+---
+
+*Updated for Wave 5G-QA-EXEC re-run — 2026-06-12.*

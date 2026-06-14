@@ -22,6 +22,7 @@ import UserNode from './nodes/UserNode';
 import HouseholdNode from './nodes/HouseholdNode';
 import BusinessProfilePanel from './BusinessProfilePanel';
 import HouseholdProfilePanel from './HouseholdProfilePanel';
+import { PlaceGraphEmptyState } from './PlaceEmptyStates';
 
 const nodeTypes: NodeTypes = {
   business: BusinessNode,
@@ -29,7 +30,6 @@ const nodeTypes: NodeTypes = {
   household: HouseholdNode,
 };
 
-// Mini Metro color palette
 const COLORS = {
   restaurant: '#E53935',
   retail: '#1E88E5',
@@ -105,8 +105,16 @@ function generateEdges(nodes: Node[]): Edge[] {
   }));
 }
 
+function nodeTypeLabel(nodeType: string): string {
+  switch (nodeType) {
+    case 'BUSINESS': return 'Business';
+    case 'HOUSEHOLD': return 'Household';
+    case 'USER': return 'Connection';
+    default: return 'Node';
+  }
+}
+
 interface PlaceGraphProps {
-  /** When set, open the business profile panel for this business (deep link from Connections > Following). */
   highlightBusinessId?: string;
 }
 
@@ -114,9 +122,9 @@ export default function PlaceGraph({ highlightBusinessId }: PlaceGraphProps) {
   const { place, updateNodePosition } = usePlace();
   const [selectedBusinessId, setSelectedBusinessId] = useState<string | null>(null);
   const [selectedHouseholdId, setSelectedHouseholdId] = useState<string | null>(null);
+  const [showNodeList, setShowNodeList] = useState(false);
   const hasAppliedHighlight = useRef(false);
 
-  // Deep link: open business panel when highlightBusinessId matches a node
   useEffect(() => {
     if (!highlightBusinessId || !place?.nodes.length || hasAppliedHighlight.current) return;
     const hasNode = place.nodes.some(
@@ -132,7 +140,6 @@ export default function PlaceGraph({ highlightBusinessId }: PlaceGraphProps) {
     if (!place?.nodes.length) return [];
     const placeFlowNodes = placeNodesToFlowNodes(place.nodes);
 
-    // Add invisible center node for radial layout
     const centerNode: Node = {
       id: '__center__',
       type: 'default',
@@ -155,11 +162,21 @@ export default function PlaceGraph({ highlightBusinessId }: PlaceGraphProps) {
   const [nodes, setNodes, onNodesChange] = useNodesState(initialNodes);
   const [edges, setEdges, onEdgesChange] = useEdgesState(initialEdges);
 
-  // Sync when place data changes
-  React.useEffect(() => {
+  useEffect(() => {
     setNodes(initialNodes);
     setEdges(initialEdges);
   }, [initialNodes, initialEdges, setNodes, setEdges]);
+
+  const openNode = useCallback((pn: PlaceNodeData) => {
+    if (pn.nodeType === 'BUSINESS') {
+      setSelectedHouseholdId(null);
+      setSelectedBusinessId(pn.entityId);
+    } else if (pn.nodeType === 'HOUSEHOLD') {
+      setSelectedBusinessId(null);
+      setSelectedHouseholdId(pn.entityId);
+    }
+    setShowNodeList(false);
+  }, []);
 
   const handleNodesChange = useCallback((changes: NodeChange[]) => {
     onNodesChange(changes);
@@ -186,35 +203,58 @@ export default function PlaceGraph({ highlightBusinessId }: PlaceGraphProps) {
   const isEmpty = !place?.nodes.length;
 
   if (isEmpty) {
-    return (
-      <div style={{
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        height: '100%',
-        gap: 16,
-        color: '#374151',
-      }}>
-        <div style={{ fontSize: 64, opacity: 0.3 }}>🏘️</div>
-        <h2 style={{ fontSize: 24, fontWeight: 700, color: '#111827' }}>Your Main Street is Empty</h2>
-        <p style={{ fontSize: 16, color: '#6B7280', maxWidth: 400, textAlign: 'center' }}>
-          Head over to the <strong>Explore</strong> tab to discover local businesses and start building your personal neighborhood.
-        </p>
-      </div>
-    );
+    return <PlaceGraphEmptyState />;
   }
+
+  const visibleNodes = place?.nodes ?? [];
 
   return (
     <div
-      style={{
-        width: '100%',
-        height: '100%',
-        position: 'relative',
-      }}
+      className="relative h-full w-full bg-[#F0F2EC] dark:bg-slate-900"
       role="application"
       aria-label="Your neighborhood map"
+      aria-describedby="place-graph-instructions"
     >
+      <p id="place-graph-instructions" className="sr-only">
+        Interactive neighborhood map. Use the node list button to open businesses and connections with the keyboard,
+        or select nodes on the map. Zoom controls are in the bottom-left corner.
+      </p>
+
+      <div className="absolute left-3 top-3 z-10 flex flex-col gap-2">
+        <button
+          type="button"
+          onClick={() => setShowNodeList(open => !open)}
+          className="rounded-lg border border-gray-200 bg-white px-3 py-1.5 text-xs font-medium text-gray-700 shadow-sm hover:bg-gray-50 dark:border-slate-600 dark:bg-slate-800 dark:text-gray-200 dark:hover:bg-slate-700"
+          aria-expanded={showNodeList}
+          aria-controls="place-graph-node-list"
+        >
+          {showNodeList ? 'Hide node list' : 'Node list'}
+        </button>
+
+        {showNodeList && (
+          <nav
+            id="place-graph-node-list"
+            aria-label="Neighborhood nodes"
+            className="max-h-48 w-56 overflow-y-auto rounded-lg border border-gray-200 bg-white p-2 shadow-lg dark:border-slate-600 dark:bg-slate-800"
+          >
+            <ul className="space-y-1">
+              {visibleNodes.map(pn => (
+                <li key={pn.id}>
+                  <button
+                    type="button"
+                    onClick={() => openNode(pn)}
+                    className="w-full rounded-md px-2 py-1.5 text-left text-xs text-gray-800 hover:bg-indigo-50 dark:text-gray-200 dark:hover:bg-indigo-950"
+                  >
+                    <span className="font-medium">{pn.label || pn.entityId}</span>
+                    <span className="ml-1 text-gray-500 dark:text-gray-400">({nodeTypeLabel(pn.nodeType)})</span>
+                  </button>
+                </li>
+              ))}
+            </ul>
+          </nav>
+        )}
+      </div>
+
       <ReactFlow
         nodes={nodes}
         edges={edges}
@@ -230,17 +270,20 @@ export default function PlaceGraph({ highlightBusinessId }: PlaceGraphProps) {
         minZoom={0.2}
         maxZoom={3}
         proOptions={{ hideAttribution: true }}
-        style={{ background: '#F0F2EC' }}
+        className="dark:[--xy-background-color:theme(colors.slate.900)]"
+        aria-label="Neighborhood graph canvas"
       >
-        <Background variant={BackgroundVariant.Dots} gap={22} size={2.5} color="#C5CBBA" />
+        <Background variant={BackgroundVariant.Dots} gap={22} size={2.5} color="#C5CBBA" className="dark:opacity-40" />
         <Controls
           showInteractive={false}
-          style={{ borderRadius: 8, boxShadow: '0 2px 8px rgba(0,0,0,0.08)' }}
+          className="!rounded-lg !border-gray-200 !shadow-md dark:!border-slate-600 dark:!bg-slate-800"
+          aria-label="Graph zoom controls"
         />
         <MiniMap
           nodeColor={(node) => (node.data as Record<string, string>)?.color || '#546E7A'}
           maskColor="rgba(255, 255, 255, 0.7)"
-          style={{ borderRadius: 8, border: '1px solid #E5E7EB' }}
+          className="!rounded-lg !border !border-gray-200 dark:!border-slate-600 dark:!bg-slate-800"
+          aria-label="Graph minimap"
         />
       </ReactFlow>
 

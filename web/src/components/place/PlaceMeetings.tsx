@@ -2,15 +2,20 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useSession } from 'next-auth/react';
-import { Spinner, Card } from 'shared/components';
+import { Spinner, Card, Button, ConfirmModal, DropdownMenu } from 'shared/components';
+import type { ContextMenuItem } from 'shared/components';
 import {
-  getMeetings, createMeeting, rsvpMeeting, deleteMeeting, linkMeetingToCalendar,
+  getMeetings, createMeeting, rsvpMeeting, linkMeetingToCalendar,
 } from '@/api/placeMeeting';
 import type { MeetingPlace } from '@/api/placeMeeting';
 import { usePlace } from '../../contexts/PlaceContext';
+import { useGlobalTrash } from '@/contexts/GlobalTrashContext';
+import { PlaceCalendarLinkModal } from './PlaceCalendarLinkModal';
+import { PlaceMeetingsEmptyState } from './PlaceEmptyStates';
+import { placeActionError, placeActionSuccess } from './placeUxFeedback';
 import {
-  MapPin, Calendar, Clock, Plus, Check, X, Users, CalendarPlus,
-  ChevronDown, ChevronUp,
+  MapPin, Calendar, Clock, Plus, Check, X, Users,
+  ChevronDown, ChevronUp, MoreHorizontal,
 } from 'lucide-react';
 
 const STATUS_COLORS: Record<string, { bg: string; text: string }> = {
@@ -25,13 +30,21 @@ export default function PlaceMeetings() {
   const token = session?.accessToken as string | undefined;
   const userId = (session?.user as { id?: string } | undefined)?.id;
   const { place } = usePlace();
+  const { trashItem } = useGlobalTrash();
 
   const [meetings, setMeetings] = useState<MeetingPlace[]>([]);
+  const [loadError, setLoadError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [showCreate, setShowCreate] = useState(false);
   const [expandedId, setExpandedId] = useState<string | null>(null);
+  const [openMenuId, setOpenMenuId] = useState<string | null>(null);
 
-  // Create form state
+  const [pendingTrash, setPendingTrash] = useState<{ id: string; name: string } | null>(null);
+  const [isTrashing, setIsTrashing] = useState(false);
+
+  const [calendarLinkTarget, setCalendarLinkTarget] = useState<{ id: string; name: string } | null>(null);
+  const [isLinkingCalendar, setIsLinkingCalendar] = useState(false);
+
   const [formName, setFormName] = useState('');
   const [formAddress, setFormAddress] = useState('');
   const [formDate, setFormDate] = useState('');
@@ -43,14 +56,34 @@ export default function PlaceMeetings() {
   const fetchMeetings = useCallback(async () => {
     if (!token) return;
     setLoading(true);
+    setLoadError(null);
     try {
       const data = await getMeetings(token);
       setMeetings(data);
-    } catch { /* */ }
-    finally { setLoading(false); }
+    } catch (error: unknown) {
+      setLoadError('Could not load meetings');
+      placeActionError('Could not load meetings', error);
+    } finally {
+      setLoading(false);
+    }
   }, [token]);
 
   useEffect(() => { fetchMeetings(); }, [fetchMeetings]);
+
+  useEffect(() => {
+    const onTrashOrRestore = (event: Event) => {
+      const detail = (event as CustomEvent<{ moduleId?: string; type?: string }>).detail;
+      if (detail?.moduleId === 'place' && (detail.type === 'meeting' || event.type === 'itemRestored')) {
+        void fetchMeetings();
+      }
+    };
+    window.addEventListener('placeItemTrashed', onTrashOrRestore);
+    window.addEventListener('itemRestored', onTrashOrRestore);
+    return () => {
+      window.removeEventListener('placeItemTrashed', onTrashOrRestore);
+      window.removeEventListener('itemRestored', onTrashOrRestore);
+    };
+  }, [fetchMeetings]);
 
   const handleCreate = async () => {
     if (!token || !formName.trim()) return;
@@ -67,8 +100,12 @@ export default function PlaceMeetings() {
       setFormName(''); setFormAddress(''); setFormDate(''); setFormNote(''); setFormBusinessId('');
       setShowCreate(false);
       await fetchMeetings();
-    } catch { /* */ }
-    finally { setCreating(false); }
+      placeActionSuccess('Meeting created');
+    } catch (error: unknown) {
+      placeActionError('Could not create meeting', error);
+    } finally {
+      setCreating(false);
+    }
   };
 
   const handleRsvp = async (meetingId: string, status: 'ACCEPTED' | 'DECLINED') => {
@@ -76,26 +113,79 @@ export default function PlaceMeetings() {
     try {
       await rsvpMeeting(meetingId, status, token);
       await fetchMeetings();
-    } catch { /* */ }
+      placeActionSuccess(status === 'ACCEPTED' ? 'Invite accepted' : 'Invite declined');
+    } catch (error: unknown) {
+      placeActionError('Could not update RSVP', error);
+    }
   };
 
-  const handleCancel = async (meetingId: string) => {
-    if (!token) return;
-    try {
-      await deleteMeeting(meetingId, token);
-      await fetchMeetings();
-    } catch { /* */ }
+  const requestTrashMeeting = (meetingId: string, name: string) => {
+    setPendingTrash({ id: meetingId, name });
   };
 
-  const handleLinkCalendar = async (meetingId: string) => {
-    if (!token) return;
-    // For now, prompt user — in the future this will use a calendar picker
-    const calendarId = prompt('Enter your calendar ID to link this meeting:');
-    if (!calendarId) return;
+  const executeTrashMeeting = async () => {
+    if (!pendingTrash) return;
+    setIsTrashing(true);
     try {
-      await linkMeetingToCalendar(meetingId, calendarId, token);
+      await trashItem({
+        id: pendingTrash.id,
+        name: pendingTrash.name,
+        type: 'meeting',
+        moduleId: 'place',
+        moduleName: 'Place',
+      });
+      setPendingTrash(null);
       await fetchMeetings();
-    } catch { /* */ }
+      placeActionSuccess('Meeting moved to trash');
+    } catch (error: unknown) {
+      placeActionError('Could not move meeting to trash', error);
+    } finally {
+      setIsTrashing(false);
+    }
+  };
+
+  const requestLinkCalendar = (meetingId: string, name: string) => {
+    setCalendarLinkTarget({ id: meetingId, name });
+    setOpenMenuId(null);
+  };
+
+  const executeLinkCalendar = async (calendarId: string) => {
+    if (!token || !calendarLinkTarget) return;
+    setIsLinkingCalendar(true);
+    try {
+      await linkMeetingToCalendar(calendarLinkTarget.id, calendarId, token);
+      setCalendarLinkTarget(null);
+      await fetchMeetings();
+      placeActionSuccess('Meeting linked to calendar');
+    } catch (error: unknown) {
+      placeActionError('Could not link meeting to calendar', error);
+    } finally {
+      setIsLinkingCalendar(false);
+    }
+  };
+
+  const buildMeetingMenuItems = (
+    meeting: MeetingPlace,
+    isCreator: boolean,
+  ): ContextMenuItem[] => {
+    const items: ContextMenuItem[] = [];
+    if (!meeting.eventId) {
+      items.push({
+        label: 'Add to calendar',
+        onClick: () => requestLinkCalendar(meeting.id, meeting.locationName),
+      });
+    }
+    if (isCreator && meeting.status !== 'CANCELLED') {
+      items.push({
+        label: 'Move to trash',
+        destructive: true,
+        onClick: () => {
+          requestTrashMeeting(meeting.id, meeting.locationName);
+          setOpenMenuId(null);
+        },
+      });
+    }
+    return items;
   };
 
   const businessNodes = place?.nodes.filter(n => n.nodeType === 'BUSINESS') || [];
@@ -114,46 +204,54 @@ export default function PlaceMeetings() {
 
   return (
     <div className="space-y-6 p-4">
-      {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-lg font-bold text-gray-900 dark:text-gray-100">Meeting Places</h2>
           <p className="text-sm text-gray-600 dark:text-gray-400">Coordinate meetups with your connections</p>
         </div>
         <button
+          type="button"
           onClick={() => setShowCreate(!showCreate)}
-          className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 transition-colors"
+          className="flex items-center gap-2 rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-700"
         >
-          <Plus className="w-4 h-4" />
+          <Plus className="h-4 w-4" />
           New Meeting
         </button>
       </div>
 
-      {/* Pending invites */}
+      {loadError && (
+        <p className="rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800 dark:border-red-900 dark:bg-red-950 dark:text-red-200" role="alert">
+          {loadError}{' '}
+          <button type="button" onClick={() => void fetchMeetings()} className="font-semibold underline">
+            Retry
+          </button>
+        </p>
+      )}
+
       {pendingInvites.length > 0 && (
         <Card>
           <div className="p-4">
-            <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3 flex items-center gap-2">
-              <Users className="w-4 h-4 text-amber-600" />
+            <h3 className="mb-3 flex items-center gap-2 text-sm font-semibold text-gray-900 dark:text-gray-100">
+              <Users className="h-4 w-4 text-amber-600" />
               Pending Invites ({pendingInvites.length})
             </h3>
             <div className="space-y-3">
               {pendingInvites.map(m => (
-                <div key={m.id} className="flex items-center justify-between p-3 bg-amber-50 rounded-lg border border-amber-200">
+                <div key={m.id} className="flex items-center justify-between rounded-lg border border-amber-200 bg-amber-50 p-3">
                   <div>
                     <p className="text-sm font-medium text-gray-900 dark:text-gray-100">{m.locationName}</p>
                     <p className="text-xs text-gray-600 dark:text-gray-400">
                       From {m.creator.name || 'Unknown'}
                       {m.scheduledAt && ` · ${new Date(m.scheduledAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' })}`}
                     </p>
-                    {m.note && <p className="text-xs text-gray-700 dark:text-gray-300 mt-1">&quot;{m.note}&quot;</p>}
+                    {m.note && <p className="mt-1 text-xs text-gray-700 dark:text-gray-300">&quot;{m.note}&quot;</p>}
                   </div>
                   <div className="flex gap-2">
-                    <button onClick={() => handleRsvp(m.id, 'ACCEPTED')} className="p-2 bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors" title="Accept">
-                      <Check className="w-4 h-4" />
+                    <button type="button" onClick={() => handleRsvp(m.id, 'ACCEPTED')} className="rounded-lg bg-green-100 p-2 text-green-700 transition-colors hover:bg-green-200" title="Accept" aria-label="Accept invite">
+                      <Check className="h-4 w-4" />
                     </button>
-                    <button onClick={() => handleRsvp(m.id, 'DECLINED')} className="p-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors" title="Decline">
-                      <X className="w-4 h-4" />
+                    <button type="button" onClick={() => handleRsvp(m.id, 'DECLINED')} className="rounded-lg bg-red-100 p-2 text-red-700 transition-colors hover:bg-red-200" title="Decline" aria-label="Decline invite">
+                      <X className="h-4 w-4" />
                     </button>
                   </div>
                 </div>
@@ -163,29 +261,28 @@ export default function PlaceMeetings() {
         </Card>
       )}
 
-      {/* Create form */}
       {showCreate && (
         <Card>
-          <div className="p-4 space-y-4">
+          <div className="space-y-4 p-4">
             <h3 className="text-sm font-semibold text-gray-900 dark:text-gray-100">Create a Meeting Place</h3>
 
             <div>
-              <label className="text-xs font-medium text-gray-700 dark:text-gray-300 block mb-1">Location Name *</label>
+              <label className="mb-1 block text-xs font-medium text-gray-700 dark:text-gray-300">Location Name *</label>
               <input
                 type="text"
                 value={formName}
                 onChange={e => setFormName(e.target.value)}
                 placeholder="e.g., Joe's Pizza, Central Park"
-                className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-transparent focus:ring-2 focus:ring-indigo-500 dark:border-slate-600"
               />
             </div>
 
             <div>
-              <label className="text-xs font-medium text-gray-700 dark:text-gray-300 block mb-1">Link to a Place on your Main Street</label>
+              <label className="mb-1 block text-xs font-medium text-gray-700 dark:text-gray-300">Link to a Place on your Main Street</label>
               <select
                 value={formBusinessId}
                 onChange={e => setFormBusinessId(e.target.value)}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-transparent focus:ring-2 focus:ring-indigo-500 dark:border-slate-600"
               >
                 <option value="">None</option>
                 {businessNodes.map(n => (
@@ -196,60 +293,62 @@ export default function PlaceMeetings() {
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="text-xs font-medium text-gray-700 dark:text-gray-300 block mb-1">Date & Time</label>
+                <label className="mb-1 block text-xs font-medium text-gray-700 dark:text-gray-300">Date & Time</label>
                 <input
                   type="datetime-local"
                   value={formDate}
                   onChange={e => setFormDate(e.target.value)}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-transparent focus:ring-2 focus:ring-indigo-500 dark:border-slate-600"
                 />
               </div>
               <div>
-                <label className="text-xs font-medium text-gray-700 dark:text-gray-300 block mb-1">Duration (min)</label>
+                <label className="mb-1 block text-xs font-medium text-gray-700 dark:text-gray-300">Duration (min)</label>
                 <input
                   type="number"
                   value={formDuration}
-                  onChange={e => setFormDuration(parseInt(e.target.value) || 60)}
+                  onChange={e => setFormDuration(parseInt(e.target.value, 10) || 60)}
                   min={15}
                   step={15}
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                  className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-transparent focus:ring-2 focus:ring-indigo-500 dark:border-slate-600"
                 />
               </div>
             </div>
 
             <div>
-              <label className="text-xs font-medium text-gray-700 dark:text-gray-300 block mb-1">Address</label>
+              <label className="mb-1 block text-xs font-medium text-gray-700 dark:text-gray-300">Address</label>
               <input
                 type="text"
                 value={formAddress}
                 onChange={e => setFormAddress(e.target.value)}
                 placeholder="Optional address"
-                className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-transparent focus:ring-2 focus:ring-indigo-500 dark:border-slate-600"
               />
             </div>
 
             <div>
-              <label className="text-xs font-medium text-gray-700 dark:text-gray-300 block mb-1">Note</label>
+              <label className="mb-1 block text-xs font-medium text-gray-700 dark:text-gray-300">Note</label>
               <input
                 type="text"
                 value={formNote}
                 onChange={e => setFormNote(e.target.value)}
                 placeholder="e.g., Let's grab lunch!"
-                className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg text-sm focus:ring-2 focus:ring-indigo-500 focus:border-transparent"
+                className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-transparent focus:ring-2 focus:ring-indigo-500 dark:border-slate-600"
               />
             </div>
 
             <div className="flex gap-2 pt-2">
               <button
+                type="button"
                 onClick={handleCreate}
                 disabled={!formName.trim() || creating}
-                className="px-4 py-2 bg-indigo-600 text-white rounded-lg text-sm font-medium hover:bg-indigo-700 disabled:opacity-50 transition-colors"
+                className="rounded-lg bg-indigo-600 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-indigo-700 disabled:opacity-50"
               >
                 {creating ? 'Creating...' : 'Create Meeting'}
               </button>
               <button
+                type="button"
                 onClick={() => setShowCreate(false)}
-                className="px-4 py-2 bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-300 rounded-lg text-sm font-medium hover:bg-gray-200 transition-colors"
+                className="rounded-lg bg-gray-100 px-4 py-2 text-sm font-medium text-gray-700 transition-colors hover:bg-gray-200 dark:bg-slate-700 dark:text-gray-300"
               >
                 Cancel
               </button>
@@ -258,13 +357,8 @@ export default function PlaceMeetings() {
         </Card>
       )}
 
-      {/* Meeting list */}
       {activeMeetings.length === 0 ? (
-        <div className="text-center py-16 text-gray-700 dark:text-gray-300">
-          <MapPin className="w-10 h-10 mx-auto mb-3 text-gray-400" />
-          <p className="text-lg font-semibold">No meetings yet</p>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Create a meeting place to coordinate with your connections.</p>
-        </div>
+        <PlaceMeetingsEmptyState />
       ) : (
         <div className="space-y-3">
           {activeMeetings.map(m => {
@@ -272,68 +366,75 @@ export default function PlaceMeetings() {
             const isExpanded = expandedId === m.id;
             const isCreator = m.creatorId === userId;
             const myInvite = m.invites.find(i => i.inviteeId === userId);
+            const menuItems = buildMeetingMenuItems(m, isCreator);
 
             return (
               <Card key={m.id}>
                 <div className="p-4">
-                  {/* Main row */}
                   <div
-                    className="flex items-center gap-3 cursor-pointer"
+                    className="flex cursor-pointer items-center gap-3"
                     onClick={() => setExpandedId(isExpanded ? null : m.id)}
+                    onKeyDown={e => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault();
+                        setExpandedId(isExpanded ? null : m.id);
+                      }
+                    }}
+                    role="button"
+                    tabIndex={0}
+                    aria-expanded={isExpanded}
                   >
-                    <div className="w-10 h-10 rounded-lg bg-indigo-50 flex items-center justify-center flex-shrink-0">
-                      <MapPin className="w-5 h-5 text-indigo-600" />
+                    <div className="flex h-10 w-10 flex-shrink-0 items-center justify-center rounded-lg bg-indigo-50">
+                      <MapPin className="h-5 w-5 text-indigo-600" />
                     </div>
-                    <div className="flex-1 min-w-0">
+                    <div className="min-w-0 flex-1">
                       <div className="flex items-center gap-2">
-                        <span className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{m.locationName}</span>
-                        <span className={`text-xs px-2 py-0.5 rounded-full ${statusStyle.bg} ${statusStyle.text}`}>
+                        <span className="truncate text-sm font-medium text-gray-900 dark:text-gray-100">{m.locationName}</span>
+                        <span className={`rounded-full px-2 py-0.5 text-xs ${statusStyle.bg} ${statusStyle.text}`}>
                           {m.status.toLowerCase()}
                         </span>
                       </div>
-                      <div className="flex items-center gap-3 text-xs text-gray-600 dark:text-gray-400 mt-0.5">
+                      <div className="mt-0.5 flex items-center gap-3 text-xs text-gray-600 dark:text-gray-400">
                         {m.scheduledAt && (
                           <span className="flex items-center gap-1">
-                            <Calendar className="w-3 h-3" />
+                            <Calendar className="h-3 w-3" />
                             {new Date(m.scheduledAt).toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' })}
                           </span>
                         )}
                         {m.duration && (
                           <span className="flex items-center gap-1">
-                            <Clock className="w-3 h-3" />
+                            <Clock className="h-3 w-3" />
                             {m.duration} min
                           </span>
                         )}
                         <span className="flex items-center gap-1">
-                          <Users className="w-3 h-3" />
+                          <Users className="h-3 w-3" />
                           {m.invites.length + 1}
                         </span>
                       </div>
                     </div>
-                    {isExpanded ? <ChevronUp className="w-4 h-4 text-gray-600 dark:text-gray-400" /> : <ChevronDown className="w-4 h-4 text-gray-600 dark:text-gray-400" />}
+                    {isExpanded ? <ChevronUp className="h-4 w-4 text-gray-600 dark:text-gray-400" /> : <ChevronDown className="h-4 w-4 text-gray-600 dark:text-gray-400" />}
                   </div>
 
-                  {/* Expanded details */}
                   {isExpanded && (
-                    <div className="mt-4 pt-4 border-t border-gray-100 space-y-3">
+                    <div className="mt-4 space-y-3 border-t border-gray-100 pt-4">
                       {m.note && <p className="text-sm text-gray-700 dark:text-gray-300">&quot;{m.note}&quot;</p>}
                       {m.locationAddress && (
-                        <p className="text-xs text-gray-600 dark:text-gray-400 flex items-center gap-1">
-                          <MapPin className="w-3 h-3" /> {m.locationAddress}
+                        <p className="flex items-center gap-1 text-xs text-gray-600 dark:text-gray-400">
+                          <MapPin className="h-3 w-3" /> {m.locationAddress}
                         </p>
                       )}
 
-                      {/* Attendees */}
                       <div>
-                        <p className="text-xs font-semibold text-gray-700 dark:text-gray-300 mb-1">Attendees</p>
+                        <p className="mb-1 text-xs font-semibold text-gray-700 dark:text-gray-300">Attendees</p>
                         <div className="flex flex-wrap gap-2">
-                          <span className="text-xs px-2 py-1 rounded-full bg-indigo-50 text-indigo-700">
+                          <span className="rounded-full bg-indigo-50 px-2 py-1 text-xs text-indigo-700">
                             {m.creator.name || 'Unknown'} (organizer)
                           </span>
                           {m.invites.map(inv => (
                             <span
                               key={inv.id}
-                              className={`text-xs px-2 py-1 rounded-full ${
+                              className={`rounded-full px-2 py-1 text-xs ${
                                 inv.status === 'ACCEPTED' ? 'bg-green-50 text-green-700' :
                                 inv.status === 'DECLINED' ? 'bg-red-50 text-red-700' :
                                 'bg-gray-100 text-gray-600'
@@ -345,35 +446,43 @@ export default function PlaceMeetings() {
                         </div>
                       </div>
 
-                      {/* Actions */}
-                      <div className="flex gap-2 pt-1">
-                        {/* RSVP if I'm an invitee with pending status */}
+                      <div className="flex flex-wrap items-center gap-2 pt-1">
                         {myInvite && myInvite.status === 'PENDING' && (
                           <>
-                            <button onClick={() => handleRsvp(m.id, 'ACCEPTED')} className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium bg-green-100 text-green-700 rounded-lg hover:bg-green-200 transition-colors">
-                              <Check className="w-3 h-3" /> Accept
+                            <button type="button" onClick={() => handleRsvp(m.id, 'ACCEPTED')} className="flex items-center gap-1 rounded-lg bg-green-100 px-3 py-1.5 text-xs font-medium text-green-700 transition-colors hover:bg-green-200">
+                              <Check className="h-3 w-3" /> Accept
                             </button>
-                            <button onClick={() => handleRsvp(m.id, 'DECLINED')} className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors">
-                              <X className="w-3 h-3" /> Decline
+                            <button type="button" onClick={() => handleRsvp(m.id, 'DECLINED')} className="flex items-center gap-1 rounded-lg bg-red-100 px-3 py-1.5 text-xs font-medium text-red-700 transition-colors hover:bg-red-200">
+                              <X className="h-3 w-3" /> Decline
                             </button>
                           </>
                         )}
-                        {/* Calendar link */}
-                        {!m.eventId && (
-                          <button onClick={() => handleLinkCalendar(m.id)} className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium bg-blue-100 text-blue-700 rounded-lg hover:bg-blue-200 transition-colors">
-                            <CalendarPlus className="w-3 h-3" /> Add to Calendar
-                          </button>
-                        )}
                         {m.eventId && (
-                          <span className="flex items-center gap-1 px-3 py-1.5 text-xs text-green-700 bg-green-50 rounded-lg">
-                            <Calendar className="w-3 h-3" /> On calendar
+                          <span className="flex items-center gap-1 rounded-lg bg-green-50 px-3 py-1.5 text-xs text-green-700">
+                            <Calendar className="h-3 w-3" /> On calendar
                           </span>
                         )}
-                        {/* Cancel if creator */}
-                        {isCreator && m.status !== 'CANCELLED' && (
-                          <button onClick={() => handleCancel(m.id)} className="flex items-center gap-1 px-3 py-1.5 text-xs font-medium bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-300 rounded-lg hover:bg-gray-200 transition-colors">
-                            <X className="w-3 h-3" /> Cancel Meeting
-                          </button>
+                        {menuItems.length > 0 && (
+                          <DropdownMenu
+                            open={openMenuId === m.id}
+                            onOpenChange={open => setOpenMenuId(open ? m.id : null)}
+                            items={menuItems}
+                            menuLabel="Meeting actions"
+                            align="start"
+                          >
+                            <Button
+                              type="button"
+                              variant="ghost"
+                              size="sm"
+                              aria-label="Meeting actions"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                setOpenMenuId((prev) => (prev === m.id ? null : m.id));
+                              }}
+                            >
+                              <MoreHorizontal className="h-4 w-4" />
+                            </Button>
+                          </DropdownMenu>
                         )}
                       </div>
                     </div>
@@ -384,6 +493,29 @@ export default function PlaceMeetings() {
           })}
         </div>
       )}
+
+      <ConfirmModal
+        open={pendingTrash !== null}
+        onClose={() => setPendingTrash(null)}
+        onConfirm={executeTrashMeeting}
+        title="Move meeting to trash?"
+        description={
+          pendingTrash
+            ? `Move "${pendingTrash.name}" to trash? You can restore it from the global trash bin.`
+            : undefined
+        }
+        variant="destructive"
+        confirmLabel="Move to trash"
+        loading={isTrashing}
+      />
+
+      <PlaceCalendarLinkModal
+        open={calendarLinkTarget !== null}
+        onClose={() => setCalendarLinkTarget(null)}
+        onConfirm={executeLinkCalendar}
+        loading={isLinkingCalendar}
+        meetingName={calendarLinkTarget?.name}
+      />
     </div>
   );
 }

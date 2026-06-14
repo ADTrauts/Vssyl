@@ -280,6 +280,9 @@ export function CalendarMonthView({
   }, []);
 
   const openCreateDrawer = useCallback((start: Date, end: Date) => {
+    setShowEventModal(false);
+    setSelectedEvent(null);
+    eventClickRef.current = null;
     setEditingEvent(null);
     setDraftStart(start);
     setDraftEnd(end);
@@ -351,6 +354,18 @@ export function CalendarMonthView({
     const now = new Date();
     openCreateDrawer(now, new Date(now.getTime() + 60 * 60 * 1000));
   }, [openCreateDrawer]);
+
+  useEffect(() => {
+    if (!showEventModal || showDrawer) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return;
+      setShowEventModal(false);
+      setSelectedEvent(null);
+      eventClickRef.current = null;
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [showEventModal, showDrawer]);
 
   const handleExportMonth = useCallback(async () => {
     try {
@@ -553,6 +568,7 @@ export function CalendarMonthView({
                 />
                 <span className="text-sm font-medium text-gray-700 dark:text-gray-300">My events only</span>
               </label>
+              <CalendarShortcutsHelp />
             </>
           }
           secondary={
@@ -670,6 +686,48 @@ export function CalendarMonthView({
             currentUserId={(session as any)?.user?.id}
           />
         )}
+      overlays={
+        <>
+          <EventDrawer
+            isOpen={showDrawer}
+            onClose={closeEventDrawer}
+            onCreated={async () => {
+              await reloadEvents();
+              closeEventDrawer();
+            }}
+            onUpdated={async () => {
+              await reloadEvents();
+              closeEventDrawer();
+            }}
+            contextType={effectiveContextType}
+            contextId={effectiveContextId || dashboardId || undefined}
+            eventToEdit={editingEvent || undefined}
+            defaultStart={draftStart}
+            defaultEnd={draftEnd}
+          />
+          <RecurrenceScopeModal
+            open={pendingRecurrenceMove !== null}
+            onClose={() => setPendingRecurrenceMove(null)}
+            title="Move recurring event"
+            description="Apply this move to a single occurrence or the entire series?"
+            onSelect={async (scope: RecurrenceScope) => {
+              if (!pendingRecurrenceMove) return;
+              const { ev, payload } = pendingRecurrenceMove;
+              setPendingRecurrenceMove(null);
+              const movePayload: Record<string, string> = { ...payload };
+              if (scope === 'THIS') {
+                movePayload.editMode = 'THIS';
+                movePayload.occurrenceStartAt = ev.occurrenceStartAt || ev.startAt;
+              }
+              const resp = await calendarAPI.updateEvent(ev.id, movePayload);
+              if (resp?.success) {
+                const updated = resp.data as EventItem;
+                setEvents((prev) => prev.map((e) => (e.id === ev.id ? { ...e, ...updated } : e)));
+              }
+            }}
+          />
+        </>
+      }
     </CalendarPageShell>
 
       {/* Modern Event Modal - Rendered via portal to avoid overflow clipping */}
@@ -992,45 +1050,6 @@ export function CalendarMonthView({
         );
       })()}
 
-      <EventDrawer
-        isOpen={showDrawer}
-        onClose={closeEventDrawer}
-        onCreated={async () => {
-          await reloadEvents();
-          closeEventDrawer();
-        }}
-        onUpdated={async () => {
-          await reloadEvents();
-          closeEventDrawer();
-        }}
-        contextType={effectiveContextType}
-        contextId={effectiveContextId || dashboardId || undefined}
-        eventToEdit={editingEvent || undefined}
-        defaultStart={draftStart}
-        defaultEnd={draftEnd}
-      />
-
-      <RecurrenceScopeModal
-        open={pendingRecurrenceMove !== null}
-        onClose={() => setPendingRecurrenceMove(null)}
-        title="Move recurring event"
-        description="Apply this move to a single occurrence or the entire series?"
-        onSelect={async (scope: RecurrenceScope) => {
-          if (!pendingRecurrenceMove) return;
-          const { ev, payload } = pendingRecurrenceMove;
-          setPendingRecurrenceMove(null);
-          const movePayload: Record<string, string> = { ...payload };
-          if (scope === 'THIS') {
-            movePayload.editMode = 'THIS';
-            movePayload.occurrenceStartAt = ev.occurrenceStartAt || ev.startAt;
-          }
-          const resp = await calendarAPI.updateEvent(ev.id, movePayload);
-          if (resp?.success) {
-            const updated = resp.data as EventItem;
-            setEvents((prev) => prev.map((e) => (e.id === ev.id ? { ...e, ...updated } : e)));
-          }
-        }}
-      />
     </>
   );
 }
