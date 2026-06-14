@@ -129,3 +129,19 @@ See [AI_ADMIN_ANALYTICS_BOUNDARY_REVIEW.md](./AI_ADMIN_ANALYTICS_BOUNDARY_REVIEW
 | Notebook | NOTEBOOK_OPERATION_MATRIX |
 | Place | PLACE_OPERATION_MATRIX — read-only AI twins |
 | File Hub | FILE_HUB — tools + Drive context providers compliant (Wave 1C) |
+
+---
+
+## Operational links vs V_Link (Relationship Framework)
+
+Module **operational** cross-entity links are exposed to AI via **module context providers**, not the platform `vlink` pipeline source.
+
+| Mechanism | Taxonomy class | AI exposure path | V_Link source? |
+|-----------|----------------|------------------|----------------|
+| `VLinkEntity` (confirmed) | Association | `vlinkPipelineContextService` / `recent_vlinks` | **Yes** |
+| `TaskFileLink`, `TaskEventLink` | Association / Reference | Todo AI providers (`task_overview`, …) | No |
+| `NotebookLink` | Association / Reference | Notebook providers + hydrate via target visibility | No |
+| `FileReference` (chat attachment) | Attachment | Drive visibility + chat context | No |
+| `entityLinking` inference | AI context (ephemeral) | Twin merge — lower precedence than persisted V_Link | No |
+
+**Authority:** [RELATIONSHIP_OWNERSHIP_MATRIX.md](../RELATIONSHIP_OWNERSHIP_MATRIX.md), [RELATIONSHIP_READ_FEDERATION_CONTRACT.md](../RELATIONSHIP_READ_FEDERATION_CONTRACT.md).

@@ -500,20 +500,22 @@ Capability-driven before feature-flag-driven (§26).
 
 ### Per-module capability matrix (audit baseline)
 
+**V_Link column:** reflects manifest `capabilities.vlink` + resolver alignment — see [PLATFORM_ENTITY_MODEL.md](./PLATFORM_ENTITY_MODEL.md) for entity-level truth. **Relationship Framework:** [RELATIONSHIP_FRAMEWORK_INDEX.md](./RELATIONSHIP_FRAMEWORK_INDEX.md).
+
 | Module | ai | vlink | trash | realtime | notifications | businessWorkspace | globalActivity |
 |--------|----|-------|-------|----------|---------------|-------------------|----------------|
 | drive | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
-| chat | ✅ | ❌ pending | ✅ | ✅ | ✅ | ✅ | ✅ |
+| chat | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ | ✅ |
 | calendar | ✅ | ✅ | ✅ | partial | ✅ | ✅ | ❌ domain only |
 | vlink | ✅ | — | archive | partial | ❌ | ✅ | ❌ |
-| todo | ⚠️ | ❌ | ✅ | ❌ | ❌ | ❌ gap | ❌ |
-| notes | ⚠️ | ❌ | ❌ deletedAt | ❌ | ✅ | ✅ | ❌ |
+| todo | ⚠️ | ✅ | ✅ | ❌ | partial | ❌ gap | ❌ |
+| notes | ⚠️ | ⚠️ partial | ⚠️ deletedAt | ❌ | ✅ | ✅ | ❌ |
 | hr | ✅ | ❌ | ❌ | partial | ⚠️ | ✅ | ❌ |
 | scheduling | ✅ | ❌ | partial | ✅ | ❌ | ✅ | ❌ |
-| place | ✅ | ❌ | ❌ | ❌ | ❌ | ❌ gap | ❌ |
+| place | ✅ | ✅ | ✅ | ✅ | partial | ❌ gap | ❌ |
 | dashboard | ✅ | ❌ | ✅ | ❌ | ❌ | ✅ | ❌ |
 
-**Target:** manifest + registry reconcile on startup; `resolveModuleCapabilities()` helper (Batch 2).
+**Target:** manifest + registry reconcile on startup; `resolveModuleCapabilities()` helper (Batch 2). V_Link ≠ module operational links — see [RELATIONSHIP_OWNERSHIP_MATRIX.md](./RELATIONSHIP_OWNERSHIP_MATRIX.md).
 
 ---
 
@@ -536,9 +538,9 @@ Modules own Prisma rows; platform operates on **`PlatformEntityDescriptor`** con
 
 **Full entities:** file, calendar event, chat conversation, task, note, etc. **Lightweight:** widget instance, message. **Not entities:** optimistic UI state.
 
-**Gap:** `VLinkEntityType` enum wider than `vlinkEntityResolverService` — register resolver before claiming `vlink` capability.
+**Gap:** `VLinkEntityType` enum wider than resolver coverage — register resolver + lifecycle before claiming `vlink` capability. Relationship program: [`RELATIONSHIP_FRAMEWORK_INDEX.md`](./RELATIONSHIP_FRAMEWORK_INDEX.md).
 
-See [`PLATFORM_ENTITY_MODEL.md`](./PLATFORM_ENTITY_MODEL.md).
+See [`PLATFORM_ENTITY_MODEL.md`](./PLATFORM_ENTITY_MODEL.md) (integration truth table).
 
 ---
 

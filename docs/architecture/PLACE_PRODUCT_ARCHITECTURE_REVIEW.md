@@ -151,7 +151,7 @@ authorize → execute → emit → notify/realtime
 | Assign “contact vendor” work | `todoTaskService` / `todoAIActionService` |
 | Link renovation Page to supplier | `notebookLinkService` + Place visibility read |
 | Message invitee about meeting | Chat (future notification → `NotificationService`) |
-| Resolve shareable listing URL | `vlinkService` + `placeVlinkAccessService` (future) |
+| Resolve shareable listing URL | `vlinkService` + `placeVlinkAccessService` |
 
 ### 2.4 Overlap disambiguation
 

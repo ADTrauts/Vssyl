@@ -3,7 +3,8 @@
 **Module id:** `calendar`  
 **Last updated:** 2026-06-01  
 **Status:** Complete  
-**Prerequisite:** [CALENDAR_GLOBAL_TRASH_PHASE2A.md](./CALENDAR_GLOBAL_TRASH_PHASE2A.md)
+**Prerequisite:** [CALENDAR_GLOBAL_TRASH_PHASE2A.md](./CALENDAR_GLOBAL_TRASH_PHASE2A.md)  
+**Relationship Framework:** [RELATIONSHIP_FRAMEWORK_INDEX.md](../RELATIONSHIP_FRAMEWORK_INDEX.md) · lifecycle [RELATIONSHIP_CASCADE_RULES.md](../RELATIONSHIP_CASCADE_RULES.md)
 
 ## Summary
 

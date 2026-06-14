@@ -32,6 +32,21 @@ V_Link is a native operating-layer primitive that lets users connect related ite
 
 **Canonical runtime:** `server/src/ai/context/vlinkPipelineContextService.ts`
 
+## Module resolver status (2026-06-14)
+
+Backend V_Link resolver coverage (see [PLATFORM_ENTITY_MODEL.md](../docs/architecture/PLATFORM_ENTITY_MODEL.md) for full table):
+
+| Module | Status |
+|--------|--------|
+| drive (FILE, FOLDER) | ✅ Reference path |
+| calendar (CALENDAR_EVENT) | ✅ |
+| chat (CHAT_CONVERSATION) | ✅ — CHAT_THREAD deferred |
+| todo (TASK, TODO) | ✅ |
+| place (PLACE_LISTING, PLACE_MEETING) | ✅ |
+| notes (NOTE) | ⚠️ partial inline resolver; dedicated service TBD |
+
+**Relationship Framework:** [RELATIONSHIP_FRAMEWORK_INDEX.md](../docs/architecture/RELATIONSHIP_FRAMEWORK_INDEX.md)
+
 ## Non-negotiables
 
 - Membership-only access in v1 (no UNLISTED/code-only anonymous access)

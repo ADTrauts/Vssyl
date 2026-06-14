@@ -70,7 +70,7 @@
 | **Restore task (Global Trash)** | `trashController` | `todoTrashService` | P | P | P | N | — | P | — | P | — | Phase 2; `todo.task.restored` |
 | **Permanent delete (Global Trash)** | `trashController` | `todoTrashService` | P | P | P | N | — | P | — | P | — | Phase 2; V_Link unlink + `todo.task.permanentlyDeleted` |
 | **Permanent delete task** | `trashController` | — | N | N | N | N | — | — | — | N | — | Hard delete from trash |
-| **V_Link resolve task** | — | `vlinkEntityResolverService` | N | N | N | N | — | — | — | — | N | Inline Prisma |
+| **V_Link resolve task** | — | `todoVlinkAccessService` via `vlinkEntityResolverService` | P | P | N | N | — | — | — | — | P | Phase 2; creator/assignee + PE |
 | **ActionExecutor todo ops** | — | `todoAIActionService` | N | N | N | N | — | — | C | — | — | Phase 1F |
 | **toolExecutor create_todo** | — | `todoAIActionService` → `todoTaskService` | N | N | N | N | — | — | C | — | — | Phase 1F |
 | **Dashboard widget list** | `TodoWidget` (web) | — | — | — | — | — | — | — | — | — | — | Client `/api/todo` |

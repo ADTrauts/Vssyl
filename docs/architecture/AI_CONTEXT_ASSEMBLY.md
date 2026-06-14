@@ -15,7 +15,7 @@ How registered modules and platform sources feed the twin. **`CrossModuleContext
 ```mermaid
 flowchart TB
   subgraph sources [Module context sources]
-    Tags["Tags / Metadata"]
+    Tags["Tags / Metadata (module-local — not relationship SoR)"]
     VL["V_Link semantic relationships"]
     Drive["Drive / File Hub"]
     Cal["Calendar / Events"]
@@ -251,6 +251,8 @@ See [AI_BUSINESS_PERSONAL_TWIN_BOUNDARIES.md](./AI_BUSINESS_PERSONAL_TWIN_BOUNDA
 | **Pipeline trace** | Diagnostics comparing required vs performed | `retrievalPerformed`, `contextUsed`, evidence bundle |
 
 Grounding enforcement (block/disclose/regenerate) uses trace output — see [AI_PIPELINE_ADMIN_TOOLS.md](./AI_PIPELINE_ADMIN_TOOLS.md).
+
+**Tags vs relationships:** Module-local tags (`Task.tags`, etc.) are **not** relationship federation inputs unless a module provider explicitly exports them. Cross-module grouping for AI uses **V_Link** (`vlink` source) and module operational links via providers — see [RELATIONSHIP_READ_FEDERATION_CONTRACT.md](./RELATIONSHIP_READ_FEDERATION_CONTRACT.md).
 
 ---
 

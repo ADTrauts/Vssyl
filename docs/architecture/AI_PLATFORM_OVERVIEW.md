@@ -124,7 +124,9 @@ V_Link is **not** a marketplace module. In AI it appears as:
 
 **Non-negotiable:** Unapproved V_Link suggestions never ground twin responses. V_Link membership does not grant access to linked entity content.
 
-Product plan: [`docs/plans/V_LINK_PLATFORM_LAYER_PLAN.md`](../plans/V_LINK_PLATFORM_LAYER_PLAN.md)
+**Relationship Framework:** Federation and taxonomy — [RELATIONSHIP_READ_FEDERATION_CONTRACT.md](./RELATIONSHIP_READ_FEDERATION_CONTRACT.md), [RELATIONSHIP_TAXONOMY.md](./RELATIONSHIP_TAXONOMY.md) (V_Link = Association class). Lifecycle: [RELATIONSHIP_LIFECYCLE_MATRIX.md](./RELATIONSHIP_LIFECYCLE_MATRIX.md).
+
+Product plan (historical phases): [`docs/plans/V_LINK_PLATFORM_LAYER_PLAN.md`](../plans/V_LINK_PLATFORM_LAYER_PLAN.md). **Current integration truth:** [PLATFORM_ENTITY_MODEL.md](./PLATFORM_ENTITY_MODEL.md).
 
 ---
 

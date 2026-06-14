@@ -25,7 +25,7 @@
 ## Exceptions
 
 - **Notes** uses `deletedAt` — migrate to `trashedAt` (Batch 2)
-- **V_Link archive** is separate from Global Trash (intentional)
+- **V_Link archive** is separate from Global Trash (intentional) — [RELATIONSHIP_LIFECYCLE_MATRIX.md](./RELATIONSHIP_LIFECYCLE_MATRIX.md)
 - Chat **messages** may use message-level delete semantics (lightweight entity)
 
 ## Permanent delete

@@ -13,6 +13,7 @@ Complement (not replace) `memory-bank/systemPatterns.md` for product-level archi
 | Legacy cleanup / deprecation | [LEGACY_CLEANUP.md](./LEGACY_CLEANUP.md) | `platform-standards.mdc` |
 | Global Trash | [GLOBAL_TRASH.md](./GLOBAL_TRASH.md) | `module-development.mdc` |
 | V_Link | [V_LINK.md](./V_LINK.md) | — |
+| **Relationship Framework** | [RELATIONSHIP_FRAMEWORK_INDEX.md](./RELATIONSHIP_FRAMEWORK_INDEX.md) | — |
 | Platform entity model | [PLATFORM_ENTITY_MODEL.md](./PLATFORM_ENTITY_MODEL.md) | — |
 | Platform job registry | [PLATFORM_JOB_REGISTRY.md](./PLATFORM_JOB_REGISTRY.md) | — |
 | **AI System Textbook (internal onboarding)** | [AI_SYSTEM_TEXTBOOK.md](./AI_SYSTEM_TEXTBOOK.md) → [`ai-textbook/`](./ai-textbook/) | — |
@@ -66,4 +67,4 @@ Pattern catalog: [`../guides/MODULE_REFERENCE_PATTERNS_FROM_FILE_HUB.md`](../gui
 | [NOTEBOOK_LINK_ACCESS_RULES.md](./NOTEBOOK_LINK_ACCESS_RULES.md) | Phase 3A — authorization |
 | [NOTEBOOK_LINK_IMPLEMENTATION_PLAN.md](./NOTEBOOK_LINK_IMPLEMENTATION_PLAN.md) | Phase 3B scope |
 
-**Last updated:** 2026-06-14 (Reference Workspace Program charter)
+**Last updated:** 2026-06-14 (Relationship Framework index; Reference Workspace Program charter)
