@@ -90,6 +90,49 @@ The Relationship Framework defines **what relationship classes exist**, **who ow
 | [AUTOMATION_CONSUMER_BOUNDARY.md](./AUTOMATION_CONSUMER_BOUNDARY.md) | Allowed/forbidden future consumers | Notifications, AI, analytics, workflows, … | Platform architecture | Safety model, federation Pattern D |
 | [AI_AUTOMATION_BOUNDARY.md](./AI_AUTOMATION_BOUNDARY.md) | AI observe/suggest vs silent exec | C5 consumer rules | Platform architecture + AI | Trigger catalog, V_LINK, TAG_STRATEGY |
 
+### Read adapters (Phase 2D-1)
+
+| Document | Purpose | Scope | Owner | Dependencies |
+|----------|---------|-------|-------|--------------|
+| [RELATIONSHIP_READ_ADAPTER_CATALOG.md](./RELATIONSHIP_READ_ADAPTER_CATALOG.md) | **Read adapters** per taxonomy class | SoR, payload, AI/search/analytics eligibility | Platform architecture | Ownership matrix, federation contract |
+| [RELATIONSHIP_HYDRATION_PATTERNS.md](./RELATIONSHIP_HYDRATION_PATTERNS.md) | Patterns A–E formalized | Direct read, search, hydrate, index, events | Platform architecture | Federation contract, search architecture |
+| [RELATIONSHIP_PROVIDER_REGISTRY.md](./RELATIONSHIP_PROVIDER_REGISTRY.md) | Future registry model — prevent drift | Provider kinds K1–K7, capabilities | Platform architecture | Catalog, PLATFORM_ENTITY_MODEL |
+| [AI_RELATIONSHIP_RETRIEVAL_MODEL.md](./AI_RELATIONSHIP_RETRIEVAL_MODEL.md) | AI federation ordering + V_Link/tags/search | Twin retrieval rules | Platform architecture + AI | 2B, 2C, AI_CONTEXT_ASSEMBLY |
+| [READ_ADAPTER_GOVERNANCE.md](./READ_ADAPTER_GOVERNANCE.md) | Certification, deprecation, testing | Merge gates | Platform architecture | Registry model |
+
+### Graph visualization (Phase 2D-2)
+
+| Document | Purpose | Scope | Owner | Dependencies |
+|----------|---------|-------|-------|--------------|
+| [RELATIONSHIP_GRAPH_VISUALIZATION_CONTRACT.md](./RELATIONSHIP_GRAPH_VISUALIZATION_CONTRACT.md) | **Graph as read projection** — not SoR | Purpose, boundaries, node/edge/container | Platform architecture | Read adapters, federation contract |
+| [GRAPH_NODE_AND_EDGE_MODEL.md](./GRAPH_NODE_AND_EDGE_MODEL.md) | Canonical projection node/edge categories | Visual meaning, adapters, AI eligibility | Platform architecture | Taxonomy, adapter catalog |
+| [GRAPH_PERMISSION_AND_VISIBILITY_MODEL.md](./GRAPH_PERMISSION_AND_VISIBILITY_MODEL.md) | Fail-closed graph visibility | Redaction, V_Link resolver, counts | Platform architecture | Search permission model |
+| [GRAPH_TRAVERSAL_AND_HYDRATION_MODEL.md](./GRAPH_TRAVERSAL_AND_HYDRATION_MODEL.md) | Depth limits, hydration flow | 1-hop/2-hop/N-hop caps | Platform architecture | Hydration patterns |
+| [AI_GRAPH_INTERACTION_MODEL.md](./AI_GRAPH_INTERACTION_MODEL.md) | AI summarize/suggest — not auto-write | Layer 4 graph context | Platform architecture + AI | AI retrieval, automation boundary |
+| [GRAPH_GOVERNANCE_AND_CERTIFICATION.md](./GRAPH_GOVERNANCE_AND_CERTIFICATION.md) | K7 graph provider certification | Drift prevention | Platform architecture | Read adapter governance |
+
+### Recommendations (Phase 2D-3)
+
+| Document | Purpose | Scope | Owner | Dependencies |
+|----------|---------|-------|-------|--------------|
+| [RELATIONSHIP_RECOMMENDATION_ARCHITECTURE.md](./RELATIONSHIP_RECOMMENDATION_ARCHITECTURE.md) | **Suggestions vs facts** — approval-driven | Sources, consumers, ownership | Platform architecture | Federation contract, ownership matrix |
+| [RECOMMENDATION_SIGNAL_MODEL.md](./RECOMMENDATION_SIGNAL_MODEL.md) | Signal families + confidence + explainability | 14+ signal types | Platform architecture | Adapters, tags, graph |
+| [RECOMMENDATION_PERMISSION_MODEL.md](./RECOMMENDATION_PERMISSION_MODEL.md) | Fail-closed recommendation visibility | Cross-tenant, redaction | Platform architecture | Search/graph permission |
+| [AI_RECOMMENDATION_BOUNDARY.md](./AI_RECOMMENDATION_BOUNDARY.md) | AI surface/explain — not auto-create | VLinkSuggestion, AISuggestion | Platform architecture + AI | AI retrieval, automation, graph |
+| [RECOMMENDATION_LIFECYCLE_MODEL.md](./RECOMMENDATION_LIFECYCLE_MODEL.md) | Suggested/Accepted/Rejected/Dismissed/Expired | Proposal ≠ relationship state | Platform architecture | Lifecycle matrix, events |
+| [RECOMMENDATION_GOVERNANCE.md](./RECOMMENDATION_GOVERNANCE.md) | Certification RG1–RG17 | No hidden rankers | Platform architecture | Signal model |
+
+### Analytics (Phase 2D-4)
+
+| Document | Purpose | Scope | Owner | Dependencies |
+|----------|---------|-------|-------|--------------|
+| [RELATIONSHIP_ANALYTICS_MODEL.md](./RELATIONSHIP_ANALYTICS_MODEL.md) | **Observations vs facts** — consumer C0 | Event/adapter/graph/recommendation derivation | Platform architecture | Federation contract, audit policy |
+| [RELATIONSHIP_METRICS_CATALOG.md](./RELATIONSHIP_METRICS_CATALOG.md) | Metric definitions + confidence + retention | 15+ core metrics | Platform architecture | Event model, lifecycle |
+| [RELATIONSHIP_HEALTH_MODEL.md](./RELATIONSHIP_HEALTH_MODEL.md) | Health as interpretation — not SoR | Healthy/inactive/orphaned/… | Platform architecture | Lifecycle matrix |
+| [ANALYTICS_PERMISSION_MODEL.md](./ANALYTICS_PERMISSION_MODEL.md) | Fail-closed analytics visibility | Aggregates, k-anonymity | Platform architecture | Search/graph permission |
+| [AI_RELATIONSHIP_ANALYTICS_BOUNDARY.md](./AI_RELATIONSHIP_ANALYTICS_BOUNDARY.md) | AI trends — not grounding SoR | Layer 8 in stack | Platform architecture + AI | AI retrieval, recommend, graph |
+| [RELATIONSHIP_ANALYTICS_GOVERNANCE.md](./RELATIONSHIP_ANALYTICS_GOVERNANCE.md) | Certification AG1–AG15 | No analytics-derived truth | Platform architecture | Metrics catalog |
+
 ### Phase closeouts
 
 | Document | Phase |
@@ -100,6 +143,10 @@ The Relationship Framework defines **what relationship classes exist**, **who ow
 | [audits/RELATIONSHIP_FRAMEWORK_PHASE_2A_CLOSEOUT.md](./audits/RELATIONSHIP_FRAMEWORK_PHASE_2A_CLOSEOUT.md) | 2A |
 | [audits/RELATIONSHIP_FRAMEWORK_PHASE_2B_CLOSEOUT.md](./audits/RELATIONSHIP_FRAMEWORK_PHASE_2B_CLOSEOUT.md) | 2B |
 | [audits/RELATIONSHIP_FRAMEWORK_PHASE_2C_CLOSEOUT.md](./audits/RELATIONSHIP_FRAMEWORK_PHASE_2C_CLOSEOUT.md) | 2C |
+| [audits/RELATIONSHIP_FRAMEWORK_PHASE_2D1_CLOSEOUT.md](./audits/RELATIONSHIP_FRAMEWORK_PHASE_2D1_CLOSEOUT.md) | 2D-1 |
+| [audits/RELATIONSHIP_FRAMEWORK_PHASE_2D2_CLOSEOUT.md](./audits/RELATIONSHIP_FRAMEWORK_PHASE_2D2_CLOSEOUT.md) | 2D-2 |
+| [audits/RELATIONSHIP_FRAMEWORK_PHASE_2D3_CLOSEOUT.md](./audits/RELATIONSHIP_FRAMEWORK_PHASE_2D3_CLOSEOUT.md) | 2D-3 |
+| [audits/RELATIONSHIP_FRAMEWORK_PHASE_2D4_CLOSEOUT.md](./audits/RELATIONSHIP_FRAMEWORK_PHASE_2D4_CLOSEOUT.md) | 2D-4 |
 
 ---
 
@@ -149,6 +196,41 @@ The Relationship Framework defines **what relationship classes exist**, **who ow
 3. [AUTOMATION_CONSUMER_BOUNDARY.md](./AUTOMATION_CONSUMER_BOUNDARY.md) — who may consume  
 4. [AI_AUTOMATION_BOUNDARY.md](./AI_AUTOMATION_BOUNDARY.md) — AI observe/suggest rules
 
+### Read adapter / hydration work
+
+1. [RELATIONSHIP_READ_ADAPTER_CATALOG.md](./RELATIONSHIP_READ_ADAPTER_CATALOG.md) — per-class readers  
+2. [RELATIONSHIP_HYDRATION_PATTERNS.md](./RELATIONSHIP_HYDRATION_PATTERNS.md) — patterns A–E  
+3. [RELATIONSHIP_PROVIDER_REGISTRY.md](./RELATIONSHIP_PROVIDER_REGISTRY.md) — registry model  
+4. [AI_RELATIONSHIP_RETRIEVAL_MODEL.md](./AI_RELATIONSHIP_RETRIEVAL_MODEL.md) — AI precedence  
+5. [READ_ADAPTER_GOVERNANCE.md](./READ_ADAPTER_GOVERNANCE.md) — certification
+
+### Graph visualization work
+
+1. [RELATIONSHIP_GRAPH_VISUALIZATION_CONTRACT.md](./RELATIONSHIP_GRAPH_VISUALIZATION_CONTRACT.md) — projection contract  
+2. [GRAPH_NODE_AND_EDGE_MODEL.md](./GRAPH_NODE_AND_EDGE_MODEL.md) — nodes and edges  
+3. [GRAPH_PERMISSION_AND_VISIBILITY_MODEL.md](./GRAPH_PERMISSION_AND_VISIBILITY_MODEL.md) — fail-closed  
+4. [GRAPH_TRAVERSAL_AND_HYDRATION_MODEL.md](./GRAPH_TRAVERSAL_AND_HYDRATION_MODEL.md) — depth caps  
+5. [AI_GRAPH_INTERACTION_MODEL.md](./AI_GRAPH_INTERACTION_MODEL.md) — AI rules  
+6. [GRAPH_GOVERNANCE_AND_CERTIFICATION.md](./GRAPH_GOVERNANCE_AND_CERTIFICATION.md) — K7 certification
+
+### Recommendation work
+
+1. [RELATIONSHIP_RECOMMENDATION_ARCHITECTURE.md](./RELATIONSHIP_RECOMMENDATION_ARCHITECTURE.md) — suggestions vs facts  
+2. [RECOMMENDATION_SIGNAL_MODEL.md](./RECOMMENDATION_SIGNAL_MODEL.md) — signal families  
+3. [RECOMMENDATION_PERMISSION_MODEL.md](./RECOMMENDATION_PERMISSION_MODEL.md) — fail-closed  
+4. [RECOMMENDATION_LIFECYCLE_MODEL.md](./RECOMMENDATION_LIFECYCLE_MODEL.md) — proposal states  
+5. [AI_RECOMMENDATION_BOUNDARY.md](./AI_RECOMMENDATION_BOUNDARY.md) — AI rules  
+6. [RECOMMENDATION_GOVERNANCE.md](./RECOMMENDATION_GOVERNANCE.md) — certification
+
+### Analytics work
+
+1. [RELATIONSHIP_ANALYTICS_MODEL.md](./RELATIONSHIP_ANALYTICS_MODEL.md) — observations vs facts  
+2. [RELATIONSHIP_METRICS_CATALOG.md](./RELATIONSHIP_METRICS_CATALOG.md) — metric catalog  
+3. [RELATIONSHIP_HEALTH_MODEL.md](./RELATIONSHIP_HEALTH_MODEL.md) — interpretation layer  
+4. [ANALYTICS_PERMISSION_MODEL.md](./ANALYTICS_PERMISSION_MODEL.md) — fail-closed  
+5. [AI_RELATIONSHIP_ANALYTICS_BOUNDARY.md](./AI_RELATIONSHIP_ANALYTICS_BOUNDARY.md) — AI rules  
+6. [RELATIONSHIP_ANALYTICS_GOVERNANCE.md](./RELATIONSHIP_ANALYTICS_GOVERNANCE.md) — certification
+
 ---
 
 ## Module-specific relationship references
@@ -175,9 +257,14 @@ The Relationship Framework defines **what relationship classes exist**, **who ow
 | 2A | ✅ | Tag strategy (constitutional) |
 | 2B | ✅ | Relationship search architecture |
 | 2C | ✅ | Automation trigger catalog |
-| 2D | ⏳ Recommended | Read adapters, graph viz, recommendations, analytics |
+| 2D-1 | ✅ | Relationship read adapter catalog |
+| 2D-2 | ✅ | Graph visualization contract |
+| 2D-3 | ✅ | Recommendation architecture |
+| 2D-4 | ✅ | Relationship analytics model |
+| **Phase 2** | **✅ Complete** | Consumer architecture (constitutional) |
+| **Phase 3** | Separate program | Intelligence & implementation — see [audits/RELATIONSHIP_FRAMEWORK_PHASE_2D4_CLOSEOUT.md](./audits/RELATIONSHIP_FRAMEWORK_PHASE_2D4_CLOSEOUT.md) |
 
-See [audits/RELATIONSHIP_FRAMEWORK_PHASE_2C_CLOSEOUT.md](./audits/RELATIONSHIP_FRAMEWORK_PHASE_2C_CLOSEOUT.md) for Phase 2D recommendation.
+**Program status:** Relationship Framework Phases 1–2 are **substantially complete** for constitutional documentation. Phase 3 recommended as **Relationship Intelligence & Implementation Program** (engineering + product — not doc-only).
 
 ---
 
@@ -198,6 +285,15 @@ See [audits/RELATIONSHIP_FRAMEWORK_PHASE_2C_CLOSEOUT.md](./audits/RELATIONSHIP_F
 | New automation consumer on domain events | Trigger catalog + consumer boundary + safety model |
 | AI subscribes to new relationship trigger | AI_AUTOMATION_BOUNDARY + trigger catalog tier ≤ T2 |
 | User workflow / destructive automation rule | Safety model D2+ confirmation + consumer C4 registration |
+| New relationship read adapter | Read adapter catalog + provider registry + governance G1–G10 |
+| Cross-module hydrate path | RELATIONSHIP_HYDRATION_PATTERNS Pattern C + target module gate |
+| AI new relationship retrieval source | AI_RELATIONSHIP_RETRIEVAL_MODEL + read adapter catalog |
+| New graph surface or K7 provider | Graph visualization contract + governance GV1–GV12 |
+| Federated graph explorer | Traversal model + permission model + distinct surface legend |
+| New recommendation type or signal family | Recommendation architecture + signal model + governance RG1–RG14 |
+| AI-generated recommendation | AI_RECOMMENDATION_BOUNDARY + permission model |
+| New relationship metric or health label | Analytics model + metrics catalog + governance AG1–AG15 |
+| AI uses analytics in twin | AI_RELATIONSHIP_ANALYTICS_BOUNDARY + permission model |
 
 ---
 
