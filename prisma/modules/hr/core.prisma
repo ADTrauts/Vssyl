@@ -43,8 +43,10 @@ model EmployeeHRProfile {
   personalInfo    Json?  // { birthday, address, etc. }
   
   // ============================================================================
-  // SOFT DELETE (HR data must be retained for legal/audit)
+  // GLOBAL TRASH (HR data must be retained for legal/audit)
   // ============================================================================
+  trashedAt       DateTime?
+  /** @deprecated use trashedAt — retained for migration reads only */
   deletedAt       DateTime?
   deletedBy       String?
   deletedReason   String?  // Termination, Resignation, etc.
@@ -72,6 +74,7 @@ model EmployeeHRProfile {
   @@index([businessId])
   @@index([employeePositionId])
   @@index([deletedAt])
+  @@index([trashedAt])
   @@index([employeeType])
   @@index([employmentStatus])
   @@map("employee_hr_profiles")

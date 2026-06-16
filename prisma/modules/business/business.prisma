@@ -84,7 +84,10 @@ model Business {
   scheduleTemplates ScheduleTemplate[] @relation("BusinessScheduleTemplates")
   businessStations BusinessStation[] @relation("BusinessStations")
   jobLocations JobLocation[] @relation("BusinessJobLocations")
-  
+  // Workforce Communications Module
+  workforceCommunications WorkforceCommunication[] @relation("BusinessWorkforceCommunications")
+  workforceCampaigns WorkforceCampaign[] @relation("BusinessWorkforceCampaigns")
+
   // Vssyl Place
   placeListing BusinessPlaceListing?
   placeTransactions PlaceTransaction[]

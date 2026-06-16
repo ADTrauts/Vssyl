@@ -405,6 +405,15 @@ model User {
   vlinkSuggestionsReviewed VLinkSuggestion[]  @relation("VLinkSuggestionReviewer")
   vlinkActivities          VLinkActivity[]    @relation("VLinkActivityActor")
 
+  // Workforce Communications Module relations
+  workforceCommunicationsCreated   WorkforceCommunication[] @relation("WorkforceCommunicationCreatedBy")
+  workforceCommunicationsPublished WorkforceCommunication[] @relation("WorkforceCommunicationPublishedBy")
+  workforceCampaignsCreated        WorkforceCampaign[] @relation("WorkforceCampaignCreatedBy")
+  workforceAudienceResolutions       WorkforceAudienceResolution[] @relation("WorkforceAudienceResolutionUser")
+  workforceReadReceipts            WorkforceReadReceipt[] @relation("WorkforceReadReceiptUser")
+  workforceAcknowledgements          WorkforceAcknowledgement[] @relation("WorkforceAcknowledgementUser")
+  workforceDeliveryLogs            WorkforceDeliveryLog[] @relation("WorkforceDeliveryLogUser")
+
   // Vssyl Place relations
   place               Place?
   placeFollowVisibility PlaceFollowVisibility[]
@@ -869,7 +878,10 @@ model Business {
   scheduleTemplates ScheduleTemplate[] @relation("BusinessScheduleTemplates")
   businessStations BusinessStation[] @relation("BusinessStations")
   jobLocations JobLocation[] @relation("BusinessJobLocations")
-  
+  // Workforce Communications Module
+  workforceCommunications WorkforceCommunication[] @relation("BusinessWorkforceCommunications")
+  workforceCampaigns WorkforceCampaign[] @relation("BusinessWorkforceCampaigns")
+
   // Vssyl Place
   placeListing BusinessPlaceListing?
   placeTransactions PlaceTransaction[]
@@ -1941,6 +1953,15 @@ enum VLinkEntityType {
   NOTE
   PLACE_LISTING
   PLACE_MEETING
+  SCHEDULE
+  SCHEDULE_SHIFT
+  SHIFT_SWAP_REQUEST
+  HR_EMPLOYEE_PROFILE
+  HR_TIME_OFF_REQUEST
+  HR_ATTENDANCE_EXCEPTION
+  HR_ONBOARDING_JOURNEY
+  WORKFORCE_COMMUNICATION
+  WORKFORCE_CAMPAIGN
   DASHBOARD
   WIDGET
   USER
@@ -4285,6 +4306,7 @@ model File {
   trashedAt   DateTime?
   activities  Activity[]
   fileReferences FileReference[]
+  workforceAttachments WorkforceAttachment[] @relation("WorkforceAttachmentFile")
 
   @@index([userId])
   @@index([folderId])
@@ -5426,8 +5448,10 @@ model EmployeeHRProfile {
   personalInfo    Json?  // { birthday, address, etc. }
   
   // ============================================================================
-  // SOFT DELETE (HR data must be retained for legal/audit)
+  // GLOBAL TRASH (HR data must be retained for legal/audit)
   // ============================================================================
+  trashedAt       DateTime?
+  /** @deprecated use trashedAt — retained for migration reads only */
   deletedAt       DateTime?
   deletedBy       String?
   deletedReason   String?  // Termination, Resignation, etc.
@@ -5455,6 +5479,7 @@ model EmployeeHRProfile {
   @@index([businessId])
   @@index([employeePositionId])
   @@index([deletedAt])
+  @@index([trashedAt])
   @@index([employeeType])
   @@index([employmentStatus])
   @@map("employee_hr_profiles")
@@ -5877,12 +5902,15 @@ model Schedule {
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
+  trashedAt         DateTime?
+
   shifts            ScheduleShift[]
   
   @@index([businessId])
   @@index([status])
   @@index([startDate, endDate])
   @@index([layoutMode])
+  @@index([trashedAt])
   @@map("schedules")
 }
 
@@ -5943,6 +5971,8 @@ model ScheduleShift {
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
 
+  trashedAt           DateTime?
+
   swapRequests        ShiftSwapRequest[] @relation("OriginalShift")
   
   @@index([scheduleId])
@@ -5955,6 +5985,7 @@ model ScheduleShift {
   @@index([stationName])
   @@index([jobFunction])
   @@index([priority])
+  @@index([trashedAt])
   @@map("schedule_shifts")
 }
 
@@ -6112,10 +6143,13 @@ model ScheduleTemplate {
   
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
+
+  trashedAt           DateTime?
   
   @@unique([businessId, name])
   @@index([businessId])
   @@index([isActive])
+  @@index([trashedAt])
   @@map("schedule_templates")
 }
 
@@ -6190,6 +6224,300 @@ model JobLocation {
   @@map("job_locations")
 }
 
+
+
+// ============================================================================
+// WORKFORCE_COMMS MODULE
+// ============================================================================
+
+// ============================================================================
+// WORKFORCE COMMUNICATIONS MODULE - CORE MODELS
+// ============================================================================
+// Purpose: Operational workforce broadcast lifecycle (author → audience → read → ack)
+// Module id: workforce_comms
+// ============================================================================
+
+// ============================================================================
+// ENUMS
+// ============================================================================
+
+enum WorkforceCommunicationType {
+  ANNOUNCEMENT
+  DEPARTMENT_BROADCAST
+  LEADERSHIP_MESSAGE
+  SCHEDULE_NOTICE
+  HR_BROADCAST
+  POLICY_COMPLIANCE
+  EMERGENCY_ALERT
+}
+
+enum WorkforceCommunicationStatus {
+  DRAFT
+  SCHEDULED
+  PUBLISHED
+  EXPIRED
+  CANCELLED
+}
+
+enum WorkforcePriority {
+  LOW
+  NORMAL
+  HIGH
+  URGENT
+}
+
+enum WorkforceCampaignStatus {
+  DRAFT
+  ACTIVE
+  COMPLETED
+  CANCELLED
+}
+
+enum WorkforceAudienceType {
+  BUSINESS
+  DEPARTMENT
+  EMPLOYEE_POSITION
+  POSITION
+  TIER
+  MANAGER_SUBTREE
+  BUSINESS_ROLE
+  CUSTOM_GROUP
+}
+
+enum WorkforceEngagementSource {
+  HUB
+  FRONT_PAGE
+  NOTIFICATION
+  EMAIL
+  MOBILE
+}
+
+enum WorkforceDeliveryStatus {
+  PENDING
+  SENT
+  FAILED
+  SKIPPED
+}
+
+enum WorkforceBridgeKind {
+  SCHEDULE_PUBLISHED
+  HR_POLICY_UPDATE
+  MANUAL
+}
+
+// ============================================================================
+// WORKFORCE CAMPAIGN
+// ============================================================================
+
+model WorkforceCampaign {
+  id          String   @id @default(uuid())
+  businessId  String
+  business    Business @relation("BusinessWorkforceCampaigns", fields: [businessId], references: [id], onDelete: Cascade)
+
+  name        String
+  description String?
+  status      WorkforceCampaignStatus @default(DRAFT)
+  startsAt    DateTime?
+  endsAt      DateTime?
+
+  createdById String
+  createdBy   User     @relation("WorkforceCampaignCreatedBy", fields: [createdById], references: [id], onDelete: Cascade)
+
+  trashedAt   DateTime?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  communications WorkforceCommunication[]
+
+  @@unique([businessId, name])
+  @@index([businessId, trashedAt])
+  @@map("workforce_campaigns")
+}
+
+// ============================================================================
+// WORKFORCE COMMUNICATION
+// ============================================================================
+
+model WorkforceCommunication {
+  id                String   @id @default(uuid())
+  businessId        String
+  business          Business @relation("BusinessWorkforceCommunications", fields: [businessId], references: [id], onDelete: Cascade)
+
+  createdById       String
+  createdBy         User     @relation("WorkforceCommunicationCreatedBy", fields: [createdById], references: [id], onDelete: Cascade)
+  publishedById     String?
+  publishedBy       User?    @relation("WorkforceCommunicationPublishedBy", fields: [publishedById], references: [id], onDelete: SetNull)
+  publishedAt       DateTime?
+
+  title             String
+  body              String
+  summary           String?
+  communicationType WorkforceCommunicationType
+  priority          WorkforcePriority @default(NORMAL)
+
+  status            WorkforceCommunicationStatus @default(DRAFT)
+  scheduledAt       DateTime?
+  expiresAt         DateTime?
+  requiresAck       Boolean  @default(false)
+  requiresRead      Boolean  @default(true)
+
+  showOnFrontPage   Boolean  @default(false)
+  showInHubFeed     Boolean  @default(true)
+
+  campaignId        String?
+  campaign          WorkforceCampaign? @relation(fields: [campaignId], references: [id], onDelete: SetNull)
+
+  legacyFrontPageId String?
+
+  trashedAt         DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
+  audience          WorkforceAudience?
+  audienceResolutions WorkforceAudienceResolution[]
+  readReceipts      WorkforceReadReceipt[]
+  acknowledgements  WorkforceAcknowledgement[]
+  attachments       WorkforceAttachment[]
+  deliveryLogs      WorkforceDeliveryLog[]
+  bridgeRefs        WorkforceBridgeRef[]
+
+  @@index([businessId, status])
+  @@index([businessId, trashedAt])
+  @@index([businessId, publishedAt])
+  @@map("workforce_communications")
+}
+
+// ============================================================================
+// WORKFORCE AUDIENCE (specification — not resolved users)
+// ============================================================================
+
+model WorkforceAudience {
+  id              String   @id @default(uuid())
+  communicationId String   @unique
+  communication   WorkforceCommunication @relation(fields: [communicationId], references: [id], onDelete: Cascade)
+
+  audienceType    WorkforceAudienceType
+  spec            Json
+
+  estimatedCount  Int?
+
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  @@map("workforce_audiences")
+}
+
+// ============================================================================
+// WORKFORCE AUDIENCE RESOLUTION (immutable publish snapshot / audit)
+// ============================================================================
+
+model WorkforceAudienceResolution {
+  id                 String   @id @default(uuid())
+  communicationId    String
+  communication      WorkforceCommunication @relation(fields: [communicationId], references: [id], onDelete: Cascade)
+  userId             String
+  user               User     @relation("WorkforceAudienceResolutionUser", fields: [userId], references: [id], onDelete: Cascade)
+  employeePositionId String?
+  resolvedAt         DateTime @default(now())
+  resolutionVersion  Int      @default(1)
+
+  @@unique([communicationId, userId])
+  @@index([communicationId])
+  @@index([userId])
+  @@map("workforce_audience_resolutions")
+}
+
+// ============================================================================
+// WORKFORCE READ RECEIPT
+// ============================================================================
+
+model WorkforceReadReceipt {
+  id              String   @id @default(uuid())
+  communicationId String
+  communication   WorkforceCommunication @relation(fields: [communicationId], references: [id], onDelete: Cascade)
+  userId          String
+  user            User     @relation("WorkforceReadReceiptUser", fields: [userId], references: [id], onDelete: Cascade)
+  readAt          DateTime @default(now())
+  source          WorkforceEngagementSource @default(HUB)
+
+  @@unique([communicationId, userId])
+  @@map("workforce_read_receipts")
+}
+
+// ============================================================================
+// WORKFORCE ACKNOWLEDGEMENT
+// ============================================================================
+
+model WorkforceAcknowledgement {
+  id              String   @id @default(uuid())
+  communicationId String
+  communication   WorkforceCommunication @relation(fields: [communicationId], references: [id], onDelete: Cascade)
+  userId          String
+  user            User     @relation("WorkforceAcknowledgementUser", fields: [userId], references: [id], onDelete: Cascade)
+  acknowledgedAt  DateTime @default(now())
+  ipAddress       String?
+  userAgent       String?
+
+  @@unique([communicationId, userId])
+  @@map("workforce_acknowledgements")
+}
+
+// ============================================================================
+// WORKFORCE ATTACHMENT
+// ============================================================================
+
+model WorkforceAttachment {
+  id              String   @id @default(uuid())
+  communicationId String
+  communication   WorkforceCommunication @relation(fields: [communicationId], references: [id], onDelete: Cascade)
+  fileId          String?
+  file            File?    @relation("WorkforceAttachmentFile", fields: [fileId], references: [id], onDelete: SetNull)
+  label           String?
+  url             String?
+  mimeType        String?
+  sortOrder       Int      @default(0)
+  trashedAt       DateTime?
+
+  @@index([communicationId])
+  @@map("workforce_attachments")
+}
+
+// ============================================================================
+// WORKFORCE DELIVERY LOG (notification fan-out audit)
+// ============================================================================
+
+model WorkforceDeliveryLog {
+  id              String   @id @default(uuid())
+  communicationId String
+  communication   WorkforceCommunication @relation(fields: [communicationId], references: [id], onDelete: Cascade)
+  userId          String
+  user            User     @relation("WorkforceDeliveryLogUser", fields: [userId], references: [id], onDelete: Cascade)
+  notificationId  String?
+  channel         String
+  status          WorkforceDeliveryStatus
+  attemptedAt     DateTime @default(now())
+  deliveredAt     DateTime?
+
+  @@index([communicationId])
+  @@map("workforce_delivery_logs")
+}
+
+// ============================================================================
+// WORKFORCE BRIDGE REF (cross-module trigger reference)
+// ============================================================================
+
+model WorkforceBridgeRef {
+  id               String   @id @default(uuid())
+  communicationId  String
+  communication    WorkforceCommunication @relation(fields: [communicationId], references: [id], onDelete: Cascade)
+  sourceModuleId   String
+  sourceEntityType String
+  sourceEntityId   String
+  bridgeKind       WorkforceBridgeKind
+
+  @@index([sourceModuleId, sourceEntityId])
+  @@map("workforce_bridge_refs")
+}
 
 
 // ============================================================================

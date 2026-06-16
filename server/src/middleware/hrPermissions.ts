@@ -1,11 +1,10 @@
 /**
  * HR MODULE PERMISSION MIDDLEWARE
- * 
- * Handles permission checks for HR module access
- * Three levels of access:
- * 1. HR Admin - Full access to all HR features
- * 2. Manager - Team-level access
- * 3. Employee - Self-service only
+ *
+ * Legacy RBAC for HR module access. Policy Engine dual enforcement is applied
+ * at the route layer via `checkHRPolicy` from `server/src/auth/hrPolicyDual.ts`
+ * (authorize → execute → emit). Legacy middleware remains authoritative during
+ * Stage 1 dual migration; PE security denies may block after legacy passes.
  */
 
 import { Request, Response, NextFunction } from 'express';

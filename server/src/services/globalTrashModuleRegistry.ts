@@ -10,8 +10,8 @@ export interface GlobalTrashModuleHandler {
   moduleName: string;
   supportedTypes: string[];
   softTrash?(input: GlobalTrashHandlerInput): Promise<void>;
-  restore(input: Omit<GlobalTrashHandlerInput, 'metadata'>): Promise<boolean>;
-  permanentDelete(input: Omit<GlobalTrashHandlerInput, 'metadata'>): Promise<boolean>;
+  restore(input: GlobalTrashHandlerInput): Promise<boolean>;
+  permanentDelete(input: GlobalTrashHandlerInput): Promise<boolean>;
   emptyModuleTrash(input: { userId: string }): Promise<number>;
   listTrashed?(input: { userId: string }): Promise<unknown[]>;
 }

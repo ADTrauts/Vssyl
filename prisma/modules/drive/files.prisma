@@ -23,6 +23,7 @@ model File {
   trashedAt   DateTime?
   activities  Activity[]
   fileReferences FileReference[]
+  workforceAttachments WorkforceAttachment[] @relation("WorkforceAttachmentFile")
 
   @@index([userId])
   @@index([folderId])

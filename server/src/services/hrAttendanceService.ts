@@ -1,5 +1,13 @@
+/**
+ * HR attendance domain service.
+ *
+ * Attendance expectation templates (`AttendanceShiftTemplate`) are owned by HR — not
+ * Scheduling `ShiftTemplate` or `ScheduleTemplate`. See
+ * docs/business-operations/SHIFT_TEMPLATE_DOMAIN_DECISION.md (CO-08 / G08).
+ */
 import {
   AttendanceExceptionStatus,
+  AttendanceExceptionType,
   AttendanceMethod,
   AttendanceRecordStatus,
   AttendanceShiftAssignmentStatus,
@@ -8,6 +16,7 @@ import {
 import { prisma } from '../lib/prisma';
 import { logger } from '../lib/logger';
 import { NotificationService } from './notificationService';
+import { recordAttendanceExceptionCreated } from './hrActivityService';
 
 type JsonInput = Prisma.InputJsonValue | null | undefined;
 
@@ -258,13 +267,186 @@ export async function recordPunchIn(params: RecordPunchParams) {
     source
   });
 
-  // NOTE: Attendance exceptions are typically created by background jobs or policy enforcement
-  // When exceptions are created, add notification hooks there:
-  // - hr_attendance_exception_created (notify manager)
-  // - hr_attendance_policy_violation (notify manager/employee)
-  // - hr_attendance_missing_punch (notify employee)
+  // NOTE: Attendance exceptions are typically created by background jobs or policy enforcement.
+  // Use createAttendanceException for the canonical write + activity path.
 
   return record;
+}
+
+export interface CreateAttendanceExceptionInput {
+  businessId: string;
+  employeePositionId: string;
+  type: AttendanceExceptionType;
+  actorUserId: string;
+  attendanceRecordId?: string | null;
+  policyId?: string | null;
+  detectedSource?: string | null;
+  details?: JsonInput;
+  metadata?: JsonInput;
+}
+
+export async function createAttendanceException(input: CreateAttendanceExceptionInput) {
+  const exception = await prisma.attendanceException.create({
+    data: {
+      businessId: input.businessId,
+      employeePositionId: input.employeePositionId,
+      type: input.type,
+      attendanceRecordId: input.attendanceRecordId ?? null,
+      policyId: input.policyId ?? null,
+      detectedById: input.actorUserId,
+      detectedSource: input.detectedSource ?? null,
+      details: input.details ?? Prisma.JsonNull,
+      metadata: input.metadata ?? Prisma.JsonNull,
+    },
+  });
+
+  await recordAttendanceExceptionCreated({
+    actorUserId: input.actorUserId,
+    businessId: input.businessId,
+    exceptionId: exception.id,
+    employeePositionId: input.employeePositionId,
+    type: input.type,
+  });
+
+  await notifyAttendanceExceptionStakeholders(input, exception.id);
+
+  return exception;
+}
+
+const HR_WORKSPACE = (businessId: string) => `/business/${businessId}/workspace/hr/me`;
+
+async function resolveEmployeeUserId(employeePositionId: string): Promise<string | null> {
+  const position = await prisma.employeePosition.findUnique({
+    where: { id: employeePositionId },
+    select: { userId: true },
+  });
+  return position?.userId ?? null;
+}
+
+async function resolveManagerUserId(
+  employeePositionId: string,
+  businessId: string
+): Promise<string | null> {
+  const employeePosition = await prisma.employeePosition.findFirst({
+    where: { id: employeePositionId, businessId },
+    include: {
+      position: {
+        include: {
+          reportsTo: {
+            include: {
+              employeePositions: {
+                where: { businessId, active: true },
+                take: 1,
+                select: { userId: true },
+              },
+            },
+          },
+        },
+      },
+    },
+  });
+
+  return employeePosition?.position?.reportsTo?.employeePositions?.[0]?.userId ?? null;
+}
+
+async function notifyAttendanceExceptionStakeholders(
+  input: CreateAttendanceExceptionInput,
+  exceptionId: string
+): Promise<void> {
+  try {
+    const employeeUserId = await resolveEmployeeUserId(input.employeePositionId);
+    const managerUserId = await resolveManagerUserId(input.employeePositionId, input.businessId);
+
+    if (input.type === AttendanceExceptionType.MISSED_PUNCH && employeeUserId) {
+      await NotificationService.createNotification({
+        userId: employeeUserId,
+        type: 'hr_attendance_missing_punch',
+        title: 'Missing punch detected',
+        body: 'A missing punch was recorded on your attendance.',
+        data: {
+          businessId: input.businessId,
+          exceptionId,
+          employeePositionId: input.employeePositionId,
+          actionUrl: HR_WORKSPACE(input.businessId),
+        },
+      });
+    } else if (
+      (input.type === AttendanceExceptionType.GEO_VIOLATION ||
+        input.type === AttendanceExceptionType.POLICY_OVERRIDE) &&
+      employeeUserId
+    ) {
+      await NotificationService.createNotification({
+        userId: employeeUserId,
+        type: 'hr_attendance_policy_violation',
+        title: 'Attendance policy violation',
+        body: 'An attendance policy violation was detected on your record.',
+        data: {
+          businessId: input.businessId,
+          exceptionId,
+          employeePositionId: input.employeePositionId,
+          type: input.type,
+          actionUrl: HR_WORKSPACE(input.businessId),
+        },
+      });
+    }
+
+    if (managerUserId && managerUserId !== input.actorUserId) {
+      await NotificationService.createNotification({
+        userId: managerUserId,
+        type: 'hr_attendance_exception_created',
+        title: 'Attendance exception created',
+        body: `A new attendance exception (${input.type}) requires review.`,
+        data: {
+          businessId: input.businessId,
+          exceptionId,
+          employeePositionId: input.employeePositionId,
+          type: input.type,
+          actionUrl: `/business/${input.businessId}/workspace/hr`,
+        },
+      });
+    }
+  } catch (error: unknown) {
+    const err = error instanceof Error ? error : new Error(String(error));
+    await logger.warn('Failed to send attendance exception notification', {
+      operation: 'attendance_exception_notification_error',
+      exceptionId,
+      error: { message: err.message, stack: err.stack },
+    });
+  }
+}
+
+export async function notifyAttendancePolicyViolation(params: {
+  businessId: string;
+  employeePositionId: string;
+  exceptionId: string;
+  actorUserId: string;
+}): Promise<void> {
+  await notifyAttendanceExceptionStakeholders(
+    {
+      businessId: params.businessId,
+      employeePositionId: params.employeePositionId,
+      type: AttendanceExceptionType.POLICY_OVERRIDE,
+      actorUserId: params.actorUserId,
+    },
+    params.exceptionId
+  );
+}
+
+export async function notifyAttendanceMissingPunch(params: {
+  businessId: string;
+  employeePositionId: string;
+  exceptionId: string;
+  actorUserId: string;
+}): Promise<void> {
+  await notifyAttendanceExceptionStakeholders(
+    {
+      businessId: params.businessId,
+      employeePositionId: params.employeePositionId,
+      type: AttendanceExceptionType.MISSED_PUNCH,
+      actorUserId: params.actorUserId,
+    },
+    params.exceptionId
+  );
 }
 
 export async function recordPunchOut(params: ClockOutParams) {
@@ -619,7 +801,8 @@ export async function resolveAttendanceException({
 
 
 // -----------------------------------------------------------------------------
-// Shift templates & assignments
+// Attendance expectation templates & assignments (AttendanceShiftTemplate — HR only)
+// Product term: Attendance Expectation Template. Not Scheduling ShiftTemplate.
 // -----------------------------------------------------------------------------
 
 const validateShiftWindow = (startMinutes: number, endMinutes: number) => {
@@ -634,6 +817,7 @@ const validateShiftWindow = (startMinutes: number, endMinutes: number) => {
   }
 };
 
+/** Lists HR attendance expectation templates (`AttendanceShiftTemplate`). */
 export async function listShiftTemplates(filters: ShiftTemplateFilters) {
   const { businessId, includeInactive } = filters;
 
@@ -646,6 +830,7 @@ export async function listShiftTemplates(filters: ShiftTemplateFilters) {
   });
 }
 
+/** Creates or updates an HR attendance expectation template — not a Scheduling shift template. */
 export async function upsertShiftTemplate(input: ShiftTemplateInput) {
   const {
     id,
@@ -876,6 +1061,94 @@ export async function getUpcomingShiftsForEmployee(
       }
     }
   });
+}
+
+const attendanceExceptionDetailsInclude = {
+  employeePosition: {
+    include: {
+      user: { select: { id: true, name: true, email: true, image: true } },
+      position: {
+        include: {
+          department: { select: { id: true, name: true } },
+          tier: { select: { id: true, name: true } },
+        },
+      },
+    },
+  },
+  attendanceRecord: true,
+  policy: { select: { id: true, name: true } },
+} satisfies Prisma.AttendanceExceptionInclude;
+
+export async function getAttendanceExceptionWithDetails(exceptionId: string, businessId: string) {
+  return prisma.attendanceException.findUnique({
+    where: { id: exceptionId },
+    include: attendanceExceptionDetailsInclude,
+  });
+}
+
+export interface ResolveTeamAttendanceExceptionParams {
+  businessId: string;
+  exceptionId: string;
+  managerUserId: string;
+  directReportEmployeePositionIds: string[];
+  status: AttendanceExceptionStatus;
+  resolutionNote?: string | null;
+  managerNote?: string | null;
+  resolutionPayload?: Prisma.InputJsonValue | null;
+  attendanceAdjustments?: ResolveAttendanceExceptionInput['attendanceAdjustments'];
+}
+
+export async function resolveTeamAttendanceExceptionForManager(
+  params: ResolveTeamAttendanceExceptionParams
+) {
+  const {
+    businessId,
+    exceptionId,
+    managerUserId,
+    directReportEmployeePositionIds,
+    status,
+    resolutionNote,
+    managerNote,
+    resolutionPayload,
+    attendanceAdjustments,
+  } = params;
+
+  if (directReportEmployeePositionIds.length === 0) {
+    throw new Error('Not authorized to resolve this exception');
+  }
+
+  const existingException = await prisma.attendanceException.findFirst({
+    where: {
+      id: exceptionId,
+      businessId,
+    },
+    select: {
+      id: true,
+      employeePositionId: true,
+      status: true,
+    },
+  });
+
+  if (!existingException) {
+    throw new Error('Attendance exception not found');
+  }
+
+  if (!directReportEmployeePositionIds.includes(existingException.employeePositionId)) {
+    throw new Error('Not authorized to resolve this exception');
+  }
+
+  await resolveAttendanceException({
+    businessId,
+    exceptionId,
+    managerUserId,
+    status,
+    resolutionNote: resolutionNote ?? null,
+    managerNote: managerNote ?? null,
+    resolutionPayload,
+    attendanceAdjustments,
+  });
+
+  return getAttendanceExceptionWithDetails(exceptionId, businessId);
 }
 
 

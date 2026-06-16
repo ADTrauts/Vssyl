@@ -108,6 +108,13 @@ export class NotificationGroupingService {
         maxGroupSize: 5,
         priority: 'medium'
       },
+      // Scheduling notifications - group by type within 10 minutes
+      {
+        type: 'scheduling',
+        timeWindow: 10,
+        maxGroupSize: 5,
+        priority: 'medium'
+      },
       // Calendar notifications - group by type within 10 minutes
       {
         type: 'calendar',
@@ -213,7 +220,23 @@ export class NotificationGroupingService {
       'member_request': 'invitations',
       'system_alert': 'system',
       'hr_onboarding_task_approved': 'hr',
+      'hr_onboarding_task_pending_approval': 'hr',
+      'hr_onboarding_journey_completed': 'hr',
+      'hr_onboarding_assigned': 'hr',
       'hr_time_off_request_submitted': 'hr',
+      'hr_time_off_request_approved': 'hr',
+      'hr_time_off_request_denied': 'hr',
+      'hr_time_off_balance_low': 'hr',
+      'hr_attendance_exception_created': 'hr',
+      'hr_attendance_policy_violation': 'hr',
+      'hr_attendance_missing_punch': 'hr',
+      'hr_attendance_exception_resolved': 'hr',
+      'scheduling_schedule_published': 'scheduling',
+      'scheduling_shift_assigned': 'scheduling',
+      'scheduling_swap_requested': 'scheduling',
+      'scheduling_swap_approved': 'scheduling',
+      'scheduling_swap_denied': 'scheduling',
+      'scheduling_open_shift_available': 'scheduling',
       'calendar_reminder': 'calendar'
     };
     
@@ -225,14 +248,38 @@ export class NotificationGroupingService {
    * Generate group key for notification
    */
   private getGroupKey(notification: NotificationData): string {
+    const data = notification.data as Record<string, unknown> | undefined;
     switch (notification.type) {
       case 'chat':
       case 'mentions':
-        return `${notification.type}_${(notification.data as any)?.conversationId || 'general'}`;
+      case 'chat_message':
+      case 'chat_mention':
+      case 'chat_reaction':
+        return `${notification.type}_${data?.conversationId || 'general'}`;
       case 'drive':
-        return `${notification.type}_${(notification.data as any)?.senderId || 'system'}`;
+      case 'drive_shared':
+      case 'drive_permission':
+      case 'drive_item_restored':
+      case 'drive_item_deleted':
+        return `${notification.type}_${data?.senderId || 'system'}`;
       case 'system':
-        return `${notification.type}_${(notification.data as any)?.category || 'general'}`;
+      case 'system_alert':
+        return `${notification.type}_${data?.category || 'general'}`;
+      case 'scheduling_schedule_published':
+        return `scheduling_publish_${data?.scheduleId || 'general'}`;
+      case 'scheduling_swap_requested':
+      case 'scheduling_swap_approved':
+      case 'scheduling_swap_denied':
+        return `scheduling_swap_${data?.shiftId || 'general'}`;
+      case 'hr_attendance_exception_created':
+      case 'hr_attendance_policy_violation':
+      case 'hr_attendance_missing_punch':
+      case 'hr_attendance_exception_resolved':
+        return `hr_attendance_${data?.exceptionId || 'general'}`;
+      case 'hr_time_off_request_submitted':
+      case 'hr_time_off_request_approved':
+      case 'hr_time_off_request_denied':
+        return `hr_time_off_${data?.requestId || 'general'}`;
       default:
         return `${notification.type}_general`;
     }
@@ -306,19 +353,40 @@ export class NotificationGroupingService {
       'member_request': 'invitations',
       'system_alert': 'system',
       'hr_onboarding_task_approved': 'hr',
+      'hr_onboarding_task_pending_approval': 'hr',
+      'hr_onboarding_journey_completed': 'hr',
+      'hr_onboarding_assigned': 'hr',
       'hr_time_off_request_submitted': 'hr',
+      'hr_time_off_request_approved': 'hr',
+      'hr_time_off_request_denied': 'hr',
+      'hr_time_off_balance_low': 'hr',
+      'hr_attendance_exception_created': 'hr',
+      'hr_attendance_policy_violation': 'hr',
+      'hr_attendance_missing_punch': 'hr',
+      'hr_attendance_exception_resolved': 'hr',
+      'scheduling_schedule_published': 'scheduling',
+      'scheduling_shift_assigned': 'scheduling',
+      'scheduling_swap_requested': 'scheduling',
+      'scheduling_swap_approved': 'scheduling',
+      'scheduling_swap_denied': 'scheduling',
+      'scheduling_open_shift_available': 'scheduling',
       'calendar_reminder': 'calendar'
     };
     
     const category = typeMapping[notification.type] || notification.type.split('_')[0];
+    const data = notification.data as Record<string, unknown> | undefined;
     
     switch (category) {
       case 'chat':
-        return `${(notification.data as any)?.senderName || 'Someone'} sent ${rule.maxGroupSize > 1 ? 'messages' : 'a message'}`;
+        return `${data?.senderName || 'Someone'} sent ${rule.maxGroupSize > 1 ? 'messages' : 'a message'}`;
       case 'mentions':
-        return `${(notification.data as any)?.senderName || 'Someone'} mentioned you`;
+        return `${data?.senderName || 'Someone'} mentioned you`;
       case 'drive':
-        return `${(notification.data as any)?.senderName || 'Someone'} shared files with you`;
+        return `${data?.senderName || 'Someone'} shared files with you`;
+      case 'scheduling':
+        return notification.title;
+      case 'hr':
+        return notification.title;
       case 'system':
         return 'System notifications';
       default:

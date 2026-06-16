@@ -23,7 +23,9 @@ export type VLinkEntityType =
   | 'USER'
   | 'BUSINESS'
   | 'HOUSEHOLD'
-  | 'MODULE_ENTITY';
+  | 'MODULE_ENTITY'
+  | 'WORKFORCE_COMMUNICATION'
+  | 'WORKFORCE_CAMPAIGN';
 
 export interface VLinkEntityCounts {
   accessible: Record<string, number>;

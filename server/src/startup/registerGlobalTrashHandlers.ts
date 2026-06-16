@@ -45,6 +45,30 @@ import {
   softTrashPlaceItem,
   type PlaceTrashItemType,
 } from '../services/place/placeTrashService';
+import {
+  emptySchedulingTrash,
+  listTrashedSchedulingItemsForGlobalTrash,
+  permanentlyDeleteSchedulingItem,
+  restoreSchedulingItem,
+  softTrashSchedulingItem,
+  type SchedulingTrashItemType,
+} from '../services/schedulingTrashService';
+import {
+  emptyHRTrash,
+  listTrashedEmployeeProfilesForGlobalTrash,
+  permanentlyDeleteHRItem,
+  restoreHRItem,
+  softTrashHRItem,
+  type HRTrashItemType,
+} from '../services/hrTrashService';
+import {
+  emptyWorkforceTrash,
+  listTrashedWorkforceItemsForGlobalTrash,
+  permanentlyDeleteWorkforceItem,
+  restoreWorkforceItem,
+  softTrashWorkforceItem,
+  type WorkforceTrashItemType,
+} from '../services/workforceTrashService';
 import { logger } from '../lib/logger';
 
 export function registerGlobalTrashHandlers(): void {
@@ -240,8 +264,119 @@ export function registerGlobalTrashHandlers(): void {
     listTrashed: async ({ userId }) => listTrashedPlaceItemsForGlobalTrash(userId),
   });
 
+  registerGlobalTrashModuleHandler({
+    moduleId: 'scheduling',
+    moduleName: 'Scheduling',
+    supportedTypes: ['schedule', 'shift', 'schedule_template'],
+    softTrash: async ({ userId, type, id, metadata }) => {
+      if (type !== 'schedule' && type !== 'shift' && type !== 'schedule_template') {
+        throw new Error(`Unsupported scheduling trash type: ${type}`);
+      }
+      await softTrashSchedulingItem({
+        userId,
+        type: type as SchedulingTrashItemType,
+        id,
+        metadata: metadata as Record<string, unknown> | undefined,
+      });
+    },
+    restore: async ({ userId, type, id, metadata }) => {
+      if (type !== 'schedule' && type !== 'shift' && type !== 'schedule_template') return false;
+      return restoreSchedulingItem({
+        userId,
+        type: type as SchedulingTrashItemType,
+        id,
+        metadata: metadata as Record<string, unknown> | undefined,
+      });
+    },
+    permanentDelete: async ({ userId, type, id, metadata }) => {
+      if (type !== 'schedule' && type !== 'shift' && type !== 'schedule_template') return false;
+      return permanentlyDeleteSchedulingItem({
+        userId,
+        type: type as SchedulingTrashItemType,
+        id,
+        metadata: metadata as Record<string, unknown> | undefined,
+      });
+    },
+    emptyModuleTrash: async ({ userId }) => emptySchedulingTrash({ userId }),
+    listTrashed: async ({ userId }) => listTrashedSchedulingItemsForGlobalTrash(userId),
+  });
+
+  registerGlobalTrashModuleHandler({
+    moduleId: 'hr',
+    moduleName: 'HR',
+    supportedTypes: ['employee_profile'],
+    softTrash: async ({ userId, type, id, metadata }) => {
+      if (type !== 'employee_profile') {
+        throw new Error(`Unsupported HR trash type: ${type}`);
+      }
+      await softTrashHRItem({
+        userId,
+        type: type as HRTrashItemType,
+        id,
+        metadata: metadata as Record<string, unknown> | undefined,
+      });
+    },
+    restore: async ({ userId, type, id, metadata }) => {
+      if (type !== 'employee_profile') return false;
+      return restoreHRItem({
+        userId,
+        type: type as HRTrashItemType,
+        id,
+        metadata: metadata as Record<string, unknown> | undefined,
+      });
+    },
+    permanentDelete: async ({ userId, type, id, metadata }) => {
+      if (type !== 'employee_profile') return false;
+      return permanentlyDeleteHRItem({
+        userId,
+        type: type as HRTrashItemType,
+        id,
+        metadata: metadata as Record<string, unknown> | undefined,
+      });
+    },
+    emptyModuleTrash: async ({ userId }) => emptyHRTrash({ userId }),
+    listTrashed: async ({ userId }) => listTrashedEmployeeProfilesForGlobalTrash(userId),
+  });
+
+  registerGlobalTrashModuleHandler({
+    moduleId: 'workforce_comms',
+    moduleName: 'Workforce Communications',
+    supportedTypes: ['communication', 'campaign'],
+    softTrash: async ({ userId, type, id, metadata }) => {
+      if (type !== 'communication' && type !== 'campaign') {
+        throw new Error(`Unsupported workforce trash type: ${type}`);
+      }
+      await softTrashWorkforceItem({
+        userId,
+        type: type as WorkforceTrashItemType,
+        id,
+        metadata: metadata as Record<string, unknown> | undefined,
+      });
+    },
+    restore: async ({ userId, type, id, metadata }) => {
+      if (type !== 'communication' && type !== 'campaign') return false;
+      return restoreWorkforceItem({
+        userId,
+        type: type as WorkforceTrashItemType,
+        id,
+        metadata: metadata as Record<string, unknown> | undefined,
+      });
+    },
+    permanentDelete: async ({ userId, type, id, metadata }) => {
+      if (type !== 'communication' && type !== 'campaign') return false;
+      return permanentlyDeleteWorkforceItem({
+        userId,
+        type: type as WorkforceTrashItemType,
+        id,
+        metadata: metadata as Record<string, unknown> | undefined,
+      });
+    },
+    emptyModuleTrash: async ({ userId }) => emptyWorkforceTrash({ userId }),
+    listTrashed: async ({ userId }) => listTrashedWorkforceItemsForGlobalTrash(userId),
+  });
+
   void logger.info('Registered Global Trash module handlers', {
     operation: 'global_trash_handlers_register',
-    modules: ['drive', 'chat', 'calendar', 'todo', 'notes', 'place'],
+    modules: ['drive', 'chat', 'calendar', 'todo', 'notes', 'place', 'scheduling', 'hr', 'workforce_comms'],
   });
 }

@@ -398,7 +398,7 @@ export const useScheduling = ({
       const data = await getShiftTemplates(businessId, token);
       setTemplates(data);
     } catch (err) {
-      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch templates';
+      const errorMessage = err instanceof Error ? err.message : 'Failed to fetch scheduling shift templates';
       setError(errorMessage);
       console.error('Error fetching templates:', err);
     } finally {

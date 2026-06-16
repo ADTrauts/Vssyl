@@ -81,6 +81,10 @@ export interface ScheduleShift {
   updatedAt: string;
 }
 
+/**
+ * Scheduling shift planning template (`ShiftTemplate` / `shift_templates`).
+ * Not HR `AttendanceShiftTemplate` — see SHIFT_TEMPLATE_DOMAIN_DECISION.md.
+ */
 export interface ShiftTemplate {
   id: string;
   businessId: string;
@@ -165,6 +169,10 @@ export interface ShiftSwapRequest {
   updatedAt: string;
 }
 
+/**
+ * Multi-day schedule layout template (`ScheduleTemplate` / `schedule_templates`).
+ * Distinct from `ShiftTemplate` and HR attendance expectation templates.
+ */
 export interface ScheduleTemplate {
   id: string;
   businessId: string;
@@ -364,7 +372,7 @@ export const deleteShift = async (businessId: string, shiftId: string, token?: s
   if (!res.ok) throw new Error('Failed to delete shift');
 };
 
-// Shift Templates
+// Scheduling shift templates (ShiftTemplate — planning patterns, not HR attendance)
 export const getShiftTemplates = async (businessId: string, token?: string): Promise<ShiftTemplate[]> => {
   if (!token) throw new Error('Authentication required');
   const res = await fetch(`/api/scheduling/admin/templates?businessId=${businessId}`, {
@@ -373,7 +381,7 @@ export const getShiftTemplates = async (businessId: string, token?: string): Pro
   if (!res.ok) {
     const errorData = await res.json().catch(() => ({}));
     console.error('Failed to fetch templates:', { status: res.status, error: errorData });
-    throw new Error(errorData.message || 'Failed to fetch templates');
+    throw new Error(errorData.message || 'Failed to fetch scheduling shift templates');
   }
   const data = await res.json();
   return data.templates || data;
@@ -398,11 +406,11 @@ export const createShiftTemplate = async (
     headers: authHeaders(token, { 'Content-Type': 'application/json' }),
     body: JSON.stringify({ businessId, ...templateData }),
   });
-  if (!res.ok) throw new Error('Failed to create template');
+  if (!res.ok) throw new Error('Failed to create scheduling shift template');
   return res.json();
 };
 
-// Schedule Templates
+// Schedule templates (ScheduleTemplate — multi-day layouts)
 export const getScheduleTemplates = async (businessId: string, token?: string): Promise<ScheduleTemplate[]> => {
   if (!token) throw new Error('Authentication required');
   const res = await fetch(`/api/scheduling/admin/schedule-templates?businessId=${businessId}`, {

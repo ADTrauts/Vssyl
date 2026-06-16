@@ -8,6 +8,7 @@ export const BUILT_IN_MODULE_IDS = [
   'calendar',
   'hr',
   'scheduling',
+  'workforce_comms',
   'todo',
   'notes',
   'notebook',

@@ -33,7 +33,7 @@ const SCHEDULING_STRATEGIES = [
   { value: 'AVAILABILITY_FIRST', label: 'Availability-First', description: 'Prioritize employee availability and preferences' },
   { value: 'BUDGET_FIRST', label: 'Budget-First', description: 'Optimize labor costs while maintaining coverage' },
   { value: 'COMPLIANCE_FIRST', label: 'Compliance-First', description: 'Enforce labor laws and safety requirements' },
-  { value: 'TEMPLATE_BASED', label: 'Template-Based', description: 'Use reusable weekly/monthly templates' },
+  { value: 'TEMPLATE_BASED', label: 'Template-Based', description: 'Use reusable weekly/monthly schedule templates' },
   { value: 'AUTO_GENERATE', label: 'Auto-Generate', description: 'AI-powered automatic schedule generation' },
 ];
 

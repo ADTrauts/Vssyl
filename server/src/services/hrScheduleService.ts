@@ -1,3 +1,14 @@
+/**
+ * Workforce calendar bridge between HR (PTO) and Scheduling (shifts).
+ *
+ * @module bridge
+ * @ownership Platform / Business Operations (shared workforce calendar sync)
+ * @consumers hrController, hrAIActionService, schedulingAdminController,
+ *   schedulingTeamController, schedulingEmployeeController, businessController,
+ *   moduleRuntimeController, moduleProvisionController, moduleBrowseController,
+ *   moduleArtifactController, moduleSubmissionController
+ * @see docs/business-operations/HR_SCHEDULE_SERVICE_CONTRACT.md
+ */
 import { TimeOffStatus } from '@prisma/client';
 import { prisma } from '../lib/prisma';
 import { logger } from '../lib/logger';

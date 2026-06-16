@@ -12,6 +12,7 @@ import { VLinkModule } from '../vlink/VLinkModule';
 import DriveWorkspaceLanding from '../drive/DriveWorkspaceLanding';
 import HRLayout from '../hr/HRLayout';
 import SchedulingLayout from '../scheduling/SchedulingLayout';
+import WorkforceCommsLayout from '../workforce-comms/WorkforceCommsLayout';
 import BusinessWorkspaceHubPanel from './BusinessWorkspaceHubPanel';
 import BusinessWorkspaceModuleRedirect from './BusinessWorkspaceModuleRedirect';
 import { getModuleDefinition, normalizeModuleId } from '../../runtime/modules/moduleRegistry';
@@ -79,6 +80,9 @@ export default function BusinessWorkspaceContent({
         return <HRLayout businessId={business.id} />;
       case 'scheduling':
         return <SchedulingLayout businessId={business.id} />;
+      case 'workforce_comms':
+      case 'workforce-comms':
+        return <WorkforceCommsLayout businessId={business.id} />;
       case 'analytics':
         return <BusinessWorkspaceModuleRedirect href={analyticsHref} />;
       case 'members':

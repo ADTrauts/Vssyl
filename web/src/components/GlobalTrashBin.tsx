@@ -139,6 +139,14 @@ export default function GlobalTrashBin({ className = '', onItemTrashed }: Global
         return '🏪';
       case 'meeting':
         return '📍';
+      case 'schedule':
+        return '📆';
+      case 'shift':
+        return '🕐';
+      case 'schedule_template':
+        return '📋';
+      case 'employee_profile':
+        return '👤';
       default:
         return '📄';
     }
@@ -259,20 +267,6 @@ export default function GlobalTrashBin({ className = '', onItemTrashed }: Global
       if (!trashItemData) return;
 
       const itemData = JSON.parse(trashItemData) as Omit<TrashedItem, 'trashedAt'>;
-
-      if (
-        itemData.type === 'module' &&
-        itemData.moduleId === 'scheduling' &&
-        itemData.metadata?.scheduleId
-      ) {
-        window.dispatchEvent(
-          new CustomEvent('scheduleTrashed', {
-            detail: { ...itemData, scheduleId: itemData.metadata.scheduleId },
-          })
-        );
-        toast.success(`${itemData.name} will be deleted`);
-        return;
-      }
 
       setPendingMoveToTrashItem(itemData);
     } catch (error) {

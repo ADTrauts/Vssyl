@@ -46,12 +46,15 @@ model Schedule {
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
 
+  trashedAt         DateTime?
+
   shifts            ScheduleShift[]
   
   @@index([businessId])
   @@index([status])
   @@index([startDate, endDate])
   @@index([layoutMode])
+  @@index([trashedAt])
   @@map("schedules")
 }
 
@@ -112,6 +115,8 @@ model ScheduleShift {
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
 
+  trashedAt           DateTime?
+
   swapRequests        ShiftSwapRequest[] @relation("OriginalShift")
   
   @@index([scheduleId])
@@ -124,6 +129,7 @@ model ScheduleShift {
   @@index([stationName])
   @@index([jobFunction])
   @@index([priority])
+  @@index([trashedAt])
   @@map("schedule_shifts")
 }
 
@@ -281,10 +287,13 @@ model ScheduleTemplate {
   
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
+
+  trashedAt           DateTime?
   
   @@unique([businessId, name])
   @@index([businessId])
   @@index([isActive])
+  @@index([trashedAt])
   @@map("schedule_templates")
 }
 

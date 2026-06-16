@@ -20,6 +20,14 @@ export function normalizeModuleId(rawId: string): string {
   ) {
     return 'scheduling';
   }
+  if (
+    id === 'workforce_comms' ||
+    id === 'workforce-comms' ||
+    id.startsWith('workforce_comms') ||
+    id.startsWith('workforce-comms')
+  ) {
+    return 'workforce_comms';
+  }
   if (id === 'calendar' || id.startsWith('cal')) return 'calendar';
   if (id === 'drive' || id.includes('drive')) return 'drive';
   if (id === 'chat' || id.includes('chat')) return 'chat';

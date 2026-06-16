@@ -1,314 +1,213 @@
 import { Response } from 'express';
 import { AuthenticatedRequest } from '../../middleware/schedulingPermissions';
-import { prisma } from '../../lib/prisma';
-import { logger } from '../../lib/logger';
-import { Prisma, BusinessRole, SchedulingStrategy, JobFunction, StationType, ScheduleStatus, AttendanceRecordStatus } from '@prisma/client';
-import { getRecommendedSchedulingConfig } from '../../services/schedulingRecommendationService';
-import { SchedulingPhilosophyService } from '../../services/schedulingPhilosophyService';
-import { getChatSocketService } from '../../services/chatSocketService';
-import { requireAuthorizedBusinessId, TIME_FIELD_REGEX } from './schedulingShared';
+import { requireAuthorizedBusinessId } from './schedulingShared';
+import {
+  publishBusinessSchedule,
+  SchedulingWorkflowError,
+} from '../../services/schedulingPublishService';
+import {
+  assignShiftToEmployeeByManager,
+  listOpenShiftsForManager,
+  listTeamAvailability,
+  resolveManagerScopeFromRequest,
+} from '../../services/schedulingManagerService';
+import { listTeamSchedulesForManager } from '../../services/schedulingScheduleService';
+import {
+  approveShiftSwap,
+  denyShiftSwap,
+  listPendingSwapRequestsForTeam,
+} from '../../services/schedulingSwapService';
+import { mapSchedulingServiceError } from '../../services/schedulingControllerUtils';
 
-// Manager Functions
-/**
- * GET /api/scheduling/team/schedules
- * Returns schedules for the manager's team
- * For ADMIN users: returns all schedules (same as admin endpoint)
- * For MANAGER users: returns schedules with shifts assigned to their direct reports
- */
 export async function getTeamSchedules(req: AuthenticatedRequest, res: Response): Promise<void> {
   try {
     const user = req.user;
     const businessId = requireAuthorizedBusinessId(req, res);
-    if (!businessId) return;
+    if (!businessId || !user) return;
 
-    const directReportIds = req.directReportIds || [];
-
-    if (!user) {
-      res.status(401).json({ error: 'User not authenticated' });
-      return;
-    }
-
-    // Check if user is ADMIN or has canManage permission
-    const member = await prisma.businessMember.findUnique({
-      where: {
-        businessId_userId: {
-          businessId,
-          userId: user.id,
-        },
-      },
-      select: { role: true, canManage: true },
-    });
-
-    const isAdmin = member?.role === BusinessRole.ADMIN || member?.canManage === true;
-
-    const { status, startDate, endDate } = req.query;
-
-    const where: Prisma.ScheduleWhereInput = {
-      businessId
-    };
-
-    if (
-      status &&
-      typeof status === 'string' &&
-      ['DRAFT', 'PUBLISHED', 'ARCHIVED'].includes(status.toUpperCase())
-    ) {
-      where.status = status.toUpperCase() as ScheduleStatus;
-    }
-
-    if (startDate || endDate) {
-      const dateFilters: Prisma.ScheduleWhereInput[] = [];
-      if (startDate && typeof startDate === 'string') {
-        dateFilters.push({ startDate: { gte: new Date(startDate) } });
-      }
-      if (endDate && typeof endDate === 'string') {
-        dateFilters.push({ endDate: { lte: new Date(endDate) } });
-      }
-      if (dateFilters.length > 0) {
-        where.AND = dateFilters;
-      }
-    }
-
-    // For ADMIN users: return all schedules (same as admin endpoint)
-    // For MANAGER users: filter schedules that have shifts assigned to their direct reports
-    if (!isAdmin && directReportIds.length > 0) {
-      // Filter schedules that have at least one shift assigned to a direct report
-      where.shifts = {
-        some: {
-          employeePositionId: {
-            in: directReportIds
-          }
-        }
-      };
-    }
-
-    const schedules = await prisma.schedule.findMany({
-      where,
-      include: {
-        shifts: {
-          include: {
-            employeePosition: {
-              include: {
-                user: {
-                  select: {
-                    id: true,
-                    name: true,
-                    email: true
-                  }
-                },
-                position: {
-                  select: {
-                    title: true
-                  }
-                }
-              }
-            },
-            position: {
-              select: {
-                id: true,
-                title: true
-              }
-            }
-          },
-          orderBy: {
-            startTime: 'asc'
-          }
-        }
-      },
-      orderBy: {
-        startDate: 'desc'
-      }
-    });
-
-    // Return schedules with shifts included
-    const schedulesWithShifts = schedules.map(schedule => ({
-      id: schedule.id,
-      businessId: schedule.businessId,
-      name: schedule.name,
-      description: schedule.description,
-      locationId: schedule.locationId,
-      startDate: schedule.startDate,
-      endDate: schedule.endDate,
-      timezone: schedule.timezone,
-      status: schedule.status,
-      publishedAt: schedule.publishedAt,
-      publishedById: schedule.publishedById,
-      templateId: schedule.templateId,
-      metadata: schedule.metadata,
-      createdById: schedule.createdById,
-      createdAt: schedule.createdAt,
-      updatedAt: schedule.updatedAt,
-      shifts: schedule.shifts || []
-    }));
-
-    // Debug: Log shift counts
-    const totalShifts = schedulesWithShifts.reduce((sum, s) => sum + (s.shifts?.length || 0), 0);
-    logger.info('Team schedules retrieved', {
-      operation: 'get_team_schedules',
-      userId: user.id,
+    const scope = await resolveManagerScopeFromRequest(
       businessId,
-      directReportCount: directReportIds.length,
-      scheduleCount: schedulesWithShifts.length,
-      totalShiftCount: totalShifts,
-      schedulesWithShifts: schedulesWithShifts.map(s => ({
-        id: s.id,
-        name: s.name,
-        status: s.status,
-        shiftCount: s.shifts?.length || 0,
-        firstShiftDate: s.shifts?.[0]?.startTime || null
-      }))
+      user.id,
+      req.directReportIds
+    );
+
+    const status =
+      typeof req.query.status === 'string' ? req.query.status : undefined;
+    const startDate =
+      typeof req.query.startDate === 'string' ? req.query.startDate : undefined;
+    const endDate =
+      typeof req.query.endDate === 'string' ? req.query.endDate : undefined;
+
+    const schedules = await listTeamSchedulesForManager({
+      businessId,
+      scope,
+      status,
+      startDate,
+      endDate,
     });
 
-    res.json({ schedules: schedulesWithShifts });
+    res.json({ schedules });
   } catch (error: unknown) {
-    const err = error instanceof Error ? error : new Error('Unknown error');
-    logger.error('Failed to get team schedules', {
-      operation: 'get_team_schedules',
-      error: { message: err.message, stack: err.stack }
-    });
-    res.status(500).json({ error: 'Failed to retrieve team schedules' });
+    if (!mapSchedulingServiceError(error, res, 'get_team_schedules')) {
+      res.status(500).json({ error: 'Failed to retrieve team schedules' });
+    }
   }
 }
 
 export async function publishTeamSchedule(req: AuthenticatedRequest, res: Response): Promise<void> {
-  res.status(501).json({ error: 'Not yet implemented - Manager features coming in Phase 2' });
-}
-
-export async function getOpenShiftsForTeam(req: AuthenticatedRequest, res: Response): Promise<void> {
-  res.status(501).json({ error: 'Not yet implemented - Open shifts coming in Phase 2' });
-}
-
-export async function assignEmployeeToShift(req: AuthenticatedRequest, res: Response): Promise<void> {
-  res.status(501).json({ error: 'Not yet implemented - Manager features coming in Phase 2' });
-}
-
-export async function getTeamAvailability(req: AuthenticatedRequest, res: Response): Promise<void> {
-  res.status(501).json({ error: 'Not yet implemented - Manager features coming in Phase 2' });
-}
-
-/**
- * GET /api/scheduling/team/swaps/pending
- * Get pending shift swap requests for manager's team
- */
-export async function getPendingShiftSwapRequestsForTeam(req: AuthenticatedRequest, res: Response): Promise<void> {
   try {
     const user = req.user;
     const businessId = requireAuthorizedBusinessId(req, res);
-    if (!businessId) return;
+    if (!businessId || !user) return;
 
-    const directReportIds = req.directReportIds || [];
-
-    if (!user) {
-      res.status(401).json({ error: 'User not authenticated' });
+    const scheduleId = req.params.id;
+    if (!scheduleId) {
+      res.status(400).json({ error: 'Schedule id is required' });
       return;
     }
 
-    // Check if user is ADMIN or has canManage permission
-    const member = await prisma.businessMember.findUnique({
-      where: {
-        businessId_userId: {
-          businessId,
-          userId: user.id,
-        },
-      },
-      select: { role: true, canManage: true },
+    const scope = await resolveManagerScopeFromRequest(
+      businessId,
+      user.id,
+      req.directReportIds
+    );
+
+    const result = await publishBusinessSchedule({
+      scheduleId,
+      businessId,
+      actorUserId: user.id,
+      managerScope: scope,
     });
 
-    const isAdmin = member?.role === BusinessRole.ADMIN || member?.canManage === true;
+    res.json({
+      schedule: result.schedule,
+      message: 'Schedule published successfully',
+      shiftCount: result.shiftCount,
+    });
+  } catch (error: unknown) {
+    if (error instanceof SchedulingWorkflowError) {
+      res.status(error.statusCode).json({ error: error.message });
+      return;
+    }
+    mapSchedulingServiceError(error, res, 'publish_team_schedule');
+  }
+}
 
-    // Build where clause
-    const where: Prisma.ShiftSwapRequestWhereInput = {
+export async function getOpenShiftsForTeam(req: AuthenticatedRequest, res: Response): Promise<void> {
+  try {
+    const user = req.user;
+    const businessId = requireAuthorizedBusinessId(req, res);
+    if (!businessId || !user) return;
+
+    const scope = await resolveManagerScopeFromRequest(
       businessId,
-      status: 'PENDING'
-    };
+      user.id,
+      req.directReportIds
+    );
 
-    // If not admin, filter by direct reports
-    if (!isAdmin && directReportIds.length > 0) {
-      where.OR = [
-        {
-          originalShift: {
-            employeePositionId: {
-              in: directReportIds
-            }
-          }
-        },
-        {
-          requestedToId: {
-            in: directReportIds
-          }
-        }
-      ];
+    const startDate =
+      typeof req.query.startDate === 'string' ? req.query.startDate : undefined;
+    const endDate =
+      typeof req.query.endDate === 'string' ? req.query.endDate : undefined;
+
+    const shifts = await listOpenShiftsForManager({
+      businessId,
+      scope,
+      startDate,
+      endDate,
+    });
+
+    res.json({ shifts });
+  } catch (error: unknown) {
+    mapSchedulingServiceError(error, res, 'get_open_shifts_team');
+  }
+}
+
+export async function assignEmployeeToShift(req: AuthenticatedRequest, res: Response): Promise<void> {
+  try {
+    const user = req.user;
+    const businessId = requireAuthorizedBusinessId(req, res);
+    if (!businessId || !user) return;
+
+    const shiftId = req.params.id;
+    const { employeePositionId } = req.body as { employeePositionId?: string };
+
+    if (!shiftId || !employeePositionId || typeof employeePositionId !== 'string') {
+      res.status(400).json({ error: 'Shift id and employeePositionId are required' });
+      return;
     }
 
-    const swaps = await prisma.shiftSwapRequest.findMany({
-      where,
-      include: {
-        originalShift: {
-          include: {
-            schedule: {
-              select: {
-                id: true,
-                name: true
-              }
-            },
-            employeePosition: {
-              include: {
-                user: {
-                  select: {
-                    id: true,
-                    name: true,
-                    email: true
-                  }
-                }
-              }
-            }
-          }
-        },
-        requestedBy: {
-          select: {
-            id: true,
-            name: true,
-            email: true
-          }
-        },
-        requestedTo: {
-          select: {
-            id: true,
-            name: true,
-            email: true
-          }
-        }
-      },
-      orderBy: {
-        createdAt: 'desc'
-      }
-    });
-
-    logger.info('Pending swap requests retrieved for team', {
-      operation: 'get_pending_swap_requests_team',
-      userId: user.id,
+    const scope = await resolveManagerScopeFromRequest(
       businessId,
-      swapCount: swaps.length
+      user.id,
+      req.directReportIds
+    );
+
+    const shift = await assignShiftToEmployeeByManager({
+      businessId,
+      shiftId,
+      employeePositionId,
+      actorUserId: user.id,
+      scope,
     });
 
+    res.json(shift);
+  } catch (error: unknown) {
+    if (error instanceof SchedulingWorkflowError) {
+      res.status(error.statusCode).json({ error: error.message });
+      return;
+    }
+    mapSchedulingServiceError(error, res, 'assign_employee_to_shift');
+  }
+}
+
+export async function getTeamAvailability(req: AuthenticatedRequest, res: Response): Promise<void> {
+  try {
+    const user = req.user;
+    const businessId = requireAuthorizedBusinessId(req, res);
+    if (!businessId || !user) return;
+
+    const scope = await resolveManagerScopeFromRequest(
+      businessId,
+      user.id,
+      req.directReportIds
+    );
+
+    const availability = await listTeamAvailability({ businessId, scope });
+    res.json({ availability });
+  } catch (error: unknown) {
+    mapSchedulingServiceError(error, res, 'get_team_availability');
+  }
+}
+
+export async function getPendingShiftSwapRequestsForTeam(
+  req: AuthenticatedRequest,
+  res: Response
+): Promise<void> {
+  try {
+    const user = req.user;
+    const businessId = requireAuthorizedBusinessId(req, res);
+    if (!businessId || !user) return;
+
+    const scope = await resolveManagerScopeFromRequest(
+      businessId,
+      user.id,
+      req.directReportIds
+    );
+
+    const swaps = await listPendingSwapRequestsForTeam({ businessId, scope });
     res.json({ swaps });
   } catch (error: unknown) {
-    const err = error instanceof Error ? error : new Error('Unknown error');
-    logger.error('Failed to get pending swap requests for team', {
-      operation: 'get_pending_swap_requests_team',
-      error: { message: err.message, stack: err.stack }
-    });
-    res.status(500).json({ error: 'Failed to retrieve pending swap requests' });
+    mapSchedulingServiceError(error, res, 'get_pending_swap_requests_team');
   }
 }
 
-/**
- * PUT /api/scheduling/team/swaps/:id/approve
- * Approve a shift swap request (Manager)
- */
-export async function approveShiftSwapManager(req: AuthenticatedRequest, res: Response): Promise<void> {
+export async function approveShiftSwapManager(
+  req: AuthenticatedRequest,
+  res: Response
+): Promise<void> {
   try {
     const user = req.user;
-    // Get businessId from middleware or validate from query
     let businessId: string | undefined = req.businessId;
     if (!businessId) {
       const businessIdParam = req.query.businessId;
@@ -320,156 +219,33 @@ export async function approveShiftSwapManager(req: AuthenticatedRequest, res: Re
       }
     }
     const swapId = req.params.id;
-    const { managerNotes } = req.body;
+    const { managerNotes } = req.body as { managerNotes?: string };
 
     if (!user || !businessId || !swapId) {
       res.status(401).json({ error: 'User not authenticated or missing required parameters' });
       return;
     }
 
-    // Get the swap request
-    const swapRequest = await prisma.shiftSwapRequest.findUnique({
-      where: { id: swapId },
-      include: {
-        originalShift: {
-          include: {
-            employeePosition: true
-          }
-        }
-      }
-    });
-
-    if (!swapRequest || swapRequest.businessId !== businessId) {
-      res.status(404).json({ error: 'Swap request not found' });
-      return;
-    }
-
-    if (swapRequest.status !== 'PENDING') {
-      res.status(400).json({ error: 'Swap request is not pending' });
-      return;
-    }
-
-    // Update swap request status
-    const updatedSwap = await prisma.shiftSwapRequest.update({
-      where: { id: swapId },
-      data: {
-        status: 'APPROVED',
-        approvedById: user.id,
-        approvedAt: new Date(),
-        reason: managerNotes ? `${swapRequest.reason || ''}\n\nManager notes: ${managerNotes}` : swapRequest.reason
-      },
-      include: {
-        originalShift: {
-          include: {
-            schedule: {
-              select: {
-                id: true,
-                name: true
-              }
-            },
-            employeePosition: {
-              include: {
-                user: {
-                  select: {
-                    id: true,
-                    name: true,
-                    email: true
-                  }
-                }
-              }
-            }
-          }
-        },
-        requestedBy: {
-          select: {
-            id: true,
-            name: true,
-            email: true
-          }
-        },
-        requestedTo: {
-          select: {
-            id: true,
-            name: true,
-            email: true
-          }
-        }
-      }
-    });
-
-    // If a specific employee was requested, assign them to the shift
-    if (swapRequest.requestedToId && swapRequest.originalShift.employeePositionId) {
-      // Find the employee position for the requested user
-      const requestedEmployeePosition = await prisma.employeePosition.findFirst({
-        where: {
-          userId: swapRequest.requestedToId,
-          businessId,
-          active: true
-        }
-      });
-
-      if (requestedEmployeePosition) {
-        // Get schedule status before updating shift
-        const schedule = await prisma.schedule.findUnique({
-          where: { id: swapRequest.originalShift.scheduleId },
-          select: { status: true }
-        });
-
-        await prisma.scheduleShift.update({
-          where: { id: swapRequest.originalShiftId },
-          data: {
-            employeePositionId: requestedEmployeePosition.id,
-            status: 'FILLED'
-          }
-        });
-
-        // Sync to calendar if schedule is published
-        if (schedule?.status === 'PUBLISHED') {
-          try {
-            const { syncSingleShiftToCalendar } = await import('../../services/hrScheduleService');
-            await syncSingleShiftToCalendar(swapRequest.originalShiftId, businessId);
-          } catch (calendarError) {
-            // Log but don't fail swap approval if calendar sync fails
-            logger.warn('Failed to sync shift swap to calendar', {
-              operation: 'approve_shift_swap_manager_calendar_sync',
-              shiftId: swapRequest.originalShiftId,
-              swapId,
-              error: {
-                message: calendarError instanceof Error ? calendarError.message : 'Unknown error',
-                stack: calendarError instanceof Error ? calendarError.stack : undefined
-              }
-            });
-          }
-        }
-      }
-    }
-
-    logger.info('Shift swap approved by manager', {
-      operation: 'approve_shift_swap_manager',
-      userId: user.id,
+    const updatedSwap = await approveShiftSwap({
       businessId,
-      swapId
+      swapId,
+      actorUserId: user.id,
+      notes: managerNotes,
+      notesLabel: 'Manager notes',
     });
 
     res.json(updatedSwap);
   } catch (error: unknown) {
-    const err = error instanceof Error ? error : new Error('Unknown error');
-    logger.error('Failed to approve shift swap', {
-      operation: 'approve_shift_swap_manager',
-      error: { message: err.message, stack: err.stack }
-    });
-    res.status(500).json({ error: 'Failed to approve shift swap' });
+    mapSchedulingServiceError(error, res, 'approve_shift_swap_manager');
   }
 }
 
-/**
- * PUT /api/scheduling/team/swaps/:id/deny
- * Deny a shift swap request (Manager)
- */
-export async function denyShiftSwapManager(req: AuthenticatedRequest, res: Response): Promise<void> {
+export async function denyShiftSwapManager(
+  req: AuthenticatedRequest,
+  res: Response
+): Promise<void> {
   try {
     const user = req.user;
-    // Get businessId from middleware or validate from query
     let businessId: string | undefined = req.businessId;
     if (!businessId) {
       const businessIdParam = req.query.businessId;
@@ -481,91 +257,23 @@ export async function denyShiftSwapManager(req: AuthenticatedRequest, res: Respo
       }
     }
     const swapId = req.params.id;
-    const { managerNotes } = req.body;
+    const { managerNotes } = req.body as { managerNotes?: string };
 
     if (!user || !businessId || !swapId) {
       res.status(401).json({ error: 'User not authenticated or missing required parameters' });
       return;
     }
 
-    // Get the swap request
-    const swapRequest = await prisma.shiftSwapRequest.findUnique({
-      where: { id: swapId }
-    });
-
-    if (!swapRequest || swapRequest.businessId !== businessId) {
-      res.status(404).json({ error: 'Swap request not found' });
-      return;
-    }
-
-    if (swapRequest.status !== 'PENDING') {
-      res.status(400).json({ error: 'Swap request is not pending' });
-      return;
-    }
-
-    // Update swap request status
-    const updatedSwap = await prisma.shiftSwapRequest.update({
-      where: { id: swapId },
-      data: {
-        status: 'DENIED',
-        approvedById: user.id,
-        approvedAt: new Date(),
-        reason: managerNotes ? `${swapRequest.reason || ''}\n\nManager notes: ${managerNotes}` : swapRequest.reason
-      },
-      include: {
-        originalShift: {
-          include: {
-            schedule: {
-              select: {
-                id: true,
-                name: true
-              }
-            },
-            employeePosition: {
-              include: {
-                user: {
-                  select: {
-                    id: true,
-                    name: true,
-                    email: true
-                  }
-                }
-              }
-            }
-          }
-        },
-        requestedBy: {
-          select: {
-            id: true,
-            name: true,
-            email: true
-          }
-        },
-        requestedTo: {
-          select: {
-            id: true,
-            name: true,
-            email: true
-          }
-        }
-      }
-    });
-
-    logger.info('Shift swap denied by manager', {
-      operation: 'deny_shift_swap_manager',
-      userId: user.id,
+    const updatedSwap = await denyShiftSwap({
       businessId,
-      swapId
+      swapId,
+      actorUserId: user.id,
+      notes: managerNotes,
+      notesLabel: 'Manager notes',
     });
 
     res.json(updatedSwap);
   } catch (error: unknown) {
-    const err = error instanceof Error ? error : new Error('Unknown error');
-    logger.error('Failed to deny shift swap', {
-      operation: 'deny_shift_swap_manager',
-      error: { message: err.message, stack: err.stack }
-    });
-    res.status(500).json({ error: 'Failed to deny shift swap' });
+    mapSchedulingServiceError(error, res, 'deny_shift_swap_manager');
   }
 }
-

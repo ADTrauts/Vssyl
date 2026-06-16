@@ -1,7 +1,21 @@
-import { PrismaClient, Prisma } from '@prisma/client';
+import { PrismaClient, Prisma, EmployeeType as PrismaEmployeeType } from '@prisma/client';
 import { EmployeePosition, Position, User, Business } from '@prisma/client';
+import bcrypt from 'bcrypt';
 import { prisma } from '../lib/prisma';
 import { logger } from '../lib/logger';
+
+/**
+ * Workforce identity authority service.
+ *
+ * EmployeePosition writes MUST go through this service (org-chart authority path).
+ * HR extends via EmployeeHRProfile — HR must not create EP placement directly.
+ *
+ * Consumer matrix (read-only unless noted):
+ * - Org Chart routes: WRITE (authority)
+ * - HR CSV import: WRITE (delegated via importEmployeesFromCSV)
+ * - HR terminate/delete: WRITE (deactivate via deactivateEmployeePositionById)
+ * - Scheduling, Calendar, hrScheduleService: READ only
+ */
 
 function logSrvErr(operation: string, message: string, err: unknown, context?: Record<string, unknown>): void {
   const e = err instanceof Error ? err : new Error(String(err));
@@ -83,6 +97,40 @@ export interface BusinessEmployeeSummary {
   tierDistribution: Record<string, number>;
 }
 
+export interface CsvImportRowInput {
+  row: number;
+  name: string;
+  email: string;
+  title?: string;
+  department?: string;
+  hiredate?: string;
+  employeetype?: string;
+  worklocation?: string;
+}
+
+export interface CsvImportRowResult {
+  row: number;
+  success: boolean;
+  email: string;
+  name: string;
+  error?: string;
+  action?: 'created' | 'updated' | 'skipped';
+}
+
+export interface CsvImportParams {
+  businessId: string;
+  assignedById: string;
+  defaultTierId: string;
+  rows: CsvImportRowInput[];
+}
+
+export interface CsvImportSummary {
+  created: number;
+  updated: number;
+  skipped: number;
+  results: CsvImportRowResult[];
+}
+
 export class EmployeeManagementService {
   /**
    * Assign an employee to a position
@@ -137,7 +185,7 @@ export class EmployeeManagementService {
     }
 
     // Create the assignment (businessId always from authoritative position row)
-    return await prisma.employeePosition.create({
+    const assignment = await prisma.employeePosition.create({
       data: {
         userId: data.userId,
         positionId: data.positionId,
@@ -161,17 +209,28 @@ export class EmployeeManagementService {
         },
       },
     });
+
+    void logger.info('Employee assigned to position', {
+      operation: 'employee_management_assign_to_position',
+      employeePositionId: assignment.id,
+      userId: data.userId,
+      positionId: data.positionId,
+      businessId: position.businessId,
+    });
+
+    return assignment;
   }
 
   /**
-   * Remove an employee from a position
+   * Remove an employee from a position (org-chart authority path).
    */
   async removeEmployeeFromPosition(
     userId: string,
     positionId: string,
-    businessId: string
+    businessId: string,
+    endDate: Date = new Date()
   ): Promise<void> {
-    await prisma.employeePosition.updateMany({
+    const result = await prisma.employeePosition.updateMany({
       where: {
         userId,
         positionId,
@@ -180,9 +239,45 @@ export class EmployeeManagementService {
       },
       data: {
         active: false,
-        endDate: new Date(),
+        endDate,
       },
     });
+
+    if (result.count > 0) {
+      void logger.info('Employee position deactivated', {
+        operation: 'employee_management_remove_from_position',
+        userId,
+        positionId,
+        businessId,
+        endDate: endDate.toISOString(),
+      });
+    }
+  }
+
+  /**
+   * Deactivate an assignment by EmployeePosition id.
+   * Used by HR terminate/delete for lifecycle symmetry with org-chart remove.
+   */
+  async deactivateEmployeePositionById(
+    employeePositionId: string,
+    businessId: string,
+    endDate: Date = new Date()
+  ): Promise<void> {
+    const assignment = await prisma.employeePosition.findFirst({
+      where: { id: employeePositionId, businessId, active: true },
+      select: { userId: true, positionId: true },
+    });
+
+    if (!assignment) {
+      return;
+    }
+
+    await this.removeEmployeeFromPosition(
+      assignment.userId,
+      assignment.positionId,
+      businessId,
+      endDate
+    );
   }
 
   /**
@@ -822,6 +917,234 @@ export class EmployeeManagementService {
       isValid: errors.length === 0,
       errors,
       warnings,
+    };
+  }
+
+  /**
+   * Import employees from parsed CSV rows.
+   * EmployeePosition placement uses assignEmployeeToPosition (authority path).
+   * EmployeeHRProfile upsert is HR-owned extension on the resulting EP.
+   */
+  async importEmployeesFromCSV(params: CsvImportParams): Promise<CsvImportSummary> {
+    const { businessId, assignedById, defaultTierId, rows } = params;
+    let created = 0;
+    let updated = 0;
+    let skipped = 0;
+    const results: CsvImportRowResult[] = [];
+
+    for (const row of rows) {
+      try {
+        const rowResult = await this.processCsvImportRow({
+          businessId,
+          assignedById,
+          defaultTierId,
+          row,
+        });
+        results.push(rowResult);
+        if (rowResult.action === 'created') {
+          created++;
+        } else if (rowResult.action === 'updated') {
+          updated++;
+        }
+      } catch (error: unknown) {
+        results.push({
+          row: row.row,
+          success: false,
+          email: row.email,
+          name: row.name,
+          error: error instanceof Error ? error.message : 'Unknown error',
+        });
+        skipped++;
+      }
+    }
+
+    return { created, updated, skipped, results };
+  }
+
+  private normalizeEmployeeTypeForImport(value?: string): PrismaEmployeeType | undefined {
+    if (!value) {
+      return undefined;
+    }
+    const normalized = value.trim().toUpperCase().replace(/[\s-]+/g, '_');
+    const allowed = Object.values(PrismaEmployeeType) as string[];
+    return allowed.includes(normalized) ? (normalized as PrismaEmployeeType) : undefined;
+  }
+
+  private async ensureBusinessMembership(userId: string, businessId: string): Promise<void> {
+    await prisma.businessMember.upsert({
+      where: {
+        businessId_userId: { businessId, userId },
+      },
+      create: {
+        businessId,
+        userId,
+        isActive: true,
+      },
+      update: {
+        isActive: true,
+        leftAt: null,
+      },
+    });
+  }
+
+  private async resolveOrCreateUserForImport(
+    email: string,
+    name: string
+  ): Promise<{ id: string; email: string; name: string | null }> {
+    let user = await prisma.user.findUnique({ where: { email } });
+    if (!user) {
+      const tempPassword = Math.random().toString(36).slice(-12) + Math.random().toString(36).slice(-12);
+      const hashedPassword = await bcrypt.hash(tempPassword, 10);
+      user = await prisma.user.create({
+        data: {
+          email,
+          name,
+          password: hashedPassword,
+          emailVerified: null,
+        },
+      });
+    } else if (user.name !== name) {
+      user = await prisma.user.update({
+        where: { id: user.id },
+        data: { name },
+      });
+    }
+    return user;
+  }
+
+  private async resolveOrCreatePositionForImport(
+    businessId: string,
+    defaultTierId: string,
+    title: string,
+    departmentName: string
+  ): Promise<{ id: string }> {
+    let department = await prisma.department.findFirst({
+      where: {
+        businessId,
+        name: { equals: departmentName, mode: 'insensitive' },
+      },
+    });
+
+    if (!department) {
+      department = await prisma.department.create({
+        data: {
+          businessId,
+          name: departmentName,
+        },
+      });
+    }
+
+    let position = await prisma.position.findFirst({
+      where: {
+        businessId,
+        departmentId: department.id,
+        title: { equals: title, mode: 'insensitive' },
+      },
+    });
+
+    if (!position) {
+      position = await prisma.position.create({
+        data: {
+          businessId,
+          departmentId: department.id,
+          tierId: defaultTierId,
+          title,
+        },
+      });
+    }
+
+    return position;
+  }
+
+  private async upsertHrProfileForImport(
+    employeePositionId: string,
+    businessId: string,
+    hireDate: Date,
+    row: CsvImportRowInput
+  ): Promise<void> {
+    const employeeType =
+      this.normalizeEmployeeTypeForImport(row.employeetype) ?? PrismaEmployeeType.FULL_TIME;
+
+    await prisma.employeeHRProfile.upsert({
+      where: { employeePositionId },
+      create: {
+        employeePositionId,
+        businessId,
+        hireDate,
+        employeeType,
+        workLocation: row.worklocation || null,
+        employmentStatus: 'ACTIVE',
+      },
+      update: {
+        hireDate,
+        employeeType: this.normalizeEmployeeTypeForImport(row.employeetype),
+        workLocation: row.worklocation || undefined,
+        employmentStatus: 'ACTIVE',
+      },
+    });
+  }
+
+  private async processCsvImportRow(params: {
+    businessId: string;
+    assignedById: string;
+    defaultTierId: string;
+    row: CsvImportRowInput;
+  }): Promise<CsvImportRowResult> {
+    const { businessId, assignedById, defaultTierId, row } = params;
+    const email = row.email;
+    const name = row.name;
+    const title = row.title || 'Employee';
+    const departmentName = row.department || 'General';
+    const hireDate = row.hiredate ? new Date(row.hiredate) : new Date();
+
+    const user = await this.resolveOrCreateUserForImport(email, name);
+    await this.ensureBusinessMembership(user.id, businessId);
+
+    const position = await this.resolveOrCreatePositionForImport(
+      businessId,
+      defaultTierId,
+      title,
+      departmentName
+    );
+
+    const existingPosition = await prisma.employeePosition.findFirst({
+      where: {
+        businessId,
+        userId: user.id,
+        positionId: position.id,
+        active: true,
+      },
+    });
+
+    let action: 'created' | 'updated' = 'created';
+    let employeePositionId: string;
+
+    if (existingPosition) {
+      await this.updateEmployeePosition(existingPosition.id, {
+        startDate: hireDate,
+      });
+      employeePositionId = existingPosition.id;
+      action = 'updated';
+    } else {
+      const assignment = await this.assignEmployeeToPosition({
+        userId: user.id,
+        positionId: position.id,
+        businessId,
+        assignedById,
+        startDate: hireDate,
+      });
+      employeePositionId = assignment.id;
+      action = 'created';
+    }
+
+    await this.upsertHrProfileForImport(employeePositionId, businessId, hireDate, row);
+
+    return {
+      row: row.row,
+      success: true,
+      email,
+      name,
+      action,
     };
   }
 }

@@ -1,0 +1,6 @@
+-- HR CO-09 / G13: V_Link entity types for employee profile, time-off, attendance exception, onboarding journey
+
+ALTER TYPE "VLinkEntityType" ADD VALUE IF NOT EXISTS 'HR_EMPLOYEE_PROFILE';
+ALTER TYPE "VLinkEntityType" ADD VALUE IF NOT EXISTS 'HR_TIME_OFF_REQUEST';
+ALTER TYPE "VLinkEntityType" ADD VALUE IF NOT EXISTS 'HR_ATTENDANCE_EXCEPTION';
+ALTER TYPE "VLinkEntityType" ADD VALUE IF NOT EXISTS 'HR_ONBOARDING_JOURNEY';

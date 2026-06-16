@@ -7,6 +7,10 @@ import { toast } from 'react-hot-toast';
 import { useBusinessConfiguration } from '@/contexts/BusinessConfigurationContext';
 import { useHRFeatures } from '@/hooks/useHRFeatures';
 import HRPageLayout from '@/components/hr/HRPageLayout';
+import {
+  HR_ATTENDANCE_EXPECTATION_TEMPLATE_LABEL,
+  HR_ATTENDANCE_EXPECTATION_SUMMARY,
+} from '@/lib/workforceTemplateTerminology';
 
 type AttendanceOverview = {
   activeEmployees: number;
@@ -366,6 +370,10 @@ export default function HRAttendancePage() {
         <h1 className="text-3xl font-bold">Attendance Settings</h1>
         <p className="text-gray-600 dark:text-gray-400 mt-2">
           Configure attendance policies and monitor usage for your organization.
+        </p>
+        <p className="text-sm text-gray-500 dark:text-gray-400 mt-3 max-w-3xl">
+          <span className="font-medium text-gray-700 dark:text-gray-300">{HR_ATTENDANCE_EXPECTATION_TEMPLATE_LABEL}s</span>{' '}
+          define expected work windows for attendance tracking. {HR_ATTENDANCE_EXPECTATION_SUMMARY}
         </p>
       </div>
 

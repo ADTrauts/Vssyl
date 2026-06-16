@@ -1,6 +1,14 @@
 import { authenticatedApiCall } from '../lib/apiUtils';
 import type { ModuleNotificationMetadata, ModuleNotificationType } from '../../../shared/src/types/module-notifications';
 
+/** Legacy / static workforce notification type → module category mapping (F-WC-002). */
+export const WORKFORCE_NOTIFICATION_TYPE_CATEGORIES: Record<string, string> = {
+  workforce_communication_published: 'workforce_comms',
+  workforce_ack_required: 'workforce_comms',
+  workforce_ack_reminder: 'workforce_comms',
+  workforce_campaign_completed: 'workforce_comms',
+};
+
 // Notification data interfaces
 export interface NotificationData {
   [key: string]: unknown;

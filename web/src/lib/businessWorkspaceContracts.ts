@@ -35,6 +35,7 @@ export const BUSINESS_WORKSPACE_SWITCH_CONTRACTS: BusinessWorkspaceModuleContrac
   { moduleId: 'vlink', routeKind: 'segment-switch', segment: 'vlink', switchMounted: true, entryComponent: 'VLinkModule' },
   { moduleId: 'hr', routeKind: 'segment-page', segment: 'hr', switchMounted: true, entryComponent: 'HRLayout' },
   { moduleId: 'scheduling', routeKind: 'segment-page', segment: 'scheduling', switchMounted: true, entryComponent: 'SchedulingLayout' },
+  { moduleId: 'workforce_comms', routeKind: 'segment-page', segment: 'workforce-comms', switchMounted: true, entryComponent: 'WorkforceCommsLayout' },
   { moduleId: 'members', routeKind: 'segment-page', segment: 'members', switchMounted: true, switchAliases: ['connections'], entryComponent: 'WorkMembersPage' },
   { moduleId: 'analytics', routeKind: 'segment-page', segment: 'analytics', switchMounted: true, entryComponent: 'WorkAnalyticsPage' },
 ];
@@ -47,6 +48,7 @@ export const WORKSPACE_CHILD_ROUTE_SEGMENTS = new Set<string>([
   'notes',
   'hr',
   'scheduling',
+  'workforce-comms',
   'settings',
   'developer-portal',
   'modules',
@@ -63,6 +65,7 @@ export const REGISTRY_BUSINESS_WORKSPACE_MODULE_IDS = [
   'ai',
   'hr',
   'scheduling',
+  'workforce_comms',
   'analytics',
   'members',
   'vlink',

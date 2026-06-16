@@ -10,6 +10,7 @@ import {
   Link2,
   Lock,
   MapPin,
+  Megaphone,
   MessageSquare,
   Puzzle,
   Shield,
@@ -36,6 +37,7 @@ export const MODULE_ICONS: Record<string, LucideIcon> = {
   place: MapPin,
   hr: Shield,
   scheduling: CalendarIcon,
+  workforce_comms: Megaphone,
   admin: Lock,
   modules: Puzzle,
 };

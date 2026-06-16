@@ -8,6 +8,8 @@ import { CalendarTrashError } from '../services/calendarTrashService';
 import { TodoTrashError } from '../services/todoTrashService';
 import { NotesTrashError } from '../services/notes/notesTrashService';
 import { PlaceTrashError } from '../services/place/placeTrashService';
+import { SchedulingTrashError } from '../services/schedulingTrashService';
+import { HRTrashError } from '../services/hrTrashService';
 import {
   listAccessibleTrashedFiles,
   listAccessibleTrashedFolders,
@@ -22,7 +24,7 @@ function hasUserId(user: unknown): user is { id: string } | { sub: string } {
 interface TrashItemRequest {
   id: string;
   name: string;
-  type: 'file' | 'folder' | 'conversation' | 'dashboard_tab' | 'module' | 'message' | 'ai_conversation' | 'event' | 'profile_photo' | 'task' | 'note' | 'listing' | 'meeting';
+  type: 'file' | 'folder' | 'conversation' | 'dashboard_tab' | 'module' | 'message' | 'ai_conversation' | 'event' | 'profile_photo' | 'task' | 'note' | 'listing' | 'meeting' | 'schedule' | 'shift' | 'schedule_template' | 'employee_profile';
   moduleId: string;
   moduleName: string;
   metadata?: Record<string, unknown>;
@@ -205,6 +207,34 @@ function mapPlaceTrashError(res: Response, error: unknown): boolean {
   return false;
 }
 
+function mapSchedulingTrashError(res: Response, error: unknown): boolean {
+  if (error instanceof SchedulingTrashError) {
+    if (error.code === 'forbidden') {
+      res.status(403).json({ message: 'Forbidden' });
+      return true;
+    }
+    if (error.code === 'not_found') {
+      res.status(404).json({ message: 'Item not found or already trashed' });
+      return true;
+    }
+  }
+  return false;
+}
+
+function mapHRTrashError(res: Response, error: unknown): boolean {
+  if (error instanceof HRTrashError) {
+    if (error.code === 'forbidden') {
+      res.status(403).json({ message: 'Forbidden' });
+      return true;
+    }
+    if (error.code === 'not_found') {
+      res.status(404).json({ message: 'Item not found or already trashed' });
+      return true;
+    }
+  }
+  return false;
+}
+
 async function tryCalendarRestore(
   userId: string,
   id: string,
@@ -367,6 +397,96 @@ async function tryPlacePermanentDelete(
   return false;
 }
 
+async function trySchedulingRestore(
+  userId: string,
+  id: string,
+  moduleId?: string,
+  type?: string
+): Promise<boolean> {
+  const handler = getGlobalTrashModuleHandler('scheduling');
+  if (!handler) return false;
+
+  if (
+    moduleId === 'scheduling' &&
+    (type === 'schedule' || type === 'shift' || type === 'schedule_template')
+  ) {
+    return handler.restore({ userId, type, id });
+  }
+
+  if (!moduleId && !type) {
+    if (await handler.restore({ userId, type: 'schedule', id })) return true;
+    if (await handler.restore({ userId, type: 'shift', id })) return true;
+    if (await handler.restore({ userId, type: 'schedule_template', id })) return true;
+  }
+
+  return false;
+}
+
+async function trySchedulingPermanentDelete(
+  userId: string,
+  id: string,
+  moduleId?: string,
+  type?: string
+): Promise<boolean> {
+  const handler = getGlobalTrashModuleHandler('scheduling');
+  if (!handler) return false;
+
+  if (
+    moduleId === 'scheduling' &&
+    (type === 'schedule' || type === 'shift' || type === 'schedule_template')
+  ) {
+    return handler.permanentDelete({ userId, type, id });
+  }
+
+  if (!moduleId && !type) {
+    if (await handler.permanentDelete({ userId, type: 'schedule', id })) return true;
+    if (await handler.permanentDelete({ userId, type: 'shift', id })) return true;
+    if (await handler.permanentDelete({ userId, type: 'schedule_template', id })) return true;
+  }
+
+  return false;
+}
+
+async function tryHRRestore(
+  userId: string,
+  id: string,
+  moduleId?: string,
+  type?: string
+): Promise<boolean> {
+  const handler = getGlobalTrashModuleHandler('hr');
+  if (!handler) return false;
+
+  if (moduleId === 'hr' && type === 'employee_profile') {
+    return handler.restore({ userId, type, id });
+  }
+
+  if (!moduleId && !type) {
+    if (await handler.restore({ userId, type: 'employee_profile', id })) return true;
+  }
+
+  return false;
+}
+
+async function tryHRPermanentDelete(
+  userId: string,
+  id: string,
+  moduleId?: string,
+  type?: string
+): Promise<boolean> {
+  const handler = getGlobalTrashModuleHandler('hr');
+  if (!handler) return false;
+
+  if (moduleId === 'hr' && type === 'employee_profile') {
+    return handler.permanentDelete({ userId, type, id });
+  }
+
+  if (!moduleId && !type) {
+    if (await handler.permanentDelete({ userId, type: 'employee_profile', id })) return true;
+  }
+
+  return false;
+}
+
 async function loadTrashedCalendarEvents(userId: string): Promise<TrashedListItem[]> {
   const calendarHandler = getGlobalTrashModuleHandler('calendar');
   if (!calendarHandler?.listTrashed) {
@@ -379,6 +499,44 @@ async function loadTrashedCalendarEvents(userId: string): Promise<TrashedListIte
     logger.warn('Trash: calendar handler listTrashed failed', {
       operation: 'list_trashed_items',
       moduleId: 'calendar',
+      userId,
+      error: { message: err.message },
+    });
+    return [];
+  }
+}
+
+async function loadTrashedSchedulingItems(userId: string): Promise<TrashedListItem[]> {
+  const schedulingHandler = getGlobalTrashModuleHandler('scheduling');
+  if (!schedulingHandler?.listTrashed) {
+    return [];
+  }
+  try {
+    return (await schedulingHandler.listTrashed({ userId })) as TrashedListItem[];
+  } catch (error: unknown) {
+    const err = error instanceof Error ? error : new Error(String(error));
+    logger.warn('Trash: scheduling handler listTrashed failed', {
+      operation: 'list_trashed_items',
+      moduleId: 'scheduling',
+      userId,
+      error: { message: err.message },
+    });
+    return [];
+  }
+}
+
+async function loadTrashedHRItems(userId: string): Promise<TrashedListItem[]> {
+  const hrHandler = getGlobalTrashModuleHandler('hr');
+  if (!hrHandler?.listTrashed) {
+    return [];
+  }
+  try {
+    return (await hrHandler.listTrashed({ userId })) as TrashedListItem[];
+  } catch (error: unknown) {
+    const err = error instanceof Error ? error : new Error(String(error));
+    logger.warn('Trash: hr handler listTrashed failed', {
+      operation: 'list_trashed_items',
+      moduleId: 'hr',
       userId,
       error: { message: err.message },
     });
@@ -507,6 +665,8 @@ export async function listTrashedItems(req: Request, res: Response) {
     const trashedTodoTasks = await loadTrashedTodoTasks(userId);
     const trashedNotesPages = await loadTrashedNotesPages(userId);
     const trashedPlaceItems = await loadTrashedPlaceItems(userId);
+    const trashedSchedulingItems = await loadTrashedSchedulingItems(userId);
+    const trashedHRItems = await loadTrashedHRItems(userId);
 
     // Get trashed dashboards
     const trashedDashboards = await prisma.dashboard.findMany({
@@ -617,6 +777,8 @@ export async function listTrashedItems(req: Request, res: Response) {
       ...trashedTodoTasks,
       ...trashedNotesPages,
       ...trashedPlaceItems,
+      ...trashedSchedulingItems,
+      ...trashedHRItems,
       ...trashedProfilePhotos.map(photo => ({
         id: photo.id,
         name: 'Profile Photo',
@@ -841,6 +1003,52 @@ export async function trashItem(req: Request, res: Response) {
         }
       }
 
+      case 'schedule':
+      case 'shift':
+      case 'schedule_template': {
+        if (moduleId !== 'scheduling' && moduleId) {
+          return res.status(400).json({ message: 'Invalid module for scheduling trash' });
+        }
+        try {
+          const handler = getGlobalTrashModuleHandler('scheduling');
+          if (!handler?.softTrash) {
+            return res.status(500).json({ message: 'Scheduling trash handler not registered' });
+          }
+          await handler.softTrash({
+            userId,
+            type,
+            id,
+            metadata,
+          });
+          return res.json({ success: true, message: 'Item moved to trash' });
+        } catch (error: unknown) {
+          if (mapSchedulingTrashError(res, error)) return;
+          throw error;
+        }
+      }
+
+      case 'employee_profile': {
+        if (moduleId !== 'hr' && moduleId) {
+          return res.status(400).json({ message: 'Invalid module for HR trash' });
+        }
+        try {
+          const handler = getGlobalTrashModuleHandler('hr');
+          if (!handler?.softTrash) {
+            return res.status(500).json({ message: 'HR trash handler not registered' });
+          }
+          await handler.softTrash({
+            userId,
+            type,
+            id,
+            metadata,
+          });
+          return res.json({ success: true, message: 'Item moved to trash' });
+        } catch (error: unknown) {
+          if (mapHRTrashError(res, error)) return;
+          throw error;
+        }
+      }
+
       default:
         return res.status(400).json({ message: 'Invalid item type' });
     }
@@ -911,6 +1119,24 @@ export async function restoreItem(req: Request, res: Response) {
       }
     } catch (error: unknown) {
       if (mapPlaceTrashError(res, error)) return;
+      throw error;
+    }
+
+    try {
+      if (await trySchedulingRestore(userId, id, moduleId, type)) {
+        return res.json({ success: true, message: 'Item restored' });
+      }
+    } catch (error: unknown) {
+      if (mapSchedulingTrashError(res, error)) return;
+      throw error;
+    }
+
+    try {
+      if (await tryHRRestore(userId, id, moduleId, type)) {
+        return res.json({ success: true, message: 'Item restored' });
+      }
+    } catch (error: unknown) {
+      if (mapHRTrashError(res, error)) return;
       throw error;
     }
 
@@ -1000,6 +1226,24 @@ export async function deleteItem(req: Request, res: Response) {
       }
     } catch (error: unknown) {
       if (mapPlaceTrashError(res, error)) return;
+      throw error;
+    }
+
+    try {
+      if (await trySchedulingPermanentDelete(userId, id, moduleId, type)) {
+        return res.json({ success: true, message: 'Item permanently deleted' });
+      }
+    } catch (error: unknown) {
+      if (mapSchedulingTrashError(res, error)) return;
+      throw error;
+    }
+
+    try {
+      if (await tryHRPermanentDelete(userId, id, moduleId, type)) {
+        return res.json({ success: true, message: 'Item permanently deleted' });
+      }
+    } catch (error: unknown) {
+      if (mapHRTrashError(res, error)) return;
       throw error;
     }
 
@@ -1123,6 +1367,32 @@ export async function emptyTrash(req: Request, res: Response) {
       });
     }
 
+    if (moduleId === 'scheduling') {
+      const handler = getGlobalTrashModuleHandler('scheduling');
+      if (!handler) {
+        return res.status(500).json({ message: 'Scheduling trash handler not registered' });
+      }
+      const deletedCount = await handler.emptyModuleTrash({ userId });
+      return res.json({
+        success: true,
+        message: 'Scheduling trash emptied',
+        deletedCount,
+      });
+    }
+
+    if (moduleId === 'hr') {
+      const handler = getGlobalTrashModuleHandler('hr');
+      if (!handler) {
+        return res.status(500).json({ message: 'HR trash handler not registered' });
+      }
+      const deletedCount = await handler.emptyModuleTrash({ userId });
+      return res.json({
+        success: true,
+        message: 'HR trash emptied',
+        deletedCount,
+      });
+    }
+
     const driveHandler = getGlobalTrashModuleHandler('drive');
     if (driveHandler) {
       await driveHandler.emptyModuleTrash({ userId });
@@ -1151,6 +1421,16 @@ export async function emptyTrash(req: Request, res: Response) {
     const placeHandler = getGlobalTrashModuleHandler('place');
     if (placeHandler) {
       await placeHandler.emptyModuleTrash({ userId });
+    }
+
+    const schedulingHandler = getGlobalTrashModuleHandler('scheduling');
+    if (schedulingHandler) {
+      await schedulingHandler.emptyModuleTrash({ userId });
+    }
+
+    const hrHandler = getGlobalTrashModuleHandler('hr');
+    if (hrHandler) {
+      await hrHandler.emptyModuleTrash({ userId });
     }
 
     await Promise.all([

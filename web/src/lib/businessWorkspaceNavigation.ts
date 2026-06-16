@@ -32,6 +32,9 @@ export function resolveBusinessWorkspaceModule(
   if (firstSegment === 'notes') {
     return 'notebook';
   }
+  if (firstSegment === 'workforce-comms') {
+    return 'workforce_comms';
+  }
   return firstSegment || 'dashboard';
 }
 
@@ -67,6 +70,9 @@ export function shouldRenderWorkspaceChildren(pathname: string): boolean {
   }
   if (first === 'notes') {
     return WORKSPACE_CHILD_ROUTE_SEGMENTS.has('notebook');
+  }
+  if (first === 'workforce-comms') {
+    return WORKSPACE_CHILD_ROUTE_SEGMENTS.has('workforce-comms');
   }
   return WORKSPACE_CHILD_ROUTE_SEGMENTS.has(first);
 }

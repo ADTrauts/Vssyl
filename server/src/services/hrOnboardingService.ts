@@ -12,6 +12,10 @@ import { ensureBusinessDashboardForUser } from './dashboardService';
 import { ensureEmployeeDocumentsFolder } from './driveService';
 import { storageService } from './storageService';
 import { NotificationService } from './notificationService';
+import {
+  recordOnboardingCompleted,
+  recordOnboardingCreated,
+} from './hrActivityService';
 
 function logSrvErr(operation: string, message: string, err: unknown, context?: Record<string, unknown>): void {
   const e = err instanceof Error ? err : new Error(String(err));
@@ -477,7 +481,7 @@ export async function startOnboardingJourney(input: StartOnboardingJourneyInput)
       initiatedByUserId: initiatedByUserId ?? null
     });
 
-    return tx.employeeOnboardingJourney.findUnique({
+    const createdJourney = await tx.employeeOnboardingJourney.findUnique({
       where: { id: journey.id },
       include: {
         onboardingTemplate: true,
@@ -486,6 +490,56 @@ export async function startOnboardingJourney(input: StartOnboardingJourneyInput)
         }
       }
     });
+
+    if (createdJourney && initiatedByUserId) {
+      await recordOnboardingCreated({
+        actorUserId: initiatedByUserId,
+        businessId,
+        journeyId: createdJourney.id,
+        employeeHrProfileId,
+        templateId: template.id,
+      });
+    }
+
+    if (createdJourney) {
+      const profile = await tx.employeeHRProfile.findFirst({
+        where: { id: employeeHrProfileId, businessId },
+        include: {
+          employeePosition: {
+            select: { userId: true },
+          },
+        },
+      });
+      const employeeUserId = profile?.employeePosition?.userId;
+      if (employeeUserId && employeeUserId !== initiatedByUserId) {
+        try {
+          await NotificationService.createNotification({
+            userId: employeeUserId,
+            type: 'hr_onboarding_assigned',
+            title: 'Onboarding assigned',
+            body: `Your onboarding journey "${template.name}" has started.`,
+            data: {
+              businessId,
+              journeyId: createdJourney.id,
+              templateId: template.id,
+              actionUrl: `/business/${businessId}/workspace/hr/me`,
+            },
+          });
+        } catch (notificationError: unknown) {
+          const err =
+            notificationError instanceof Error
+              ? notificationError
+              : new Error(String(notificationError));
+          await logger.warn('Failed to send onboarding assigned notification', {
+            operation: 'hr_onboarding_assigned_notification_error',
+            journeyId: createdJourney.id,
+            error: { message: err.message, stack: err.stack },
+          });
+        }
+      }
+    }
+
+    return createdJourney;
   });
 }
 
@@ -693,6 +747,27 @@ export async function completeOnboardingTask(input: CompleteOnboardingTaskInput)
         }
       });
     }
+
+    await recordOnboardingCompleted({
+      actorUserId: completedByUserId,
+      businessId,
+      journeyId: completedJourney.id,
+      employeeHrProfileId: completedJourney.employeeHrProfileId,
+    });
+
+    try {
+      const employeeName =
+        completedJourney.employeeHrProfile?.employeePosition?.user?.name ?? 'Employee';
+      const { onHrOnboardingCompleted } = await import('./workforceBridgeService.js');
+      await onHrOnboardingCompleted({
+        businessId,
+        actorUserId: completedByUserId,
+        journeyId: completedJourney.id,
+        employeeName,
+      });
+    } catch {
+      // Optional bridge; HR remains source of truth
+    }
   }
 
   return updatedTask;
@@ -812,6 +887,121 @@ export async function deliverOnboardingDocuments(params: {
   }
 
   return delivered;
+}
+
+export async function getOnboardingDocumentLibrary(userId: string, businessId: string) {
+  const dashboard = await ensureBusinessDashboardForUser(userId, businessId);
+  if (!dashboard) {
+    throw new Error('Failed to prepare business workspace');
+  }
+
+  const folder = await ensureEmployeeDocumentsFolder(userId, dashboard.id);
+
+  const files = await prisma.file.findMany({
+    where: {
+      userId,
+      folderId: folder.id,
+      trashedAt: null,
+    },
+    orderBy: { updatedAt: 'desc' },
+    select: {
+      id: true,
+      name: true,
+      type: true,
+      size: true,
+      url: true,
+      createdAt: true,
+      updatedAt: true,
+    },
+  });
+
+  return {
+    folderId: folder.id,
+    dashboardId: dashboard.id,
+    files,
+  };
+}
+
+export async function findEmployeeOwnedOnboardingTask(
+  businessId: string,
+  taskId: string,
+  employeeHrProfileId: string
+) {
+  return prisma.employeeOnboardingTask.findFirst({
+    where: {
+      id: taskId,
+      businessId,
+      onboardingJourney: {
+        employeeHrProfileId,
+      },
+    },
+  });
+}
+
+export async function findTeamOnboardingTaskForManager(
+  businessId: string,
+  taskId: string,
+  directReportEmployeePositionIds: string[]
+) {
+  const task = await prisma.employeeOnboardingTask.findFirst({
+    where: { id: taskId, businessId },
+    include: {
+      onboardingJourney: {
+        include: {
+          employeeHrProfile: {
+            select: {
+              employeePositionId: true,
+            },
+          },
+        },
+      },
+    },
+  });
+
+  if (!task) {
+    return null;
+  }
+
+  if (
+    !task.onboardingJourney.employeeHrProfile ||
+    !directReportEmployeePositionIds.includes(
+      task.onboardingJourney.employeeHrProfile.employeePositionId
+    )
+  ) {
+    return null;
+  }
+
+  return task;
+}
+
+export async function getEmployeeUserIdForHrProfile(employeeHrProfileId: string): Promise<string | null> {
+  const profile = await prisma.employeeHRProfile.findUnique({
+    where: { id: employeeHrProfileId },
+    include: {
+      employeePosition: {
+        select: { userId: true },
+      },
+    },
+  });
+
+  return profile?.employeePosition?.userId ?? null;
+}
+
+export async function deliverDocumentsAfterJourneyStart(params: {
+  businessId: string;
+  employeeHrProfileId: string;
+  initiatedByUserId?: string | null;
+}): Promise<Array<{ checklistId: string; fileId: string }>> {
+  const employeeUserId = await getEmployeeUserIdForHrProfile(params.employeeHrProfileId);
+  if (!employeeUserId) {
+    return [];
+  }
+
+  return deliverOnboardingDocuments({
+    businessId: params.businessId,
+    employeeUserId,
+    initiatedByUserId: params.initiatedByUserId ?? null,
+  });
 }
 
 

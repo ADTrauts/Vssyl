@@ -7,6 +7,9 @@ import { Card, Spinner, Alert } from 'shared/components';
 import { useBusinessConfiguration } from '../../contexts/BusinessConfigurationContext';
 import { BusinessBrandingProvider, BrandedHeader } from '../BusinessBranding';
 import { WidgetRenderer } from './widgets';
+import { listFrontPageCommunications } from '@/api/workforceComms';
+import { priorityBadgeClass, priorityLabel } from '@/components/workforce-comms/workforceCommsUtils';
+import type { WorkforceCommunicationListItem } from '@/api/workforceComms';
 
 // ============================================================================
 // TYPES
@@ -69,6 +72,7 @@ export default function BusinessFrontPage({ businessId, userId }: BusinessFrontP
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [userCustomization, setUserCustomization] = useState<any>(null);
+  const [frontPageCommunications, setFrontPageCommunications] = useState<WorkforceCommunicationListItem[]>([]);
 
   useEffect(() => {
     if (session?.accessToken && businessId) {
@@ -111,6 +115,13 @@ export default function BusinessFrontPage({ businessId, userId }: BusinessFrontP
       if (widgetsResponse.ok) {
         const widgetsData = await widgetsResponse.json();
         setWidgets(widgetsData.widgets || []);
+      }
+
+      try {
+        const communications = await listFrontPageCommunications(businessId, 10);
+        setFrontPageCommunications(communications);
+      } catch {
+        setFrontPageCommunications([]);
       }
 
       // Load user customization if enabled
@@ -251,25 +262,37 @@ export default function BusinessFrontPage({ businessId, userId }: BusinessFrontP
               </div>
             )}
 
-            {/* Company Announcements */}
-            {config.companyAnnouncements && config.companyAnnouncements.length > 0 && (
+            {/* Company Announcements (Workforce Communications source) */}
+            {frontPageCommunications.length > 0 && (
               <div className="mb-8">
                 <h3 className="text-xl font-semibold mb-4">Announcements</h3>
                 <div className="space-y-3">
-                  {config.companyAnnouncements.map((announcement: Record<string, any>) => (
-                    <Card key={announcement.id} className="p-4 border-l-4 border-blue-500">
+                  {frontPageCommunications.map((announcement) => (
+                    <div
+                      key={announcement.id}
+                      role="button"
+                      tabIndex={0}
+                      className="cursor-pointer"
+                      onClick={() =>
+                        router.push(
+                          `/business/${businessId}/workspace/workforce-comms/communications/${announcement.id}`
+                        )
+                      }
+                    >
+                    <Card className="p-4 border-l-4 border-blue-500">
                       <div className="flex items-start justify-between">
                         <div>
                           <h4 className="font-semibold text-gray-900 dark:text-gray-100">{announcement.title}</h4>
-                          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{announcement.content}</p>
+                          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                            {announcement.summary || announcement.body?.slice(0, 200)}
+                          </p>
                         </div>
-                        {announcement.priority === 'urgent' && (
-                          <span className="px-2 py-1 text-xs font-semibold bg-red-100 text-red-800 rounded">
-                            Urgent
-                          </span>
-                        )}
+                        <span className={`px-2 py-1 text-xs font-semibold rounded ${priorityBadgeClass(announcement.priority)}`}>
+                          {priorityLabel(announcement.priority)}
+                        </span>
                       </div>
                     </Card>
+                    </div>
                   ))}
                 </div>
               </div>

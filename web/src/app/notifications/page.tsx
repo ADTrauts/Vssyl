@@ -23,7 +23,8 @@ import {
   Zap,
   MapPin,
   Menu,
-  X
+  X,
+  Megaphone,
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { Avatar, Button, Badge, ConfirmModal, DropdownMenu, ContextMenuItem } from 'shared/components';
@@ -54,6 +55,7 @@ const CATEGORY_ICONS: Record<string, React.ComponentType<any>> = {
   mentions: AtSign,
   calendar: Clock,
   scheduling: Clock,
+  workforce_comms: Megaphone,
   todo: Check,
   ai: Zap,
   place: MapPin,
@@ -82,6 +84,28 @@ const LEGACY_TYPE_MAPPING: Record<string, string> = {
   'place_community_member_left': 'place',
   'place_community_invite': 'place',
   'notes_shared': 'notes',
+  'hr_time_off_request_submitted': 'hr',
+  'hr_time_off_request_approved': 'hr',
+  'hr_time_off_request_denied': 'hr',
+  'hr_time_off_balance_low': 'hr',
+  'hr_onboarding_assigned': 'hr',
+  'hr_onboarding_task_approved': 'hr',
+  'hr_onboarding_task_pending_approval': 'hr',
+  'hr_onboarding_journey_completed': 'hr',
+  'hr_attendance_exception_created': 'hr',
+  'hr_attendance_policy_violation': 'hr',
+  'hr_attendance_missing_punch': 'hr',
+  'hr_attendance_exception_resolved': 'hr',
+  'scheduling_schedule_published': 'scheduling',
+  'scheduling_shift_assigned': 'scheduling',
+  'scheduling_swap_requested': 'scheduling',
+  'scheduling_swap_approved': 'scheduling',
+  'scheduling_swap_denied': 'scheduling',
+  'scheduling_open_shift_available': 'scheduling',
+  'workforce_communication_published': 'workforce_comms',
+  'workforce_ack_required': 'workforce_comms',
+  'workforce_ack_reminder': 'workforce_comms',
+  'workforce_campaign_completed': 'workforce_comms',
 };
 
 function showNotificationActionError(message: string, error: unknown) {

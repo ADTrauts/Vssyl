@@ -220,6 +220,7 @@ function buildSchema() {
     'support',
     'hr',
     'scheduling',
+    'workforce_comms',
     'todo',
     'notes',
     'notebook',

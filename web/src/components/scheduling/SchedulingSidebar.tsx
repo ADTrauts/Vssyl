@@ -52,7 +52,7 @@ const navItems: NavItem[] = [
   },
   {
     id: 'templates',
-    label: 'Templates',
+    label: 'Schedule Templates',
     icon: FileText,
     roles: ['ADMIN'],
   },

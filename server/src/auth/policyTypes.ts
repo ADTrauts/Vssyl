@@ -26,7 +26,15 @@ export type PolicyResourceType =
   | 'place_connection'
   | 'place_transaction'
   | 'conversation'
-  | 'message';
+  | 'message'
+  | 'schedule'
+  | 'shift'
+  | 'hr_employee'
+  | 'time_off_request'
+  | 'attendance_exception'
+  | 'onboarding_journey'
+  | 'workforce_communication'
+  | 'workforce_campaign';
 
 export interface PolicyScope {
   dashboardId?: string;

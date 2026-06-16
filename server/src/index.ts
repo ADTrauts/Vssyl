@@ -70,6 +70,7 @@ import { seedTodoModuleOnStartup } from './startup/seedTodoModule';
 import { seedNotesModuleOnStartup } from './startup/seedNotesModule';
 import { seedNotebookModuleOnStartup } from './startup/seedNotebookModule';
 import { seedSchedulingModuleOnStartup } from './startup/seedSchedulingModule';
+import { seedWorkforceCommsModuleOnStartup } from './startup/seedWorkforceCommsModule';
 import { registerPlatformCronJobs } from './jobs/platformCronJobs';
 import type { JwtPayload } from 'jsonwebtoken';
 import userRouter from './routes/user';
@@ -132,6 +133,7 @@ import { adminLogsRouter } from './routes/admin-logs';
 import adminPortalTestingRouter from './routes/admin-portal-testing';
 import hrRouter from './routes/hr';
 import schedulingRouter from './routes/scheduling';
+import workforceCommsRouter from './routes/workforceComms';
 import activityFeedRouter from './routes/activityFeed';
 import debugModulesRouter from './routes/debug-modules';
 import debugDatabaseRouter from './routes/debug-database';
@@ -971,6 +973,7 @@ app.use(
   },
   schedulingRouter
 ); // Scheduling module routes (includes own auth checks)
+app.use('/api/workforce-comms', workforceCommsRouter); // Workforce Communications routes
 
 // Log registered scheduling routes on startup
 if (process.env.NODE_ENV === 'development') {
@@ -1238,6 +1241,7 @@ async function handleServerListening(): Promise<void> {
     await seedNotesModuleOnStartup();
     await seedNotebookModuleOnStartup();
     await seedSchedulingModuleOnStartup();
+    await seedWorkforceCommsModuleOnStartup();
   } catch (e: unknown) {
     const err = e as Error;
     void logger.error('Module seed failed (non-critical)', {

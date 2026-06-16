@@ -167,6 +167,15 @@ model User {
   vlinkSuggestionsReviewed VLinkSuggestion[]  @relation("VLinkSuggestionReviewer")
   vlinkActivities          VLinkActivity[]    @relation("VLinkActivityActor")
 
+  // Workforce Communications Module relations
+  workforceCommunicationsCreated   WorkforceCommunication[] @relation("WorkforceCommunicationCreatedBy")
+  workforceCommunicationsPublished WorkforceCommunication[] @relation("WorkforceCommunicationPublishedBy")
+  workforceCampaignsCreated        WorkforceCampaign[] @relation("WorkforceCampaignCreatedBy")
+  workforceAudienceResolutions       WorkforceAudienceResolution[] @relation("WorkforceAudienceResolutionUser")
+  workforceReadReceipts            WorkforceReadReceipt[] @relation("WorkforceReadReceiptUser")
+  workforceAcknowledgements          WorkforceAcknowledgement[] @relation("WorkforceAcknowledgementUser")
+  workforceDeliveryLogs            WorkforceDeliveryLog[] @relation("WorkforceDeliveryLogUser")
+
   // Vssyl Place relations
   place               Place?
   placeFollowVisibility PlaceFollowVisibility[]

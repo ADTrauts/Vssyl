@@ -87,6 +87,16 @@ const BUILT_IN_MODULE_DEFINITIONS: BuiltInModuleDefinition[] = [
     pricingTier: 'premium',
   },
   {
+    id: 'workforce_comms',
+    name: 'Workforce Communications',
+    description: 'Operational workforce broadcast lifecycle with audience targeting, acknowledgements, and campaign reporting',
+    version: '1.0.0',
+    category: 'COMMUNICATION',
+    tags: ['workforce', 'communications', 'announcements', 'broadcast'],
+    icon: 'megaphone',
+    pricingTier: 'premium',
+  },
+  {
     id: 'todo',
     name: 'To-Do',
     description: 'AI-powered task and to-do management with prioritization, scheduling, and context-aware features',
@@ -608,6 +618,96 @@ const BUILT_IN_MODULES: Array<{ moduleId: string; moduleName: string; aiContext:
           supportedIntents: ['business_operations', 'workflow_action'],
           retrievalCost: 'medium',
           priority: 65,
+          pipelineSourceIds: ['module_context'],
+          volatility: 'dynamic',
+          freshnessPolicy: { maxAgeMs: 300000 },
+        },
+      ],
+    },
+  },
+  {
+    moduleId: 'workforce_comms',
+    moduleName: 'Workforce Communications',
+    aiContext: {
+      purpose: 'Operational workforce broadcasts, acknowledgements, and campaign communications for businesses',
+      category: 'BUSINESS',
+      keywords: [
+        'announcement', 'broadcast', 'communication', 'workforce comms', 'acknowledgement', 'ack',
+        'campaign', 'policy compliance', 'schedule notice', 'hr broadcast', 'front page',
+        'audience', 'reach', 'read receipt', 'pending ack'
+      ],
+      patterns: [
+        'workforce communications?',
+        'company announcement',
+        'broadcast (message|to employees)',
+        'pending acknowledgements?',
+        'communication reach',
+        'campaign (report|analytics)',
+        'who (read|acknowledged)',
+        'publish (announcement|communication)'
+      ],
+      concepts: [
+        'workforce broadcasting',
+        'operational communications',
+        'acknowledgement compliance',
+        'audience targeting',
+        'campaign lifecycle'
+      ],
+      entities: [
+        {
+          name: 'Communication',
+          pluralName: 'Communications',
+          description: 'A workforce broadcast communication with audience and lifecycle',
+        },
+        {
+          name: 'Campaign',
+          pluralName: 'Campaigns',
+          description: 'A grouped set of related workforce communications',
+        },
+      ],
+      actions: [
+        {
+          name: 'view_communications',
+          description: 'View workforce communications feed and admin list',
+          permissions: ['workforce_comms:read'],
+        },
+        {
+          name: 'create_communication',
+          description: 'Create a draft workforce communication',
+          permissions: ['workforce_comms:write'],
+        },
+        {
+          name: 'publish_communication',
+          description: 'Publish a communication to its resolved audience',
+          permissions: ['workforce:communication.publish'],
+        },
+        {
+          name: 'view_reports',
+          description: 'View workforce communication reach and acknowledgement reports',
+          permissions: ['workforce:report.read'],
+        },
+      ],
+      contextProviders: [
+        {
+          name: 'workforce_comms_overview',
+          description: 'Published/draft counts, pending acks, and recent published communications',
+          endpoint: '/api/workforce-comms/ai/context/overview',
+          cacheDuration: 300000,
+          supportedIntents: ['business_operations', 'workflow_action'],
+          retrievalCost: 'low',
+          priority: 75,
+          pipelineSourceIds: ['module_context'],
+          volatility: 'dynamic',
+          freshnessPolicy: { maxAgeMs: 300000 },
+        },
+        {
+          name: 'workforce_comms_reach',
+          description: 'Reach, read rate, and acknowledgement rate for a communication',
+          endpoint: '/api/workforce-comms/ai/context/reach',
+          cacheDuration: 300000,
+          supportedIntents: ['business_operations', 'analytics'],
+          retrievalCost: 'medium',
+          priority: 70,
           pipelineSourceIds: ['module_context'],
           volatility: 'dynamic',
           freshnessPolicy: { maxAgeMs: 300000 },

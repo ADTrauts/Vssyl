@@ -1651,3 +1651,677 @@ export function emitNotebookLinkArchivedEvent(params: {
     })
   );
 }
+
+function schedulingBusinessScope(businessId: string) {
+  return { businessId, dashboardId: null, householdId: null };
+}
+
+export function emitSchedulingScheduleCreatedEvent(params: {
+  actorUserId: string;
+  scheduleId: string;
+  businessId: string;
+  status?: string;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.SCHEDULING_SCHEDULE_CREATED, {
+      actorUserId: params.actorUserId,
+      entityId: params.scheduleId,
+      ...schedulingBusinessScope(params.businessId),
+      metadata: {
+        moduleId: 'scheduling',
+        ...(params.status ? { status: params.status } : {}),
+      },
+    })
+  );
+}
+
+export function emitSchedulingScheduleUpdatedEvent(params: {
+  actorUserId: string;
+  scheduleId: string;
+  businessId: string;
+  status?: string;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.SCHEDULING_SCHEDULE_UPDATED, {
+      actorUserId: params.actorUserId,
+      entityId: params.scheduleId,
+      ...schedulingBusinessScope(params.businessId),
+      metadata: {
+        moduleId: 'scheduling',
+        ...(params.status ? { status: params.status } : {}),
+      },
+    })
+  );
+}
+
+export function emitSchedulingSchedulePublishedEvent(params: {
+  actorUserId: string;
+  scheduleId: string;
+  businessId: string;
+  shiftCount: number;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.SCHEDULING_SCHEDULE_PUBLISHED, {
+      actorUserId: params.actorUserId,
+      entityId: params.scheduleId,
+      ...schedulingBusinessScope(params.businessId),
+      metadata: {
+        moduleId: 'scheduling',
+        shiftCount: params.shiftCount,
+      },
+    })
+  );
+}
+
+export function emitSchedulingScheduleTrashedEvent(params: {
+  actorUserId: string;
+  scheduleId: string;
+  businessId: string;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.SCHEDULING_SCHEDULE_TRASHED, {
+      actorUserId: params.actorUserId,
+      entityId: params.scheduleId,
+      ...schedulingBusinessScope(params.businessId),
+      metadata: { moduleId: 'scheduling' },
+    })
+  );
+}
+
+export function emitSchedulingScheduleRestoredEvent(params: {
+  actorUserId: string;
+  scheduleId: string;
+  businessId: string;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.SCHEDULING_SCHEDULE_RESTORED, {
+      actorUserId: params.actorUserId,
+      entityId: params.scheduleId,
+      ...schedulingBusinessScope(params.businessId),
+      metadata: { moduleId: 'scheduling' },
+    })
+  );
+}
+
+export function emitSchedulingSchedulePermanentlyDeletedEvent(params: {
+  actorUserId: string;
+  scheduleId: string;
+  businessId: string;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.SCHEDULING_SCHEDULE_PERMANENTLY_DELETED, {
+      actorUserId: params.actorUserId,
+      entityId: params.scheduleId,
+      ...schedulingBusinessScope(params.businessId),
+      metadata: { moduleId: 'scheduling' },
+    })
+  );
+}
+
+export function emitSchedulingShiftCreatedEvent(params: {
+  actorUserId: string;
+  shiftId: string;
+  businessId: string;
+  scheduleId: string;
+  status?: string;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.SCHEDULING_SHIFT_CREATED, {
+      actorUserId: params.actorUserId,
+      entityId: params.shiftId,
+      ...schedulingBusinessScope(params.businessId),
+      metadata: {
+        moduleId: 'scheduling',
+        scheduleId: params.scheduleId,
+        ...(params.status ? { status: params.status } : {}),
+      },
+    })
+  );
+}
+
+export function emitSchedulingShiftUpdatedEvent(params: {
+  actorUserId: string;
+  shiftId: string;
+  businessId: string;
+  scheduleId: string;
+  status?: string;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.SCHEDULING_SHIFT_UPDATED, {
+      actorUserId: params.actorUserId,
+      entityId: params.shiftId,
+      ...schedulingBusinessScope(params.businessId),
+      metadata: {
+        moduleId: 'scheduling',
+        scheduleId: params.scheduleId,
+        ...(params.status ? { status: params.status } : {}),
+      },
+    })
+  );
+}
+
+export function emitSchedulingShiftAssignedEvent(params: {
+  actorUserId: string;
+  shiftId: string;
+  businessId: string;
+  scheduleId: string;
+  employeePositionId: string;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.SCHEDULING_SHIFT_ASSIGNED, {
+      actorUserId: params.actorUserId,
+      entityId: params.shiftId,
+      ...schedulingBusinessScope(params.businessId),
+      metadata: {
+        moduleId: 'scheduling',
+        scheduleId: params.scheduleId,
+        employeePositionId: params.employeePositionId,
+      },
+    })
+  );
+}
+
+export function emitSchedulingShiftUnassignedEvent(params: {
+  actorUserId: string;
+  shiftId: string;
+  businessId: string;
+  scheduleId: string;
+  employeePositionId: string;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.SCHEDULING_SHIFT_UNASSIGNED, {
+      actorUserId: params.actorUserId,
+      entityId: params.shiftId,
+      ...schedulingBusinessScope(params.businessId),
+      metadata: {
+        moduleId: 'scheduling',
+        scheduleId: params.scheduleId,
+        employeePositionId: params.employeePositionId,
+      },
+    })
+  );
+}
+
+export function emitSchedulingShiftTrashedEvent(params: {
+  actorUserId: string;
+  shiftId: string;
+  businessId: string;
+  scheduleId: string;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.SCHEDULING_SHIFT_TRASHED, {
+      actorUserId: params.actorUserId,
+      entityId: params.shiftId,
+      ...schedulingBusinessScope(params.businessId),
+      metadata: { moduleId: 'scheduling', scheduleId: params.scheduleId },
+    })
+  );
+}
+
+export function emitSchedulingShiftRestoredEvent(params: {
+  actorUserId: string;
+  shiftId: string;
+  businessId: string;
+  scheduleId: string;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.SCHEDULING_SHIFT_RESTORED, {
+      actorUserId: params.actorUserId,
+      entityId: params.shiftId,
+      ...schedulingBusinessScope(params.businessId),
+      metadata: { moduleId: 'scheduling', scheduleId: params.scheduleId },
+    })
+  );
+}
+
+export function emitSchedulingShiftPermanentlyDeletedEvent(params: {
+  actorUserId: string;
+  shiftId: string;
+  businessId: string;
+  scheduleId: string;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.SCHEDULING_SHIFT_PERMANENTLY_DELETED, {
+      actorUserId: params.actorUserId,
+      entityId: params.shiftId,
+      ...schedulingBusinessScope(params.businessId),
+      metadata: { moduleId: 'scheduling', scheduleId: params.scheduleId },
+    })
+  );
+}
+
+export function emitSchedulingSwapRequestedEvent(params: {
+  actorUserId: string;
+  swapId: string;
+  businessId: string;
+  shiftId: string;
+  requestedToId?: string | null;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.SCHEDULING_SWAP_REQUESTED, {
+      actorUserId: params.actorUserId,
+      entityId: params.swapId,
+      ...schedulingBusinessScope(params.businessId),
+      metadata: {
+        moduleId: 'scheduling',
+        shiftId: params.shiftId,
+        ...(params.requestedToId ? { requestedToId: params.requestedToId } : {}),
+      },
+    })
+  );
+}
+
+export function emitSchedulingSwapResolvedEvent(params: {
+  actorUserId: string;
+  swapId: string;
+  businessId: string;
+  shiftId: string;
+  outcome: 'approved' | 'denied';
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.SCHEDULING_SWAP_RESOLVED, {
+      actorUserId: params.actorUserId,
+      entityId: params.swapId,
+      ...schedulingBusinessScope(params.businessId),
+      metadata: {
+        moduleId: 'scheduling',
+        shiftId: params.shiftId,
+        outcome: params.outcome,
+      },
+    })
+  );
+}
+
+export function emitSchedulingShiftTemplateCreatedEvent(params: {
+  actorUserId: string;
+  templateId: string;
+  businessId: string;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.SCHEDULING_SHIFT_TEMPLATE_CREATED, {
+      actorUserId: params.actorUserId,
+      entityId: params.templateId,
+      ...schedulingBusinessScope(params.businessId),
+      metadata: { moduleId: 'scheduling' },
+    })
+  );
+}
+
+export function emitSchedulingShiftTemplateUpdatedEvent(params: {
+  actorUserId: string;
+  templateId: string;
+  businessId: string;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.SCHEDULING_SHIFT_TEMPLATE_UPDATED, {
+      actorUserId: params.actorUserId,
+      entityId: params.templateId,
+      ...schedulingBusinessScope(params.businessId),
+      metadata: { moduleId: 'scheduling' },
+    })
+  );
+}
+
+export function emitSchedulingShiftTemplateArchivedEvent(params: {
+  actorUserId: string;
+  templateId: string;
+  businessId: string;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.SCHEDULING_SHIFT_TEMPLATE_ARCHIVED, {
+      actorUserId: params.actorUserId,
+      entityId: params.templateId,
+      ...schedulingBusinessScope(params.businessId),
+      metadata: { moduleId: 'scheduling' },
+    })
+  );
+}
+
+export function emitSchedulingScheduleTemplateCreatedEvent(params: {
+  actorUserId: string;
+  templateId: string;
+  businessId: string;
+  scheduleType?: string;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.SCHEDULING_SCHEDULE_TEMPLATE_CREATED, {
+      actorUserId: params.actorUserId,
+      entityId: params.templateId,
+      ...schedulingBusinessScope(params.businessId),
+      metadata: {
+        moduleId: 'scheduling',
+        ...(params.scheduleType ? { scheduleType: params.scheduleType } : {}),
+      },
+    })
+  );
+}
+
+export function emitSchedulingScheduleTemplateUpdatedEvent(params: {
+  actorUserId: string;
+  templateId: string;
+  businessId: string;
+  scheduleType?: string;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.SCHEDULING_SCHEDULE_TEMPLATE_UPDATED, {
+      actorUserId: params.actorUserId,
+      entityId: params.templateId,
+      ...schedulingBusinessScope(params.businessId),
+      metadata: {
+        moduleId: 'scheduling',
+        ...(params.scheduleType ? { scheduleType: params.scheduleType } : {}),
+      },
+    })
+  );
+}
+
+export function emitSchedulingScheduleTemplateTrashedEvent(params: {
+  actorUserId: string;
+  templateId: string;
+  businessId: string;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.SCHEDULING_SCHEDULE_TEMPLATE_TRASHED, {
+      actorUserId: params.actorUserId,
+      entityId: params.templateId,
+      ...schedulingBusinessScope(params.businessId),
+      metadata: { moduleId: 'scheduling' },
+    })
+  );
+}
+
+function workforceBusinessScope(businessId: string) {
+  return { businessId, dashboardId: null, householdId: null };
+}
+
+function workforceMetadata(extra?: Record<string, unknown>) {
+  return { moduleId: 'workforce_comms', ...extra };
+}
+
+export function emitWorkforceCommunicationCreatedEvent(params: {
+  actorUserId: string;
+  communicationId: string;
+  businessId: string;
+  communicationType?: string;
+  priority?: string;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.WORKFORCE_COMMUNICATION_CREATED, {
+      actorUserId: params.actorUserId,
+      entityId: params.communicationId,
+      ...workforceBusinessScope(params.businessId),
+      metadata: workforceMetadata({
+        ...(params.communicationType ? { communicationType: params.communicationType } : {}),
+        ...(params.priority ? { priority: params.priority } : {}),
+      }),
+    })
+  );
+}
+
+export function emitWorkforceCommunicationUpdatedEvent(params: {
+  actorUserId: string;
+  communicationId: string;
+  businessId: string;
+  status?: string;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.WORKFORCE_COMMUNICATION_UPDATED, {
+      actorUserId: params.actorUserId,
+      entityId: params.communicationId,
+      ...workforceBusinessScope(params.businessId),
+      metadata: workforceMetadata(params.status ? { status: params.status } : undefined),
+    })
+  );
+}
+
+export function emitWorkforceCommunicationScheduledEvent(params: {
+  actorUserId: string;
+  communicationId: string;
+  businessId: string;
+  scheduledAt: Date | string;
+}): DomainEvent {
+  const scheduledAt =
+    params.scheduledAt instanceof Date ? params.scheduledAt.toISOString() : params.scheduledAt;
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.WORKFORCE_COMMUNICATION_SCHEDULED, {
+      actorUserId: params.actorUserId,
+      entityId: params.communicationId,
+      ...workforceBusinessScope(params.businessId),
+      metadata: workforceMetadata({ scheduledAt }),
+    })
+  );
+}
+
+export function emitWorkforceCommunicationPublishedEvent(params: {
+  actorUserId: string;
+  communicationId: string;
+  businessId: string;
+  communicationType?: string;
+  audienceType?: string;
+  recipientCount?: number;
+  requiresAck?: boolean;
+  priority?: string;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.WORKFORCE_COMMUNICATION_PUBLISHED, {
+      actorUserId: params.actorUserId,
+      entityId: params.communicationId,
+      ...workforceBusinessScope(params.businessId),
+      metadata: workforceMetadata({
+        ...(params.communicationType ? { communicationType: params.communicationType } : {}),
+        ...(params.audienceType ? { audienceType: params.audienceType } : {}),
+        ...(params.recipientCount !== undefined ? { recipientCount: params.recipientCount } : {}),
+        ...(params.requiresAck !== undefined ? { requiresAck: params.requiresAck } : {}),
+        ...(params.priority ? { priority: params.priority } : {}),
+      }),
+    })
+  );
+}
+
+export function emitWorkforceCommunicationCancelledEvent(params: {
+  actorUserId: string;
+  communicationId: string;
+  businessId: string;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.WORKFORCE_COMMUNICATION_CANCELLED, {
+      actorUserId: params.actorUserId,
+      entityId: params.communicationId,
+      ...workforceBusinessScope(params.businessId),
+      metadata: workforceMetadata(),
+    })
+  );
+}
+
+export function emitWorkforceCommunicationExpiredEvent(params: {
+  actorUserId: string;
+  communicationId: string;
+  businessId: string;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.WORKFORCE_COMMUNICATION_EXPIRED, {
+      actorUserId: params.actorUserId,
+      entityId: params.communicationId,
+      ...workforceBusinessScope(params.businessId),
+      metadata: workforceMetadata(),
+    })
+  );
+}
+
+export function emitWorkforceCommunicationTrashedEvent(params: {
+  actorUserId: string;
+  communicationId: string;
+  businessId: string;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.WORKFORCE_COMMUNICATION_TRASHED, {
+      actorUserId: params.actorUserId,
+      entityId: params.communicationId,
+      ...workforceBusinessScope(params.businessId),
+      metadata: workforceMetadata(),
+    })
+  );
+}
+
+export function emitWorkforceCommunicationRestoredEvent(params: {
+  actorUserId: string;
+  communicationId: string;
+  businessId: string;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.WORKFORCE_COMMUNICATION_RESTORED, {
+      actorUserId: params.actorUserId,
+      entityId: params.communicationId,
+      ...workforceBusinessScope(params.businessId),
+      metadata: workforceMetadata(),
+    })
+  );
+}
+
+export function emitWorkforceCommunicationPermanentlyDeletedEvent(params: {
+  actorUserId: string;
+  communicationId: string;
+  businessId: string;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.WORKFORCE_COMMUNICATION_PERMANENTLY_DELETED, {
+      actorUserId: params.actorUserId,
+      entityId: params.communicationId,
+      ...workforceBusinessScope(params.businessId),
+      metadata: workforceMetadata(),
+    })
+  );
+}
+
+export function emitWorkforceReadRecordedEvent(params: {
+  actorUserId: string;
+  communicationId: string;
+  businessId: string;
+  source?: string;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.WORKFORCE_READ_RECORDED, {
+      actorUserId: params.actorUserId,
+      entityId: params.communicationId,
+      ...workforceBusinessScope(params.businessId),
+      metadata: workforceMetadata(params.source ? { source: params.source } : undefined),
+    })
+  );
+}
+
+export function emitWorkforceAckCompletedEvent(params: {
+  actorUserId: string;
+  communicationId: string;
+  businessId: string;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.WORKFORCE_ACK_COMPLETED, {
+      actorUserId: params.actorUserId,
+      entityId: params.communicationId,
+      ...workforceBusinessScope(params.businessId),
+      metadata: workforceMetadata(),
+    })
+  );
+}
+
+export function emitWorkforceCampaignCreatedEvent(params: {
+  actorUserId: string;
+  campaignId: string;
+  businessId: string;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.WORKFORCE_CAMPAIGN_CREATED, {
+      actorUserId: params.actorUserId,
+      entityId: params.campaignId,
+      ...workforceBusinessScope(params.businessId),
+      metadata: workforceMetadata(),
+    })
+  );
+}
+
+export function emitWorkforceCampaignCompletedEvent(params: {
+  actorUserId: string;
+  campaignId: string;
+  businessId: string;
+  communicationCount?: number;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.WORKFORCE_CAMPAIGN_COMPLETED, {
+      actorUserId: params.actorUserId,
+      entityId: params.campaignId,
+      ...workforceBusinessScope(params.businessId),
+      metadata: workforceMetadata(
+        params.communicationCount !== undefined
+          ? { communicationCount: params.communicationCount }
+          : undefined
+      ),
+    })
+  );
+}
+
+export function emitWorkforceCampaignTrashedEvent(params: {
+  actorUserId: string;
+  campaignId: string;
+  businessId: string;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.WORKFORCE_CAMPAIGN_TRASHED, {
+      actorUserId: params.actorUserId,
+      entityId: params.campaignId,
+      ...workforceBusinessScope(params.businessId),
+      metadata: workforceMetadata(),
+    })
+  );
+}
+
+export function emitWorkforceCampaignRestoredEvent(params: {
+  actorUserId: string;
+  campaignId: string;
+  businessId: string;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.WORKFORCE_CAMPAIGN_RESTORED, {
+      actorUserId: params.actorUserId,
+      entityId: params.campaignId,
+      ...workforceBusinessScope(params.businessId),
+      metadata: workforceMetadata(),
+    })
+  );
+}
+
+export function emitWorkforceCampaignPermanentlyDeletedEvent(params: {
+  actorUserId: string;
+  campaignId: string;
+  businessId: string;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.WORKFORCE_CAMPAIGN_PERMANENTLY_DELETED, {
+      actorUserId: params.actorUserId,
+      entityId: params.campaignId,
+      ...workforceBusinessScope(params.businessId),
+      metadata: workforceMetadata(),
+    })
+  );
+}
+
+export function emitWorkforceBridgeCreatedEvent(params: {
+  actorUserId: string;
+  businessId: string;
+  communicationId: string;
+  sourceModuleId: string;
+  bridgeKind: string;
+  sourceEntityId: string;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.WORKFORCE_BRIDGE_CREATED, {
+      actorUserId: params.actorUserId,
+      entityId: params.communicationId,
+      ...workforceBusinessScope(params.businessId),
+      metadata: workforceMetadata({
+        sourceModuleId: params.sourceModuleId,
+        bridgeKind: params.bridgeKind,
+        sourceEntityId: params.sourceEntityId,
+      }),
+    })
+  );
+}

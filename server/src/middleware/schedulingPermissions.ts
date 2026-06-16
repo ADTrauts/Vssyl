@@ -4,6 +4,12 @@ import { prisma } from '../lib/prisma';
 import { logger } from '../lib/logger';
 import { BusinessRole, ModuleInstallation } from '@prisma/client';
 
+/**
+ * Legacy scheduling RBAC. Route-level Policy Engine dual checks are applied via
+ * `checkSchedulingPolicy` from `server/src/auth/schedulingPolicyDual.ts` after
+ * these middleware functions succeed.
+ */
+
 // Extend AuthenticatedRequest to include scheduling-specific properties
 export interface AuthenticatedRequest extends BaseAuthenticatedRequest {
   businessId?: string;

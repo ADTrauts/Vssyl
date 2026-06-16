@@ -9,6 +9,8 @@ import {
   checkSchedulingEmployeeAccess,
   checkSchedulingSelfAccess
 } from '../middleware/schedulingPermissions';
+import { checkSchedulingPolicy } from '../auth/schedulingPolicyDual';
+import { POLICY_ACTIONS } from '../auth/policyActions';
 import * as schedulingController from '../controllers/schedulingController';
 import { asyncHandler } from '../index';
 
@@ -196,38 +198,80 @@ router.use(checkSchedulingModuleInstalled);
 // ============================================================================
 
 // Schedules
-router.get('/admin/schedules', checkSchedulingAdmin, schedulingController.getSchedules);
-router.post('/admin/schedules', checkSchedulingAdmin, postAdminCreateSchedule, schedulingController.createSchedule);
-router.get('/admin/schedules/:id', checkSchedulingAdmin, idParam, schedulingController.getScheduleById);
+router.get(
+  '/admin/schedules',
+  checkSchedulingAdmin,
+  checkSchedulingPolicy(POLICY_ACTIONS.SCHEDULING_SCHEDULE_READ),
+  schedulingController.getSchedules
+);
+router.post(
+  '/admin/schedules',
+  checkSchedulingAdmin,
+  checkSchedulingPolicy(POLICY_ACTIONS.SCHEDULING_SCHEDULE_WRITE),
+  postAdminCreateSchedule,
+  schedulingController.createSchedule
+);
+router.get('/admin/schedules/:id', checkSchedulingAdmin, idParam, checkSchedulingPolicy(POLICY_ACTIONS.SCHEDULING_SCHEDULE_READ, { resourceIdParam: 'id' }), schedulingController.getScheduleById);
 router.put(
   '/admin/schedules/:id',
   checkSchedulingAdmin,
   idParam,
+  checkSchedulingPolicy(POLICY_ACTIONS.SCHEDULING_SCHEDULE_WRITE, { resourceIdParam: 'id', resourceType: 'schedule' }),
   putAdminUpdateSchedule,
   schedulingController.updateSchedule
 );
-router.delete('/admin/schedules/:id', checkSchedulingAdmin, idParam, schedulingController.deleteSchedule);
-router.post('/admin/schedules/:id/publish', checkSchedulingAdmin, idParam, schedulingController.publishSchedule);
+router.delete(
+  '/admin/schedules/:id',
+  checkSchedulingAdmin,
+  idParam,
+  checkSchedulingPolicy(POLICY_ACTIONS.SCHEDULING_SCHEDULE_DELETE, { resourceIdParam: 'id', resourceType: 'schedule' }),
+  schedulingController.deleteSchedule
+);
+router.post(
+  '/admin/schedules/:id/publish',
+  checkSchedulingAdmin,
+  idParam,
+  checkSchedulingPolicy(POLICY_ACTIONS.SCHEDULING_SCHEDULE_PUBLISH, { resourceIdParam: 'id', resourceType: 'schedule' }),
+  schedulingController.publishSchedule
+);
 
 // Shifts
-router.get('/admin/shifts', checkSchedulingAdmin, schedulingController.getShifts);
-router.post('/admin/shifts', checkSchedulingAdmin, postAdminCreateShift, schedulingController.createShift);
-router.get('/admin/shifts/:id', checkSchedulingAdmin, idParam, schedulingController.getShiftById);
+router.get(
+  '/admin/shifts',
+  checkSchedulingAdmin,
+  checkSchedulingPolicy(POLICY_ACTIONS.SCHEDULING_SHIFT_READ),
+  schedulingController.getShifts
+);
+router.post(
+  '/admin/shifts',
+  checkSchedulingAdmin,
+  checkSchedulingPolicy(POLICY_ACTIONS.SCHEDULING_SHIFT_WRITE),
+  postAdminCreateShift,
+  schedulingController.createShift
+);
+router.get('/admin/shifts/:id', checkSchedulingAdmin, idParam, checkSchedulingPolicy(POLICY_ACTIONS.SCHEDULING_SHIFT_READ, { resourceIdParam: 'id' }), schedulingController.getShiftById);
 router.put(
   '/admin/shifts/:id',
   checkSchedulingAdmin,
   idParam,
+  checkSchedulingPolicy(POLICY_ACTIONS.SCHEDULING_SHIFT_WRITE, { resourceIdParam: 'id', resourceType: 'shift' }),
   putAdminUpdateShift,
   schedulingController.updateShift
 );
-router.delete('/admin/shifts/:id', checkSchedulingAdmin, idParam, schedulingController.deleteShift);
+router.delete(
+  '/admin/shifts/:id',
+  checkSchedulingAdmin,
+  idParam,
+  checkSchedulingPolicy(POLICY_ACTIONS.SCHEDULING_SHIFT_DELETE, { resourceIdParam: 'id', resourceType: 'shift' }),
+  schedulingController.deleteShift
+);
 
 // Shift Templates
-router.get('/admin/templates', checkSchedulingAdmin, schedulingController.getShiftTemplates);
-router.post('/admin/templates', checkSchedulingAdmin, schedulingController.createShiftTemplate);
-router.get('/admin/templates/:id', checkSchedulingAdmin, idParam, schedulingController.getShiftTemplateById);
-router.put('/admin/templates/:id', checkSchedulingAdmin, idParam, schedulingController.updateShiftTemplate);
-router.delete('/admin/templates/:id', checkSchedulingAdmin, idParam, schedulingController.deleteShiftTemplate);
+router.get('/admin/templates', checkSchedulingAdmin, checkSchedulingPolicy(POLICY_ACTIONS.SCHEDULING_TEMPLATE_WRITE), schedulingController.getShiftTemplates);
+router.post('/admin/templates', checkSchedulingAdmin, checkSchedulingPolicy(POLICY_ACTIONS.SCHEDULING_TEMPLATE_WRITE), schedulingController.createShiftTemplate);
+router.get('/admin/templates/:id', checkSchedulingAdmin, idParam, checkSchedulingPolicy(POLICY_ACTIONS.SCHEDULING_TEMPLATE_WRITE), schedulingController.getShiftTemplateById);
+router.put('/admin/templates/:id', checkSchedulingAdmin, idParam, checkSchedulingPolicy(POLICY_ACTIONS.SCHEDULING_TEMPLATE_WRITE), schedulingController.updateShiftTemplate);
+router.delete('/admin/templates/:id', checkSchedulingAdmin, idParam, checkSchedulingPolicy(POLICY_ACTIONS.SCHEDULING_TEMPLATE_WRITE), schedulingController.deleteShiftTemplate);
 
 // Schedule Templates
 router.get('/admin/schedule-templates', checkSchedulingAdmin, schedulingController.getScheduleTemplates);
@@ -257,6 +301,7 @@ router.put(
   '/admin/swaps/:id/approve',
   checkSchedulingAdmin,
   idParam,
+  checkSchedulingPolicy(POLICY_ACTIONS.SCHEDULING_SWAP_MANAGE, { resourceIdParam: 'id' }),
   putSwapManagerNotes,
   schedulingController.approveShiftSwapAdmin
 );
@@ -264,6 +309,7 @@ router.put(
   '/admin/swaps/:id/deny',
   checkSchedulingAdmin,
   idParam,
+  checkSchedulingPolicy(POLICY_ACTIONS.SCHEDULING_SWAP_MANAGE, { resourceIdParam: 'id' }),
   putSwapManagerNotes,
   schedulingController.denyShiftSwapAdmin
 );
@@ -273,6 +319,7 @@ router.get('/admin/stations', checkSchedulingAdmin, schedulingController.getBusi
 router.post(
   '/admin/stations',
   checkSchedulingAdmin,
+  checkSchedulingPolicy(POLICY_ACTIONS.SCHEDULING_STATION_WRITE),
   postAdminCreateBusinessStation,
   schedulingController.createBusinessStation
 );
@@ -281,10 +328,17 @@ router.put(
   '/admin/stations/:id',
   checkSchedulingAdmin,
   idParam,
+  checkSchedulingPolicy(POLICY_ACTIONS.SCHEDULING_STATION_WRITE, { resourceIdParam: 'id' }),
   putAdminUpdateBusinessStation,
   schedulingController.updateBusinessStation
 );
-router.delete('/admin/stations/:id', checkSchedulingAdmin, idParam, schedulingController.deleteBusinessStation);
+router.delete(
+  '/admin/stations/:id',
+  checkSchedulingAdmin,
+  idParam,
+  checkSchedulingPolicy(POLICY_ACTIONS.SCHEDULING_STATION_WRITE, { resourceIdParam: 'id' }),
+  schedulingController.deleteBusinessStation
+);
 
 // Job Locations
 router.get('/admin/job-locations', checkSchedulingAdmin, schedulingController.getBusinessJobLocations);
@@ -328,10 +382,22 @@ router.post(
 // ============================================================================
 
 router.get('/team/schedules', checkSchedulingManagerAccess, schedulingController.getTeamSchedules);
-router.post('/team/schedules/:id/publish', checkSchedulingManagerAccess, idParam, schedulingController.publishTeamSchedule);
+router.post(
+  '/team/schedules/:id/publish',
+  checkSchedulingManagerAccess,
+  idParam,
+  checkSchedulingPolicy(POLICY_ACTIONS.SCHEDULING_SCHEDULE_PUBLISH, { resourceIdParam: 'id', resourceType: 'schedule' }),
+  schedulingController.publishTeamSchedule
+);
 
 router.get('/team/shifts/open', checkSchedulingManagerAccess, schedulingController.getOpenShiftsForTeam);
-router.post('/team/shifts/:id/assign', checkSchedulingManagerAccess, idParam, schedulingController.assignEmployeeToShift);
+router.post(
+  '/team/shifts/:id/assign',
+  checkSchedulingManagerAccess,
+  idParam,
+  checkSchedulingPolicy(POLICY_ACTIONS.SCHEDULING_SHIFT_ASSIGN, { resourceIdParam: 'id', resourceType: 'shift' }),
+  schedulingController.assignEmployeeToShift
+);
 
 router.get('/team/availability', checkSchedulingManagerAccess, schedulingController.getTeamAvailability);
 
@@ -340,6 +406,7 @@ router.put(
   '/team/swaps/:id/approve',
   checkSchedulingManagerAccess,
   idParam,
+  checkSchedulingPolicy(POLICY_ACTIONS.SCHEDULING_SWAP_MANAGE, { resourceIdParam: 'id' }),
   putSwapManagerNotes,
   schedulingController.approveShiftSwapManager
 );
@@ -347,6 +414,7 @@ router.put(
   '/team/swaps/:id/deny',
   checkSchedulingManagerAccess,
   idParam,
+  checkSchedulingPolicy(POLICY_ACTIONS.SCHEDULING_SWAP_MANAGE, { resourceIdParam: 'id' }),
   putSwapManagerNotes,
   schedulingController.denyShiftSwapManager
 );
@@ -380,7 +448,14 @@ router.put(
 );
 router.delete('/me/availability/:id', checkSchedulingEmployeeAccess, checkSchedulingSelfAccess, idParam, schedulingController.deleteOwnAvailability);
 
-router.post('/me/shifts/:id/swap/request', checkSchedulingEmployeeAccess, checkSchedulingSelfAccess, idParam, schedulingController.requestShiftSwap);
+router.post(
+  '/me/shifts/:id/swap/request',
+  checkSchedulingEmployeeAccess,
+  checkSchedulingSelfAccess,
+  idParam,
+  checkSchedulingPolicy(POLICY_ACTIONS.SCHEDULING_SWAP_REQUEST, { resourceIdParam: 'id', resourceType: 'shift' }),
+  schedulingController.requestShiftSwap
+);
 router.get('/me/swaps', checkSchedulingEmployeeAccess, checkSchedulingSelfAccess, schedulingController.getOwnShiftSwapRequests);
 router.post('/me/swap-requests/:id/cancel', checkSchedulingEmployeeAccess, checkSchedulingSelfAccess, idParam, schedulingController.cancelSwapRequest);
 

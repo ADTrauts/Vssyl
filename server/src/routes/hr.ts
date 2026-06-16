@@ -21,6 +21,8 @@ import {
   checkManagerAccess, 
   checkEmployeeAccess 
 } from '../middleware/hrPermissions';
+import { checkHRPolicy } from '../auth/hrPolicyDual';
+import { POLICY_ACTIONS } from '../auth/policyActions';
 import {
   checkBusinessAdvancedOrHigher,
   checkHRFeature,
@@ -57,32 +59,33 @@ router.use(checkHRModuleInstalled);  // HR module must be installed
 // ============================================================================
 
 // Employee Management (Available on Business Advanced+)
-router.get('/admin/employees', checkHRAdmin, hrController.getAdminEmployees);
-router.get('/admin/employees/filter-options', checkHRAdmin, hrController.getEmployeeFilterOptions);
-router.get('/admin/employees/:id', checkHRAdmin, hrController.getAdminEmployee);
-router.get('/admin/employees/:id/audit-logs', checkHRAdmin, hrController.getEmployeeAuditLogs);
-router.post('/admin/employees', checkHRAdmin, hrController.createEmployee);
-router.put('/admin/employees/:id', checkHRAdmin, hrController.updateEmployee);
-router.delete('/admin/employees/:id', checkHRAdmin, hrController.deleteEmployee);
-router.post('/admin/employees/:id/terminate', checkHRAdmin, hrController.terminateEmployee);
+router.get('/admin/employees', checkHRAdmin, checkHRPolicy(POLICY_ACTIONS.HR_EMPLOYEE_READ), hrController.getAdminEmployees);
+router.get('/admin/employees/filter-options', checkHRAdmin, checkHRPolicy(POLICY_ACTIONS.HR_EMPLOYEE_READ), hrController.getEmployeeFilterOptions);
+router.get('/admin/employees/:id', checkHRAdmin, checkHRPolicy(POLICY_ACTIONS.HR_EMPLOYEE_READ, { resourceIdParam: 'id', resourceType: 'hr_employee' }), hrController.getAdminEmployee);
+router.get('/admin/employees/:id/audit-logs', checkHRAdmin, checkHRPolicy(POLICY_ACTIONS.HR_EMPLOYEE_READ, { resourceIdParam: 'id', resourceType: 'hr_employee' }), hrController.getEmployeeAuditLogs);
+router.post('/admin/employees', checkHRAdmin, checkHRPolicy(POLICY_ACTIONS.HR_EMPLOYEE_WRITE), hrController.createEmployee);
+router.put('/admin/employees/:id', checkHRAdmin, checkHRPolicy(POLICY_ACTIONS.HR_EMPLOYEE_WRITE, { resourceIdParam: 'id', resourceType: 'hr_employee' }), hrController.updateEmployee);
+router.delete('/admin/employees/:id', checkHRAdmin, checkHRPolicy(POLICY_ACTIONS.HR_EMPLOYEE_DELETE, { resourceIdParam: 'id', resourceType: 'hr_employee' }), hrController.deleteEmployee);
+router.post('/admin/employees/:id/terminate', checkHRAdmin, checkHRPolicy(POLICY_ACTIONS.HR_EMPLOYEE_TERMINATE, { resourceIdParam: 'id', resourceType: 'hr_employee' }), hrController.terminateEmployee);
 
 // Time-off calendar (admin view)
-router.get('/admin/time-off/calendar', checkHRAdmin, hrController.getTimeOffCalendar);
+router.get('/admin/time-off/calendar', checkHRAdmin, checkHRPolicy(POLICY_ACTIONS.HR_TIME_OFF_READ), hrController.getTimeOffCalendar);
 
 // Time-off reports (admin view)
 router.get('/admin/time-off/reports', checkHRAdmin, hrController.getTimeOffReports);
 
 // Employee Import/Export (Available on Business Advanced+)
 router.post('/admin/employees/import', 
-  checkHRAdmin, 
+  checkHRAdmin,
+  checkHRPolicy(POLICY_ACTIONS.HR_EMPLOYEE_IMPORT),
   csvUpload.single('file'),
   hrController.importEmployeesCSV
 );
 router.get('/admin/employees/export', checkHRAdmin, hrController.exportEmployeesCSV);
 
 // HR Settings (Available on Business Advanced+)
-router.get('/admin/settings', checkHRAdmin, hrController.getHRSettings);
-router.put('/admin/settings', checkHRAdmin, hrController.updateHRSettings);
+router.get('/admin/settings', checkHRAdmin, checkHRPolicy(POLICY_ACTIONS.HR_SETTINGS_WRITE), hrController.getHRSettings);
+router.put('/admin/settings', checkHRAdmin, checkHRPolicy(POLICY_ACTIONS.HR_SETTINGS_WRITE), hrController.updateHRSettings);
 router.get('/admin/features', checkHRAdmin, hrController.getHRFeatureAvailability);
 
 // HR Analytics (Available on Business Advanced+)
@@ -101,18 +104,21 @@ router.post(
   '/admin/onboarding/templates',
   checkHRFeature('onboarding'),
   checkHRAdmin,
+  checkHRPolicy(POLICY_ACTIONS.HR_ONBOARDING_MANAGE),
   hrController.createOnboardingTemplate
 );
 router.put(
   '/admin/onboarding/templates/:templateId',
   checkHRFeature('onboarding'),
   checkHRAdmin,
+  checkHRPolicy(POLICY_ACTIONS.HR_ONBOARDING_UPDATE, { resourceIdParam: 'templateId', resourceType: 'onboarding_journey' }),
   hrController.updateOnboardingTemplate
 );
 router.delete(
   '/admin/onboarding/templates/:templateId',
   checkHRFeature('onboarding'),
   checkHRAdmin,
+  checkHRPolicy(POLICY_ACTIONS.HR_ONBOARDING_MANAGE, { resourceIdParam: 'templateId', resourceType: 'onboarding_journey' }),
   hrController.deleteOnboardingTemplate
 );
 router.get(
@@ -131,12 +137,14 @@ router.post(
   '/admin/onboarding/journeys/start',
   checkHRFeature('onboarding'),
   checkHRAdmin,
+  checkHRPolicy(POLICY_ACTIONS.HR_ONBOARDING_CREATE),
   hrController.startOnboardingJourney
 );
 router.post(
   '/admin/onboarding/tasks/:taskId/complete',
   checkHRFeature('onboarding'),
   checkHRAdmin,
+  checkHRPolicy(POLICY_ACTIONS.HR_ONBOARDING_COMPLETE, { resourceIdParam: 'taskId', resourceType: 'onboarding_journey' }),
   hrController.completeOnboardingTask
 );
 
@@ -157,12 +165,14 @@ router.post(
   '/admin/attendance/policies',
   checkHRFeature('attendance'),
   checkHRAdmin,
+  checkHRPolicy(POLICY_ACTIONS.HR_ATTENDANCE_MANAGE),
   hrController.createAttendancePolicy
 );
 router.put(
   '/admin/attendance/policies/:id',
   checkHRFeature('attendance'),
   checkHRAdmin,
+  checkHRPolicy(POLICY_ACTIONS.HR_ATTENDANCE_MANAGE, { resourceIdParam: 'id' }),
   hrController.updateAttendancePolicy
 );
 
@@ -241,6 +251,7 @@ router.get('/team/time-off/pending',
 
 router.post('/team/time-off/:id/approve',
   checkManagerAccess,
+  checkHRPolicy(POLICY_ACTIONS.HR_TIME_OFF_APPROVE, { resourceIdParam: 'id', resourceType: 'time_off_request' }),
   hrController.approveTeamTimeOff
 );
 
@@ -254,6 +265,7 @@ router.post(
   '/team/onboarding/tasks/:taskId/complete',
   checkHRFeature('onboarding'),
   checkManagerAccess,
+  checkHRPolicy(POLICY_ACTIONS.HR_ONBOARDING_COMPLETE, { resourceIdParam: 'taskId', resourceType: 'onboarding_journey' }),
   hrController.completeTeamOnboardingTask
 );
 
@@ -268,6 +280,7 @@ router.post(
   '/team/attendance/exceptions/:id/resolve',
   checkHRFeature('attendance'),
   checkManagerAccess,
+  checkHRPolicy(POLICY_ACTIONS.HR_ATTENDANCE_EXCEPTION_UPDATE, { resourceIdParam: 'id', resourceType: 'attendance_exception' }),
   hrController.resolveTeamAttendanceException
 );
 
@@ -317,6 +330,7 @@ router.post(
 // Request time off (framework stub)
 router.post('/me/time-off/request',
   checkEmployeeAccess,
+  checkHRPolicy(POLICY_ACTIONS.HR_TIME_OFF_REQUEST),
   hrController.requestTimeOff
 );
 
@@ -347,6 +361,7 @@ router.post(
   '/me/onboarding/tasks/:taskId/complete',
   checkHRFeature('onboarding'),
   checkEmployeeAccess,
+  checkHRPolicy(POLICY_ACTIONS.HR_ONBOARDING_COMPLETE, { resourceIdParam: 'taskId', resourceType: 'onboarding_journey' }),
   hrController.completeMyOnboardingTask
 );
 

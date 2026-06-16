@@ -6,24 +6,18 @@
  */
 
 import { Request, Response } from 'express';
+import type { Prisma } from '@prisma/client';
 import {
-  Prisma,
   EmployeeType as PrismaEmployeeType,
   AttendanceExceptionStatus,
   AttendanceMethod,
   AttendanceRecordStatus,
-  EmploymentStatus,
   OnboardingTaskOwnerType,
   OnboardingTaskStatus,
   OnboardingTaskType,
-  TimeOffStatus,
-  TimeOffType
 } from '@prisma/client';
-import bcrypt from 'bcrypt';
-import { prisma } from '../lib/prisma';
 import { logger } from '../lib/logger';
 import { z } from 'zod';
-import { syncTimeOffRequestCalendar } from '../services/hrScheduleService';
 import {
   getAttendanceOverview as getAttendanceOverviewService,
   listAttendancePolicies,
@@ -31,31 +25,70 @@ import {
   listEmployeeAttendanceRecords,
   recordPunchIn,
   recordPunchOut,
-  resolveAttendanceException,
   ResolveAttendanceExceptionInput,
-  upsertAttendancePolicy
+  resolveTeamAttendanceExceptionForManager,
+  upsertAttendancePolicy,
 } from '../services/hrAttendanceService';
 import {
   archiveOnboardingTemplate,
   completeOnboardingTask as completeOnboardingTaskService,
-  deliverOnboardingDocuments,
+  deliverDocumentsAfterJourneyStart,
   findEmployeeHrProfileByUser,
+  findEmployeeOwnedOnboardingTask,
+  findTeamOnboardingTaskForManager,
+  getOnboardingDocumentLibrary as getOnboardingDocumentLibraryService,
   listEmployeeJourneysForUser,
   listEmployeeJourneys as listEmployeeJourneysService,
   listOnboardingTemplates as listOnboardingTemplatesService,
   listOnboardingTasksForEmployeePositions,
   startOnboardingJourney as startOnboardingJourneyService,
-  upsertOnboardingTemplate as upsertOnboardingTemplateService
+  upsertOnboardingTemplate as upsertOnboardingTemplateService,
 } from '../services/hrOnboardingService';
 import {
   getOnboardingAnalytics,
   getAttendanceAnalytics,
-  getTimeOffAnalytics
+  getTimeOffAnalytics,
 } from '../services/hrAnalyticsService';
-import { NotificationService } from '../services/notificationService';
-import { ensureBusinessDashboardForUser } from '../services/dashboardService';
-import { ensureEmployeeDocumentsFolder } from '../services/driveService';
-import { getBusinessHRFeatures } from '../middleware/hrFeatureGating';
+import { getDashboardSummary as getDashboardSummaryService, generateTimeOffReports } from '../services/hrAnalyticsSupportService';
+import {
+  createEmployeeProfile,
+  exportEmployeesToCsv,
+  getAdminEmployee as getAdminEmployeeService,
+  getDefaultOrganizationalTierId,
+  getEmployeeAuditLogs as getEmployeeAuditLogsService,
+  getEmployeeFilterOptions as getEmployeeFilterOptionsService,
+  getOwnHrData as getOwnHrDataService,
+  getTeamEmployees as getTeamEmployeesService,
+  importEmployeesFromCsv,
+  listAdminEmployees,
+  terminateEmployee as terminateEmployeeService,
+  updateEmployeeProfile,
+} from '../services/hrEmployeeService';
+import {
+  approveTeamTimeOff as approveTeamTimeOffService,
+  cancelTimeOffRequest as cancelTimeOffRequestService,
+  getMyTimeOffRequests as getMyTimeOffRequestsService,
+  getPendingTeamTimeOff as getPendingTeamTimeOffService,
+  getTimeOffBalance as getTimeOffBalanceService,
+  getTimeOffCalendar as getTimeOffCalendarService,
+  InsufficientPtoBalanceError,
+  requestTimeOff as requestTimeOffService,
+  TimeOffConflictError,
+} from '../services/hrPtoService';
+import {
+  getHRFeatureAvailability as getHRFeatureAvailabilityService,
+  getHRSettings as getHRSettingsService,
+  updateHRSettings as updateHRSettingsService,
+} from '../services/hrSettingsService';
+import { softTrashEmployeeProfile, HRTrashError } from '../services/hrTrashService';
+import {
+  FieldValidationError,
+  findActiveEmployeePositionId,
+  HRWorkflowError,
+  normalizeWorkingDays,
+  parseJsonField,
+  resolveManagerContext,
+} from '../services/hrServiceShared';
 
 function logHrControllerError(message: string, operation: string, err: unknown): void {
   const e = err instanceof Error ? err : new Error(String(err));
@@ -222,256 +255,12 @@ export const getDashboardSummary = async (req: Request, res: Response): Promise<
       return;
     }
 
-    const [employeeCount, pendingTimeOffCount, pendingOnboardingCount] = await Promise.all([
-      prisma.employeePosition.count({
-        where: { businessId, active: true },
-      }),
-      prisma.timeOffRequest.count({
-        where: { businessId, status: TimeOffStatus.PENDING },
-      }),
-      prisma.employeeOnboardingTask.count({
-        where: {
-          businessId,
-          status: { notIn: [OnboardingTaskStatus.COMPLETED, OnboardingTaskStatus.CANCELLED] },
-        },
-      }),
-    ]);
-
-    res.json({
-      employeeCount,
-      pendingTimeOffCount,
-      pendingOnboardingCount,
-    });
+    const summary = await getDashboardSummaryService(businessId);
+    res.json(summary);
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Failed to load HR summary';
     logHrControllerError('Error fetching HR dashboard summary', 'hr_dashboard_summary', error);
     res.status(500).json({ error: message });
-  }
-};
-
-type FieldValidationErrorDetails = {
-  fieldErrors: Record<string, string[]>;
-  formErrors: string[];
-};
-
-class FieldValidationError extends Error {
-  readonly field: string;
-  readonly details?: FieldValidationErrorDetails;
-
-  constructor(field: string, message: string, details?: FieldValidationErrorDetails) {
-    super(message);
-    this.name = 'FieldValidationError';
-    this.field = field;
-    this.details = details;
-  }
-}
-
-const isJsonRecord = (value: unknown): value is Record<string, unknown> => (
-  typeof value === 'object' && value !== null && !Array.isArray(value)
-);
-
-const parseJsonField = (value: unknown, fieldName: string): Prisma.InputJsonValue | null | undefined => {
-  if (value === undefined) {
-    return undefined;
-  }
-
-  if (value === null) {
-    return null;
-  }
-
-  if (typeof value === 'string') {
-    const trimmed = value.trim();
-    if (trimmed.length === 0) {
-      return null;
-    }
-
-    try {
-      const parsed = JSON.parse(trimmed);
-      if (!isJsonRecord(parsed)) {
-        throw new FieldValidationError(fieldName, 'Must be a JSON object');
-      }
-      return parsed as Prisma.InputJsonValue;
-    } catch (error) {
-      if (error instanceof FieldValidationError) {
-        throw error;
-      }
-      throw new FieldValidationError(fieldName, 'Must be valid JSON');
-    }
-  }
-
-  if (isJsonRecord(value)) {
-    return value as Prisma.InputJsonValue;
-  }
-
-  throw new FieldValidationError(fieldName, 'Must be a JSON object');
-};
-
-type AuditChangeMap = Record<string, { before: unknown; after: unknown }>;
-
-const toAuditValue = (input: unknown): unknown => {
-  if (input === undefined) {
-    return null;
-  }
-  if (input instanceof Date) {
-    return input.toISOString();
-  }
-  return input;
-};
-
-const recordAuditChange = (changes: AuditChangeMap, field: string, previous: unknown, next: unknown) => {
-  const beforeValue = toAuditValue(previous);
-  const afterValue = toAuditValue(next);
-  if (JSON.stringify(beforeValue) !== JSON.stringify(afterValue)) {
-    changes[field] = { before: beforeValue, after: afterValue };
-  }
-};
-
-const normalizeWorkingDays = (days?: string[]): string[] => {
-  if (!days || days.length === 0) {
-    return [];
-  }
-
-  const unique = new Set<string>();
-  days.forEach((day) => {
-    const normalized = day.trim().toUpperCase();
-    if (normalized.length > 0) {
-      unique.add(normalized);
-    }
-  });
-  return Array.from(unique);
-};
-
-const normalizeEmployeeTypeValue = (
-  value?: string | null
-): PrismaEmployeeType | undefined => {
-  if (!value) {
-    return undefined;
-  }
-
-  const normalized = value.trim().toUpperCase();
-  const validTypes = Object.values(PrismaEmployeeType) as PrismaEmployeeType[];
-
-  if (validTypes.includes(normalized as PrismaEmployeeType)) {
-    return normalized as PrismaEmployeeType;
-  }
-
-  return undefined;
-};
-
-const findActiveEmployeePositionId = async (businessId: string, userId: string): Promise<string | null> => {
-  const position = await prisma.employeePosition.findFirst({
-    where: { businessId, userId, active: true },
-    select: { id: true }
-  });
-  return position?.id ?? null;
-};
-
-interface ManagerContext {
-  managerPositionId: string | null;
-  directReportPositionIds: string[];
-  directReportEmployeePositionIds: string[];
-}
-
-const resolveManagerContext = async (
-  businessId: string,
-  managerUserId: string
-): Promise<ManagerContext> => {
-  const managerPosition = await prisma.employeePosition.findFirst({
-    where: {
-      businessId,
-      userId: managerUserId,
-      active: true
-    },
-    select: {
-      id: true,
-      positionId: true
-    }
-  });
-
-  if (!managerPosition?.positionId) {
-    return {
-      managerPositionId: null,
-      directReportPositionIds: [],
-      directReportEmployeePositionIds: []
-    };
-  }
-
-  const directReportPositions = await prisma.position.findMany({
-    where: {
-      businessId,
-      reportsToId: managerPosition.positionId
-    },
-    select: {
-      id: true
-    }
-  });
-
-  const directReportPositionIds = directReportPositions.map((p) => p.id);
-
-  if (directReportPositionIds.length === 0) {
-    return {
-      managerPositionId: managerPosition.id,
-      directReportPositionIds,
-      directReportEmployeePositionIds: []
-    };
-  }
-
-  const employeePositions = await prisma.employeePosition.findMany({
-    where: {
-      businessId,
-      active: true,
-      positionId: { in: directReportPositionIds }
-    },
-    select: { id: true }
-  });
-
-  return {
-    managerPositionId: managerPosition.id,
-    directReportPositionIds,
-    directReportEmployeePositionIds: employeePositions.map((ep) => ep.id)
-  };
-};
-
-type EmployeeAuditInput = {
-  userId: string;
-  action: 'HR_EMPLOYEE_CREATED' | 'HR_EMPLOYEE_UPDATED' | 'HR_EMPLOYEE_TERMINATED';
-  resourceId: string;
-  businessId: string;
-  employeeUserId: string;
-  employeeName: string | null;
-  changes: AuditChangeMap;
-  metadata?: Record<string, unknown>;
-  force?: boolean;
-};
-
-const logEmployeeAudit = async ({ force = false, changes, ...payload }: EmployeeAuditInput) => {
-  if (!force && Object.keys(changes).length === 0) {
-    return;
-  }
-
-  const details: Record<string, unknown> = {
-    businessId: payload.businessId,
-    employeeUserId: payload.employeeUserId,
-    employeeName: payload.employeeName,
-    changes
-  };
-
-  if (payload.metadata) {
-    details.metadata = payload.metadata;
-  }
-
-  try {
-    await prisma.auditLog.create({
-      data: {
-        userId: payload.userId,
-        action: payload.action,
-        resourceType: 'HR_EMPLOYEE',
-        resourceId: payload.resourceId,
-        details: JSON.stringify(details)
-      }
-    });
-  } catch (error) {
-    logHrControllerError('Error logging audit entry', 'hr_audit_log', error);
   }
 };
 
@@ -485,175 +274,48 @@ const logEmployeeAudit = async ({ force = false, changes, ...payload }: Employee
  */
 export const getAdminEmployees = async (req: Request, res: Response) => {
   try {
-    // Validate query parameters
     const businessIdParam = req.query.businessId;
     if (!businessIdParam || typeof businessIdParam !== 'string') {
       return res.status(400).json({ error: 'businessId is required and must be a string' });
     }
-    const businessId = businessIdParam;
-    
+
     const statusParam = req.query.status;
-    const status = (statusParam && typeof statusParam === 'string') ? statusParam : 'ACTIVE';
-    
+    const status = statusParam && typeof statusParam === 'string' ? statusParam : 'ACTIVE';
     const qParam = req.query.q;
-    const q = (qParam && typeof qParam === 'string') ? qParam : '';
-    
+    const q = qParam && typeof qParam === 'string' ? qParam : '';
     const departmentIdParam = req.query.departmentId;
-    const departmentId = (departmentIdParam && typeof departmentIdParam === 'string') ? departmentIdParam : undefined;
-    
+    const departmentId =
+      departmentIdParam && typeof departmentIdParam === 'string' ? departmentIdParam : undefined;
     const positionIdParam = req.query.positionId;
-    const positionId = (positionIdParam && typeof positionIdParam === 'string') ? positionIdParam : undefined;
-    
+    const positionId =
+      positionIdParam && typeof positionIdParam === 'string' ? positionIdParam : undefined;
     const sortByParam = req.query.sortBy;
-    const sortBy = (sortByParam && typeof sortByParam === 'string') ? sortByParam : 'createdAt';
-    
+    const sortBy = sortByParam && typeof sortByParam === 'string' ? sortByParam : 'createdAt';
     const sortOrderParam = req.query.sortOrder;
-    const rawSortOrder = (sortOrderParam && typeof sortOrderParam === 'string') ? sortOrderParam : 'desc';
-    const sortOrder: Prisma.SortOrder = rawSortOrder === 'asc' ? 'asc' : 'desc';
+    const rawSortOrder = sortOrderParam && typeof sortOrderParam === 'string' ? sortOrderParam : 'desc';
+    const sortOrder = rawSortOrder === 'asc' ? 'asc' : 'desc';
     const page = Number(req.query.page || 1);
     const pageSize = Math.min(100, Number(req.query.pageSize || 20));
-    const skip = (page - 1) * pageSize;
-    
-    // Build orderBy clauses for active and terminated datasets - Prisma supports nested relations for sorting
-    let activeOrderBy: Prisma.EmployeePositionOrderByWithRelationInput = { createdAt: sortOrder };
-    let terminatedOrderBy: Prisma.EmployeeHRProfileOrderByWithRelationInput = { updatedAt: sortOrder };
 
-    switch (sortBy) {
-      case 'name':
-        activeOrderBy = { user: { name: sortOrder } };
-        terminatedOrderBy = { employeePosition: { user: { name: sortOrder } } };
-        break;
-      case 'email':
-        activeOrderBy = { user: { email: sortOrder } };
-        terminatedOrderBy = { employeePosition: { user: { email: sortOrder } } };
-        break;
-      case 'title':
-        activeOrderBy = { position: { title: sortOrder } };
-        terminatedOrderBy = { employeePosition: { position: { title: sortOrder } } };
-        break;
-      case 'department':
-        activeOrderBy = { position: { department: { name: sortOrder } } };
-        terminatedOrderBy = { employeePosition: { position: { department: { name: sortOrder } } } };
-        break;
-      case 'hireDate':
-        activeOrderBy = { hrProfile: { hireDate: sortOrder } };
-        terminatedOrderBy = { hireDate: sortOrder };
-        break;
-      default:
-        activeOrderBy = { [sortBy]: sortOrder } as Prisma.EmployeePositionOrderByWithRelationInput;
-        terminatedOrderBy = { [sortBy]: sortOrder } as Prisma.EmployeeHRProfileOrderByWithRelationInput;
-    }
-    
-    if (status === 'TERMINATED') {
-      // Build where clause for terminated employees
-      const where: Record<string, unknown> = {
-        businessId,
-        employmentStatus: 'TERMINATED'
-      };
-
-      const employeePositionFilter: Record<string, unknown> = { businessId };
-
-      if (departmentId) {
-        employeePositionFilter.position = {
-          ...((employeePositionFilter.position as Record<string, unknown>) || {}),
-          departmentId
-        };
-      }
-      if (positionId) {
-        employeePositionFilter.positionId = positionId;
-      }
-      if (q) {
-        employeePositionFilter.OR = [
-          { user: { name: { contains: q, mode: 'insensitive' } } },
-          { user: { email: { contains: q, mode: 'insensitive' } } },
-          { position: { title: { contains: q, mode: 'insensitive' } } }
-        ];
-      }
-
-      if (Object.keys(employeePositionFilter).length > 1 || Object.keys(employeePositionFilter).some((key) => key !== 'businessId')) {
-        where.employeePosition = employeePositionFilter;
-      }
-
-      const [hrProfiles, totalCount] = await Promise.all([
-        prisma.employeeHRProfile.findMany({
-          where,
-          include: {
-            employeePosition: {
-              include: {
-                user: {
-                  select: { id: true, name: true, email: true, image: true }
-                },
-                position: { include: { department: true, tier: true } }
-              }
-            }
-          },
-          orderBy: terminatedOrderBy,
-          skip,
-          take: pageSize
-        }),
-        prisma.employeeHRProfile.count({ where })
-      ]);
-
-      return res.json({ 
-        employees: hrProfiles,
-        count: totalCount,
-        page,
-        pageSize,
-        tier: req.hrTier,
-        features: req.hrFeatures
-      });
-    }
-
-    // ACTIVE employees
-    const where: Record<string, unknown> = {
-      businessId,
-      active: true
-    };
-    
-    // Add search query
-    if (q) {
-      where.OR = [
-        { user: { name: { contains: q, mode: 'insensitive' } } },
-        { user: { email: { contains: q, mode: 'insensitive' } } },
-        { position: { title: { contains: q, mode: 'insensitive' } } }
-      ];
-    }
-    
-    // Add department filter
-    if (departmentId) {
-      where.position = {
-        ...((where.position as Record<string, unknown>) || {}),
-        departmentId
-      };
-    }
-    
-    // Add position/title filter
-    if (positionId) {
-      where.positionId = positionId;
-    }
-
-    const [employees, totalCount] = await Promise.all([
-      prisma.employeePosition.findMany({
-        where,
-        include: {
-          user: { select: { id: true, name: true, email: true, image: true } },
-          position: { include: { department: true, tier: true } },
-          hrProfile: true
-        },
-        orderBy: activeOrderBy,
-        skip,
-        take: pageSize
-      }),
-      prisma.employeePosition.count({ where })
-    ]);
-
-    return res.json({ 
-      employees,
-      count: totalCount,
+    const result = await listAdminEmployees({
+      businessId: businessIdParam,
+      status,
+      q,
+      departmentId,
+      positionId,
+      sortBy,
+      sortOrder,
       page,
       pageSize,
+    });
+
+    return res.json({
+      employees: result.employees,
+      count: result.count,
+      page: result.page,
+      pageSize: result.pageSize,
       tier: req.hrTier,
-      features: req.hrFeatures
+      features: req.hrFeatures,
     });
   } catch (error) {
     logHrControllerError('Error fetching employees', 'hr_employees_list', error);
@@ -671,34 +333,9 @@ export const getEmployeeFilterOptions = async (req: Request, res: Response) => {
     if (!businessIdParam || typeof businessIdParam !== 'string') {
       return res.status(400).json({ error: 'businessId is required and must be a string' });
     }
-    const businessId = businessIdParam;
 
-    const [departments, positions] = await Promise.all([
-      prisma.department.findMany({
-        where: { businessId },
-        select: { id: true, name: true },
-        orderBy: { name: 'asc' }
-      }),
-      prisma.position.findMany({
-        where: { 
-          businessId,
-          employeePositions: {
-            some: {
-              active: true,
-              businessId
-            }
-          }
-        },
-        select: { id: true, title: true },
-        orderBy: { title: 'asc' },
-        distinct: ['title']
-      })
-    ]);
-
-    return res.json({
-      departments,
-      positions
-    });
+    const options = await getEmployeeFilterOptionsService(businessIdParam);
+    return res.json(options);
   } catch (error) {
     logHrControllerError('Error fetching filter options', 'hr_filter_options', error);
     const errorMessage = error instanceof Error ? error.message : 'Failed to fetch filter options';
@@ -706,10 +343,6 @@ export const getEmployeeFilterOptions = async (req: Request, res: Response) => {
   }
 };
 
-/**
- * Get single employee details
- * Framework: Returns employee with HR profile
- */
 export const getAdminEmployee = async (req: Request, res: Response) => {
   try {
     const { id } = req.params;
@@ -717,32 +350,13 @@ export const getAdminEmployee = async (req: Request, res: Response) => {
     if (!businessIdParam || typeof businessIdParam !== 'string') {
       return res.status(400).json({ error: 'businessId is required and must be a string' });
     }
-    const businessId = businessIdParam;
-    
-    const employee = await prisma.employeePosition.findFirst({
-      where: {
-        id,
-        businessId,
-        active: true
-      },
-      include: {
-        user: true,
-        position: {
-          include: {
-            department: true,
-            tier: true
-          }
-        }
-      ,hrProfile: true
-      }
-    });
-    
-    if (!employee) {
-      return res.status(404).json({ error: 'Employee not found' });
-    }
-    
-    res.json({ employee });
+
+    const result = await getAdminEmployeeService(businessIdParam, id);
+    res.json(result);
   } catch (error) {
+    if (error instanceof HRWorkflowError) {
+      return res.status(error.statusCode).json({ error: error.message });
+    }
     logHrControllerError('Error fetching employee', 'hr_employee_get', error);
     res.status(500).json({ error: 'Failed to fetch employee' });
   }
@@ -758,27 +372,24 @@ export const createEmployee = async (req: Request, res: Response) => {
     if (!businessIdParam || typeof businessIdParam !== 'string') {
       return res.status(400).json({ error: 'businessId is required and must be a string' });
     }
-    const businessId = businessIdParam;
     const userId = (req.user as { id: string })?.id;
-    
     if (!userId) {
       return res.status(401).json({ error: 'User not authenticated' });
     }
 
-    // Validate input
     const validationResult = employeeCreateSchema.safeParse(req.body);
     if (!validationResult.success) {
-      return res.status(400).json({ 
-        error: 'Validation failed', 
-        details: validationResult.error.errors 
+      return res.status(400).json({
+        error: 'Validation failed',
+        details: validationResult.error.errors,
       });
     }
 
-    const { employeePositionId, hireDate, employeeType, workLocation, emergencyContact, personalInfo } = validationResult.data;
+    const { employeePositionId, hireDate, employeeType, workLocation, emergencyContact, personalInfo } =
+      validationResult.data;
 
-    let emergencyContactJson: Prisma.InputJsonValue | null | undefined;
-    let personalInfoJson: Prisma.InputJsonValue | null | undefined;
-
+    let emergencyContactJson;
+    let personalInfoJson;
     try {
       emergencyContactJson = parseJsonField(emergencyContact, 'emergencyContact');
       personalInfoJson = parseJsonField(personalInfo, 'personalInfo');
@@ -786,123 +397,58 @@ export const createEmployee = async (req: Request, res: Response) => {
       if (fieldError instanceof FieldValidationError) {
         return res.status(400).json({
           error: 'Validation failed',
-          details: [{ path: [fieldError.field], message: fieldError.message }]
+          details: [{ path: [fieldError.field], message: fieldError.message }],
         });
       }
       throw fieldError;
     }
 
-    const hireDateValue = hireDate ? new Date(hireDate) : undefined;
-    const employeeTypeValue = employeeType ? (employeeType as PrismaEmployeeType) : undefined;
-
-    const position = await prisma.employeePosition.findFirst({
-      where: { id: employeePositionId, businessId },
-      include: { user: { select: { id: true, name: true, email: true } } }
-    });
-    if (!position) {
-      return res.status(400).json({ error: 'Invalid employeePositionId for this business' });
-    }
-
-    // Get existing HR profile if any (for audit comparison)
-    const existingProfile = await prisma.employeeHRProfile.findUnique({
-      where: { employeePositionId }
-    });
-
-    // Create HR profile if not exists
-    const hrProfile = await prisma.employeeHRProfile.upsert({
-      where: { employeePositionId },
-      create: {
-        employeePositionId,
-        businessId,
-        employmentStatus: 'ACTIVE',
-        ...(hireDateValue ? { hireDate: hireDateValue } : {}),
-        ...(employeeTypeValue ? { employeeType: employeeTypeValue } : {}),
-        ...(workLocation !== undefined ? { workLocation } : {}),
-        ...(emergencyContactJson !== undefined ? {
-          emergencyContact: emergencyContactJson === null ? Prisma.JsonNull : emergencyContactJson
-        } : {}),
-        ...(personalInfoJson !== undefined ? {
-          personalInfo: personalInfoJson === null ? Prisma.JsonNull : personalInfoJson
-        } : {})
-      },
-      update: {
-        employmentStatus: 'ACTIVE',
-        ...(hireDate !== undefined ? { hireDate: hireDateValue } : {}),
-        ...(employeeType !== undefined ? { employeeType: employeeTypeValue } : {}),
-        ...(workLocation !== undefined ? { workLocation } : {}),
-        ...(emergencyContact !== undefined ? { emergencyContact: emergencyContactJson ?? Prisma.JsonNull } : {}),
-        ...(personalInfo !== undefined ? { personalInfo: personalInfoJson ?? Prisma.JsonNull } : {})
-      }
-    });
-
-    // Ensure position is active
-    await prisma.employeePosition.update({
-      where: { id: employeePositionId },
-      data: {
-        active: true,
-        startDate: hireDate ? new Date(hireDate) : new Date(),
-        endDate: null
-      }
-    });
-
-    const auditChanges: AuditChangeMap = {};
-    recordAuditChange(auditChanges, 'hireDate', existingProfile?.hireDate, hrProfile.hireDate);
-    recordAuditChange(auditChanges, 'employeeType', existingProfile?.employeeType, hrProfile.employeeType);
-    recordAuditChange(auditChanges, 'workLocation', existingProfile?.workLocation, hrProfile.workLocation);
-    recordAuditChange(auditChanges, 'emergencyContact', existingProfile?.emergencyContact, hrProfile.emergencyContact);
-    recordAuditChange(auditChanges, 'personalInfo', existingProfile?.personalInfo, hrProfile.personalInfo);
-
-    await logEmployeeAudit({
+    const { hrProfile } = await createEmployeeProfile({
+      businessId: businessIdParam,
       userId,
-      action: existingProfile ? 'HR_EMPLOYEE_UPDATED' : 'HR_EMPLOYEE_CREATED',
-      resourceId: employeePositionId,
-      businessId,
-      employeeUserId: position.userId,
-      employeeName: position.user?.name || position.user?.email || null,
-      changes: auditChanges,
-      force: true
+      employeePositionId,
+      hireDate,
+      employeeType: employeeType as PrismaEmployeeType | undefined,
+      workLocation,
+      emergencyContactJson,
+      personalInfoJson,
     });
 
     return res.json({ message: 'Employee profile created', hrProfile });
   } catch (error) {
+    if (error instanceof HRWorkflowError) {
+      return res.status(error.statusCode).json({ error: error.message });
+    }
     logHrControllerError('Error creating employee', 'hr_employee_create', error);
     const errorMessage = error instanceof Error ? error.message : 'Failed to create employee';
     res.status(500).json({ error: errorMessage });
   }
 };
 
-/**
- * Update employee
- * Framework: Stub - returns success message
- */
 export const updateEmployee = async (req: Request, res: Response) => {
   try {
     const businessIdParam = req.query.businessId;
     if (!businessIdParam || typeof businessIdParam !== 'string') {
       return res.status(400).json({ error: 'businessId is required and must be a string' });
     }
-    const businessId = businessIdParam;
-    const { id } = req.params; // employeePositionId
+    const { id } = req.params;
     const userId = (req.user as { id: string })?.id;
-    
     if (!userId) {
       return res.status(401).json({ error: 'User not authenticated' });
     }
 
-    // Validate input
     const validationResult = employeeUpdateSchema.safeParse(req.body);
     if (!validationResult.success) {
-      return res.status(400).json({ 
-        error: 'Validation failed', 
-        details: validationResult.error.errors 
+      return res.status(400).json({
+        error: 'Validation failed',
+        details: validationResult.error.errors,
       });
     }
 
     const { hireDate, employeeType, workLocation, emergencyContact, personalInfo } = validationResult.data;
 
-    let emergencyContactJson: Prisma.InputJsonValue | null | undefined;
-    let personalInfoJson: Prisma.InputJsonValue | null | undefined;
-
+    let emergencyContactJson;
+    let personalInfoJson;
     try {
       emergencyContactJson = parseJsonField(emergencyContact, 'emergencyContact');
       personalInfoJson = parseJsonField(personalInfo, 'personalInfo');
@@ -910,76 +456,35 @@ export const updateEmployee = async (req: Request, res: Response) => {
       if (fieldError instanceof FieldValidationError) {
         return res.status(400).json({
           error: 'Validation failed',
-          details: [{ path: [fieldError.field], message: fieldError.message }]
+          details: [{ path: [fieldError.field], message: fieldError.message }],
         });
       }
       throw fieldError;
     }
 
-    const position = await prisma.employeePosition.findFirst({ 
-      where: { id, businessId },
-      include: { user: { select: { id: true, name: true, email: true } } }
-    });
-    if (!position) {
-      return res.status(404).json({ error: 'Employee position not found' });
-    }
-
-    // Get existing profile for audit comparison
-    const existingProfile = await prisma.employeeHRProfile.findUnique({
-      where: { employeePositionId: id }
-    });
-
-    if (!existingProfile) {
-      return res.status(404).json({ error: 'HR profile not found for this employee' });
-    }
-
-    // Build update data with only provided fields
-    const updateData: Record<string, unknown> = {};
-    if (hireDate !== undefined) updateData.hireDate = new Date(hireDate);
-    if (employeeType !== undefined) updateData.employeeType = employeeType as PrismaEmployeeType;
-    if (workLocation !== undefined) updateData.workLocation = workLocation;
-    if (emergencyContact !== undefined) {
-      updateData.emergencyContact = emergencyContactJson ?? Prisma.JsonNull;
-    }
-    if (personalInfo !== undefined) {
-      updateData.personalInfo = personalInfoJson ?? Prisma.JsonNull;
-    }
-
-    const updated = await prisma.employeeHRProfile.update({
-      where: { employeePositionId: id },
-      data: updateData
-    });
-
-    // Track field-level changes for audit
-    const changes: AuditChangeMap = {};
-    if (hireDate !== undefined) {
-      recordAuditChange(changes, 'hireDate', existingProfile.hireDate, updated.hireDate);
-    }
-    if (employeeType !== undefined) {
-      recordAuditChange(changes, 'employeeType', existingProfile.employeeType, updated.employeeType);
-    }
-    if (workLocation !== undefined) {
-      recordAuditChange(changes, 'workLocation', existingProfile.workLocation, updated.workLocation);
-    }
-    if (emergencyContact !== undefined) {
-      recordAuditChange(changes, 'emergencyContact', existingProfile.emergencyContact, updated.emergencyContact);
-    }
-    if (personalInfo !== undefined) {
-      recordAuditChange(changes, 'personalInfo', existingProfile.personalInfo, updated.personalInfo);
-    }
-
-    await logEmployeeAudit({
+    const { hrProfile } = await updateEmployeeProfile({
+      businessId: businessIdParam,
       userId,
-      action: 'HR_EMPLOYEE_UPDATED',
-      resourceId: id,
-      businessId,
-      employeeUserId: position.userId,
-      employeeName: position.user?.name || position.user?.email || null,
-      changes
+      employeePositionId: id,
+      hireDate,
+      employeeType: employeeType as PrismaEmployeeType | undefined,
+      workLocation,
+      emergencyContactJson,
+      personalInfoJson,
+      fieldsProvided: {
+        hireDate: hireDate !== undefined,
+        employeeType: employeeType !== undefined,
+        workLocation: workLocation !== undefined,
+        emergencyContact: emergencyContact !== undefined,
+        personalInfo: personalInfo !== undefined,
+      },
     });
 
-    return res.json({ message: 'Employee profile updated', hrProfile: updated });
+    return res.json({ message: 'Employee profile updated', hrProfile });
   } catch (error) {
+    if (error instanceof HRWorkflowError) {
+      return res.status(error.statusCode).json({ error: error.message });
+    }
     logHrControllerError('Error updating employee', 'hr_employee_update', error);
     const errorMessage = error instanceof Error ? error.message : 'Failed to update employee';
     res.status(500).json({ error: errorMessage });
@@ -998,23 +503,29 @@ export const deleteEmployee = async (req: Request, res: Response) => {
     }
     const businessId = businessIdParam;
     const { id } = req.params; // employeePositionId
-    const position = await prisma.employeePosition.findFirst({ where: { id, businessId } });
-    if (!position) {
-      return res.status(404).json({ error: 'Employee position not found' });
+    const userId = req.user?.id;
+    if (!userId) {
+      return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    // Soft delete HR profile (retain data for audit)
-    await prisma.employeeHRProfile.update({
-      where: { employeePositionId: id },
-      data: {
-        deletedAt: new Date(),
-        deletedBy: req.user?.id || null,
-        deletedReason: 'admin_deleted'
-      }
+    await softTrashEmployeeProfile({
+      userId,
+      businessId,
+      employeePositionId: id,
+      deletedBy: userId,
+      deletedReason: 'admin_deleted',
     });
 
-    return res.json({ message: 'Employee HR profile soft-deleted' });
-  } catch (error) {
+    return res.json({ message: 'Employee HR profile moved to trash' });
+  } catch (error: unknown) {
+    if (error instanceof HRTrashError) {
+      if (error.code === 'not_found') {
+        return res.status(404).json({ error: 'Employee not found' });
+      }
+      if (error.code === 'forbidden') {
+        return res.status(403).json({ error: 'Access denied' });
+      }
+    }
     logHrControllerError('Error deleting employee', 'hr_employee_delete', error);
     res.status(500).json({ error: 'Failed to delete employee' });
   }
@@ -1129,37 +640,12 @@ export const getOnboardingDocumentLibrary = async (req: Request, res: Response) 
       return res.status(401).json({ error: 'User context required' });
     }
 
-    const dashboard = await ensureBusinessDashboardForUser(userId, businessId);
-    if (!dashboard) {
-      return res.status(500).json({ error: 'Failed to prepare business workspace' });
-    }
-
-    const folder = await ensureEmployeeDocumentsFolder(userId, dashboard.id);
-
-    const files = await prisma.file.findMany({
-      where: {
-        userId,
-        folderId: folder.id,
-        trashedAt: null
-      },
-      orderBy: { updatedAt: 'desc' },
-      select: {
-        id: true,
-        name: true,
-        type: true,
-        size: true,
-        url: true,
-        createdAt: true,
-        updatedAt: true
-      }
-    });
-
-    return res.json({
-      folderId: folder.id,
-      dashboardId: dashboard.id,
-      files
-    });
+    const library = await getOnboardingDocumentLibraryService(userId, businessId);
+    return res.json(library);
   } catch (error) {
+    if (error instanceof Error && error.message === 'Failed to prepare business workspace') {
+      return res.status(500).json({ error: error.message });
+    }
     logHrControllerError('Error fetching onboarding document library', 'hr_onboarding_document_library', error);
     const message = error instanceof Error ? error.message : 'Failed to fetch onboarding documents';
     return res.status(500).json({ error: message });
@@ -1177,30 +663,16 @@ export const startOnboardingJourney = async (req: Request, res: Response) => {
     const journey = await startOnboardingJourneyService({
       ...payload,
       businessId,
-      initiatedByUserId: req.user?.id ?? null
+      initiatedByUserId: req.user?.id ?? null,
     });
 
     let deliveredDocuments: Array<{ checklistId: string; fileId: string }> = [];
-
     try {
-      const profile = await prisma.employeeHRProfile.findUnique({
-        where: { id: payload.employeeHrProfileId },
-        include: {
-          employeePosition: {
-            select: { userId: true }
-          }
-        }
+      deliveredDocuments = await deliverDocumentsAfterJourneyStart({
+        businessId,
+        employeeHrProfileId: payload.employeeHrProfileId,
+        initiatedByUserId: req.user?.id ?? null,
       });
-
-      const employeeUserId = profile?.employeePosition?.userId;
-
-      if (employeeUserId) {
-        deliveredDocuments = await deliverOnboardingDocuments({
-          businessId,
-          employeeUserId,
-          initiatedByUserId: req.user?.id ?? null
-        });
-      }
     } catch (deliveryError) {
       logHrControllerError('Error delivering onboarding documents', 'hr_onboarding_documents_deliver', deliveryError);
     }
@@ -1211,7 +683,7 @@ export const startOnboardingJourney = async (req: Request, res: Response) => {
       return res.status(400).json({
         error: error.message,
         field: error.field,
-        details: error.details
+        details: error.details,
       });
     }
 
@@ -1338,15 +810,7 @@ export const completeMyOnboardingTask = async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'Employee profile not found' });
     }
 
-    const task = await prisma.employeeOnboardingTask.findFirst({
-      where: {
-        id: taskId,
-        businessId,
-        onboardingJourney: {
-          employeeHrProfileId: profile.id
-        }
-      }
-    });
+    const task = await findEmployeeOwnedOnboardingTask(businessId, taskId, profile.id);
 
     if (!task) {
       return res.status(404).json({ error: 'Onboarding task not found' });
@@ -1435,20 +899,11 @@ export const completeTeamOnboardingTask = async (req: Request, res: Response) =>
       return res.status(403).json({ error: 'No onboarding tasks available for approval' });
     }
 
-    const task = await prisma.employeeOnboardingTask.findFirst({
-      where: { id: taskId, businessId },
-      include: {
-        onboardingJourney: {
-          include: {
-            employeeHrProfile: {
-              select: {
-                employeePositionId: true
-              }
-            }
-          }
-        }
-      }
-    });
+    const task = await findTeamOnboardingTaskForManager(
+      businessId,
+      taskId,
+      managerContext.directReportEmployeePositionIds
+    );
 
     if (!task) {
       return res.status(404).json({ error: 'Onboarding task not found' });
@@ -1891,64 +1346,28 @@ export const getEmployeeAuditLogs = async (req: Request, res: Response) => {
     if (!businessIdParam || typeof businessIdParam !== 'string') {
       return res.status(400).json({ error: 'businessId is required and must be a string' });
     }
-    const businessId = businessIdParam;
-    const { id } = req.params; // employeePositionId
+    const { id } = req.params;
 
-    // Verify employee belongs to business
-    const position = await prisma.employeePosition.findFirst({
-      where: { id, businessId },
-      include: { user: { select: { id: true, name: true, email: true } } }
-    });
-    
-    if (!position) {
-      return res.status(404).json({ error: 'Employee not found' });
-    }
-
-    // Get audit logs for this employee
-    const auditLogs = await prisma.auditLog.findMany({
-      where: {
-        resourceType: 'HR_EMPLOYEE',
-        resourceId: id,
-        OR: [
-          { action: 'HR_EMPLOYEE_CREATED' },
-          { action: 'HR_EMPLOYEE_UPDATED' },
-          { action: 'HR_EMPLOYEE_TERMINATED' }
-        ]
-      },
-      include: {
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true
-          }
-        }
-      },
-      orderBy: { timestamp: 'desc' },
-      take: 100
-    });
-
-    return res.json({ auditLogs });
+    const result = await getEmployeeAuditLogsService(businessIdParam, id);
+    return res.json(result);
   } catch (error) {
+    if (error instanceof HRWorkflowError) {
+      return res.status(error.statusCode).json({ error: error.message });
+    }
     logHrControllerError('Error fetching audit logs', 'hr_audit_logs_list', error);
     const errorMessage = error instanceof Error ? error.message : 'Failed to fetch audit logs';
     res.status(500).json({ error: errorMessage });
   }
 };
 
-/**
- * Terminate employee (archive record and vacate position)
- */
 export const terminateEmployee = async (req: Request, res: Response) => {
   try {
-    const { id } = req.params; // employeePositionId
+    const { id } = req.params;
     const businessIdParam = req.query.businessId;
     if (!businessIdParam || typeof businessIdParam !== 'string') {
       return res.status(400).json({ error: 'businessId is required and must be a string' });
     }
-    const businessId = businessIdParam;
     const userId = (req.user as { id: string })?.id;
-
     if (!userId) {
       return res.status(401).json({ error: 'User not authenticated' });
     }
@@ -1957,149 +1376,63 @@ export const terminateEmployee = async (req: Request, res: Response) => {
     if (!terminationValidation.success) {
       return res.status(400).json({
         error: 'Validation failed',
-        details: terminationValidation.error.errors
+        details: terminationValidation.error.errors,
       });
     }
 
     const { date, reason, notes } = terminationValidation.data;
     const terminationDate = date ? new Date(date) : new Date();
 
-    let terminationNotes: Prisma.InputJsonValue | null | undefined;
-
+    let terminationNotes;
     try {
       terminationNotes = parseJsonField(notes ?? undefined, 'notes');
     } catch (fieldError) {
       if (fieldError instanceof FieldValidationError) {
         return res.status(400).json({
           error: 'Validation failed',
-          details: [{ path: [fieldError.field], message: fieldError.message }]
+          details: [{ path: [fieldError.field], message: fieldError.message }],
         });
       }
       throw fieldError;
     }
 
-    const employeePosition = await prisma.employeePosition.findFirst({
-      where: { id, businessId, active: true },
-      include: {
-        hrProfile: true,
-        user: { select: { id: true, name: true, email: true } }
-      }
-    });
-
-    if (!employeePosition) {
-      return res.status(404).json({ error: 'Active employee position not found' });
-    }
-
-    // Ensure HR profile exists
-    const hrProfile = employeePosition.hrProfile
-      ? employeePosition.hrProfile
-      : await prisma.employeeHRProfile.create({
-          data: {
-            employeePositionId: employeePosition.id,
-            businessId,
-            hireDate: undefined
-          }
-        });
-
-    // Update HR profile status to TERMINATED
-    const terminationUpdateData: Prisma.EmployeeHRProfileUpdateInput = {
-      employmentStatus: 'TERMINATED',
-      terminationDate,
-      terminationReason: reason || null,
-      terminatedBy: userId
-    };
-
-    if (notes !== undefined) {
-      terminationUpdateData.terminationNotes = terminationNotes ?? Prisma.JsonNull;
-    }
-
-    const updatedProfile = await prisma.employeeHRProfile.update({
-      where: { id: hrProfile.id },
-      data: terminationUpdateData
-    });
-
-    // Vacate position: deactivate assignment and set end date
-    await prisma.employeePosition.update({
-      where: { id: employeePosition.id },
-      data: {
-        active: false,
-        endDate: terminationDate
-      },
-      include: { user: { select: { id: true, name: true, email: true } } }
-    });
-
-    const terminationChanges: AuditChangeMap = {};
-    recordAuditChange(terminationChanges, 'employmentStatus', hrProfile.employmentStatus, updatedProfile.employmentStatus);
-    recordAuditChange(terminationChanges, 'terminationDate', hrProfile.terminationDate, updatedProfile.terminationDate);
-    recordAuditChange(terminationChanges, 'terminationReason', hrProfile.terminationReason, updatedProfile.terminationReason);
-    recordAuditChange(terminationChanges, 'terminationNotes', hrProfile.terminationNotes, updatedProfile.terminationNotes);
-    recordAuditChange(terminationChanges, 'terminatedBy', hrProfile.terminatedBy, updatedProfile.terminatedBy);
-
-    await logEmployeeAudit({
+    const result = await terminateEmployeeService({
+      businessId: businessIdParam,
       userId,
-      action: 'HR_EMPLOYEE_TERMINATED',
-      resourceId: id,
-      businessId,
-      employeeUserId: employeePosition.userId,
-      employeeName: employeePosition.user?.name || employeePosition.user?.email || null,
-      changes: terminationChanges,
-      metadata: {
-        terminationDate: terminationDate.toISOString(),
-        terminationReason: reason || null,
-        terminationNotes: notes !== undefined ? (terminationNotes ?? null) : undefined
-      }
+      employeePositionId: id,
+      terminationDate,
+      reason,
+      terminationNotes,
+      notesProvided: notes !== undefined,
     });
 
     return res.json({
       message: 'Employee terminated; position vacated',
-      employeePositionId: employeePosition.id,
-      terminationDate,
-      positionVacant: true
+      ...result,
     });
   } catch (error) {
+    if (error instanceof HRWorkflowError) {
+      return res.status(error.statusCode).json({ error: error.message });
+    }
     logHrControllerError('Error terminating employee', 'hr_employee_terminate', error);
     return res.status(500).json({ error: 'Failed to terminate employee' });
   }
 };
 
-/**
- * Get HR settings for business
- * Framework: Returns default settings or stored settings
- */
 export const getHRSettings = async (req: Request, res: Response) => {
   try {
-    // TODO: Enable after migration
-    // const settings = await prisma.hRModuleSettings.findUnique({
-    //   where: { businessId }
-    // });
-    const settings = null;
-    
-    res.json({ 
-      settings: settings || {
-        message: 'No custom settings configured',
-        defaults: {
-          timeOffSettings: { defaultPTODays: 15 },
-          workWeekSettings: { daysPerWeek: 5, hoursPerDay: 8 }
-        }
-      }
-    });
+    const result = await getHRSettingsService();
+    res.json(result);
   } catch (error) {
     logHrControllerError('Error fetching HR settings', 'hr_settings_get', error);
     res.status(500).json({ error: 'Failed to fetch HR settings' });
   }
 };
 
-/**
- * Update HR settings
- * Framework: Stub - returns success message
- */
 export const updateHRSettings = async (req: Request, res: Response) => {
   try {
-    // TODO: Implement HR settings update
-    res.json({ 
-      message: 'HR settings update - framework stub',
-      note: 'Feature implementation pending'
-    });
+    const result = await updateHRSettingsService();
+    res.json(result);
   } catch (error) {
     logHrControllerError('Error updating HR settings', 'hr_settings_update', error);
     res.status(500).json({ error: 'Failed to update HR settings' });
@@ -2113,12 +1446,8 @@ export const getHRFeatureAvailability = async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Business ID required' });
     }
 
-    const { tier, features } = await getBusinessHRFeatures(businessId);
-
-    return res.status(200).json({
-      tier,
-      features
-    });
+    const result = await getHRFeatureAvailabilityService(businessId);
+    return res.status(200).json(result);
   } catch (error) {
     logHrControllerError('Error fetching HR feature availability', 'hr_features_availability', error);
     return res.status(500).json({ error: 'Failed to load HR feature availability' });
@@ -2143,34 +1472,9 @@ export const getTeamEmployees = async (req: Request, res: Response) => {
     if (!businessIdParam || typeof businessIdParam !== 'string') {
       return res.status(400).json({ error: 'businessId is required and must be a string' });
     }
-    const businessId = businessIdParam;
 
-    const {
-      managerPositionId,
-      directReportPositionIds
-    } = await resolveManagerContext(businessId, req.user.id);
-
-    if (!managerPositionId || directReportPositionIds.length === 0) {
-      return res.json({ employees: [], count: 0 });
-    }
-
-    const teamEmployees = await prisma.employeePosition.findMany({
-      where: {
-        businessId,
-        active: true,
-        positionId: { in: directReportPositionIds }
-      },
-      include: {
-        user: { select: { id: true, name: true, email: true, image: true } },
-        position: { include: { department: true, tier: true } },
-        hrProfile: true
-      }
-    });
-    
-    res.json({ 
-      employees: teamEmployees,
-      count: teamEmployees.length
-    });
+    const result = await getTeamEmployeesService(businessIdParam, req.user.id);
+    res.json(result);
   } catch (error) {
     logHrControllerError('Error fetching team employees', 'hr_team_employees', error);
     res.status(500).json({ error: 'Failed to fetch team employees' });
@@ -2293,35 +1597,11 @@ export const resolveTeamAttendanceException = async (req: Request, res: Response
       return res.status(403).json({ error: 'Not authorized to resolve this exception' });
     }
 
-    const existingException = await prisma.attendanceException.findFirst({
-      where: {
-        id: exceptionId,
-        businessId
-      },
-      select: {
-        id: true,
-        employeePositionId: true,
-        status: true
-      }
-    });
-
-    if (!existingException) {
-      return res.status(404).json({ error: 'Attendance exception not found' });
-    }
-
-    if (
-      !managerContext.directReportEmployeePositionIds.includes(
-        existingException.employeePositionId
-      )
-    ) {
-      return res.status(403).json({ error: 'Not authorized to resolve this exception' });
-    }
-
     const payloadParse = attendanceExceptionResolutionSchema.safeParse(req.body);
     if (!payloadParse.success) {
       return res.status(400).json({
         error: 'Invalid resolution payload',
-        details: payloadParse.error.flatten()
+        details: payloadParse.error.flatten(),
       });
     }
 
@@ -2330,12 +1610,12 @@ export const resolveTeamAttendanceException = async (req: Request, res: Response
     const allowedStatuses: AttendanceExceptionStatus[] = [
       AttendanceExceptionStatus.UNDER_REVIEW,
       AttendanceExceptionStatus.RESOLVED,
-      AttendanceExceptionStatus.DISMISSED
+      AttendanceExceptionStatus.DISMISSED,
     ];
 
     if (!allowedStatuses.includes(payload.status)) {
       return res.status(400).json({
-        error: 'Unsupported status. Use UNDER_REVIEW, RESOLVED, or DISMISSED.'
+        error: 'Unsupported status. Use UNDER_REVIEW, RESOLVED, or DISMISSED.',
       });
     }
 
@@ -2386,37 +1666,31 @@ export const resolveTeamAttendanceException = async (req: Request, res: Response
       resolutionPayload = adjustmentsJson as Prisma.InputJsonValue;
     }
 
-    await resolveAttendanceException({
-      businessId,
-      exceptionId,
-      managerUserId: req.user.id,
-      status: payload.status,
-      resolutionNote: payload.resolutionNote ?? null,
-      managerNote: payload.managerNote ?? null,
-      resolutionPayload,
-      attendanceAdjustments
-    });
+    try {
+      const refreshed = await resolveTeamAttendanceExceptionForManager({
+        businessId,
+        exceptionId,
+        managerUserId: req.user.id,
+        directReportEmployeePositionIds: managerContext.directReportEmployeePositionIds,
+        status: payload.status,
+        resolutionNote: payload.resolutionNote ?? null,
+        managerNote: payload.managerNote ?? null,
+        resolutionPayload,
+        attendanceAdjustments,
+      });
 
-    const refreshed = await prisma.attendanceException.findUnique({
-      where: { id: exceptionId },
-      include: {
-        employeePosition: {
-          include: {
-            user: { select: { id: true, name: true, email: true, image: true } },
-            position: {
-              include: {
-                department: { select: { id: true, name: true } },
-                tier: { select: { id: true, name: true } }
-              }
-            }
-          }
-        },
-        attendanceRecord: true,
-        policy: { select: { id: true, name: true } }
+      return res.json({ exception: refreshed });
+    } catch (resolveError) {
+      if (resolveError instanceof Error) {
+        if (resolveError.message === 'Attendance exception not found') {
+          return res.status(404).json({ error: resolveError.message });
+        }
+        if (resolveError.message === 'Not authorized to resolve this exception') {
+          return res.status(403).json({ error: resolveError.message });
+        }
       }
-    });
-
-    return res.json({ exception: refreshed });
+      throw resolveError;
+    }
   } catch (error) {
     logHrControllerError('Error resolving attendance exception', 'hr_attendance_exception_resolve', error);
     return res.status(500).json({ error: 'Failed to resolve attendance exception' });
@@ -2438,57 +1712,15 @@ export const getOwnHRData = async (req: Request, res: Response) => {
     if (!businessIdParam || typeof businessIdParam !== 'string') {
       return res.status(400).json({ error: 'businessId is required and must be a string' });
     }
-    const businessId = businessIdParam;
-    
-    const employeePosition = await prisma.employeePosition.findFirst({
-      where: {
-        userId: user!.id,
-        businessId,
-        active: true
-      },
-      include: {
-        position: {
-          include: {
-            department: true,
-            tier: true
-          }
-        }
-        // hrProfile will be included after migration
-      }
-    });
-    
-    if (!employeePosition) {
-      const membership = await prisma.businessMember.findFirst({
-        where: {
-          businessId,
-          userId: user!.id,
-          isActive: true
-        },
-        include: {
-          user: {
-            select: { id: true, name: true, email: true, image: true }
-          },
-          job: true
-        }
-      });
-
-      return res.json({
-        employee: membership
-          ? {
-              id: membership.id,
-              user: membership.user,
-              position: null,
-              job: membership.job,
-              active: true,
-              metadata: {},
-              stub: true
-            }
-          : null,
-        message: 'No active employee position found; returning fallback data.'
-      });
+    if (!user?.id) {
+      return res.status(401).json({ error: 'Not authenticated' });
     }
-    
-    res.json({ employee: employeePosition });
+
+    const result = await getOwnHrDataService(businessIdParam, user.id);
+    if (result.message) {
+      return res.json({ employee: result.employee, message: result.message });
+    }
+    res.json({ employee: result.employee });
   } catch (error) {
     logHrControllerError('Error fetching own HR data', 'hr_own_profile_get', error);
     res.status(500).json({ error: 'Failed to fetch your HR data' });
@@ -2530,107 +1762,6 @@ export {
 // TIME-OFF IMPLEMENTATION (Phase 3)
 // ==========================================================================
 
-/**
- * Helper function to calculate time-off balance
- * Returns balance without sending HTTP response
- * Supports accrual rules and carryover
- */
-async function calculateTimeOffBalance(
-  userId: string,
-  businessId: string,
-  employeePositionId: string,
-  type?: TimeOffType
-): Promise<{ available: number; used: number; allotment: number; accrued: number; pending: number }> {
-  const now = new Date();
-  const startOfYear = new Date(now.getFullYear(), 0, 1);
-  const endOfYear = new Date(now.getFullYear(), 11, 31);
-  
-  const hrProfile = await prisma.employeeHRProfile.findUnique({
-    where: { employeePositionId },
-    select: { hireDate: true }
-  });
-  
-  // Calculate base allotment (defaults by type)
-  const defaultAllotments: Record<string, number> = {
-    PTO: 15,
-    SICK: 10,
-    PERSONAL: 5,
-    UNPAID: 0
-  };
-  
-  let allotment = type ? defaultAllotments[type] || 0 : 15;
-  
-  // If employee was hired mid-year, prorate allotment
-  if (hrProfile?.hireDate && type === TimeOffType.PTO) {
-    const hireDate = new Date(hrProfile.hireDate);
-    if (hireDate > startOfYear) {
-      const daysInYear = 365;
-      const daysSinceHire = Math.floor((now.getTime() - hireDate.getTime()) / (24 * 60 * 60 * 1000));
-      const prorated = Math.floor((allotment * daysSinceHire) / daysInYear);
-      allotment = Math.max(0, prorated);
-    }
-  }
-  
-  // Get approved requests for this year
-  const approved = await prisma.timeOffRequest.findMany({
-    where: { 
-      businessId, 
-      employeePositionId, 
-      status: TimeOffStatus.APPROVED,
-      ...(type ? { type } : {}),
-      startDate: { gte: startOfYear, lte: endOfYear }
-    }
-  });
-  
-  // Get pending requests (for display purposes)
-  const pending = await prisma.timeOffRequest.findMany({
-    where: { 
-      businessId, 
-      employeePositionId, 
-      status: TimeOffStatus.PENDING,
-      ...(type ? { type } : {}),
-      startDate: { gte: startOfYear, lte: endOfYear }
-    }
-  });
-  
-  // Calculate used days from approved requests
-  const usedDays = approved.reduce((acc: number, request) => {
-    const one = 24 * 60 * 60 * 1000;
-    const days = Math.max(
-      1,
-      Math.round((request.endDate.getTime() - request.startDate.getTime()) / one) + 1
-    );
-    return acc + days;
-  }, 0);
-  
-  // Calculate pending days
-  const pendingDays = pending.reduce((acc: number, request) => {
-    const one = 24 * 60 * 60 * 1000;
-    const days = Math.max(
-      1,
-      Math.round((request.endDate.getTime() - request.startDate.getTime()) / one) + 1
-    );
-    return acc + days;
-  }, 0);
-  
-  // Calculate accrued (for accrual-based systems - monthly accrual)
-  // For now, simple calculation: (months into year / 12) * allotment
-  const monthsIntoYear = now.getMonth() + 1;
-  const accrued = Math.floor((allotment * monthsIntoYear) / 12);
-  
-  // Available = accrued - used (or simple allotment - used for non-accrual)
-  // For simplicity, using allotment - used, but accrued is available for future use
-  const available = Math.max(0, allotment - usedDays);
-  
-  return { 
-    available, 
-    used: usedDays, 
-    allotment,
-    accrued,
-    pending: pendingDays
-  };
-}
-
 export const requestTimeOff = async (req: Request, res: Response) => {
   try {
     const user = req.user!;
@@ -2638,185 +1769,45 @@ export const requestTimeOff = async (req: Request, res: Response) => {
     if (!businessIdParam || typeof businessIdParam !== 'string') {
       return res.status(400).json({ error: 'businessId is required and must be a string' });
     }
-    const businessId = businessIdParam;
-    const { type, startDate, endDate, reason } = req.body as { type: string; startDate: string; endDate: string; reason?: string };
+    const { type, startDate, endDate, reason } = req.body as {
+      type: string;
+      startDate: string;
+      endDate: string;
+      reason?: string;
+    };
 
-    // Validate input
     if (!type || !startDate || !endDate) {
       return res.status(400).json({ error: 'Type, start date, and end date are required' });
     }
 
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    
-    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
-      return res.status(400).json({ error: 'Invalid date format' });
-    }
-
-    if (start > end) {
-      return res.status(400).json({ error: 'Start date must be before or equal to end date' });
-    }
-
-    if (start < new Date()) {
-      return res.status(400).json({ error: 'Cannot request time off in the past' });
-    }
-
-    // Find the employee's active position in this business
-    const employeePosition = await prisma.employeePosition.findFirst({
-      where: { userId: user.id, businessId, active: true }
+    const { request } = await requestTimeOffService({
+      businessId: businessIdParam,
+      userId: user.id,
+      userName: user.name ?? null,
+      userEmail: user.email ?? null,
+      type,
+      startDate,
+      endDate,
+      reason,
     });
-    if (!employeePosition) {
-      return res.status(400).json({ error: 'No active employee position found for user' });
-    }
-
-    // Normalize and validate time-off type
-    const normalizedType = type.toUpperCase() as TimeOffType;
-    if (!Object.values(TimeOffType).includes(normalizedType)) {
-      return res.status(400).json({ error: 'Invalid time-off type requested' });
-    }
-
-    // Check for overlapping requests (excluding canceled)
-    const overlapping = await prisma.timeOffRequest.findFirst({
-      where: {
-        businessId,
-        employeePositionId: employeePosition.id,
-        status: { not: TimeOffStatus.CANCELED },
-        OR: [
-          {
-            AND: [
-              { startDate: { lte: end } },
-              { endDate: { gte: start } }
-            ]
-          }
-        ]
-      }
-    });
-
-    if (overlapping) {
-      return res.status(400).json({ 
-        error: 'You already have a time-off request for this period',
-        conflictingRequest: {
-          id: overlapping.id,
-          startDate: overlapping.startDate,
-          endDate: overlapping.endDate,
-          status: overlapping.status
-        }
-      });
-    }
-
-    // Check balance for PTO requests
-    if (normalizedType === TimeOffType.PTO) {
-      const balance = await calculateTimeOffBalance(user.id, businessId, employeePosition.id, TimeOffType.PTO);
-      
-      // Calculate requested days
-      const one = 24 * 60 * 60 * 1000;
-      const requestedDays = Math.max(1, Math.round((end.getTime() - start.getTime()) / one) + 1);
-      
-      if (requestedDays > balance.available) {
-        return res.status(400).json({ 
-          error: `Insufficient PTO balance. Requested: ${requestedDays} days, Available: ${balance.available} days`,
-          balance: { available: balance.available, requested: requestedDays, used: balance.used, allotment: balance.allotment }
-        });
-      }
-      
-      // Check for low balance warning (less than 3 days remaining)
-      if (balance.available <= 3 && balance.available > 0) {
-        try {
-          await NotificationService.createNotification({
-            userId: user.id,
-            type: 'hr_time_off_balance_low',
-            title: 'Low PTO Balance Warning',
-            body: `You have ${balance.available} day${balance.available !== 1 ? 's' : ''} of PTO remaining. Consider planning your time off accordingly.`,
-            data: {
-              businessId,
-              employeePositionId: employeePosition.id,
-              balance: balance.available,
-              allotment: balance.allotment,
-              used: balance.used,
-              actionUrl: `/business/${businessId}/workspace/hr/me`
-            }
-          });
-        } catch (notificationError) {
-          // Don't fail request if notification fails
-          logHrControllerError('Error sending balance low notification', 'hr_timeoff_balance_notification', notificationError);
-        }
-      }
-    }
-
-    // Create the time-off request
-    const request = await prisma.timeOffRequest.create({
-      data: {
-        businessId,
-        employeePositionId: employeePosition.id,
-        type: normalizedType,
-        startDate: start,
-        endDate: end,
-        reason: reason || null,
-        status: TimeOffStatus.PENDING,
-        requestedById: user.id
-      },
-      include: {
-        employeePosition: {
-          include: {
-            position: {
-              include: {
-                reportsTo: {
-                  include: {
-                    employeePositions: {
-                      where: { businessId, active: true },
-                      include: {
-                        user: { select: { id: true, name: true, email: true } }
-                      },
-                      take: 1
-                    }
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
-    });
-
-    try {
-      await syncTimeOffRequestCalendar(request.id);
-    } catch (syncError) {
-      logHrControllerError('Error syncing time-off calendar', 'hr_timeoff_calendar_sync', syncError);
-    }
-
-    // Notify manager about time-off request
-    try {
-      const managerPosition = request.employeePosition?.position?.reportsTo?.employeePositions?.[0];
-      const managerUserId = managerPosition?.user?.id;
-      
-      if (managerUserId) {
-        const employeeName = user.name || user.email || 'An employee';
-        const days = Math.max(1, Math.round((end.getTime() - start.getTime()) / (24 * 60 * 60 * 1000)) + 1);
-        
-        await NotificationService.createNotification({
-          userId: managerUserId,
-          type: 'hr_time_off_request_submitted',
-          title: 'Time-Off Request Submitted',
-          body: `${employeeName} has submitted a ${normalizedType} request for ${days} day${days !== 1 ? 's' : ''} (${start.toLocaleDateString()} - ${end.toLocaleDateString()})`,
-          data: {
-            requestId: request.id,
-            businessId,
-            employeePositionId: employeePosition.id,
-            employeeUserId: user.id,
-            type: normalizedType,
-            startDate: start.toISOString(),
-            endDate: end.toISOString(),
-            actionUrl: `/business/${businessId}/workspace/hr/team`
-          }
-        });
-      }
-    } catch (notificationError) {
-      // Don't fail request creation if notification fails
-      logHrControllerError('Error sending time-off request notification', 'hr_timeoff_request_notification', notificationError);
-    }
 
     return res.json({ message: 'Time-off request submitted', request });
   } catch (error) {
+    if (error instanceof TimeOffConflictError) {
+      return res.status(400).json({
+        error: error.message,
+        conflictingRequest: error.conflictingRequest,
+      });
+    }
+    if (error instanceof InsufficientPtoBalanceError) {
+      return res.status(400).json({
+        error: error.message,
+        balance: error.balance,
+      });
+    }
+    if (error instanceof HRWorkflowError) {
+      return res.status(error.statusCode).json({ error: error.message });
+    }
     logHrControllerError('Error creating time-off request', 'hr_timeoff_request_create', error);
     const errorMessage = error instanceof Error ? error.message : 'Failed to submit time-off request';
     return res.status(500).json({ error: errorMessage });
@@ -2830,35 +1821,9 @@ export const getPendingTeamTimeOff = async (req: Request, res: Response) => {
     if (!businessIdParam || typeof businessIdParam !== 'string') {
       return res.status(400).json({ error: 'businessId is required and must be a string' });
     }
-    const businessId = businessIdParam;
 
-    // Determine manager's position
-    const managerPosition = await prisma.employeePosition.findFirst({ where: { userId: user.id, businessId, active: true } });
-    if (!managerPosition) return res.json({ requests: [] });
-
-    // Direct reports positions
-    const directReportPositions = await prisma.position.findMany({ where: { businessId, reportsToId: managerPosition.positionId } });
-    const reportPositionIds = directReportPositions.map((p) => p.id);
-
-    // Pending requests for those positions
-    const requests = await prisma.timeOffRequest.findMany({
-      where: {
-        businessId,
-        status: TimeOffStatus.PENDING,
-        employeePosition: { positionId: { in: reportPositionIds } }
-      },
-      include: {
-        employeePosition: {
-          include: {
-            user: { select: { id: true, name: true, email: true } },
-            position: { include: { department: true, tier: true } }
-          }
-        }
-      },
-      orderBy: { requestedAt: 'desc' }
-    });
-
-    return res.json({ requests });
+    const result = await getPendingTeamTimeOffService(businessIdParam, user.id);
+    return res.json(result);
   } catch (error) {
     logHrControllerError('Error fetching pending time-off', 'hr_timeoff_pending', error);
     return res.status(500).json({ error: 'Failed to fetch pending time-off' });
@@ -2872,90 +1837,24 @@ export const approveTeamTimeOff = async (req: Request, res: Response) => {
     if (!businessIdParam || typeof businessIdParam !== 'string') {
       return res.status(400).json({ error: 'businessId is required and must be a string' });
     }
-    const businessId = businessIdParam;
-    const { id } = req.params; // timeOffRequestId
+    const { id } = req.params;
     const { decision, note } = req.body as { decision: 'APPROVE' | 'DENY'; note?: string };
 
-    // Load request
-    const tor = await prisma.timeOffRequest.findFirst({ where: { id, businessId } });
-    if (!tor) return res.status(404).json({ error: 'Request not found' });
-
-    // Confirm manager has authority (direct reports of this manager)
-    const managerPosition = await prisma.employeePosition.findFirst({ where: { userId: user.id, businessId, active: true } });
-    if (!managerPosition) return res.status(403).json({ error: 'Not a manager in this business' });
-    const directReportPositions = await prisma.position.findMany({ where: { businessId, reportsToId: managerPosition.positionId } });
-    const reportPositionIds = directReportPositions.map((p) => p.id);
-    const targetEP = await prisma.employeePosition.findFirst({ where: { id: tor.employeePositionId, businessId }, select: { positionId: true } });
-    if (!targetEP || !reportPositionIds.includes(targetEP.positionId)) {
-      return res.status(403).json({ error: 'Not authorized to approve this request' });
-    }
-
-    // Update status
-    const status = decision === 'APPROVE' ? TimeOffStatus.APPROVED : TimeOffStatus.DENIED;
-    const updatedRequest = await prisma.timeOffRequest.update({
-      where: { id },
-      data: { status, approvedById: user.id, approvedAt: new Date(), managerNote: note || null },
-      include: {
-        employeePosition: {
-          include: {
-            user: { select: { id: true, name: true, email: true } }
-          }
-        }
-      }
+    const { status } = await approveTeamTimeOffService({
+      businessId: businessIdParam,
+      managerUserId: user.id,
+      managerName: user.name ?? null,
+      managerEmail: user.email ?? null,
+      requestId: id,
+      decision,
+      note,
     });
-
-    try {
-      await syncTimeOffRequestCalendar(id);
-    } catch (syncError) {
-      logHrControllerError('Error syncing time-off calendar', 'hr_timeoff_calendar_sync', syncError);
-    }
-
-    // Notify employee about approval/denial
-    try {
-      const employeeUserId = updatedRequest.employeePosition?.user?.id;
-      if (employeeUserId) {
-        const managerName = user.name || user.email || 'Your manager';
-        const days = Math.max(1, Math.round((new Date(updatedRequest.endDate).getTime() - new Date(updatedRequest.startDate).getTime()) / (24 * 60 * 60 * 1000)) + 1);
-        
-        if (status === TimeOffStatus.APPROVED) {
-          await NotificationService.createNotification({
-            userId: employeeUserId,
-            type: 'hr_time_off_request_approved',
-            title: 'Time-Off Request Approved ✅',
-            body: `${managerName} has approved your ${updatedRequest.type} request for ${days} day${days !== 1 ? 's' : ''} (${new Date(updatedRequest.startDate).toLocaleDateString()} - ${new Date(updatedRequest.endDate).toLocaleDateString()})`,
-            data: {
-              requestId: updatedRequest.id,
-              businessId,
-              type: updatedRequest.type,
-              startDate: updatedRequest.startDate.toISOString(),
-              endDate: updatedRequest.endDate.toISOString(),
-              actionUrl: `/business/${businessId}/workspace/hr/me`
-            }
-          });
-        } else {
-          await NotificationService.createNotification({
-            userId: employeeUserId,
-            type: 'hr_time_off_request_denied',
-            title: 'Time-Off Request Denied',
-            body: `${managerName} has denied your ${updatedRequest.type} request for ${days} day${days !== 1 ? 's' : ''}.${note ? ` Note: ${note}` : ''}`,
-            data: {
-              requestId: updatedRequest.id,
-              businessId,
-              type: updatedRequest.type,
-              startDate: updatedRequest.startDate.toISOString(),
-              endDate: updatedRequest.endDate.toISOString(),
-              actionUrl: `/business/${businessId}/workspace/hr/me`
-            }
-          });
-        }
-      }
-    } catch (notificationError) {
-      // Don't fail approval if notification fails
-      logHrControllerError('Error sending time-off approval notification', 'hr_timeoff_approval_notification', notificationError);
-    }
 
     return res.json({ message: `Request ${status.toLowerCase()}` });
   } catch (error) {
+    if (error instanceof HRWorkflowError) {
+      return res.status(error.statusCode).json({ error: error.message });
+    }
     logHrControllerError('Error approving time-off', 'hr_timeoff_approve', error);
     return res.status(500).json({ error: 'Failed to process approval' });
   }
@@ -2968,45 +1867,9 @@ export const getTimeOffBalance = async (req: Request, res: Response) => {
     if (!businessIdParam || typeof businessIdParam !== 'string') {
       return res.status(400).json({ error: 'businessId is required and must be a string' });
     }
-    const businessId = businessIdParam;
 
-    const ep = await prisma.employeePosition.findFirst({ where: { userId: user.id, businessId, active: true } });
-    if (!ep) return res.json({ balance: { pto: 0, sick: 0, personal: 0 }, used: { pto: 0, sick: 0, personal: 0 } });
-
-    // Calculate balances for each type
-    const [ptoBalance, sickBalance, personalBalance] = await Promise.all([
-      calculateTimeOffBalance(user.id, businessId, ep.id, TimeOffType.PTO),
-      calculateTimeOffBalance(user.id, businessId, ep.id, TimeOffType.SICK),
-      calculateTimeOffBalance(user.id, businessId, ep.id, TimeOffType.PERSONAL)
-    ]);
-
-    return res.json({ 
-      balance: { 
-        pto: ptoBalance.available, 
-        sick: sickBalance.available, 
-        personal: personalBalance.available 
-      }, 
-      used: { 
-        pto: ptoBalance.used, 
-        sick: sickBalance.used, 
-        personal: personalBalance.used 
-      },
-      allotment: {
-        pto: ptoBalance.allotment,
-        sick: sickBalance.allotment,
-        personal: personalBalance.allotment
-      },
-      pending: {
-        pto: ptoBalance.pending,
-        sick: sickBalance.pending,
-        personal: personalBalance.pending
-      },
-      accrued: {
-        pto: ptoBalance.accrued,
-        sick: sickBalance.accrued,
-        personal: personalBalance.accrued
-      }
-    });
+    const result = await getTimeOffBalanceService(businessIdParam, user.id);
+    return res.json(result);
   } catch (error) {
     logHrControllerError('Error fetching time-off balance', 'hr_timeoff_balance', error);
     const errorMessage = error instanceof Error ? error.message : 'Failed to fetch time-off balance';
@@ -3021,25 +1884,11 @@ export const getMyTimeOffRequests = async (req: Request, res: Response) => {
     if (!businessIdParam || typeof businessIdParam !== 'string') {
       return res.status(400).json({ error: 'businessId is required and must be a string' });
     }
-    const businessId = businessIdParam;
     const page = Number(req.query.page || 1);
     const pageSize = Math.min(100, Number(req.query.pageSize || 20));
-    const skip = (page - 1) * pageSize;
 
-    const employeePosition = await prisma.employeePosition.findFirst({ where: { userId: user.id, businessId } });
-    if (!employeePosition) return res.json({ requests: [], count: 0, page, pageSize });
-
-    const requests = await prisma.timeOffRequest.findMany({
-      where: { businessId, employeePositionId: employeePosition.id },
-      orderBy: { requestedAt: 'desc' },
-      skip,
-      take: pageSize
-    });
-    const total = await prisma.timeOffRequest.count({
-      where: { businessId, employeePositionId: employeePosition.id }
-    });
-
-    return res.json({ requests, count: total, page, pageSize });
+    const result = await getMyTimeOffRequestsService(businessIdParam, user.id, page, pageSize);
+    return res.json(result);
   } catch (error) {
     logHrControllerError('Error fetching my time-off requests', 'hr_timeoff_my_requests', error);
     const errorMessage = error instanceof Error ? error.message : 'Failed to fetch your time-off requests';
@@ -3047,9 +1896,6 @@ export const getMyTimeOffRequests = async (req: Request, res: Response) => {
   }
 };
 
-/**
- * Cancel a time-off request (employee can cancel their own pending requests)
- */
 export const cancelTimeOffRequest = async (req: Request, res: Response) => {
   try {
     const user = req.user!;
@@ -3057,143 +1903,47 @@ export const cancelTimeOffRequest = async (req: Request, res: Response) => {
     if (!businessIdParam || typeof businessIdParam !== 'string') {
       return res.status(400).json({ error: 'businessId is required and must be a string' });
     }
-    const businessId = businessIdParam;
-    const { id } = req.params; // timeOffRequestId
+    const { id } = req.params;
 
-    // Find the request
-    const request = await prisma.timeOffRequest.findFirst({
-      where: { id, businessId },
-      include: {
-        employeePosition: {
-          select: { userId: true }
-        }
-      }
-    });
-
-    if (!request) {
-      return res.status(404).json({ error: 'Time-off request not found' });
-    }
-
-    // Verify user owns this request
-    if (request.employeePosition.userId !== user.id) {
-      return res.status(403).json({ error: 'You can only cancel your own time-off requests' });
-    }
-
-    // Only allow canceling pending requests
-    if (request.status !== TimeOffStatus.PENDING) {
-      return res.status(400).json({ error: 'Only pending requests can be canceled' });
-    }
-
-    // Update status to CANCELED
-    await prisma.timeOffRequest.update({
-      where: { id },
-      data: { status: TimeOffStatus.CANCELED }
-    });
-
-    try {
-      await syncTimeOffRequestCalendar(id);
-    } catch (syncError) {
-      logHrControllerError('Error syncing time-off calendar', 'hr_timeoff_calendar_sync', syncError);
-    }
-
+    await cancelTimeOffRequestService(businessIdParam, user.id, id);
     return res.json({ message: 'Time-off request canceled' });
   } catch (error) {
+    if (error instanceof HRWorkflowError) {
+      return res.status(error.statusCode).json({ error: error.message });
+    }
     logHrControllerError('Error canceling time-off request', 'hr_timeoff_cancel', error);
     const errorMessage = error instanceof Error ? error.message : 'Failed to cancel time-off request';
     return res.status(500).json({ error: errorMessage });
   }
 };
 
-/**
- * Get time-off calendar (all approved/pending requests for a business)
- * Available to admins and managers
- */
 export const getTimeOffCalendar = async (req: Request, res: Response) => {
   try {
-    // Validate query parameters
     const businessIdParam = req.query.businessId;
     if (!businessIdParam || typeof businessIdParam !== 'string') {
       return res.status(400).json({ error: 'businessId is required and must be a string' });
     }
-    const businessId = businessIdParam;
-    
+
     const startDateParam = req.query.startDate;
     if (startDateParam && typeof startDateParam !== 'string') {
       return res.status(400).json({ error: 'startDate must be a string' });
     }
-    const startDate = startDateParam as string | undefined;
-    
     const endDateParam = req.query.endDate;
     if (endDateParam && typeof endDateParam !== 'string') {
       return res.status(400).json({ error: 'endDate must be a string' });
     }
-    const endDate = endDateParam as string | undefined;
-    
     const departmentIdParam = req.query.departmentId;
-    const departmentId = (departmentIdParam && typeof departmentIdParam === 'string') ? departmentIdParam : undefined;
+    const departmentId =
+      departmentIdParam && typeof departmentIdParam === 'string' ? departmentIdParam : undefined;
 
-    // Build date filter
-    const dateFilter: Record<string, unknown> = {};
-    if (startDate || endDate) {
-      if (startDate && endDate) {
-        dateFilter.OR = [{
-          AND: [
-            { startDate: { lte: new Date(endDate) } },
-            { endDate: { gte: new Date(startDate) } }
-          ]
-        }];
-      } else if (startDate) {
-        dateFilter.endDate = { gte: new Date(startDate) };
-      } else if (endDate) {
-        dateFilter.startDate = { lte: new Date(endDate) };
-      }
-    }
-
-    // Build where clause
-    const where: Record<string, unknown> = {
-      businessId,
-      status: { in: [TimeOffStatus.PENDING, TimeOffStatus.APPROVED] },
-      ...dateFilter
-    };
-
-    // Filter by department if specified
-    if (departmentId) {
-      where.employeePosition = {
-        position: {
-          departmentId
-        }
-      };
-    }
-
-    const requests = await prisma.timeOffRequest.findMany({
-      where,
-      include: {
-        employeePosition: {
-          include: {
-            user: {
-              select: {
-                id: true,
-                name: true,
-                email: true
-              }
-            },
-            position: {
-              include: {
-                department: {
-                  select: {
-                    id: true,
-                    name: true
-                  }
-                }
-              }
-            }
-          }
-        }
-      },
-      orderBy: { startDate: 'asc' }
+    const result = await getTimeOffCalendarService({
+      businessId: businessIdParam,
+      startDate: startDateParam,
+      endDate: endDateParam,
+      departmentId,
     });
 
-    return res.json({ requests });
+    return res.json(result);
   } catch (error) {
     logHrControllerError('Error fetching time-off calendar', 'hr_timeoff_calendar_get', error);
     const errorMessage = error instanceof Error ? error.message : 'Failed to fetch time-off calendar';
@@ -3201,126 +1951,29 @@ export const getTimeOffCalendar = async (req: Request, res: Response) => {
   }
 };
 
-/**
- * Get time-off reports (usage by department, trends, etc.)
- */
 export const getTimeOffReports = async (req: Request, res: Response) => {
   try {
-    // Validate query parameters
     const businessIdParam = req.query.businessId;
     if (!businessIdParam || typeof businessIdParam !== 'string') {
       return res.status(400).json({ error: 'businessId is required and must be a string' });
     }
-    const businessId = businessIdParam;
-    
+
     const startDateParam = req.query.startDate;
     if (startDateParam && typeof startDateParam !== 'string') {
       return res.status(400).json({ error: 'startDate must be a string' });
     }
-    const startDate = startDateParam as string | undefined;
-    
     const endDateParam = req.query.endDate;
     if (endDateParam && typeof endDateParam !== 'string') {
       return res.status(400).json({ error: 'endDate must be a string' });
     }
-    const endDate = endDateParam as string | undefined;
 
-    const start = startDate ? new Date(startDate) : new Date(new Date().getFullYear(), 0, 1);
-    const end = endDate ? new Date(endDate) : new Date(new Date().getFullYear(), 11, 31);
-
-    // Get all time-off requests in date range
-    const requests = await prisma.timeOffRequest.findMany({
-      where: {
-        businessId,
-        startDate: { gte: start, lte: end },
-        status: { in: [TimeOffStatus.APPROVED, TimeOffStatus.PENDING] }
-      },
-      include: {
-        employeePosition: {
-          include: {
-            user: {
-              select: {
-                id: true,
-                name: true,
-                email: true
-              }
-            },
-            position: {
-              include: {
-                department: {
-                  select: {
-                    id: true,
-                    name: true
-                  }
-                }
-              }
-            }
-          }
-        }
-      }
+    const report = await generateTimeOffReports({
+      businessId: businessIdParam,
+      startDate: startDateParam,
+      endDate: endDateParam,
     });
 
-    // Calculate usage by department
-    const departmentUsage: Record<string, { name: string; totalDays: number; requestCount: number; employees: Set<string> }> = {};
-    const typeUsage: Record<string, number> = {};
-    let totalDays = 0;
-    const totalRequests = requests.length;
-
-    requests.forEach((request) => {
-      const employeePosition = request.employeePosition;
-      const deptName = employeePosition.position?.department?.name ?? 'Unassigned';
-      const deptId = employeePosition.position?.department?.id ?? 'unassigned';
-      
-      if (!departmentUsage[deptId]) {
-        departmentUsage[deptId] = {
-          name: deptName,
-          totalDays: 0,
-          requestCount: 0,
-          employees: new Set()
-        };
-      }
-      
-      const one = 24 * 60 * 60 * 1000;
-      const days = Math.max(
-        1,
-        Math.round((request.endDate.getTime() - request.startDate.getTime()) / one) + 1
-      );
-      
-      departmentUsage[deptId].totalDays += days;
-      departmentUsage[deptId].requestCount += 1;
-      departmentUsage[deptId].employees.add(employeePosition.userId);
-      
-      typeUsage[request.type] = (typeUsage[request.type] || 0) + days;
-      totalDays += days;
-    });
-
-    // Convert department usage to array
-    const departmentStats = Object.entries(departmentUsage).map(([id, data]) => ({
-      departmentId: id,
-      departmentName: data.name,
-      totalDays: data.totalDays,
-      requestCount: data.requestCount,
-      employeeCount: data.employees.size,
-      averageDaysPerEmployee: data.employees.size > 0 ? (data.totalDays / data.employees.size).toFixed(1) : '0'
-    }));
-
-    return res.json({
-      period: {
-        startDate: start.toISOString().split('T')[0],
-        endDate: end.toISOString().split('T')[0]
-      },
-      summary: {
-        totalRequests,
-        totalDays,
-        averageDaysPerRequest: totalRequests > 0 ? (totalDays / totalRequests).toFixed(1) : '0'
-      },
-      byDepartment: departmentStats.sort((a, b) => b.totalDays - a.totalDays),
-      byType: Object.entries(typeUsage).map(([type, days]) => ({
-        type,
-        days,
-        percentage: totalDays > 0 ? ((days / totalDays) * 100).toFixed(1) : '0'
-      }))
-    });
+    return res.json(report);
   } catch (error) {
     logHrControllerError('Error generating time-off reports', 'hr_timeoff_reports', error);
     const errorMessage = error instanceof Error ? error.message : 'Failed to generate reports';
@@ -3340,48 +1993,51 @@ export const importEmployeesCSV = async (req: Request & { file?: Express.Multer.
   try {
     const businessId = req.query.businessId as string;
     const userId = req.user?.id;
-    
+
     if (!businessId) {
       return res.status(400).json({ error: 'businessId is required' });
     }
-    
+
     if (!req.file) {
       return res.status(400).json({ error: 'CSV file is required' });
     }
-    
-    // Parse CSV content
+
     const csvContent = req.file.buffer?.toString('utf-8');
     if (!csvContent) {
       return res.status(400).json({ error: 'Unable to read CSV file contents' });
     }
-    
+
     const lines = csvContent.split('\n').filter((line: string) => line.trim());
     if (lines.length < 2) {
       return res.status(400).json({ error: 'CSV must have at least a header row and one data row' });
     }
-    
-    // Parse header
+
     const headers = lines[0].split(',').map((h: string) => h.trim().toLowerCase());
     const requiredFields = ['name', 'email'];
     const missingFields = requiredFields.filter((field: string) => !headers.includes(field));
     if (missingFields.length > 0) {
-      return res.status(400).json({ 
-        error: `Missing required columns: ${missingFields.join(', ')}` 
+      return res.status(400).json({
+        error: `Missing required columns: ${missingFields.join(', ')}`,
       });
     }
-    
-    // Get default tier for positions
-    const defaultTier = await prisma.organizationalTier.findFirst({
-      where: { businessId },
-      orderBy: { level: 'asc' }
-    });
-    
-    if (!defaultTier) {
+
+    const defaultTierId = await getDefaultOrganizationalTierId(businessId);
+
+    if (!defaultTierId) {
       return res.status(400).json({ error: 'Business must have at least one organizational tier' });
     }
-    
-    // Parse data rows
-    const results: Array<{
+
+    const validRows: Array<{
+      row: number;
+      name: string;
+      email: string;
+      title?: string;
+      department?: string;
+      hiredate?: string;
+      employeetype?: string;
+      worklocation?: string;
+    }> = [];
+    const validationResults: Array<{
       row: number;
       success: boolean;
       email: string;
@@ -3389,224 +2045,86 @@ export const importEmployeesCSV = async (req: Request & { file?: Express.Multer.
       error?: string;
       action?: 'created' | 'updated' | 'skipped';
     }> = [];
-    
-    let created = 0;
-    let updated = 0;
     let skipped = 0;
-    
-    // Generate random password for imported users
-    const generateRandomPassword = () => {
-      return Math.random().toString(36).slice(-12) + Math.random().toString(36).slice(-12);
-    };
-    
+
     for (let i = 1; i < lines.length; i++) {
-      const row = lines[i];
-      const values = row.split(',').map((v: string) => v.trim());
-      
+      const line = lines[i];
+      const values = line.split(',').map((v: string) => v.trim());
+
       if (values.length !== headers.length) {
-        results.push({
+        validationResults.push({
           row: i + 1,
           success: false,
           email: values[headers.indexOf('email')] || 'unknown',
           name: values[headers.indexOf('name')] || 'unknown',
-          error: 'Column count mismatch'
+          error: 'Column count mismatch',
         });
         skipped++;
         continue;
       }
-      
+
       const rowData: Record<string, string> = {};
       headers.forEach((header: string, index: number) => {
         rowData[header] = values[index] || '';
       });
-      
+
       const email = rowData.email;
       const name = rowData.name;
-      
+
       if (!email || !name) {
-        results.push({
+        validationResults.push({
           row: i + 1,
           success: false,
           email: email || 'unknown',
           name: name || 'unknown',
-          error: 'Missing required fields (name or email)'
+          error: 'Missing required fields (name or email)',
         });
         skipped++;
         continue;
       }
-      
-      try {
-        // Find or create user
-        let user = await prisma.user.findUnique({ where: { email } });
-        if (!user) {
-          // Generate temporary password for imported users
-          const tempPassword = generateRandomPassword();
-          const hashedPassword = await bcrypt.hash(tempPassword, 10);
-          
-          user = await prisma.user.create({
-            data: {
-              email,
-              name,
-              password: hashedPassword,
-              emailVerified: null
-            }
-          });
-        } else if (user.name !== name) {
-          // Update name if different
-          user = await prisma.user.update({
-            where: { id: user.id },
-            data: { name }
-          });
-        }
-        
-        // Find or create position
-        // For import, we'll need department and position title
-        const title = rowData.title || 'Employee';
-        const departmentName = rowData.department || 'General';
-        
-        // Find or create department
-        let department = await prisma.department.findFirst({
-          where: {
-            businessId,
-            name: { equals: departmentName, mode: 'insensitive' }
-          }
-        });
-        
-        if (!department) {
-          department = await prisma.department.create({
-            data: {
-              businessId,
-              name: departmentName
-            }
-          });
-        }
-        
-        // Find or create position (requires tierId)
-        let position = await prisma.position.findFirst({
-          where: {
-            businessId,
-            departmentId: department.id,
-            title: { equals: title, mode: 'insensitive' }
-          }
-        });
-        
-        if (!position) {
-          position = await prisma.position.create({
-            data: {
-              businessId,
-              departmentId: department.id,
-              tierId: defaultTier.id,
-              title
-            }
-          });
-        }
-        
-        // Find or create employee position
-        const hireDate = rowData.hiredate ? new Date(rowData.hiredate) : new Date();
-        const existingPosition = await prisma.employeePosition.findFirst({
-          where: {
-            businessId,
-            userId: user.id,
-            positionId: position.id,
-            active: true
-          }
-        });
-        
-        let action: 'created' | 'updated' = 'created';
-        const assignedById = userId || user.id; // Use importing user or employee user as fallback
-        
-        if (existingPosition) {
-          // Update existing
-          await prisma.employeePosition.update({
-            where: { id: existingPosition.id },
-            data: {
-              startDate: hireDate,
-              active: true,
-              endDate: null
-            }
-          });
-          action = 'updated';
-          updated++;
-        } else {
-          // Create new (requires assignedById)
-          await prisma.employeePosition.create({
-            data: {
-              businessId,
-              userId: user.id,
-              positionId: position.id,
-              assignedById,
-              startDate: hireDate,
-              active: true
-            }
-          });
-          created++;
-        }
-        
-        // Create or update HR profile
-        const employeePosition = await prisma.employeePosition.findFirst({
-          where: {
-            businessId,
-            userId: user.id,
-            positionId: position.id
-          }
-        });
-        
-        if (employeePosition) {
-          await prisma.employeeHRProfile.upsert({
-            where: { employeePositionId: employeePosition.id },
-            create: {
-              employeePositionId: employeePosition.id,
-              businessId,
-              hireDate,
-              employeeType:
-                normalizeEmployeeTypeValue(rowData.employeetype) ??
-                PrismaEmployeeType.FULL_TIME,
-              workLocation: rowData.worklocation || null,
-              employmentStatus: 'ACTIVE'
-            },
-            update: {
-              hireDate,
-              employeeType: normalizeEmployeeTypeValue(rowData.employeetype),
-              workLocation: rowData.worklocation || undefined,
-              employmentStatus: 'ACTIVE'
-            }
-          });
-        }
-        
-        results.push({
-          row: i + 1,
-          success: true,
-          email,
-          name,
-          action
-        });
-      } catch (error) {
-        results.push({
-          row: i + 1,
-          success: false,
-          email,
-          name,
-          error: error instanceof Error ? error.message : 'Unknown error'
-        });
-        skipped++;
-      }
+
+      validRows.push({
+        row: i + 1,
+        name,
+        email,
+        title: rowData.title,
+        department: rowData.department,
+        hiredate: rowData.hiredate,
+        employeetype: rowData.employeetype,
+        worklocation: rowData.worklocation,
+      });
     }
-    
+
+    const assignedById = userId;
+    if (!assignedById) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+
+    const importResult = await importEmployeesFromCsv({
+      businessId,
+      assignedById,
+      defaultTierId,
+      rows: validRows,
+    });
+
+    skipped += importResult.skipped;
+    const results = [...validationResults, ...importResult.results].sort((a, b) => a.row - b.row);
+
     return res.json({
       success: true,
       summary: {
         total: lines.length - 1,
-        created,
-        updated,
+        created: importResult.created,
+        updated: importResult.updated,
         skipped,
-        errors: skipped
+        errors: skipped,
       },
-      results
+      results,
     });
   } catch (error) {
     logHrControllerError('Error importing employees', 'hr_employees_import', error);
-    return res.status(500).json({ 
-      error: error instanceof Error ? error.message : 'Failed to import employees' 
+    return res.status(500).json({
+      error: error instanceof Error ? error.message : 'Failed to import employees',
     });
   }
 };
@@ -3621,132 +2139,30 @@ export const exportEmployeesCSV = async (req: Request, res: Response) => {
     if (!businessIdParam || typeof businessIdParam !== 'string') {
       return res.status(400).json({ error: 'businessId is required and must be a string' });
     }
-    const businessId = businessIdParam;
-    
+
     const status = (req.query.status as string) || 'ACTIVE';
     const q = (req.query.q as string) || '';
     const departmentId = req.query.departmentId as string | undefined;
     const positionId = req.query.positionId as string | undefined;
-    
-    // Build where clause (same logic as getAdminEmployees)
-    let employees: Array<{
-      name: string;
-      email: string;
-      title: string;
-      department: string;
-      tier: string;
-      hireDate: string | null;
-      employeeType: string | null;
-      workLocation: string | null;
-    }> = [];
-    
-    if (status === 'TERMINATED') {
-      const hrProfiles = await prisma.employeeHRProfile.findMany({
-        where: {
-          businessId,
-          employmentStatus: EmploymentStatus.TERMINATED
-        },
-        include: {
-          employeePosition: {
-            include: {
-              user: true,
-              position: {
-                include: {
-                  department: true,
-                  tier: true
-                }
-              }
-            }
-          }
-        }
-      });
-      
-      employees = hrProfiles.map((profile) => ({
-        name: profile.employeePosition?.user?.name ?? '',
-        email: profile.employeePosition?.user?.email ?? '',
-        title: profile.employeePosition?.position?.title ?? '',
-        department: profile.employeePosition?.position?.department?.name ?? '',
-        tier: profile.employeePosition?.position?.tier?.name ?? '',
-        hireDate: profile.hireDate ? profile.hireDate.toISOString().split('T')[0] : null,
-        employeeType: profile.employeeType ?? null,
-        workLocation: profile.workLocation ?? null
-      }));
-    } else {
-      const where: Record<string, unknown> = {
-        businessId,
-        active: true
-      };
-      
-      if (q) {
-        where.OR = [
-          { user: { name: { contains: q, mode: 'insensitive' } } },
-          { user: { email: { contains: q, mode: 'insensitive' } } },
-          { position: { title: { contains: q, mode: 'insensitive' } } }
-        ];
-      }
-      
-      // Add department filter
-      if (departmentId) {
-        where.position = {
-          ...((where.position as Record<string, unknown>) || {}),
-          departmentId
-        };
-      }
-      
-      // Add position/title filter
-      if (positionId) {
-        where.positionId = positionId;
-      }
-      
-      const employeePositions = await prisma.employeePosition.findMany({
-        where,
-        include: {
-          user: { select: { id: true, name: true, email: true } },
-          position: { include: { department: true, tier: true } },
-          hrProfile: true
-        },
-        orderBy: { createdAt: 'desc' }
-      });
-      
-      employees = employeePositions.map(ep => ({
-        name: ep.user?.name || '',
-        email: ep.user?.email || '',
-        title: ep.position?.title || '',
-        department: ep.position?.department?.name || '',
-        tier: ep.position?.tier?.name || '',
-      hireDate: ep.hrProfile?.hireDate
-        ? ep.hrProfile.hireDate.toISOString().split('T')[0]
-        : null,
-      employeeType: ep.hrProfile?.employeeType ?? null,
-      workLocation: ep.hrProfile?.workLocation ?? null
-      }));
-    }
-    
-    // Generate CSV
-    const headers = ['Name', 'Email', 'Title', 'Department', 'Tier', 'Hire Date', 'Employee Type', 'Work Location'];
-    const csvRows = [
-      headers.join(','),
-      ...employees.map(emp => [
-        `"${emp.name}"`,
-        `"${emp.email}"`,
-        `"${emp.title}"`,
-        `"${emp.department}"`,
-        `"${emp.tier}"`,
-        emp.hireDate || '',
-        emp.employeeType || '',
-        emp.workLocation || ''
-      ].join(','))
-    ];
-    
-    const csvContent = csvRows.join('\n');
-    
+
+    const csvContent = await exportEmployeesToCsv({
+      businessId: businessIdParam,
+      status,
+      q,
+      departmentId,
+      positionId,
+    });
+
     res.setHeader('Content-Type', 'text/csv');
-    res.setHeader('Content-Disposition', `attachment; filename="employees-${status.toLowerCase()}-${new Date().toISOString().split('T')[0]}.csv"`);
+    res.setHeader(
+      'Content-Disposition',
+      `attachment; filename="employees-${status.toLowerCase()}-${new Date().toISOString().split('T')[0]}.csv"`
+    );
     res.send(csvContent);
   } catch (error) {
     logHrControllerError('Error exporting employees', 'hr_employees_export', error);
-    return res.status(500).json({ 
-      error: error instanceof Error ? error.message : 'Failed to export employees' 
+    return res.status(500).json({
+      error: error instanceof Error ? error.message : 'Failed to export employees',
     });
   }
 };

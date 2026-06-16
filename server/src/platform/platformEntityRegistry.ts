@@ -162,6 +162,108 @@ export function registerPlacePlatformEntities(): void {
   });
 }
 
+/** Scheduling schedule, shift, and swap request descriptors — CO-09 / G13. */
+export function registerSchedulingPlatformEntities(): void {
+  registerPlatformEntity({
+    entityType: 'schedule',
+    moduleId: 'scheduling',
+    displayName: 'Schedule',
+    pluralName: 'Schedules',
+    vlinkEntityType: 'SCHEDULE',
+    supportsTrash: true,
+    supportsSearch: false,
+    activityTargetType: 'schedule',
+  });
+  registerPlatformEntity({
+    entityType: 'shift',
+    moduleId: 'scheduling',
+    displayName: 'Shift',
+    pluralName: 'Shifts',
+    vlinkEntityType: 'SCHEDULE_SHIFT',
+    supportsTrash: true,
+    supportsSearch: false,
+    activityTargetType: 'shift',
+  });
+  registerPlatformEntity({
+    entityType: 'swap_request',
+    moduleId: 'scheduling',
+    displayName: 'Shift swap request',
+    pluralName: 'Shift swap requests',
+    vlinkEntityType: 'SHIFT_SWAP_REQUEST',
+    supportsTrash: false,
+    supportsSearch: false,
+    activityTargetType: 'swap_request',
+  });
+}
+
+/** HR employee profile, time-off, attendance exception, and onboarding journey — CO-09 / G13. */
+export function registerHRPlatformEntities(): void {
+  registerPlatformEntity({
+    entityType: 'employee_profile',
+    moduleId: 'hr',
+    displayName: 'Employee profile',
+    pluralName: 'Employee profiles',
+    vlinkEntityType: 'HR_EMPLOYEE_PROFILE',
+    supportsTrash: true,
+    supportsSearch: false,
+    activityTargetType: 'employee_profile',
+  });
+  registerPlatformEntity({
+    entityType: 'time_off_request',
+    moduleId: 'hr',
+    displayName: 'Time-off request',
+    pluralName: 'Time-off requests',
+    vlinkEntityType: 'HR_TIME_OFF_REQUEST',
+    supportsTrash: false,
+    supportsSearch: false,
+    activityTargetType: 'time_off_request',
+  });
+  registerPlatformEntity({
+    entityType: 'attendance_exception',
+    moduleId: 'hr',
+    displayName: 'Attendance exception',
+    pluralName: 'Attendance exceptions',
+    vlinkEntityType: 'HR_ATTENDANCE_EXCEPTION',
+    supportsTrash: false,
+    supportsSearch: false,
+    activityTargetType: 'attendance_exception',
+  });
+  registerPlatformEntity({
+    entityType: 'onboarding_journey',
+    moduleId: 'hr',
+    displayName: 'Onboarding journey',
+    pluralName: 'Onboarding journeys',
+    vlinkEntityType: 'HR_ONBOARDING_JOURNEY',
+    supportsTrash: false,
+    supportsSearch: false,
+    activityTargetType: 'onboarding_journey',
+  });
+}
+
+/** Workforce Communications communication + campaign — Phase A registration. */
+export function registerWorkforceCommsPlatformEntities(): void {
+  registerPlatformEntity({
+    entityType: 'communication',
+    moduleId: 'workforce_comms',
+    displayName: 'Communication',
+    pluralName: 'Communications',
+    vlinkEntityType: 'WORKFORCE_COMMUNICATION',
+    supportsTrash: true,
+    supportsSearch: false,
+    activityTargetType: 'communication',
+  });
+  registerPlatformEntity({
+    entityType: 'campaign',
+    moduleId: 'workforce_comms',
+    displayName: 'Campaign',
+    pluralName: 'Campaigns',
+    vlinkEntityType: 'WORKFORCE_CAMPAIGN',
+    supportsTrash: true,
+    supportsSearch: false,
+    activityTargetType: 'campaign',
+  });
+}
+
 /** Test-only reset. */
 export function clearPlatformEntityRegistryForTests(): void {
   registry.clear();

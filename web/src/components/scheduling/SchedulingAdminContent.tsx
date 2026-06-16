@@ -12,6 +12,11 @@ import ScheduleBuilderVisual from './ScheduleBuilderVisual';
 import ScheduleBuilderSidebar, { ScheduleFilters } from './ScheduleBuilderSidebar';
 import TemplateBuilderVisual from './TemplateBuilderVisual';
 import SchedulingConfiguration from '../business/SchedulingConfiguration';
+import {
+  SCHEDULING_SCHEDULE_TEMPLATE_LABEL,
+  SCHEDULING_SHIFT_PATTERN_LABEL,
+  SCHEDULING_TEMPLATE_DISAMBIGUATION_NOTE,
+} from '@/lib/workforceTemplateTerminology';
 import { getBusinessEmployees, getPositions } from '@/api/orgChart';
 import { getBusinessStations } from '@/api/scheduling';
 import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, useSensors, DragEndEvent, DragStartEvent, DragOverlay } from '@dnd-kit/core';
@@ -354,7 +359,7 @@ export default function SchedulingAdminContent({
   // Template handlers
   const handleCreateTemplate = async () => {
     if (!templateFormData.name || !session?.accessToken) {
-      alert('Please fill in template name');
+      alert(`Please fill in ${SCHEDULING_SCHEDULE_TEMPLATE_LABEL.toLowerCase()} name`);
       return;
     }
 
@@ -1087,14 +1092,14 @@ export default function SchedulingAdminContent({
             sourceTemplateId: '',
           });
         }}
-        title="Create Template"
+        title={`Create ${SCHEDULING_SCHEDULE_TEMPLATE_LABEL}`}
         size="large"
       >
         <div className="space-y-6">
           {/* Source Selection */}
           <div>
             <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-3">
-              Template Source *
+              Schedule Template Source *
             </label>
             <div className="space-y-3">
               {/* Blank Template Option */}
@@ -1115,9 +1120,9 @@ export default function SchedulingAdminContent({
                   className="mt-1"
                 />
                 <div className="flex-1">
-                  <div className="font-medium text-gray-900 dark:text-gray-100">Blank Template</div>
+                  <div className="font-medium text-gray-900 dark:text-gray-100">Blank {SCHEDULING_SCHEDULE_TEMPLATE_LABEL}</div>
                   <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
-                    Start with an empty template and build shift patterns using positions and stations
+                    Start with an empty schedule template and build {SCHEDULING_SHIFT_PATTERN_LABEL.toLowerCase()}s using positions and stations
                   </div>
                 </div>
               </label>
@@ -1140,9 +1145,9 @@ export default function SchedulingAdminContent({
                     className="mt-1"
                   />
                   <div className="flex-1">
-                    <div className="font-medium text-gray-900 dark:text-gray-100">Copy from Existing Template</div>
+                    <div className="font-medium text-gray-900 dark:text-gray-100">Copy from Existing {SCHEDULING_SCHEDULE_TEMPLATE_LABEL}</div>
                     <div className="text-sm text-gray-600 dark:text-gray-400 mt-1 mb-2">
-                      Select an existing template to copy
+                      Select an existing schedule template to copy
                     </div>
                     {templateFormData.sourceType === 'template' && (
                       <select
@@ -1221,7 +1226,7 @@ export default function SchedulingAdminContent({
           <div className="border-t border-gray-200 dark:border-slate-700 pt-4 space-y-4">
             <div>
               <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
-                Template Name *
+                Schedule Template Name *
               </label>
               <Input
                 value={templateFormData.name}
@@ -1294,7 +1299,7 @@ export default function SchedulingAdminContent({
                 (templateFormData.sourceType === 'schedule' && !templateSourceSchedule)
               }
             >
-              Create Template
+              Create {SCHEDULING_SCHEDULE_TEMPLATE_LABEL}
             </Button>
           </div>
         </div>
@@ -1314,7 +1319,7 @@ export default function SchedulingAdminContent({
             timezone: businessConfig?.defaultTimezone || 'America/New_York',
           });
         }}
-        title="Create Schedule from Template"
+        title={`Create Schedule from ${SCHEDULING_SCHEDULE_TEMPLATE_LABEL}`}
         size="large"
       >
         <div className="space-y-4">
@@ -1715,8 +1720,8 @@ export default function SchedulingAdminContent({
         <div className="h-full flex flex-col">
           <div className="flex-shrink-0 bg-white dark:bg-slate-900 border-b p-4 flex items-center justify-between">
             <div>
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Template Builder: {editingTemplate.name}</h2>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Build shift patterns using positions and stations</p>
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{SCHEDULING_SCHEDULE_TEMPLATE_LABEL} Builder: {editingTemplate.name}</h2>
+              <p className="text-sm text-gray-600 dark:text-gray-400">Build {SCHEDULING_SHIFT_PATTERN_LABEL.toLowerCase()}s using positions and stations</p>
             </div>
             <div className="flex items-center gap-2">
               <Button
@@ -1756,8 +1761,11 @@ export default function SchedulingAdminContent({
         <div className="h-full overflow-y-auto p-6">
         <div className="mb-6 flex items-center justify-between">
           <div>
-            <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">Schedule Templates</h2>
-            <p className="text-gray-600 dark:text-gray-400 mt-1">Create reusable templates from schedules or build from scratch using positions and stations</p>
+            <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">{SCHEDULING_SCHEDULE_TEMPLATE_LABEL}s</h2>
+            <p className="text-gray-600 dark:text-gray-400 mt-1">
+              Create reusable schedule templates from published schedules or build from scratch using positions and stations.
+              {SCHEDULING_TEMPLATE_DISAMBIGUATION_NOTE}
+            </p>
           </div>
           <Button
             onClick={() => {
@@ -1775,14 +1783,14 @@ export default function SchedulingAdminContent({
             className="flex items-center"
           >
             <Plus className="h-4 w-4 mr-2" />
-            Create Template
+            Create {SCHEDULING_SCHEDULE_TEMPLATE_LABEL}
           </Button>
         </div>
 
         {/* Existing Templates */}
         {templates.length > 0 && (
           <div className="mb-8">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Existing Templates</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Existing {SCHEDULING_SCHEDULE_TEMPLATE_LABEL}s</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {templates.map((template) => (
                 <Card key={template.id} className="p-4 hover:shadow-md transition-shadow">
@@ -1815,7 +1823,7 @@ export default function SchedulingAdminContent({
                       </div>
                       {template.templateData && typeof template.templateData === 'object' && 'shiftPatterns' in template.templateData && Array.isArray(template.templateData.shiftPatterns) && (
                         <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
-                          {template.templateData.shiftPatterns.length} shift pattern{template.templateData.shiftPatterns.length !== 1 ? 's' : ''}
+                          {template.templateData.shiftPatterns.length} {SCHEDULING_SHIFT_PATTERN_LABEL.toLowerCase()}{template.templateData.shiftPatterns.length !== 1 ? 's' : ''}
                         </p>
                       )}
                     </div>
@@ -1857,7 +1865,7 @@ export default function SchedulingAdminContent({
         {/* Published Schedules Section */}
         {publishedSchedulesForTemplates.length > 0 && (
           <div>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Create Template from Published Schedule</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Create {SCHEDULING_SCHEDULE_TEMPLATE_LABEL} from Published Schedule</h3>
             <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
               Select a published schedule to create a reusable template
             </p>
@@ -1867,9 +1875,10 @@ export default function SchedulingAdminContent({
         {publishedSchedulesForTemplates.length === 0 && templates.length === 0 ? (
           <Card className="p-12 text-center">
             <FileText className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">No Templates Yet</h3>
+            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">No {SCHEDULING_SCHEDULE_TEMPLATE_LABEL}s Yet</h3>
             <p className="text-gray-600 dark:text-gray-400 mb-4">
-              Create templates from published schedules or build from scratch using positions and stations
+              Create schedule templates from published schedules or build from scratch using positions and stations.
+              {SCHEDULING_TEMPLATE_DISAMBIGUATION_NOTE}
             </p>
             <div className="flex gap-2 justify-center">
               <Button
@@ -1886,7 +1895,7 @@ export default function SchedulingAdminContent({
                   });
                 }}
               >
-                Create Template
+                Create {SCHEDULING_SCHEDULE_TEMPLATE_LABEL}
               </Button>
             </div>
             {publishedSchedulesForTemplates.length === 0 && (
@@ -1906,7 +1915,7 @@ export default function SchedulingAdminContent({
                   e.dataTransfer.setData('application/json', JSON.stringify({
                     id: schedule.id,
                     name: schedule.name,
-                    type: 'module',
+                    type: 'schedule',
                     moduleId: 'scheduling',
                     moduleName: 'Scheduling',
                     metadata: {
@@ -1957,7 +1966,7 @@ export default function SchedulingAdminContent({
                           });
                         }}
                       >
-                        Create Template
+                        Create {SCHEDULING_SCHEDULE_TEMPLATE_LABEL}
                       </Button>
                       <Button
                         variant="secondary"

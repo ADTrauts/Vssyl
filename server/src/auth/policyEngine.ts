@@ -1023,6 +1023,18 @@ export async function authorize(input: PolicyInput): Promise<PolicyDecision> {
     return authorizePlaceLocationPrivacyOwner(input);
   }
 
+  if (isSchedulingPolicyAction(action)) {
+    return authorizeSchedulingPolicy(input, action);
+  }
+
+  if (isHRPolicyAction(action)) {
+    return authorizeHRPolicy(input, action);
+  }
+
+  if (isWorkforceCommsPolicyAction(action)) {
+    return authorizeWorkforceCommsPolicy(input, action);
+  }
+
   return deny(input, 'POLICY_NOT_IMPLEMENTED');
 }
 
@@ -1595,6 +1607,250 @@ async function authorizePlaceTransactionCreate(input: PolicyInput): Promise<Poli
     return deny(input, 'NOT_MEMBER');
   }
   return { allow: true, matchedPolicy: 'place_transaction_create' };
+}
+
+const SCHEDULING_ADMIN_ACTIONS = new Set<string>([
+  POLICY_ACTIONS.SCHEDULING_SCHEDULE_WRITE,
+  POLICY_ACTIONS.SCHEDULING_SCHEDULE_DELETE,
+  POLICY_ACTIONS.SCHEDULING_SCHEDULE_PUBLISH,
+  POLICY_ACTIONS.SCHEDULING_SHIFT_WRITE,
+  POLICY_ACTIONS.SCHEDULING_SHIFT_ASSIGN,
+  POLICY_ACTIONS.SCHEDULING_SHIFT_DELETE,
+  POLICY_ACTIONS.SCHEDULING_SWAP_MANAGE,
+  POLICY_ACTIONS.SCHEDULING_TEMPLATE_WRITE,
+  POLICY_ACTIONS.SCHEDULING_STATION_WRITE,
+]);
+
+const SCHEDULING_MEMBER_ACTIONS = new Set<string>([
+  POLICY_ACTIONS.SCHEDULING_SCHEDULE_READ,
+  POLICY_ACTIONS.SCHEDULING_SHIFT_READ,
+  POLICY_ACTIONS.SCHEDULING_SWAP_REQUEST,
+]);
+
+const HR_ADMIN_ACTIONS = new Set<string>([
+  POLICY_ACTIONS.HR_EMPLOYEE_WRITE,
+  POLICY_ACTIONS.HR_EMPLOYEE_DELETE,
+  POLICY_ACTIONS.HR_EMPLOYEE_TERMINATE,
+  POLICY_ACTIONS.HR_EMPLOYEE_IMPORT,
+  POLICY_ACTIONS.HR_ONBOARDING_MANAGE,
+  POLICY_ACTIONS.HR_ONBOARDING_CREATE,
+  POLICY_ACTIONS.HR_ONBOARDING_UPDATE,
+  POLICY_ACTIONS.HR_ATTENDANCE_MANAGE,
+  POLICY_ACTIONS.HR_ATTENDANCE_EXCEPTION_CREATE,
+  POLICY_ACTIONS.HR_SETTINGS_WRITE,
+]);
+
+const HR_MANAGER_ACTIONS = new Set<string>([
+  POLICY_ACTIONS.HR_TIME_OFF_APPROVE,
+  POLICY_ACTIONS.HR_TIME_OFF_DENY,
+  POLICY_ACTIONS.HR_ONBOARDING_COMPLETE,
+  POLICY_ACTIONS.HR_ATTENDANCE_EXCEPTION_UPDATE,
+]);
+
+const HR_MEMBER_ACTIONS = new Set<string>([
+  POLICY_ACTIONS.HR_EMPLOYEE_READ,
+  POLICY_ACTIONS.HR_TIME_OFF_READ,
+  POLICY_ACTIONS.HR_TIME_OFF_REQUEST,
+]);
+
+const WORKFORCE_COMMS_ADMIN_ACTIONS = new Set<string>([
+  POLICY_ACTIONS.WORKFORCE_COMMUNICATION_CREATE,
+  POLICY_ACTIONS.WORKFORCE_COMMUNICATION_WRITE,
+  POLICY_ACTIONS.WORKFORCE_COMMUNICATION_PUBLISH,
+  POLICY_ACTIONS.WORKFORCE_COMMUNICATION_DELETE,
+  POLICY_ACTIONS.WORKFORCE_CAMPAIGN_MANAGE,
+  POLICY_ACTIONS.WORKFORCE_REPORT_READ,
+  POLICY_ACTIONS.WORKFORCE_BRIDGE_MANAGE,
+]);
+
+const WORKFORCE_COMMS_MEMBER_ACTIONS = new Set<string>([
+  POLICY_ACTIONS.WORKFORCE_COMMUNICATION_READ,
+  POLICY_ACTIONS.WORKFORCE_ACK_MANAGE,
+]);
+
+function isSchedulingPolicyAction(action: string): boolean {
+  return (
+    SCHEDULING_ADMIN_ACTIONS.has(action) ||
+    SCHEDULING_MEMBER_ACTIONS.has(action)
+  );
+}
+
+function isHRPolicyAction(action: string): boolean {
+  return (
+    HR_ADMIN_ACTIONS.has(action) ||
+    HR_MANAGER_ACTIONS.has(action) ||
+    HR_MEMBER_ACTIONS.has(action)
+  );
+}
+
+function isWorkforceCommsPolicyAction(action: string): boolean {
+  return (
+    WORKFORCE_COMMS_ADMIN_ACTIONS.has(action) ||
+    WORKFORCE_COMMS_MEMBER_ACTIONS.has(action)
+  );
+}
+
+async function authorizeActiveBusinessMember(
+  input: PolicyInput,
+  businessId: string,
+  matchedPolicy: string
+): Promise<PolicyDecision> {
+  const userId = resolveUserId(input);
+  if (!userId) {
+    return deny(input, 'INSUFFICIENT_ROLE');
+  }
+
+  const membership = await prisma.businessMember.findFirst({
+    where: { businessId, userId, isActive: true },
+    select: { role: true, canManage: true },
+  });
+
+  if (!membership) {
+    return deny(input, 'NOT_MEMBER');
+  }
+
+  return { allow: true, matchedPolicy };
+}
+
+async function authorizeSchedulingPolicy(
+  input: PolicyInput,
+  action: string
+): Promise<PolicyDecision> {
+  const businessId = resolveBusinessIdFromInput(input);
+  if (!businessId) {
+    return deny(input, 'POLICY_NOT_IMPLEMENTED');
+  }
+
+  if (SCHEDULING_MEMBER_ACTIONS.has(action)) {
+    return authorizeActiveBusinessMember(input, businessId, 'scheduling_active_member');
+  }
+
+  const userId = resolveUserId(input);
+  if (!userId) {
+    return deny(input, 'INSUFFICIENT_ROLE');
+  }
+
+  const membership = await prisma.businessMember.findFirst({
+    where: { businessId, userId, isActive: true },
+    select: { role: true, canManage: true },
+  });
+
+  if (!membership) {
+    return deny(input, 'NOT_MEMBER');
+  }
+
+  if (!memberCanManageBusinessModules(membership.role, membership.canManage)) {
+    return deny(input, 'INSUFFICIENT_ROLE');
+  }
+
+  return { allow: true, matchedPolicy: 'scheduling_admin' };
+}
+
+async function authorizeHRPolicy(input: PolicyInput, action: string): Promise<PolicyDecision> {
+  const businessId = resolveBusinessIdFromInput(input);
+  if (!businessId) {
+    return deny(input, 'POLICY_NOT_IMPLEMENTED');
+  }
+
+  if (HR_MEMBER_ACTIONS.has(action)) {
+    return authorizeActiveBusinessMember(input, businessId, 'hr_active_member');
+  }
+
+  if (HR_MANAGER_ACTIONS.has(action)) {
+    const userId = resolveUserId(input);
+    if (!userId) {
+      return deny(input, 'INSUFFICIENT_ROLE');
+    }
+
+    const membership = await prisma.businessMember.findFirst({
+      where: { businessId, userId, isActive: true },
+      select: { role: true, canManage: true },
+    });
+
+    if (!membership) {
+      return deny(input, 'NOT_MEMBER');
+    }
+
+    if (
+      membership.role === 'ADMIN' ||
+      membership.role === 'MANAGER' ||
+      membership.canManage
+    ) {
+      return { allow: true, matchedPolicy: 'hr_manager_or_admin' };
+    }
+
+    const employeePosition = await prisma.employeePosition.findFirst({
+      where: { userId, businessId, active: true },
+      include: {
+        position: {
+          include: { directReports: true },
+        },
+      },
+    });
+
+    if (employeePosition && employeePosition.position.directReports.length > 0) {
+      return { allow: true, matchedPolicy: 'hr_direct_reports_manager' };
+    }
+
+    return deny(input, 'INSUFFICIENT_ROLE');
+  }
+
+  const userId = resolveUserId(input);
+  if (!userId) {
+    return deny(input, 'INSUFFICIENT_ROLE');
+  }
+
+  const membership = await prisma.businessMember.findFirst({
+    where: { businessId, userId, isActive: true },
+    select: { role: true },
+  });
+
+  if (!membership) {
+    return deny(input, 'NOT_MEMBER');
+  }
+
+  if (membership.role === 'ADMIN' || membership.role === 'MANAGER') {
+    return { allow: true, matchedPolicy: 'hr_admin' };
+  }
+
+  return deny(input, 'INSUFFICIENT_ROLE');
+}
+
+async function authorizeWorkforceCommsPolicy(
+  input: PolicyInput,
+  action: string
+): Promise<PolicyDecision> {
+  const businessId = resolveBusinessIdFromInput(input);
+  if (!businessId) {
+    return deny(input, 'POLICY_NOT_IMPLEMENTED');
+  }
+
+  if (WORKFORCE_COMMS_MEMBER_ACTIONS.has(action)) {
+    return authorizeActiveBusinessMember(input, businessId, 'workforce_comms_active_member');
+  }
+
+  const userId = resolveUserId(input);
+  if (!userId) {
+    return deny(input, 'INSUFFICIENT_ROLE');
+  }
+
+  const membership = await prisma.businessMember.findFirst({
+    where: { businessId, userId, isActive: true },
+    select: { role: true, canManage: true },
+  });
+
+  if (!membership) {
+    return deny(input, 'NOT_MEMBER');
+  }
+
+  const isAdmin = membership.role === 'ADMIN';
+  const isManagingManager = membership.role === 'MANAGER' && membership.canManage;
+
+  if (!isAdmin && !isManagingManager) {
+    return deny(input, 'INSUFFICIENT_ROLE');
+  }
+
+  return { allow: true, matchedPolicy: 'workforce_comms_admin' };
 }
 
 export async function enforcePolicy(input: PolicyInput): Promise<PolicyDecision & { allow: true }> {

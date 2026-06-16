@@ -11,6 +11,7 @@ import { getBusinessEmployees, getPositions } from '@/api/orgChart';
 import { getBusinessStations } from '@/api/scheduling';
 import { useSession } from 'next-auth/react';
 import ScheduleBuilderSidebar from './ScheduleBuilderSidebar';
+import { SCHEDULING_SHIFT_PATTERN_LABEL } from '@/lib/workforceTemplateTerminology';
 
 interface TemplateBuilderVisualProps {
   template: ScheduleTemplate;
@@ -579,8 +580,8 @@ export default function TemplateBuilderVisual({
         }}
         title={
           selectedShift
-            ? `Edit Shift Pattern for ${selectedShift.startTime ? format(parseISO(selectedShift.startTime), 'EEE, MMM d') : 'Date'}`
-            : 'Edit Shift Pattern'
+            ? `Edit ${SCHEDULING_SHIFT_PATTERN_LABEL} for ${selectedShift.startTime ? format(parseISO(selectedShift.startTime), 'EEE, MMM d') : 'Date'}`
+            : `Edit ${SCHEDULING_SHIFT_PATTERN_LABEL}`
         }
         size="xlarge"
       >
@@ -868,7 +869,7 @@ export default function TemplateBuilderVisual({
                       }
                     }
                   }}
-                  placeholder="Add notes about this shift pattern..."
+                  placeholder={`Add notes about this ${SCHEDULING_SHIFT_PATTERN_LABEL.toLowerCase()}...`}
                   className="text-sm"
                 />
               </div>
@@ -879,7 +880,7 @@ export default function TemplateBuilderVisual({
               <Button
                 variant="secondary"
                 onClick={() => {
-                  if (selectedShift && confirm('Are you sure you want to delete this shift pattern?')) {
+                  if (selectedShift && confirm(`Are you sure you want to delete this ${SCHEDULING_SHIFT_PATTERN_LABEL.toLowerCase()}?`)) {
                     const patternIndex = parseInt(selectedShift.id.replace('pattern-', ''));
                     const updatedPatterns = shiftPatterns.filter((_, idx) => idx !== patternIndex);
                     setShiftPatterns(updatedPatterns);
