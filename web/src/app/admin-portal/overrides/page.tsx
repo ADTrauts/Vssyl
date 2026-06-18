@@ -4,7 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { getSession } from 'next-auth/react';
 import { Card } from 'shared/components';
-import { useConfirm } from 'shared';
+import { useConfirm } from 'shared/hooks/useConfirm';
 import { 
   Shield, 
   Users, 

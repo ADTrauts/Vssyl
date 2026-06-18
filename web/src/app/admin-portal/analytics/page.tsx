@@ -69,7 +69,7 @@ interface RecentActivity {
 function AnalyticsPageContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
-  const activeTab = resolveAnalyticsTab(searchParams.get('tab'));
+  const activeTab = resolveAnalyticsTab(searchParams?.get('tab'));
 
   const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null);
   const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([]);
@@ -83,7 +83,7 @@ function AnalyticsPageContent() {
   const [autoRefresh, setAutoRefresh] = useState(false);
 
   const setTab = (tab: 'overview' | 'insights') => {
-    const params = new URLSearchParams(searchParams.toString());
+    const params = new URLSearchParams(searchParams?.toString() ?? '');
     if (tab === 'overview') {
       params.delete('tab');
     } else {

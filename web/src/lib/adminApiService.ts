@@ -55,7 +55,36 @@ export interface BusinessIntelligenceData {
     description: string;
     confidence: number;
     impact: 'high' | 'medium' | 'low';
+    recommendedAction?: string;
   }>;
+  abTests: Array<{
+    id: string;
+    name: string;
+    status: 'running' | 'completed' | 'paused';
+    variantA: { name: string; users: number; conversionRate: number; revenue: number };
+    variantB: { name: string; users: number; conversionRate: number; revenue: number };
+    winner?: string;
+    confidence?: number;
+  }>;
+  userSegments: Array<{
+    id: string;
+    name: string;
+    criteria: string;
+    userCount: number;
+    averageValue: number;
+    growthRate: number;
+  }>;
+  competitiveAnalysis: {
+    marketPosition: string;
+    keyCompetitors: Array<{
+      name: string;
+      marketShare: number;
+      strengths: string[];
+      weaknesses: string[];
+    }>;
+    opportunities: string[];
+    threats: string[];
+  };
 }
 
 export interface ABTestData {

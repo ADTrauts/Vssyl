@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { Card, Button, Badge, Alert, Spinner } from 'shared/components';
-import { adminApiService } from '../../lib/adminApiService';
+import { adminApiService, type BusinessIntelligenceData } from '../../lib/adminApiService';
 import {
   TrendingUp,
   Download,
@@ -14,46 +14,7 @@ import {
   BarChart3,
 } from 'lucide-react';
 
-interface BusinessIntelligenceData {
-  predictiveInsights: Array<{
-    type: 'churn' | 'upsell' | 'growth' | 'risk';
-    title: string;
-    description: string;
-    confidence: number;
-    impact: 'high' | 'medium' | 'low';
-    recommendedAction: string;
-  }>;
-  abTests: Array<{
-    id: string;
-    name: string;
-    status: 'running' | 'completed' | 'paused';
-    variantA: { name: string; users: number; conversionRate: number; revenue: number };
-    variantB: { name: string; users: number; conversionRate: number; revenue: number };
-    winner?: string;
-    confidence?: number;
-  }>;
-  userSegments: Array<{
-    id: string;
-    name: string;
-    criteria: string;
-    userCount: number;
-    averageValue: number;
-    growthRate: number;
-  }>;
-  competitiveAnalysis: {
-    marketPosition: string;
-    keyCompetitors: Array<{
-      name: string;
-      marketShare: number;
-      strengths: string[];
-      weaknesses: string[];
-    }>;
-    opportunities: string[];
-    threats: string[];
-  };
-}
-
-interface FilterOptions {
+interface FilterOptions extends Record<string, unknown> {
   dateRange: string;
   userType: string;
   metricType: string;
@@ -77,8 +38,7 @@ export default function AdminPlatformAnalyticsInsightsPanel() {
     setError(null);
     try {
       const response = await adminApiService.getBusinessIntelligence(filters);
-      const payload = response.data as BusinessIntelligenceData | null;
-      setData(payload);
+      setData(response.data ?? null);
     } catch (err: unknown) {
       console.error('Error loading strategic insights:', err);
       setError('Failed to load strategic insights. Please try again.');

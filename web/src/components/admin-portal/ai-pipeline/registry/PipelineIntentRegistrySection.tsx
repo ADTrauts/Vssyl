@@ -2,7 +2,7 @@
 
 import React, { useMemo, useState } from 'react';
 import { Button, Alert, Badge, Modal } from 'shared/components';
-import { useConfirm } from 'shared';
+import { useConfirm } from 'shared/hooks/useConfirm';
 import { adminApiService } from '../../../../lib/adminApiService';
 import { PipelineIntentEditor } from '../PipelinePolicyEditors';
 import PipelineRegistryDependencyChips from './PipelineRegistryDependencyChips';

@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { Card, Button, Badge, Alert, Spinner, Modal, Input } from 'shared/components';
-import { useConfirm } from 'shared';
+import { useConfirm } from 'shared/hooks/useConfirm';
 import { 
   FileText, 
   Search, 

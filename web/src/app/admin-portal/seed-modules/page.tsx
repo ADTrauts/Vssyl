@@ -3,7 +3,7 @@
 import React, { useState } from 'react';
 import { useSession } from 'next-auth/react';
 import { Card, Button, Alert, Badge } from 'shared/components';
-import { useConfirm } from 'shared';
+import { useConfirm } from 'shared/hooks/useConfirm';
 import { Package, CheckCircle, AlertCircle, RefreshCw } from 'lucide-react';
 import { toast } from 'react-hot-toast';
 import { AdminPortalDebugPageGate } from '../../../components/admin-portal/AdminPortalDebugPageGate';
