@@ -38,8 +38,8 @@ export default function BusinessWebhookSettingsPage() {
   return (
     <div className="max-w-4xl mx-auto p-6 space-y-6">
       <header>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Webhook subscriptions</h1>
-        <p className="text-gray-600 dark:text-gray-400 mt-2">
+        <h1 className="text-3xl font-bold text-v-text-primary">Webhook subscriptions</h1>
+        <p className="text-v-text-secondary mt-2">
           Outbound signed events for integrations (MVP shell).
         </p>
       </header>

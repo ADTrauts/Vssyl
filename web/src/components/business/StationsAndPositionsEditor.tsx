@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Card, Button, Badge, Spinner, Alert, Input, Modal, Textarea } from 'shared/components';
+import { useConfirm } from 'shared/hooks/useConfirm';
 import { Plus, Edit, Trash2, Save, X, Info } from 'lucide-react';
 import { 
   getBusinessStations, 
@@ -88,6 +89,7 @@ export default function StationsAndPositionsEditor({
   canManage,
   onSave
 }: StationsAndPositionsEditorProps) {
+  const { confirm, ConfirmDialog } = useConfirm();
   const [stations, setStations] = useState<BusinessStation[]>([]);
   const [positions, setPositions] = useState<Position[]>([]);
   const [tiers, setTiers] = useState<OrganizationalTier[]>([]);
@@ -309,7 +311,13 @@ export default function StationsAndPositionsEditor({
   };
 
   const handleDeleteStation = async (stationId: string) => {
-    if (!confirm('Are you sure you want to delete this station? This action cannot be undone.')) {
+    const ok = await confirm({
+      title: 'Delete station?',
+      description: 'This action cannot be undone.',
+      variant: 'destructive',
+      confirmLabel: 'Delete',
+    });
+    if (!ok) {
       return;
     }
 
@@ -445,7 +453,13 @@ export default function StationsAndPositionsEditor({
   };
 
   const handleDeletePosition = async (positionId: string) => {
-    if (!confirm('Are you sure you want to delete this position? This action cannot be undone.')) {
+    const ok = await confirm({
+      title: 'Delete position?',
+      description: 'This action cannot be undone.',
+      variant: 'destructive',
+      confirmLabel: 'Delete',
+    });
+    if (!ok) {
       return;
     }
 
@@ -522,8 +536,8 @@ export default function StationsAndPositionsEditor({
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Stations & Positions</h3>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+          <h3 className="text-lg font-semibold text-v-text-primary">Stations & Positions</h3>
+          <p className="text-sm text-v-text-secondary mt-1">
             Manage business stations and job functions for scheduling
           </p>
         </div>
@@ -545,7 +559,7 @@ export default function StationsAndPositionsEditor({
       <Card className="p-4 bg-blue-50 border-blue-200">
         <div className="flex items-start space-x-3">
           <Info className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
-          <div className="text-sm text-gray-700 dark:text-gray-300">
+          <div className="text-sm text-v-text-secondary">
             <p className="font-medium mb-1">About Stations & Positions</p>
             <ul className="space-y-1 ml-4 list-disc text-xs">
               <li>Stations are business-level and shared across all positions</li>
@@ -560,7 +574,7 @@ export default function StationsAndPositionsEditor({
       {/* Positions List */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h4 className="text-md font-semibold text-gray-900 dark:text-gray-100">Positions</h4>
+          <h4 className="text-md font-semibold text-v-text-primary">Positions</h4>
         </div>
         {loadingPositions ? (
           <div className="flex justify-center py-4">
@@ -568,7 +582,7 @@ export default function StationsAndPositionsEditor({
           </div>
         ) : positions.length === 0 ? (
           <Card className="p-6 text-center">
-            <p className="text-gray-600 dark:text-gray-400 mb-4">No positions configured yet.</p>
+            <p className="text-v-text-secondary mb-4">No positions configured yet.</p>
             {canManage && (
               <Button variant="secondary" onClick={() => setShowCreatePositionModal(true)}>
                 <Plus className="w-4 h-4 mr-2" />
@@ -583,7 +597,7 @@ export default function StationsAndPositionsEditor({
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex-1">
                     <div className="flex items-center space-x-2 mb-1">
-                      <h4 className="font-semibold text-gray-900 dark:text-gray-100">{position.name}</h4>
+                      <h4 className="font-semibold text-v-text-primary">{position.name}</h4>
                     </div>
                     {position.tier && (
                       <Badge color="gray" size="sm" className="mb-2">
@@ -591,18 +605,18 @@ export default function StationsAndPositionsEditor({
                       </Badge>
                     )}
                     {position.department && (
-                      <div className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                      <div className="text-xs text-v-text-secondary mt-1">
                         {position.department.name}
                       </div>
                     )}
                     {position.description && (
-                      <p className="text-xs text-gray-600 dark:text-gray-400 mt-2">{position.description}</p>
+                      <p className="text-xs text-v-text-secondary mt-2">{position.description}</p>
                     )}
-                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                    <div className="text-xs text-v-text-muted mt-2">
                       Capacity: {position.currentEmployees} / {position.capacity}
                     </div>
                     {formatTimeRange(position.defaultStartTime, position.defaultEndTime) && (
-                      <div className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                      <div className="text-xs text-v-text-muted mt-1">
                         Default shift: {formatTimeRange(position.defaultStartTime, position.defaultEndTime)}
                       </div>
                     )}
@@ -611,7 +625,7 @@ export default function StationsAndPositionsEditor({
                     <div className="flex items-center space-x-1 ml-2">
                       <button
                         onClick={() => handleEditPosition(position)}
-                        className="p-1 text-gray-600 dark:text-gray-400 hover:text-blue-600"
+                        className="p-1 text-v-text-secondary hover:text-blue-600"
                         title="Edit position"
                       >
                         <Edit className="w-4 h-4" />
@@ -619,7 +633,7 @@ export default function StationsAndPositionsEditor({
                       <button
                         onClick={() => handleDeletePosition(position.id)}
                         disabled={deleting === position.id}
-                        className="p-1 text-gray-600 dark:text-gray-400 hover:text-red-600 disabled:opacity-50"
+                        className="p-1 text-v-text-secondary hover:text-red-600 disabled:opacity-50"
                         title="Delete position"
                       >
                         {deleting === position.id ? (
@@ -640,7 +654,7 @@ export default function StationsAndPositionsEditor({
       {/* Stations List */}
       <div className="space-y-4">
         <div className="flex items-center justify-between">
-          <h4 className="text-md font-semibold text-gray-900 dark:text-gray-100">Stations</h4>
+          <h4 className="text-md font-semibold text-v-text-primary">Stations</h4>
         </div>
         {loading ? (
         <div className="flex justify-center py-8">
@@ -648,7 +662,7 @@ export default function StationsAndPositionsEditor({
         </div>
       ) : activeStations.length === 0 ? (
         <Card className="p-8 text-center">
-          <p className="text-gray-600 dark:text-gray-400 mb-4">No stations configured yet.</p>
+          <p className="text-v-text-secondary mb-4">No stations configured yet.</p>
           {canManage && (
             <Button onClick={() => setShowCreateModal(true)}>
               <Plus className="w-4 h-4 mr-2" />
@@ -663,7 +677,7 @@ export default function StationsAndPositionsEditor({
               <div className="flex items-start justify-between mb-3">
                 <div className="flex-1">
                   <div className="flex items-center space-x-2 mb-1">
-                    <h4 className="font-semibold text-gray-900 dark:text-gray-100">{station.name}</h4>
+                    <h4 className="font-semibold text-v-text-primary">{station.name}</h4>
                     {station.isRequired && (
                       <Badge color="blue" size="sm">Required</Badge>
                     )}
@@ -672,20 +686,20 @@ export default function StationsAndPositionsEditor({
                     {STATION_TYPES.find(t => t.value === station.stationType)?.label || station.stationType}
                   </Badge>
                   {station.jobFunction && (
-                    <div className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                    <div className="text-xs text-v-text-secondary mt-1">
                       {JOB_FUNCTIONS.find(jf => jf.value === station.jobFunction)?.label || station.jobFunction}
                     </div>
                   )}
                   {station.description && (
-                    <p className="text-xs text-gray-600 dark:text-gray-400 mt-2">{station.description}</p>
+                    <p className="text-xs text-v-text-secondary mt-2">{station.description}</p>
                   )}
                   {station.priority && (
-                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                    <div className="text-xs text-v-text-muted mt-2">
                       Priority: {station.priority}
                     </div>
                   )}
                   {formatTimeRange(station.defaultStartTime, station.defaultEndTime) && (
-                    <div className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                    <div className="text-xs text-v-text-muted mt-2">
                       Default shift: {formatTimeRange(station.defaultStartTime, station.defaultEndTime)}
                     </div>
                   )}
@@ -694,7 +708,7 @@ export default function StationsAndPositionsEditor({
                   <div className="flex items-center space-x-1 ml-2">
                     <button
                       onClick={() => handleEditStation(station)}
-                      className="p-1 text-gray-600 dark:text-gray-400 hover:text-blue-600"
+                      className="p-1 text-v-text-secondary hover:text-blue-600"
                       title="Edit station"
                     >
                       <Edit className="w-4 h-4" />
@@ -702,7 +716,7 @@ export default function StationsAndPositionsEditor({
                     <button
                       onClick={() => handleDeleteStation(station.id)}
                       disabled={deleting === station.id}
-                      className="p-1 text-gray-600 dark:text-gray-400 hover:text-red-600 disabled:opacity-50"
+                      className="p-1 text-v-text-secondary hover:text-red-600 disabled:opacity-50"
                       title="Delete station"
                     >
                       {deleting === station.id ? (
@@ -729,7 +743,7 @@ export default function StationsAndPositionsEditor({
       >
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
+            <label className="block text-sm font-medium text-v-text-primary mb-1">
               Station Name *
             </label>
             <Input
@@ -740,7 +754,7 @@ export default function StationsAndPositionsEditor({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
+            <label className="block text-sm font-medium text-v-text-primary mb-1">
               Station Type *
             </label>
             <select
@@ -754,7 +768,7 @@ export default function StationsAndPositionsEditor({
                   customJobFunction: '' // Reset custom job function when type changes
                 });
               }}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md text-gray-900 dark:text-gray-100 bg-white dark:bg-slate-900"
+              className="w-full px-3 py-2 border border-v-border rounded-md text-v-text-primary bg-v-surface"
             >
               {STATION_TYPES.map((type) => (
                 <option key={type.value} value={type.value}>
@@ -764,7 +778,7 @@ export default function StationsAndPositionsEditor({
             </select>
             {formData.stationType === 'OTHER' && (
               <div className="mt-2">
-                <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
+                <label className="block text-sm font-medium text-v-text-primary mb-1">
                   Custom Station Type Name *
                 </label>
                 <Input
@@ -772,7 +786,7 @@ export default function StationsAndPositionsEditor({
                   onChange={(e) => setFormData({ ...formData, customStationType: e.target.value })}
                   placeholder="e.g., Manufacturing, Warehouse, Distribution"
                 />
-                <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                <p className="text-xs text-v-text-secondary mt-1">
                   Enter a name for your custom station type
                 </p>
               </div>
@@ -780,7 +794,7 @@ export default function StationsAndPositionsEditor({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
+            <label className="block text-sm font-medium text-v-text-primary mb-1">
               Job Function (Optional)
             </label>
             <select
@@ -790,7 +804,7 @@ export default function StationsAndPositionsEditor({
                 jobFunction: e.target.value,
                 customJobFunction: e.target.value !== 'CUSTOM' ? '' : formData.customJobFunction
               })}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md text-gray-900 dark:text-gray-100 bg-white dark:bg-slate-900"
+              className="w-full px-3 py-2 border border-v-border rounded-md text-v-text-primary bg-v-surface"
             >
               <option value="">None</option>
               {filteredJobFunctions.map((jf) => (
@@ -801,7 +815,7 @@ export default function StationsAndPositionsEditor({
             </select>
             {formData.jobFunction === 'CUSTOM' && (
               <div className="mt-2">
-                <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
+                <label className="block text-sm font-medium text-v-text-primary mb-1">
                   Custom Job Function Name *
                 </label>
                 <Input
@@ -809,7 +823,7 @@ export default function StationsAndPositionsEditor({
                   onChange={(e) => setFormData({ ...formData, customJobFunction: e.target.value })}
                   placeholder="e.g., Warehouse Manager, Delivery Driver, Quality Inspector"
                 />
-                <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                <p className="text-xs text-v-text-secondary mt-1">
                   Enter a name for your custom job function
                 </p>
               </div>
@@ -817,7 +831,7 @@ export default function StationsAndPositionsEditor({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
+            <label className="block text-sm font-medium text-v-text-primary mb-1">
               Description (Optional)
             </label>
             <Textarea
@@ -830,7 +844,7 @@ export default function StationsAndPositionsEditor({
 
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
+              <label className="block text-sm font-medium text-v-text-primary mb-1">
                 Color (Hex) (Optional)
               </label>
               <div className="flex items-center space-x-2">
@@ -843,7 +857,7 @@ export default function StationsAndPositionsEditor({
                 />
                 {formData.color && (
                   <div
-                    className="w-10 h-10 rounded border border-gray-300 dark:border-slate-600"
+                    className="w-10 h-10 rounded border border-v-border"
                     style={{ backgroundColor: formData.color }}
                   />
                 )}
@@ -851,7 +865,7 @@ export default function StationsAndPositionsEditor({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
+              <label className="block text-sm font-medium text-v-text-primary mb-1">
                 Priority (1-10) (Optional)
               </label>
               <Input
@@ -867,7 +881,7 @@ export default function StationsAndPositionsEditor({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
+              <label className="block text-sm font-medium text-v-text-primary mb-1">
                 Default Start Time (Optional)
               </label>
               <Input
@@ -877,7 +891,7 @@ export default function StationsAndPositionsEditor({
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
+              <label className="block text-sm font-medium text-v-text-primary mb-1">
                 Default End Time (Optional)
               </label>
               <Input
@@ -894,9 +908,9 @@ export default function StationsAndPositionsEditor({
               id="isRequired"
               checked={formData.isRequired}
               onChange={(e) => setFormData({ ...formData, isRequired: e.target.checked })}
-              className="w-4 h-4 text-blue-600 border-gray-300 dark:border-slate-600 rounded focus:ring-blue-500"
+              className="w-4 h-4 text-blue-600 border-v-border rounded focus:ring-blue-500"
             />
-            <label htmlFor="isRequired" className="ml-2 text-sm text-gray-900 dark:text-gray-100">
+            <label htmlFor="isRequired" className="ml-2 text-sm text-v-text-primary">
               Required daily coverage (must be covered every day)
             </label>
           </div>
@@ -941,7 +955,7 @@ export default function StationsAndPositionsEditor({
       >
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
+            <label className="block text-sm font-medium text-v-text-primary mb-1">
               Position Title *
             </label>
             <Input
@@ -952,13 +966,13 @@ export default function StationsAndPositionsEditor({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
+            <label className="block text-sm font-medium text-v-text-primary mb-1">
               Organizational Tier *
             </label>
             <select
               value={positionFormData.tierId}
               onChange={(e) => setPositionFormData({ ...positionFormData, tierId: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md text-gray-900 dark:text-gray-100 bg-white dark:bg-slate-900"
+              className="w-full px-3 py-2 border border-v-border rounded-md text-v-text-primary bg-v-surface"
             >
               <option value="">Select a tier</option>
               {tiers.map((tier) => (
@@ -968,14 +982,14 @@ export default function StationsAndPositionsEditor({
               ))}
             </select>
             {tiers.length === 0 && (
-              <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+              <p className="text-xs text-v-text-secondary mt-1">
                 No organizational tiers found. Please create tiers in the Organization Chart first.
               </p>
             )}
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
+            <label className="block text-sm font-medium text-v-text-primary mb-1">
               Department (Optional)
             </label>
             <Input
@@ -983,13 +997,13 @@ export default function StationsAndPositionsEditor({
               onChange={(e) => setPositionFormData({ ...positionFormData, departmentId: e.target.value })}
               placeholder="Department ID (optional)"
             />
-            <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+            <p className="text-xs text-v-text-secondary mt-1">
               Leave empty if position is not department-specific
             </p>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
+            <label className="block text-sm font-medium text-v-text-primary mb-1">
               Description (Optional)
             </label>
             <Textarea
@@ -1001,7 +1015,7 @@ export default function StationsAndPositionsEditor({
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
+            <label className="block text-sm font-medium text-v-text-primary mb-1">
               Maximum Occupants (Optional)
             </label>
             <Input
@@ -1015,7 +1029,7 @@ export default function StationsAndPositionsEditor({
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
+              <label className="block text-sm font-medium text-v-text-primary mb-1">
                 Default Start Time (Optional)
               </label>
               <Input
@@ -1025,7 +1039,7 @@ export default function StationsAndPositionsEditor({
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
+              <label className="block text-sm font-medium text-v-text-primary mb-1">
                 Default End Time (Optional)
               </label>
               <Input
@@ -1065,6 +1079,7 @@ export default function StationsAndPositionsEditor({
           </div>
         </div>
       </Modal>
+      <ConfirmDialog />
     </div>
   );
 }

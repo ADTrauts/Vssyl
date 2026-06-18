@@ -5,6 +5,26 @@ import permissionService from '../services/permissionService';
 import employeeManagementService, {
   EmployeeAssignmentValidationError,
 } from '../services/employeeManagementService';
+import { prisma } from '../lib/prisma';
+import {
+  recordOrgChartDepartmentCreated,
+  recordOrgChartDepartmentDeleted,
+  recordOrgChartDepartmentUpdated,
+  recordOrgChartEmployeeAssigned,
+  recordOrgChartEmployeeRemoved,
+  recordOrgChartEmployeeTransferred,
+  recordOrgChartPermissionSetCopied,
+  recordOrgChartPermissionSetCreated,
+  recordOrgChartPermissionSetDeleted,
+  recordOrgChartPermissionSetUpdated,
+  recordOrgChartPositionCreated,
+  recordOrgChartPositionDeleted,
+  recordOrgChartPositionUpdated,
+  recordOrgChartStructureInitialized,
+  recordOrgChartTierCreated,
+  recordOrgChartTierDeleted,
+  recordOrgChartTierUpdated,
+} from '../services/business/orgChartActivityService';
 import {
   requireOrgChartAccess,
   requireManageForOrganizationalTier,
@@ -13,8 +33,22 @@ import {
   requirePermissionCheckAccess,
   requireEmployeeUserOrManager,
   requireManageForPermissionSetId,
+  requireManageForApprovalHierarchyId,
+  requireMemberForApprovalHierarchyId,
 } from '../middleware/orgChartPermissions';
+import { checkOrgChartPolicy } from '../auth/orgChartPolicyDual';
+import { POLICY_ACTIONS } from '../auth/policyActions';
 import { logger } from '../lib/logger';
+import approvalHierarchyService, {
+  ApprovalHierarchyValidationError,
+} from '../services/approvalHierarchyService';
+import {
+  recordApprovalHierarchyAssigned,
+  recordApprovalHierarchyCreated,
+  recordApprovalHierarchyDeleted,
+  recordApprovalHierarchyUpdated,
+  recordApprovalHierarchyValidated,
+} from '../services/business/approvalHierarchyActivityService';
 
 function logSrvErr(operation: string, message: string, err: unknown, context?: Record<string, unknown>): void {
   const e = err instanceof Error ? err : new Error(String(err));
@@ -82,10 +116,23 @@ router.get('/tiers/:businessId', requireOrgChartAccess(fromParam('businessId'), 
  * POST /api/org-chart/tiers
  * Create a new organizational tier
  */
-router.post('/tiers', requireOrgChartAccess(fromBody('businessId'), 'manage'), async (req, res) => {
+router.post(
+  '/tiers',
+  requireOrgChartAccess(fromBody('businessId'), 'manage'),
+  checkOrgChartPolicy(POLICY_ACTIONS.ORGCHART_TIER_WRITE),
+  async (req, res) => {
   try {
     const tierData = req.body;
     const tier = await orgChartService.createOrganizationalTier(tierData);
+    const authUser = getUserFromRequest(req);
+    if (authUser) {
+      void recordOrgChartTierCreated({
+        actorUserId: authUser.id,
+        businessId: tier.businessId,
+        tierId: tier.id,
+        name: tier.name,
+      });
+    }
     res.status(201).json(tier);
   } catch (error) {
     logSrvErr('org_chart_error_creating_organizational_tier', 'Error creating organizational tier:', error);
@@ -97,11 +144,24 @@ router.post('/tiers', requireOrgChartAccess(fromBody('businessId'), 'manage'), a
  * PUT /api/org-chart/tiers/:id
  * Update an organizational tier
  */
-router.put('/tiers/:id', requireManageForOrganizationalTier(), async (req, res) => {
+router.put(
+  '/tiers/:id',
+  requireManageForOrganizationalTier(),
+  checkOrgChartPolicy(POLICY_ACTIONS.ORGCHART_TIER_WRITE),
+  async (req, res) => {
   try {
     const { id } = req.params;
     const updateData = req.body;
     const tier = await orgChartService.updateOrganizationalTier(id, updateData);
+    const authUser = getUserFromRequest(req);
+    if (authUser) {
+      void recordOrgChartTierUpdated({
+        actorUserId: authUser.id,
+        businessId: tier.businessId,
+        tierId: tier.id,
+        changedFields: Object.keys(updateData as Record<string, unknown>),
+      });
+    }
     res.json(tier);
   } catch (error) {
     logSrvErr('org_chart_error_updating_organizational_tier', 'Error updating organizational tier:', error);
@@ -113,10 +173,26 @@ router.put('/tiers/:id', requireManageForOrganizationalTier(), async (req, res) 
  * DELETE /api/org-chart/tiers/:id
  * Delete an organizational tier
  */
-router.delete('/tiers/:id', requireManageForOrganizationalTier(), async (req, res) => {
+router.delete(
+  '/tiers/:id',
+  requireManageForOrganizationalTier(),
+  checkOrgChartPolicy(POLICY_ACTIONS.ORGCHART_TIER_WRITE),
+  async (req, res) => {
   try {
     const { id } = req.params;
+    const existing = await prisma.organizationalTier.findUnique({
+      where: { id },
+      select: { businessId: true },
+    });
     await orgChartService.deleteOrganizationalTier(id);
+    const authUser = getUserFromRequest(req);
+    if (authUser && existing) {
+      void recordOrgChartTierDeleted({
+        actorUserId: authUser.id,
+        businessId: existing.businessId,
+        tierId: id,
+      });
+    }
     res.status(204).send();
   } catch (error) {
     logSrvErr('org_chart_error_deleting_organizational_tier', 'Error deleting organizational tier:', error);
@@ -154,10 +230,23 @@ router.get('/departments/:businessId', requireOrgChartAccess(fromParam('business
  * POST /api/org-chart/departments
  * Create a new department
  */
-router.post('/departments', requireOrgChartAccess(fromBody('businessId'), 'manage'), async (req, res) => {
+router.post(
+  '/departments',
+  requireOrgChartAccess(fromBody('businessId'), 'manage'),
+  checkOrgChartPolicy(POLICY_ACTIONS.ORGCHART_DEPARTMENT_WRITE),
+  async (req, res) => {
   try {
     const departmentData = req.body;
     const department = await orgChartService.createDepartment(departmentData);
+    const authUser = getUserFromRequest(req);
+    if (authUser) {
+      void recordOrgChartDepartmentCreated({
+        actorUserId: authUser.id,
+        businessId: department.businessId,
+        departmentId: department.id,
+        name: department.name,
+      });
+    }
     res.status(201).json(department);
   } catch (error) {
     logSrvErr('org_chart_error_creating_department', 'Error creating department:', error);
@@ -169,11 +258,24 @@ router.post('/departments', requireOrgChartAccess(fromBody('businessId'), 'manag
  * PUT /api/org-chart/departments/:id
  * Update a department
  */
-router.put('/departments/:id', requireManageForDepartment(), async (req, res) => {
+router.put(
+  '/departments/:id',
+  requireManageForDepartment(),
+  checkOrgChartPolicy(POLICY_ACTIONS.ORGCHART_DEPARTMENT_WRITE),
+  async (req, res) => {
   try {
     const { id } = req.params;
     const updateData = req.body;
     const department = await orgChartService.updateDepartment(id, updateData);
+    const authUser = getUserFromRequest(req);
+    if (authUser) {
+      void recordOrgChartDepartmentUpdated({
+        actorUserId: authUser.id,
+        businessId: department.businessId,
+        departmentId: department.id,
+        changedFields: Object.keys(updateData as Record<string, unknown>),
+      });
+    }
     res.json(department);
   } catch (error) {
     logSrvErr('org_chart_error_updating_department', 'Error updating department:', error);
@@ -185,10 +287,26 @@ router.put('/departments/:id', requireManageForDepartment(), async (req, res) =>
  * DELETE /api/org-chart/departments/:id
  * Delete a department
  */
-router.delete('/departments/:id', requireManageForDepartment(), async (req, res) => {
+router.delete(
+  '/departments/:id',
+  requireManageForDepartment(),
+  checkOrgChartPolicy(POLICY_ACTIONS.ORGCHART_DEPARTMENT_WRITE),
+  async (req, res) => {
   try {
     const { id } = req.params;
+    const existing = await prisma.department.findUnique({
+      where: { id },
+      select: { businessId: true },
+    });
     await orgChartService.deleteDepartment(id);
+    const authUser = getUserFromRequest(req);
+    if (authUser && existing) {
+      void recordOrgChartDepartmentDeleted({
+        actorUserId: authUser.id,
+        businessId: existing.businessId,
+        departmentId: id,
+      });
+    }
     res.status(204).send();
   } catch (error) {
     logSrvErr('org_chart_error_deleting_department', 'Error deleting department:', error);
@@ -226,10 +344,23 @@ router.get('/positions/:businessId', requireOrgChartAccess(fromParam('businessId
  * POST /api/org-chart/positions
  * Create a new position
  */
-router.post('/positions', requireOrgChartAccess(fromBody('businessId'), 'manage'), async (req, res) => {
+router.post(
+  '/positions',
+  requireOrgChartAccess(fromBody('businessId'), 'manage'),
+  checkOrgChartPolicy(POLICY_ACTIONS.ORGCHART_POSITION_WRITE),
+  async (req, res) => {
   try {
     const positionData = req.body;
     const position = await orgChartService.createPosition(positionData);
+    const authUser = getUserFromRequest(req);
+    if (authUser) {
+      void recordOrgChartPositionCreated({
+        actorUserId: authUser.id,
+        businessId: position.businessId,
+        positionId: position.id,
+        title: position.title,
+      });
+    }
     res.status(201).json(position);
   } catch (error) {
     logSrvErr('org_chart_error_creating_position', 'Error creating position:', error);
@@ -241,11 +372,28 @@ router.post('/positions', requireOrgChartAccess(fromBody('businessId'), 'manage'
  * PUT /api/org-chart/positions/:id
  * Update a position
  */
-router.put('/positions/:id', requireManageForPosition(), async (req, res) => {
+router.put(
+  '/positions/:id',
+  requireManageForPosition(),
+  checkOrgChartPolicy(POLICY_ACTIONS.ORGCHART_POSITION_WRITE),
+  async (req, res) => {
   try {
     const { id } = req.params;
-    const updateData = req.body;
+    const updateData = req.body as Record<string, unknown>;
     const position = await orgChartService.updatePosition(id, updateData);
+    const authUser = getUserFromRequest(req);
+    if (authUser) {
+      void recordOrgChartPositionUpdated({
+        actorUserId: authUser.id,
+        businessId: position.businessId,
+        positionId: position.id,
+        changedFields: Object.keys(updateData),
+        reportsToId:
+          'reportsToId' in updateData
+            ? (updateData.reportsToId as string | null | undefined) ?? null
+            : undefined,
+      });
+    }
     res.json(position);
   } catch (error) {
     logSrvErr('org_chart_error_updating_position', 'Error updating position:', error);
@@ -257,10 +405,26 @@ router.put('/positions/:id', requireManageForPosition(), async (req, res) => {
  * DELETE /api/org-chart/positions/:id
  * Delete a position
  */
-router.delete('/positions/:id', requireManageForPosition(), async (req, res) => {
+router.delete(
+  '/positions/:id',
+  requireManageForPosition(),
+  checkOrgChartPolicy(POLICY_ACTIONS.ORGCHART_POSITION_WRITE),
+  async (req, res) => {
   try {
     const { id } = req.params;
+    const existing = await prisma.position.findUnique({
+      where: { id },
+      select: { businessId: true },
+    });
     await orgChartService.deletePosition(id);
+    const authUser = getUserFromRequest(req);
+    if (authUser && existing) {
+      void recordOrgChartPositionDeleted({
+        actorUserId: authUser.id,
+        businessId: existing.businessId,
+        positionId: id,
+      });
+    }
     res.status(204).send();
   } catch (error) {
     logSrvErr('org_chart_error_deleting_position', 'Error deleting position:', error);
@@ -321,7 +485,11 @@ router.get('/structure/:businessId', requireOrgChartAccess(fromParam('businessId
  * POST /api/org-chart/structure/:businessId/default
  * Create default org chart structure for a new business
  */
-router.post('/structure/:businessId/default', requireOrgChartAccess(fromParam('businessId'), 'manage'), async (req, res) => {
+router.post(
+  '/structure/:businessId/default',
+  requireOrgChartAccess(fromParam('businessId'), 'manage'),
+  checkOrgChartPolicy(POLICY_ACTIONS.ORGCHART_STRUCTURE_INITIALIZE),
+  async (req, res) => {
   try {
     const { businessId } = req.params;
     const { industry } = req.body;
@@ -331,6 +499,14 @@ router.post('/structure/:businessId/default', requireOrgChartAccess(fromParam('b
     }
     
     await orgChartService.createDefaultOrgChart(businessId, industry);
+    const authUser = getUserFromRequest(req);
+    if (authUser) {
+      void recordOrgChartStructureInitialized({
+        actorUserId: authUser.id,
+        businessId,
+        industry: typeof industry === 'string' ? industry : undefined,
+      });
+    }
     res.status(201).json({ 
       success: true,
       message: 'Default org chart structure created successfully' 
@@ -499,10 +675,23 @@ router.get('/permission-sets/:businessId', requireOrgChartAccess(fromParam('busi
  * POST /api/org-chart/permission-sets
  * Create a new permission set
  */
-router.post('/permission-sets', requireOrgChartAccess(fromBody('businessId'), 'manage'), async (req, res) => {
+router.post(
+  '/permission-sets',
+  requireOrgChartAccess(fromBody('businessId'), 'manage'),
+  checkOrgChartPolicy(POLICY_ACTIONS.ORGCHART_PERMISSION_SET_WRITE),
+  async (req, res) => {
   try {
     const permissionSetData = req.body;
     const permissionSet = await permissionService.createPermissionSet(permissionSetData);
+    const authUser = getUserFromRequest(req);
+    if (authUser) {
+      void recordOrgChartPermissionSetCreated({
+        actorUserId: authUser.id,
+        businessId: permissionSet.businessId,
+        permissionSetId: permissionSet.id,
+        name: permissionSet.name,
+      });
+    }
     res.status(201).json(permissionSet);
   } catch (error) {
     logSrvErr('org_chart_error_creating_permission_set', 'Error creating permission set:', error);
@@ -514,11 +703,24 @@ router.post('/permission-sets', requireOrgChartAccess(fromBody('businessId'), 'm
  * PUT /api/org-chart/permission-sets/:id
  * Update a permission set
  */
-router.put('/permission-sets/:id', requireManageForPermissionSetId, async (req, res) => {
+router.put(
+  '/permission-sets/:id',
+  requireManageForPermissionSetId,
+  checkOrgChartPolicy(POLICY_ACTIONS.ORGCHART_PERMISSION_SET_WRITE),
+  async (req, res) => {
   try {
     const { id } = req.params;
     const updateData = req.body;
     const permissionSet = await permissionService.updatePermissionSet(id, updateData);
+    const authUser = getUserFromRequest(req);
+    if (authUser) {
+      void recordOrgChartPermissionSetUpdated({
+        actorUserId: authUser.id,
+        businessId: permissionSet.businessId,
+        permissionSetId: permissionSet.id,
+        changedFields: Object.keys(updateData as Record<string, unknown>),
+      });
+    }
     res.json(permissionSet);
   } catch (error) {
     logSrvErr('org_chart_error_updating_permission_set', 'Error updating permission set:', error);
@@ -530,10 +732,26 @@ router.put('/permission-sets/:id', requireManageForPermissionSetId, async (req, 
  * DELETE /api/org-chart/permission-sets/:id
  * Delete a permission set
  */
-router.delete('/permission-sets/:id', requireManageForPermissionSetId, async (req, res) => {
+router.delete(
+  '/permission-sets/:id',
+  requireManageForPermissionSetId,
+  checkOrgChartPolicy(POLICY_ACTIONS.ORGCHART_PERMISSION_SET_WRITE),
+  async (req, res) => {
   try {
     const { id } = req.params;
+    const existing = await prisma.permissionSet.findUnique({
+      where: { id },
+      select: { businessId: true },
+    });
     await permissionService.deletePermissionSet(id);
+    const authUser = getUserFromRequest(req);
+    if (authUser && existing) {
+      void recordOrgChartPermissionSetDeleted({
+        actorUserId: authUser.id,
+        businessId: existing.businessId,
+        permissionSetId: id,
+      });
+    }
     res.status(204).send();
   } catch (error) {
     logSrvErr('org_chart_error_deleting_permission_set', 'Error deleting permission set:', error);
@@ -549,6 +767,7 @@ router.post(
   '/permission-sets/:id/copy',
   requireManageForPermissionSetId,
   requireOrgChartAccess(fromBody('businessId'), 'manage'),
+  checkOrgChartPolicy(POLICY_ACTIONS.ORGCHART_PERMISSION_SET_WRITE),
   async (req, res) => {
   try {
     const { id } = req.params;
@@ -563,6 +782,17 @@ router.post(
       businessId,
       newName
     );
+
+    const authUser = getUserFromRequest(req);
+    if (authUser) {
+      void recordOrgChartPermissionSetCopied({
+        actorUserId: authUser.id,
+        businessId,
+        sourcePermissionSetId: id,
+        newPermissionSetId: permissionSet.id,
+        newName,
+      });
+    }
     
     res.status(201).json(permissionSet);
   } catch (error) {
@@ -580,7 +810,11 @@ router.post(
  * Assign an employee to a position
  * NOTE: Static paths must be registered before `/employees/:businessId`.
  */
-router.post('/employees/assign', requireOrgChartAccess(fromBody('businessId'), 'manage'), async (req, res) => {
+router.post(
+  '/employees/assign',
+  requireOrgChartAccess(fromBody('businessId'), 'manage'),
+  checkOrgChartPolicy(POLICY_ACTIONS.ORGCHART_EMPLOYEE_ASSIGN),
+  async (req, res) => {
   try {
     const authUser = getUserFromRequest(req);
     if (!authUser) {
@@ -588,6 +822,13 @@ router.post('/employees/assign', requireOrgChartAccess(fromBody('businessId'), '
     }
     const assignmentData = { ...req.body, assignedById: authUser.id };
     const assignment = await employeeManagementService.assignEmployeeToPosition(assignmentData);
+    void recordOrgChartEmployeeAssigned({
+      actorUserId: authUser.id,
+      businessId: assignmentData.businessId,
+      assignmentId: assignment.id,
+      userId: assignmentData.userId,
+      positionId: assignmentData.positionId,
+    });
     res.status(201).json(assignment);
   } catch (error: unknown) {
     if (error instanceof EmployeeAssignmentValidationError) {
@@ -602,10 +843,24 @@ router.post('/employees/assign', requireOrgChartAccess(fromBody('businessId'), '
  * DELETE /api/org-chart/employees/remove
  * Remove an employee from a position
  */
-router.delete('/employees/remove', requireOrgChartAccess(fromBody('businessId'), 'manage'), async (req, res) => {
+router.delete(
+  '/employees/remove',
+  requireOrgChartAccess(fromBody('businessId'), 'manage'),
+  checkOrgChartPolicy(POLICY_ACTIONS.ORGCHART_EMPLOYEE_ASSIGN),
+  async (req, res) => {
   try {
+    const authUser = getUserFromRequest(req);
+    if (!authUser) {
+      return res.status(401).json({ error: 'Unauthorized' });
+    }
     const { userId, positionId, businessId } = req.body;
     await employeeManagementService.removeEmployeeFromPosition(userId, positionId, businessId);
+    void recordOrgChartEmployeeRemoved({
+      actorUserId: authUser.id,
+      businessId,
+      userId,
+      positionId,
+    });
     res.status(204).send();
   } catch (error) {
     logSrvErr('org_chart_error_removing_employee', 'Error removing employee:', error);
@@ -617,7 +872,11 @@ router.delete('/employees/remove', requireOrgChartAccess(fromBody('businessId'),
  * POST /api/org-chart/employees/transfer
  * Transfer an employee to a different position
  */
-router.post('/employees/transfer', requireOrgChartAccess(fromBody('businessId'), 'manage'), async (req, res) => {
+router.post(
+  '/employees/transfer',
+  requireOrgChartAccess(fromBody('businessId'), 'manage'),
+  checkOrgChartPolicy(POLICY_ACTIONS.ORGCHART_EMPLOYEE_ASSIGN),
+  async (req, res) => {
   try {
     const authUser = getUserFromRequest(req);
     if (!authUser) {
@@ -632,6 +891,14 @@ router.post('/employees/transfer', requireOrgChartAccess(fromBody('businessId'),
       authUser.id,
       effectiveDate ? new Date(effectiveDate) : undefined
     );
+    void recordOrgChartEmployeeTransferred({
+      actorUserId: authUser.id,
+      businessId,
+      transferId: transfer.id,
+      userId,
+      fromPositionId,
+      toPositionId,
+    });
     res.status(201).json(transfer);
   } catch (error: unknown) {
     if (error instanceof EmployeeAssignmentValidationError) {
@@ -646,7 +913,11 @@ router.post('/employees/transfer', requireOrgChartAccess(fromBody('businessId'),
  * POST /api/org-chart/employees/validate
  * Validate employee assignment
  */
-router.post('/employees/validate', requireOrgChartAccess(fromBody('businessId'), 'manage'), async (req, res) => {
+router.post(
+  '/employees/validate',
+  requireOrgChartAccess(fromBody('businessId'), 'manage'),
+  checkOrgChartPolicy(POLICY_ACTIONS.ORGCHART_EMPLOYEE_ASSIGN),
+  async (req, res) => {
   try {
     const { userId, positionId, businessId } = req.body;
     const validation = await employeeManagementService.validateEmployeeAssignment(userId, positionId, businessId);
@@ -789,6 +1060,315 @@ router.get('/employees/:businessId', requireOrgChartAccess(fromParam('businessId
     res.status(500).json({ success: false, error: 'Failed to fetch employees' });
   }
 });
+
+// ============================================================================
+// APPROVAL HIERARCHY (BA-F-005)
+// ============================================================================
+
+/**
+ * GET /api/org-chart/approval-hierarchy/resolve/:businessId/:employeePositionId
+ * Resolve approval chain for an employee position
+ */
+router.get(
+  '/approval-hierarchy/resolve/:businessId/:employeePositionId',
+  requireOrgChartAccess(fromParam('businessId'), 'member'),
+  checkOrgChartPolicy(POLICY_ACTIONS.ORGCHART_APPROVAL_HIERARCHY_READ),
+  async (req, res) => {
+    try {
+      const { businessId, employeePositionId } = req.params;
+      const approvalType =
+        typeof req.query.approvalType === 'string' ? req.query.approvalType : undefined;
+      const resolution = await approvalHierarchyService.resolveApprovalChain(
+        businessId,
+        employeePositionId,
+        approvalType
+      );
+      res.json({ success: true, data: resolution });
+    } catch (error: unknown) {
+      if (error instanceof ApprovalHierarchyValidationError) {
+        return res.status(error.httpStatus).json({ error: error.message });
+      }
+      logSrvErr('approval_hierarchy_resolve', 'Error resolving approval chain:', error);
+      res.status(500).json({ error: 'Failed to resolve approval chain' });
+    }
+  }
+);
+
+/**
+ * GET /api/org-chart/approval-hierarchy/validate/:businessId
+ * Validate approval hierarchy integrity for a business
+ */
+router.get(
+  '/approval-hierarchy/validate/:businessId',
+  requireOrgChartAccess(fromParam('businessId'), 'member'),
+  checkOrgChartPolicy(POLICY_ACTIONS.ORGCHART_APPROVAL_HIERARCHY_READ),
+  async (req, res) => {
+    try {
+      const { businessId } = req.params;
+      const validation = await approvalHierarchyService.validateApprovalHierarchyIntegrity(businessId);
+      const authUser = getUserFromRequest(req);
+      if (authUser) {
+        void recordApprovalHierarchyValidated({
+          actorUserId: authUser.id,
+          businessId,
+          valid: validation.valid,
+          issueCount: validation.issues.length,
+        });
+      }
+      res.json({ success: true, data: validation });
+    } catch (error) {
+      logSrvErr('approval_hierarchy_validate', 'Error validating approval hierarchy:', error);
+      res.status(500).json({ error: 'Failed to validate approval hierarchy' });
+    }
+  }
+);
+
+/**
+ * GET /api/org-chart/approval-hierarchy/entries/:id
+ * Get approval hierarchy entry detail
+ */
+router.get(
+  '/approval-hierarchy/entries/:id',
+  requireMemberForApprovalHierarchyId(),
+  checkOrgChartPolicy(POLICY_ACTIONS.ORGCHART_APPROVAL_HIERARCHY_READ),
+  async (req, res) => {
+    try {
+      const { id } = req.params;
+      const entry = await approvalHierarchyService.getApprovalHierarchyById(id);
+      if (!entry) {
+        return res.status(404).json({ error: 'Approval hierarchy entry not found' });
+      }
+      res.json({ success: true, data: entry });
+    } catch (error) {
+      logSrvErr('approval_hierarchy_detail', 'Error fetching approval hierarchy entry:', error);
+      res.status(500).json({ error: 'Failed to fetch approval hierarchy entry' });
+    }
+  }
+);
+
+/**
+ * POST /api/org-chart/approval-hierarchy/assign/employee
+ */
+router.post(
+  '/approval-hierarchy/assign/employee',
+  requireOrgChartAccess(fromBody('businessId'), 'manage'),
+  checkOrgChartPolicy(POLICY_ACTIONS.ORGCHART_APPROVAL_HIERARCHY_WRITE),
+  async (req, res) => {
+    try {
+      const authUser = getUserFromRequest(req);
+      if (!authUser) {
+        return res.status(401).json({ error: 'Unauthorized' });
+      }
+      const result = await approvalHierarchyService.assignApprovalHierarchyToEmployee(req.body);
+      void recordApprovalHierarchyAssigned({
+        actorUserId: authUser.id,
+        businessId: req.body.businessId,
+        assignmentTarget: 'employee',
+        targetId: req.body.employeePositionId,
+        entriesCreated: result.entriesCreated,
+        entriesUpdated: result.entriesUpdated,
+      });
+      res.status(result.entriesCreated > 0 ? 201 : 200).json({ success: true, data: result });
+    } catch (error: unknown) {
+      if (error instanceof ApprovalHierarchyValidationError) {
+        return res.status(error.httpStatus).json({ error: error.message });
+      }
+      logSrvErr('approval_hierarchy_assign_employee', 'Error assigning approval hierarchy:', error);
+      res.status(500).json({ error: 'Failed to assign approval hierarchy to employee' });
+    }
+  }
+);
+
+/**
+ * POST /api/org-chart/approval-hierarchy/assign/position
+ */
+router.post(
+  '/approval-hierarchy/assign/position',
+  requireOrgChartAccess(fromBody('businessId'), 'manage'),
+  checkOrgChartPolicy(POLICY_ACTIONS.ORGCHART_APPROVAL_HIERARCHY_WRITE),
+  async (req, res) => {
+    try {
+      const authUser = getUserFromRequest(req);
+      if (!authUser) {
+        return res.status(401).json({ error: 'Unauthorized' });
+      }
+      const result = await approvalHierarchyService.assignApprovalHierarchyToPosition(req.body);
+      void recordApprovalHierarchyAssigned({
+        actorUserId: authUser.id,
+        businessId: req.body.businessId,
+        assignmentTarget: 'position',
+        targetId: req.body.positionId,
+        entriesCreated: result.entriesCreated,
+        entriesUpdated: result.entriesUpdated,
+      });
+      res.status(result.entriesCreated > 0 ? 201 : 200).json({ success: true, data: result });
+    } catch (error: unknown) {
+      if (error instanceof ApprovalHierarchyValidationError) {
+        return res.status(error.httpStatus).json({ error: error.message });
+      }
+      logSrvErr('approval_hierarchy_assign_position', 'Error assigning approval hierarchy:', error);
+      res.status(500).json({ error: 'Failed to assign approval hierarchy to position' });
+    }
+  }
+);
+
+/**
+ * POST /api/org-chart/approval-hierarchy/assign/department
+ */
+router.post(
+  '/approval-hierarchy/assign/department',
+  requireOrgChartAccess(fromBody('businessId'), 'manage'),
+  checkOrgChartPolicy(POLICY_ACTIONS.ORGCHART_APPROVAL_HIERARCHY_WRITE),
+  async (req, res) => {
+    try {
+      const authUser = getUserFromRequest(req);
+      if (!authUser) {
+        return res.status(401).json({ error: 'Unauthorized' });
+      }
+      const result = await approvalHierarchyService.assignApprovalHierarchyToDepartment(req.body);
+      void recordApprovalHierarchyAssigned({
+        actorUserId: authUser.id,
+        businessId: req.body.businessId,
+        assignmentTarget: 'department',
+        targetId: req.body.departmentId,
+        entriesCreated: result.entriesCreated,
+        entriesUpdated: result.entriesUpdated,
+      });
+      res.status(result.entriesCreated > 0 ? 201 : 200).json({ success: true, data: result });
+    } catch (error: unknown) {
+      if (error instanceof ApprovalHierarchyValidationError) {
+        return res.status(error.httpStatus).json({ error: error.message });
+      }
+      logSrvErr('approval_hierarchy_assign_department', 'Error assigning approval hierarchy:', error);
+      res.status(500).json({ error: 'Failed to assign approval hierarchy to department' });
+    }
+  }
+);
+
+/**
+ * POST /api/org-chart/approval-hierarchy
+ * Create approval hierarchy entry
+ */
+router.post(
+  '/approval-hierarchy',
+  requireOrgChartAccess(fromBody('businessId'), 'manage'),
+  checkOrgChartPolicy(POLICY_ACTIONS.ORGCHART_APPROVAL_HIERARCHY_WRITE),
+  async (req, res) => {
+    try {
+      const authUser = getUserFromRequest(req);
+      if (!authUser) {
+        return res.status(401).json({ error: 'Unauthorized' });
+      }
+      const entry = await approvalHierarchyService.createApprovalHierarchy(req.body);
+      void recordApprovalHierarchyCreated({
+        actorUserId: authUser.id,
+        businessId: entry.businessId,
+        hierarchyId: entry.id,
+        employeePositionId: entry.employeePositionId,
+        managerPositionId: entry.managerPositionId,
+      });
+      res.status(201).json({ success: true, data: entry });
+    } catch (error: unknown) {
+      if (error instanceof ApprovalHierarchyValidationError) {
+        return res.status(error.httpStatus).json({ error: error.message });
+      }
+      logSrvErr('approval_hierarchy_create', 'Error creating approval hierarchy:', error);
+      res.status(500).json({ error: 'Failed to create approval hierarchy' });
+    }
+  }
+);
+
+/**
+ * PATCH /api/org-chart/approval-hierarchy/:id
+ */
+router.patch(
+  '/approval-hierarchy/:id',
+  requireManageForApprovalHierarchyId,
+  checkOrgChartPolicy(POLICY_ACTIONS.ORGCHART_APPROVAL_HIERARCHY_WRITE),
+  async (req, res) => {
+    try {
+      const { id } = req.params;
+      const updateData = req.body as Record<string, unknown>;
+      const entry = await approvalHierarchyService.updateApprovalHierarchy(id, req.body);
+      const authUser = getUserFromRequest(req);
+      if (authUser) {
+        void recordApprovalHierarchyUpdated({
+          actorUserId: authUser.id,
+          businessId: entry.businessId,
+          hierarchyId: entry.id,
+          changedFields: Object.keys(updateData),
+        });
+      }
+      res.json({ success: true, data: entry });
+    } catch (error: unknown) {
+      if (error instanceof ApprovalHierarchyValidationError) {
+        return res.status(error.httpStatus).json({ error: error.message });
+      }
+      logSrvErr('approval_hierarchy_update', 'Error updating approval hierarchy:', error);
+      res.status(500).json({ error: 'Failed to update approval hierarchy' });
+    }
+  }
+);
+
+/**
+ * DELETE /api/org-chart/approval-hierarchy/:id
+ */
+router.delete(
+  '/approval-hierarchy/:id',
+  requireManageForApprovalHierarchyId,
+  checkOrgChartPolicy(POLICY_ACTIONS.ORGCHART_APPROVAL_HIERARCHY_WRITE),
+  async (req, res) => {
+    try {
+      const { id } = req.params;
+      const existing = await prisma.managerApprovalHierarchy.findUnique({
+        where: { id },
+        select: { businessId: true },
+      });
+      await approvalHierarchyService.deleteApprovalHierarchy(id);
+      const authUser = getUserFromRequest(req);
+      if (authUser && existing) {
+        void recordApprovalHierarchyDeleted({
+          actorUserId: authUser.id,
+          businessId: existing.businessId,
+          hierarchyId: id,
+        });
+      }
+      res.status(204).send();
+    } catch (error: unknown) {
+      if (error instanceof ApprovalHierarchyValidationError) {
+        return res.status(error.httpStatus).json({ error: error.message });
+      }
+      logSrvErr('approval_hierarchy_delete', 'Error deleting approval hierarchy:', error);
+      res.status(500).json({ error: 'Failed to delete approval hierarchy' });
+    }
+  }
+);
+
+/**
+ * GET /api/org-chart/approval-hierarchy/:businessId
+ * List approval hierarchy entries for a business
+ */
+router.get(
+  '/approval-hierarchy/:businessId',
+  requireOrgChartAccess(fromParam('businessId'), 'member'),
+  checkOrgChartPolicy(POLICY_ACTIONS.ORGCHART_APPROVAL_HIERARCHY_READ),
+  async (req, res) => {
+    try {
+      const { businessId } = req.params;
+      const employeePositionId =
+        typeof req.query.employeePositionId === 'string' ? req.query.employeePositionId : undefined;
+      const activeOnly = req.query.activeOnly === 'true';
+      const entries = await approvalHierarchyService.listApprovalHierarchies(businessId, {
+        employeePositionId,
+        activeOnly,
+      });
+      res.json({ success: true, data: entries });
+    } catch (error) {
+      logSrvErr('approval_hierarchy_list', 'Error listing approval hierarchy:', error);
+      res.status(500).json({ error: 'Failed to list approval hierarchy' });
+    }
+  }
+);
 
 /**
  * GET /api/org-chart/:businessId

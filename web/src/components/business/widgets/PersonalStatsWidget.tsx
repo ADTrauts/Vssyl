@@ -101,15 +101,15 @@ export default function PersonalStatsWidget({ businessId, userId, settings, them
           return (
             <div
               key={index}
-              className="flex items-center justify-between p-3 rounded-lg border border-gray-200 dark:border-slate-700"
+              className="flex items-center justify-between p-3 rounded-lg border border-v-border"
             >
               <div className="flex items-center space-x-3">
                 <div className={`p-2 ${item.bgColor} rounded-lg`}>
                   <Icon className={`w-5 h-5 ${item.textColor}`} />
                 </div>
-                <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{item.label}</span>
+                <span className="text-sm font-medium text-v-text-secondary">{item.label}</span>
               </div>
-              <span className="text-xl font-bold text-gray-900 dark:text-gray-100">{item.value}</span>
+              <span className="text-xl font-bold text-v-text-primary">{item.value}</span>
             </div>
           );
         })}
@@ -118,7 +118,7 @@ export default function PersonalStatsWidget({ businessId, userId, settings, them
       {/* Progress Bar */}
       <div className="mt-6 p-4 bg-gradient-to-r from-blue-50 to-purple-50 rounded-lg">
         <div className="flex items-center justify-between mb-2">
-          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Overall Progress</span>
+          <span className="text-sm font-medium text-v-text-secondary">Overall Progress</span>
           <span className="text-sm font-bold" style={{ color: theme?.primaryColor }}>
             {stats?.performanceScore}%
           </span>

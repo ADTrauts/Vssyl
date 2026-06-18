@@ -5,6 +5,10 @@ import { useSession } from 'next-auth/react';
 import { useWorkAuth } from './WorkAuthContext';
 import { installModule, uninstallModule, configureModule, getInstalledModules, ModuleDetails } from '../api/modules';
 import { getWebSocketConfig } from '../lib/websocketUtils';
+import {
+  acquireRealtimeConnection,
+  releaseRealtimeConnection,
+} from '../lib/realtimeClient';
 import { 
   OrganizationalTier, 
   Department, 
@@ -142,6 +146,8 @@ export function BusinessConfigurationProvider({ children, businessId }: Business
   const pollingInterval = 30000; // 30 seconds
   const pollingRef = useRef<NodeJS.Timeout | null>(null);
   const subscribedBusinessIdRef = useRef<string | null>(null); // Track which business we're subscribed to
+  const configRealtimeListenerAttachedRef = useRef(false);
+  const BUSINESS_CONFIG_REALTIME_HOLDER = 'business-config-ws';
   const previousConfigRef = useRef<string | null>(null); // Track previous config to prevent unnecessary updates
   const loadingRef = useRef(false); // Track if we're currently loading to prevent concurrent calls
   const lastLoadTimeRef = useRef<number>(0); // Track last load time to prevent too-frequent loads
@@ -664,29 +670,60 @@ export function BusinessConfigurationProvider({ children, businessId }: Business
     }
   }, []);
 
-  // Subscribe to WebSocket updates
+  // Subscribe to realtime config updates (polling remains fallback)
   const subscribeToUpdates = useCallback((businessId: string) => {
-    // Prevent duplicate subscriptions
     if (subscribedBusinessIdRef.current === businessId) {
-      return; // Already subscribed to this business
+      return;
     }
-    
-    // Unsubscribe from previous business if different
+
     if (subscribedBusinessIdRef.current && subscribedBusinessIdRef.current !== businessId) {
       stopPolling();
+      releaseRealtimeConnection(BUSINESS_CONFIG_REALTIME_HOLDER);
+      configRealtimeListenerAttachedRef.current = false;
     }
-    
-    // Business-specific WebSocket endpoints are not implemented yet
-    // Use polling for business configuration updates
-    // (removed console.log to reduce noise)
-    setUsePolling(true);
+
     subscribedBusinessIdRef.current = businessId;
-    startPolling(businessId);
-  }, [startPolling, stopPolling]);
+
+    if (!session?.accessToken) {
+      setUsePolling(true);
+      startPolling(businessId);
+      return;
+    }
+
+    void acquireRealtimeConnection(session.accessToken, BUSINESS_CONFIG_REALTIME_HOLDER)
+      .then((socket) => {
+        if (!socket.connected) {
+          setUsePolling(true);
+          startPolling(businessId);
+          return;
+        }
+
+        socket.emit('join_business', businessId);
+        setWsConnected(true);
+        setUsePolling(false);
+        stopPolling();
+
+        if (!configRealtimeListenerAttachedRef.current) {
+          socket.on('business:config:updated', (payload: { businessId?: string }) => {
+            const activeBusinessId = subscribedBusinessIdRef.current;
+            if (payload?.businessId && activeBusinessId && payload.businessId === activeBusinessId) {
+              void loadConfigurationRef.current(activeBusinessId);
+            }
+          });
+          configRealtimeListenerAttachedRef.current = true;
+        }
+      })
+      .catch(() => {
+        setUsePolling(true);
+        startPolling(businessId);
+      });
+  }, [session?.accessToken, startPolling, stopPolling]);
 
   // Unsubscribe from updates
   const unsubscribeFromUpdates = useCallback(() => {
     stopPolling();
+    releaseRealtimeConnection(BUSINESS_CONFIG_REALTIME_HOLDER);
+    configRealtimeListenerAttachedRef.current = false;
     setWsConnected(false);
     subscribedBusinessIdRef.current = null;
   }, [stopPolling]);

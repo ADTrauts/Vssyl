@@ -3,6 +3,8 @@
 import React, { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
 import { Alert, Button, Card, Spinner } from 'shared/components';
+import { Webhook } from 'lucide-react';
+import { BusinessAdminEmptyState } from '@/components/business/BusinessAdminEmptyState';
 import {
   createWebhookSubscription,
   deleteWebhookSubscription,
@@ -111,7 +113,7 @@ export default function WebhookSubscriptionsShell({ businessId, token, canManage
 
   if (loading) {
     return (
-      <div className="flex items-center gap-2 text-gray-600 dark:text-gray-400">
+      <div className="flex items-center gap-2 text-v-text-secondary">
         <Spinner size={16} />
         Loading webhook subscriptions…
       </div>
@@ -120,7 +122,7 @@ export default function WebhookSubscriptionsShell({ businessId, token, canManage
 
   return (
     <div className="space-y-6">
-      <p className="text-sm text-gray-600 dark:text-gray-400">
+      <p className="text-sm text-v-text-secondary">
         Register HTTPS endpoints to receive signed outbound events (module install, file share).
         Partner modules must use webhook executors — no in-process third-party code.
       </p>
@@ -136,13 +138,13 @@ export default function WebhookSubscriptionsShell({ businessId, token, canManage
 
       {canManage && (
         <Card className="p-4 space-y-4">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Add subscription</h2>
+          <h2 className="text-lg font-semibold text-v-text-primary">Add subscription</h2>
           <div>
             <label className="block text-sm font-medium mb-1">Endpoint URL</label>
             <input
               value={url}
               onChange={(e) => setUrl(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-3 py-2"
+              className="w-full rounded-lg border border-v-border bg-v-surface px-3 py-2"
               placeholder="https://partner.example.com/webhooks/vssyl"
             />
           </div>
@@ -151,7 +153,7 @@ export default function WebhookSubscriptionsShell({ businessId, token, canManage
             <input
               value={description}
               onChange={(e) => setDescription(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-3 py-2"
+              className="w-full rounded-lg border border-v-border bg-v-surface px-3 py-2"
             />
           </div>
           <div>
@@ -176,23 +178,27 @@ export default function WebhookSubscriptionsShell({ businessId, token, canManage
       )}
 
       <Card className="p-4">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
+        <h2 className="text-lg font-semibold text-v-text-primary mb-4">
           Active subscriptions
         </h2>
         {subscriptions.length === 0 ? (
-          <p className="text-sm text-gray-600 dark:text-gray-400">No subscriptions yet.</p>
+          <BusinessAdminEmptyState
+            icon={<Webhook className="w-12 h-12" />}
+            title="No webhook subscriptions yet"
+            description="Create a subscription to receive business events at your endpoint."
+          />
         ) : (
           <ul className="space-y-3">
             {subscriptions.map((sub) => (
               <li
                 key={sub.id}
-                className="border border-gray-200 dark:border-slate-700 rounded-lg p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
+                className="border border-v-border rounded-lg p-3 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3"
               >
                 <div>
-                  <p className="font-medium text-gray-900 dark:text-gray-100 break-all">{sub.url}</p>
-                  <p className="text-xs text-gray-500 mt-1">{sub.eventTypes.join(', ')}</p>
+                  <p className="font-medium text-v-text-primary break-all">{sub.url}</p>
+                  <p className="text-xs text-v-text-muted mt-1">{sub.eventTypes.join(', ')}</p>
                   {sub.description && (
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{sub.description}</p>
+                    <p className="text-sm text-v-text-secondary mt-1">{sub.description}</p>
                   )}
                 </div>
                 {canManage && (
@@ -211,7 +217,7 @@ export default function WebhookSubscriptionsShell({ businessId, token, canManage
         )}
       </Card>
 
-      <p className="text-sm text-gray-600 dark:text-gray-400">
+      <p className="text-sm text-v-text-secondary">
         <Link href={`/business/${businessId}/workspace/settings`} className="text-blue-600 hover:underline">
           ← Back to business settings
         </Link>

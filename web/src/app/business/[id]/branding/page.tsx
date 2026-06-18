@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { useParams, useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { Card, Button, Spinner, Alert } from 'shared/components';
+import { useConfirm } from 'shared/hooks/useConfirm';
 import { 
   Settings, 
   Layout, 
@@ -74,6 +75,7 @@ export default function UnifiedBrandingPage() {
   const params = useParams();
   const router = useRouter();
   const { data: session } = useSession();
+  const { confirm, ConfirmDialog } = useConfirm();
 
   const businessId = params?.id as string;
 
@@ -254,7 +256,13 @@ export default function UnifiedBrandingPage() {
   };
 
   const handleDeleteWidget = async (widgetId: string) => {
-    if (!confirm('Are you sure you want to delete this widget?')) return;
+    const ok = await confirm({
+      title: 'Delete widget?',
+      description: 'This widget will be removed from your business front page.',
+      variant: 'destructive',
+      confirmLabel: 'Delete',
+    });
+    if (!ok) return;
 
     try {
       const response = await fetch(`/api/business-front/${businessId}/widgets/${widgetId}`, {
@@ -292,9 +300,9 @@ export default function UnifiedBrandingPage() {
   }
 
   return (
-    <div className="h-screen bg-gray-50 dark:bg-slate-800 flex flex-col overflow-hidden">
+    <div className="h-screen bg-v-background flex flex-col overflow-hidden">
       {/* Header */}
-      <div className="bg-white dark:bg-slate-900 border-b flex-shrink-0">
+      <div className="bg-v-surface border-b flex-shrink-0">
         <div className="container mx-auto px-6 py-4">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
@@ -307,8 +315,8 @@ export default function UnifiedBrandingPage() {
                 Back to Admin
               </Button>
               <div>
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Business Branding</h1>
-                <p className="text-sm text-gray-600 dark:text-gray-400">Configure global branding and front page settings</p>
+                <h1 className="text-2xl font-bold text-v-text-primary">Business Branding</h1>
+                <p className="text-sm text-v-text-secondary">Configure global branding and front page settings</p>
               </div>
             </div>
             <div className="flex items-center space-x-3">
@@ -373,7 +381,7 @@ export default function UnifiedBrandingPage() {
 
         {/* Tabs */}
         <div className="mb-6">
-          <div className="flex space-x-2 border-b border-gray-200 dark:border-slate-700">
+          <div className="flex space-x-2 border-b border-v-border">
             <button
               onClick={() => setActiveTab('global')}
               className={`px-4 py-3 font-medium text-sm transition-colors border-b-2 ${
@@ -456,7 +464,7 @@ export default function UnifiedBrandingPage() {
                 />
               ) : (
                 <Card className="p-8 text-center">
-                  <p className="text-gray-600 dark:text-gray-400">Save your global branding first to configure the front page layout.</p>
+                  <p className="text-v-text-secondary">Save your global branding first to configure the front page layout.</p>
                 </Card>
               )
             )}
@@ -473,7 +481,7 @@ export default function UnifiedBrandingPage() {
                 />
               ) : (
                 <Card className="p-8 text-center">
-                  <p className="text-gray-600 dark:text-gray-400">Save your global branding first to configure front page content.</p>
+                  <p className="text-v-text-secondary">Save your global branding first to configure front page content.</p>
                 </Card>
               )
             )}
@@ -498,7 +506,7 @@ export default function UnifiedBrandingPage() {
                 />
               ) : (
                 <Card className="p-8 text-center">
-                  <p className="text-gray-600 dark:text-gray-400">Save your global branding first to see the preview.</p>
+                  <p className="text-v-text-secondary">Save your global branding first to see the preview.</p>
                 </Card>
               )
             )}
@@ -520,6 +528,7 @@ export default function UnifiedBrandingPage() {
           isNew={isAddingWidget}
         />
       )}
+      <ConfirmDialog />
     </div>
   );
 }

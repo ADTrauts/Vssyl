@@ -818,6 +818,19 @@ export class ChatSocketService {
   }
 
   // ============================================================================
+  // BUSINESS ADMINISTRATION CONFIG BROADCASTS
+  // ============================================================================
+
+  public broadcastBusinessConfigUpdated(businessId: string, data: Record<string, unknown>) {
+    this.broadcastToBusiness(businessId, 'business:config:updated', data);
+    logger.debug('Business config update broadcasted', {
+      operation: 'socket_business_config_broadcast',
+      businessId,
+      changeType: data.changeType,
+    });
+  }
+
+  // ============================================================================
   // VSSYL PLACE BROADCASTS
   // ============================================================================
 

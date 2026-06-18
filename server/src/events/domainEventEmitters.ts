@@ -99,6 +99,21 @@ export function emitBusinessMemberRemovedEvent(params: {
   );
 }
 
+export function emitBusinessCreatedEvent(params: {
+  actorUserId: string;
+  businessId: string;
+  name?: string;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.BUSINESS_CREATED, {
+      actorUserId: params.actorUserId,
+      entityId: params.businessId,
+      businessId: params.businessId,
+      metadata: params.name ? { name: params.name } : {},
+    })
+  );
+}
+
 export function emitFileUploadedEvent(params: {
   actorUserId: string;
   fileId: string;

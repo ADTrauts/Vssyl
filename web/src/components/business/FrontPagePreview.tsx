@@ -68,9 +68,9 @@ function WidgetPreview({ widget, theme }: { widget: Widget; theme: ThemeConfig }
   };
 
   const getCardClass = () => {
-    const base = 'p-4 bg-white';
+    const base = 'p-4 bg-v-surface';
     if (theme.cardStyle === 'shadow') return `${base} shadow-md`;
-    if (theme.cardStyle === 'bordered') return `${base} border-2 border-gray-200`;
+    if (theme.cardStyle === 'bordered') return `${base} border-2 border-v-border`;
     return base;
   };
 
@@ -94,14 +94,14 @@ function WidgetPreview({ widget, theme }: { widget: Widget; theme: ThemeConfig }
         </div>
         {widget.description && (
           <p
-            className="text-sm text-gray-600 dark:text-gray-400"
+            className="text-sm text-v-text-secondary"
             style={{ fontFamily: theme.bodyFont || 'Inter' }}
           >
             {widget.description}
           </p>
         )}
-        <div className="mt-3 h-20 bg-gray-100 dark:bg-slate-700 rounded flex items-center justify-center">
-          <p className="text-xs text-gray-500 dark:text-gray-400">Widget Content</p>
+        <div className="mt-3 h-20 bg-v-surface dark:bg-slate-700 rounded flex items-center justify-center">
+          <p className="text-xs text-v-text-muted">Widget Content</p>
         </div>
       </div>
     </div>
@@ -144,18 +144,18 @@ export default function FrontPagePreview({
             <Eye className="w-5 h-5 text-blue-600" />
           </div>
           <div>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Live Preview</h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400">See how your front page will look</p>
+            <h3 className="text-lg font-semibold text-v-text-primary">Live Preview</h3>
+            <p className="text-sm text-v-text-secondary">See how your front page will look</p>
           </div>
         </div>
 
         {/* View Mode Selector */}
-        <div className="flex items-center space-x-2 bg-gray-100 dark:bg-slate-700 rounded-lg p-1">
+        <div className="flex items-center space-x-2 bg-v-surface dark:bg-slate-700 rounded-lg p-1">
           <button
             onClick={() => setViewMode('desktop')}
             className={`p-2 rounded transition-colors ${
               viewMode === 'desktop'
-                ? 'bg-white text-blue-600 shadow'
+                ? 'bg-v-surface text-blue-600 shadow'
                 : 'text-gray-600 hover:text-gray-900'
             }`}
             title="Desktop View"
@@ -166,7 +166,7 @@ export default function FrontPagePreview({
             onClick={() => setViewMode('tablet')}
             className={`p-2 rounded transition-colors ${
               viewMode === 'tablet'
-                ? 'bg-white text-blue-600 shadow'
+                ? 'bg-v-surface text-blue-600 shadow'
                 : 'text-gray-600 hover:text-gray-900'
             }`}
             title="Tablet View"
@@ -177,7 +177,7 @@ export default function FrontPagePreview({
             onClick={() => setViewMode('mobile')}
             className={`p-2 rounded transition-colors ${
               viewMode === 'mobile'
-                ? 'bg-white text-blue-600 shadow'
+                ? 'bg-v-surface text-blue-600 shadow'
                 : 'text-gray-600 hover:text-gray-900'
             }`}
             title="Mobile View"
@@ -188,7 +188,7 @@ export default function FrontPagePreview({
       </div>
 
       {/* Preview Container */}
-      <div className="bg-gray-100 dark:bg-slate-700 rounded-lg p-6 min-h-[600px] overflow-auto">
+      <div className="bg-v-surface dark:bg-slate-700 rounded-lg p-6 min-h-[600px] overflow-auto">
         <div className={getContainerClass()}>
           <div
             style={{
@@ -227,7 +227,7 @@ export default function FrontPagePreview({
                   Welcome Back!
                 </h2>
                 <p
-                  className="text-gray-600 dark:text-gray-400"
+                  className="text-v-text-secondary"
                   style={{ fontFamily: theme.bodyFont || 'Inter' }}
                 >
                   {welcomeMessage}
@@ -245,7 +245,7 @@ export default function FrontPagePreview({
                 </div>
               ) : (
                 <div className="text-center py-12">
-                  <p className="text-gray-500 dark:text-gray-400 mb-2">No visible widgets</p>
+                  <p className="text-v-text-muted mb-2">No visible widgets</p>
                   <p className="text-sm text-gray-400">Add and enable widgets to see them here</p>
                 </div>
               )}

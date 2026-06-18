@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { Card, Button, Input } from 'shared/components';
+import { useConfirm } from 'shared/hooks/useConfirm';
 import { Palette, Type, Layout, RotateCcw } from 'lucide-react';
 
 // ============================================================================
@@ -96,14 +97,14 @@ interface ColorPickerProps {
 function ColorPicker({ label, value, onChange, description }: ColorPickerProps) {
   return (
     <div>
-      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">{label}</label>
-      {description && <p className="text-xs text-gray-500 dark:text-gray-400 mb-2">{description}</p>}
+      <label className="block text-sm font-medium text-v-text-secondary mb-1">{label}</label>
+      {description && <p className="text-xs text-v-text-muted mb-2">{description}</p>}
       <div className="flex items-center space-x-3">
         <input
           type="color"
           value={value}
           onChange={(e) => onChange(e.target.value)}
-          className="w-12 h-12 rounded border border-gray-300 dark:border-slate-600 cursor-pointer"
+          className="w-12 h-12 rounded border border-v-border cursor-pointer"
         />
         <Input
           type="text"
@@ -127,15 +128,28 @@ export default function FrontPageThemeCustomizer({
   className = '',
 }: FrontPageThemeCustomizerProps) {
   const [activeTab, setActiveTab] = useState<'colors' | 'typography' | 'layout'>('colors');
+  const { confirm, ConfirmDialog } = useConfirm();
 
-  const handleApplyPreset = (presetName: keyof typeof PRESET_THEMES) => {
-    if (confirm(`Apply the "${presetName}" theme preset? This will override your current settings.`)) {
+  const handleApplyPreset = async (presetName: keyof typeof PRESET_THEMES) => {
+    const ok = await confirm({
+      title: `Apply "${presetName}" theme preset?`,
+      description: 'This will override your current theme settings.',
+      variant: 'standard',
+      confirmLabel: 'Apply',
+    });
+    if (ok) {
       onChange(PRESET_THEMES[presetName]);
     }
   };
 
-  const handleReset = () => {
-    if (confirm('Reset to default theme? This will override all your customizations.')) {
+  const handleReset = async () => {
+    const ok = await confirm({
+      title: 'Reset to default theme?',
+      description: 'This will override all custom theme settings.',
+      variant: 'destructive',
+      confirmLabel: 'Reset',
+    });
+    if (ok) {
       onChange(PRESET_THEMES.default);
     }
   };
@@ -145,8 +159,8 @@ export default function FrontPageThemeCustomizer({
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Theme Customization</h3>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">Customize colors, fonts, and layout styling</p>
+          <h3 className="text-lg font-semibold text-v-text-primary">Theme Customization</h3>
+          <p className="text-sm text-v-text-secondary mt-1">Customize colors, fonts, and layout styling</p>
         </div>
         <Button
           variant="secondary"
@@ -160,27 +174,27 @@ export default function FrontPageThemeCustomizer({
 
       {/* Preset Themes */}
       <Card className="p-4 mb-6">
-        <h4 className="font-semibold text-sm text-gray-900 dark:text-gray-100 mb-3">Quick Presets</h4>
+        <h4 className="font-semibold text-sm text-v-text-primary mb-3">Quick Presets</h4>
         <div className="grid grid-cols-4 gap-3">
           {Object.entries(PRESET_THEMES).map(([name, preset]) => (
             <button
               key={name}
               onClick={() => handleApplyPreset(name as keyof typeof PRESET_THEMES)}
-              className="p-3 border-2 border-gray-200 dark:border-slate-700 rounded-lg hover:border-blue-400 transition-colors text-left"
+              className="p-3 border-2 border-v-border rounded-lg hover:border-blue-400 transition-colors text-left"
             >
               <div className="flex space-x-1 mb-2">
                 <div className="w-4 h-4 rounded" style={{ backgroundColor: preset.primaryColor }} />
                 <div className="w-4 h-4 rounded" style={{ backgroundColor: preset.secondaryColor }} />
                 <div className="w-4 h-4 rounded" style={{ backgroundColor: preset.accentColor }} />
               </div>
-              <p className="text-xs font-medium text-gray-900 dark:text-gray-100 capitalize">{name}</p>
+              <p className="text-xs font-medium text-v-text-primary capitalize">{name}</p>
             </button>
           ))}
         </div>
       </Card>
 
       {/* Tabs */}
-      <div className="flex space-x-2 mb-6 border-b border-gray-200 dark:border-slate-700">
+      <div className="flex space-x-2 mb-6 border-b border-v-border">
         <button
           onClick={() => setActiveTab('colors')}
           className={`px-4 py-2 font-medium text-sm transition-colors border-b-2 ${
@@ -264,11 +278,11 @@ export default function FrontPageThemeCustomizer({
         {activeTab === 'typography' && (
           <Card className="p-6 space-y-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Heading Font</label>
+              <label className="block text-sm font-medium text-v-text-secondary mb-2">Heading Font</label>
               <select
                 value={theme.headingFont || 'Inter'}
                 onChange={(e) => onChange({ ...theme, headingFont: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-v-border rounded-lg focus:ring-2 focus:ring-blue-500"
               >
                 <option value="Inter">Inter</option>
                 <option value="Poppins">Poppins</option>
@@ -280,11 +294,11 @@ export default function FrontPageThemeCustomizer({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Body Font</label>
+              <label className="block text-sm font-medium text-v-text-secondary mb-2">Body Font</label>
               <select
                 value={theme.bodyFont || 'Inter'}
                 onChange={(e) => onChange({ ...theme, bodyFont: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-v-border rounded-lg focus:ring-2 focus:ring-blue-500"
               >
                 <option value="Inter">Inter</option>
                 <option value="Poppins">Poppins</option>
@@ -296,8 +310,8 @@ export default function FrontPageThemeCustomizer({
             </div>
 
             {/* Font Preview */}
-            <div className="p-4 bg-gray-50 dark:bg-slate-800 rounded-lg">
-              <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">Preview:</p>
+            <div className="p-4 bg-v-background rounded-lg">
+              <p className="text-xs text-v-text-secondary mb-3">Preview:</p>
               <h3
                 className="text-2xl font-bold mb-2"
                 style={{ fontFamily: theme.headingFont || 'Inter' }}
@@ -305,7 +319,7 @@ export default function FrontPageThemeCustomizer({
                 Heading Example
               </h3>
               <p
-                className="text-sm text-gray-600 dark:text-gray-400"
+                className="text-sm text-v-text-secondary"
                 style={{ fontFamily: theme.bodyFont || 'Inter' }}
               >
                 This is how your body text will look with the selected fonts.
@@ -319,11 +333,11 @@ export default function FrontPageThemeCustomizer({
         {activeTab === 'layout' && (
           <Card className="p-6 space-y-6">
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Border Radius</label>
+              <label className="block text-sm font-medium text-v-text-secondary mb-2">Border Radius</label>
               <select
                 value={theme.borderRadius || '0.5rem'}
                 onChange={(e) => onChange({ ...theme, borderRadius: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-v-border rounded-lg focus:ring-2 focus:ring-blue-500"
               >
                 <option value="0">None (0px)</option>
                 <option value="0.25rem">Small (4px)</option>
@@ -335,11 +349,11 @@ export default function FrontPageThemeCustomizer({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Spacing</label>
+              <label className="block text-sm font-medium text-v-text-secondary mb-2">Spacing</label>
               <select
                 value={theme.spacing || 'normal'}
                 onChange={(e) => onChange({ ...theme, spacing: e.target.value })}
-                className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500"
+                className="w-full px-3 py-2 border border-v-border rounded-lg focus:ring-2 focus:ring-blue-500"
               >
                 <option value="compact">Compact</option>
                 <option value="normal">Normal</option>
@@ -348,7 +362,7 @@ export default function FrontPageThemeCustomizer({
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Card Style</label>
+              <label className="block text-sm font-medium text-v-text-secondary mb-2">Card Style</label>
               <div className="grid grid-cols-3 gap-3">
                 {['flat', 'shadow', 'bordered'].map((style) => (
                   <button
@@ -357,30 +371,30 @@ export default function FrontPageThemeCustomizer({
                     className={`p-4 rounded-lg border-2 transition-colors ${
                       theme.cardStyle === style
                         ? 'border-blue-500 bg-blue-50'
-                        : 'border-gray-200 hover:border-gray-300'
+                        : 'border-v-border hover:border-v-border'
                     }`}
                   >
-                    <p className="text-sm font-medium text-gray-900 dark:text-gray-100 capitalize">{style}</p>
+                    <p className="text-sm font-medium text-v-text-primary capitalize">{style}</p>
                   </button>
                 ))}
               </div>
             </div>
 
             {/* Layout Preview */}
-            <div className="p-4 bg-gray-50 dark:bg-slate-800 rounded-lg">
-              <p className="text-xs text-gray-600 dark:text-gray-400 mb-3">Preview:</p>
+            <div className="p-4 bg-v-background rounded-lg">
+              <p className="text-xs text-v-text-secondary mb-3">Preview:</p>
               <div
-                className={`p-4 bg-white ${
+                className={`p-4 bg-v-surface ${
                   theme.cardStyle === 'shadow'
                     ? 'shadow-lg'
                     : theme.cardStyle === 'bordered'
-                    ? 'border-2 border-gray-200'
+                    ? 'border-2 border-v-border'
                     : ''
                 }`}
                 style={{ borderRadius: theme.borderRadius || '0.5rem' }}
               >
                 <h4 className="font-semibold mb-2">Card Example</h4>
-                <p className="text-sm text-gray-600 dark:text-gray-400">
+                <p className="text-sm text-v-text-secondary">
                   This shows how cards will look with your selected style settings.
                 </p>
               </div>
@@ -388,6 +402,7 @@ export default function FrontPageThemeCustomizer({
           </Card>
         )}
       </div>
+      <ConfirmDialog />
     </div>
   );
 }

@@ -218,10 +218,10 @@ export default function SchedulingConfiguration({
           <div className="flex items-start space-x-3">
             <Sparkles className="w-5 h-5 text-blue-600 mt-0.5 flex-shrink-0" />
             <div className="flex-1">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+              <h3 className="text-lg font-semibold text-v-text-primary mb-2">
                 Recommended Configuration
               </h3>
-              <p className="text-sm text-gray-700 dark:text-gray-300 mb-3">
+              <p className="text-sm text-v-text-secondary mb-3">
                 {recommendation.description}
               </p>
               <div className="space-y-2">
@@ -232,8 +232,8 @@ export default function SchedulingConfiguration({
                 </div>
                 {recommendation.rationale && recommendation.rationale.length > 0 && (
                   <div className="mt-3 space-y-1">
-                    <p className="text-xs font-medium text-gray-600 dark:text-gray-400">Why this configuration:</p>
-                    <ul className="text-xs text-gray-600 dark:text-gray-400 space-y-1 ml-4 list-disc">
+                    <p className="text-xs font-medium text-v-text-secondary">Why this configuration:</p>
+                    <ul className="text-xs text-v-text-secondary space-y-1 ml-4 list-disc">
                       {recommendation.rationale.map((reason, idx) => (
                         <li key={idx}>{reason}</li>
                       ))}
@@ -242,8 +242,8 @@ export default function SchedulingConfiguration({
                 )}
               </div>
               {recommendation.defaultStations && recommendation.defaultStations.length > 0 && (
-                <div className="mt-4 p-3 bg-white dark:bg-slate-900 rounded-lg border border-blue-200">
-                  <p className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">Recommended Stations:</p>
+                <div className="mt-4 p-3 bg-v-surface rounded-lg border border-blue-200">
+                  <p className="text-xs font-medium text-v-text-secondary mb-2">Recommended Stations:</p>
                   <div className="flex flex-wrap gap-2">
                     {recommendation.defaultStations.map((station, idx) => (
                       <div key={idx} title={station.description}>
@@ -280,8 +280,8 @@ export default function SchedulingConfiguration({
       <Card className="p-6">
         <div className="flex items-center justify-between mb-4">
           <div>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Scheduling Mode</h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+            <h3 className="text-lg font-semibold text-v-text-primary">Scheduling Mode</h3>
+            <p className="text-sm text-v-text-secondary mt-1">
               Select the scheduling mode that best fits your business type
             </p>
           </div>
@@ -301,13 +301,13 @@ export default function SchedulingConfiguration({
                 className={`p-4 text-left rounded-lg border-2 transition-all ${
                   isSelected
                     ? 'border-blue-500 bg-blue-50'
-                    : 'border-gray-200 hover:border-gray-300'
+                    : 'border-v-border hover:border-v-border'
                 } ${!canManage ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
               >
                 <div className="flex items-start justify-between mb-2">
                   <div className="flex-1">
                     <div className="flex items-center space-x-2">
-                      <span className="font-medium text-gray-900 dark:text-gray-100">{mode.label}</span>
+                      <span className="font-medium text-v-text-primary">{mode.label}</span>
                       {isRecommendedMode && (
                         <Badge color="blue" size="sm">Recommended</Badge>
                       )}
@@ -315,7 +315,7 @@ export default function SchedulingConfiguration({
                         <CheckCircle className="w-5 h-5 text-blue-600" />
                       )}
                     </div>
-                    <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">{mode.description}</p>
+                    <p className="text-xs text-v-text-secondary mt-1">{mode.description}</p>
                   </div>
                 </div>
               </button>
@@ -327,8 +327,8 @@ export default function SchedulingConfiguration({
       {/* Scheduling Strategy Selection */}
       <Card className="p-6">
         <div className="mb-4">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Scheduling Strategy</h3>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+          <h3 className="text-lg font-semibold text-v-text-primary">Scheduling Strategy</h3>
+          <p className="text-sm text-v-text-secondary mt-1">
             Choose how schedules should be generated and optimized
           </p>
         </div>
@@ -346,13 +346,13 @@ export default function SchedulingConfiguration({
                 className={`p-4 text-left rounded-lg border-2 transition-all ${
                   isSelected
                     ? 'border-blue-500 bg-blue-50'
-                    : 'border-gray-200 hover:border-gray-300'
+                    : 'border-v-border hover:border-v-border'
                 } ${!canManage ? 'cursor-not-allowed opacity-50' : 'cursor-pointer'}`}
               >
                 <div className="flex items-start justify-between mb-2">
                   <div className="flex-1">
                     <div className="flex items-center space-x-2">
-                      <span className="font-medium text-gray-900 dark:text-gray-100">{strategy.label}</span>
+                      <span className="font-medium text-v-text-primary">{strategy.label}</span>
                       {isRecommendedStrategy && (
                         <Badge color="blue" size="sm">Recommended</Badge>
                       )}
@@ -360,7 +360,7 @@ export default function SchedulingConfiguration({
                         <CheckCircle className="w-5 h-5 text-blue-600" />
                       )}
                     </div>
-                    <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">{strategy.description}</p>
+                    <p className="text-xs text-v-text-secondary mt-1">{strategy.description}</p>
                   </div>
                 </div>
               </button>
@@ -370,10 +370,10 @@ export default function SchedulingConfiguration({
       </Card>
 
       {/* Info Card */}
-      <Card className="p-4 bg-gray-50 dark:bg-slate-800 border-gray-200 dark:border-slate-700">
+      <Card className="p-4 bg-v-background border-v-border">
         <div className="flex items-start space-x-3">
-          <Info className="w-5 h-5 text-gray-600 dark:text-gray-400 mt-0.5 flex-shrink-0" />
-          <div className="text-sm text-gray-700 dark:text-gray-300">
+          <Info className="w-5 h-5 text-v-text-secondary mt-0.5 flex-shrink-0" />
+          <div className="text-sm text-v-text-secondary">
             <p className="font-medium mb-1">About Scheduling Configuration</p>
             <ul className="space-y-1 ml-4 list-disc text-xs">
               <li>The scheduling mode determines the layout and station structure</li>
@@ -412,50 +412,50 @@ export default function SchedulingConfiguration({
 
       {/* Preferences Form */}
       <Card className="p-6">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Schedule Display Preferences</h3>
+        <h3 className="text-lg font-semibold text-v-text-primary mb-4">Schedule Display Preferences</h3>
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
+            <label className="block text-sm font-medium text-v-text-primary mb-1">
               Default View Preference
             </label>
             <select
               value={preferences.viewPreference}
               onChange={(e) => setPreferences({ ...preferences, viewPreference: e.target.value as typeof preferences.viewPreference })}
               disabled={!canManage}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md text-gray-900 dark:text-gray-100 bg-white dark:bg-slate-900 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full px-3 py-2 border border-v-border rounded-md text-v-text-primary bg-v-surface disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <option value="weekly">Weekly (7 days)</option>
               <option value="two_weeks">Two Weeks (14 days)</option>
               <option value="monthly">Monthly (30 days)</option>
             </select>
-            <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">How many days to show in the schedule view by default</p>
+            <p className="text-xs text-v-text-secondary mt-1">How many days to show in the schedule view by default</p>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
+            <label className="block text-sm font-medium text-v-text-primary mb-1">
               Week Starts On
             </label>
             <select
               value={preferences.weekStartDay}
               onChange={(e) => setPreferences({ ...preferences, weekStartDay: e.target.value as typeof preferences.weekStartDay })}
               disabled={!canManage}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md text-gray-900 dark:text-gray-100 bg-white dark:bg-slate-900 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full px-3 py-2 border border-v-border rounded-md text-v-text-primary bg-v-surface disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <option value="monday">Monday</option>
               <option value="sunday">Sunday</option>
             </select>
-            <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">First day of the week for schedule display</p>
+            <p className="text-xs text-v-text-secondary mt-1">First day of the week for schedule display</p>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
+            <label className="block text-sm font-medium text-v-text-primary mb-1">
               Default Timezone
             </label>
             <select
               value={preferences.defaultTimezone}
               onChange={(e) => setPreferences({ ...preferences, defaultTimezone: e.target.value })}
               disabled={!canManage}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md text-gray-900 dark:text-gray-100 bg-white dark:bg-slate-900 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full px-3 py-2 border border-v-border rounded-md text-v-text-primary bg-v-surface disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {COMMON_TIMEZONES.map((tz) => (
                 <option key={tz.value} value={tz.value}>
@@ -463,13 +463,13 @@ export default function SchedulingConfiguration({
                 </option>
               ))}
             </select>
-            <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+            <p className="text-xs text-v-text-secondary mt-1">
               Default timezone for schedules. Individual schedules can override this if your business has multiple locations.
             </p>
           </div>
 
           <div>
-            <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
+            <label className="block text-sm font-medium text-v-text-primary mb-1">
               Default Schedule Duration (days)
             </label>
             <Input
@@ -486,20 +486,20 @@ export default function SchedulingConfiguration({
               disabled={!canManage}
               placeholder="7"
             />
-            <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+            <p className="text-xs text-v-text-secondary mt-1">
               Default number of days for new schedules (typically 7 for weekly, 14 for biweekly)
             </p>
           </div>
 
-          <div className="border-t border-gray-200 dark:border-slate-700 pt-4">
-            <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 mb-3">Operating Hours for Shift Coverage</h4>
-            <p className="text-xs text-gray-600 dark:text-gray-400 mb-4">
+          <div className="border-t border-v-border pt-4">
+            <h4 className="text-sm font-semibold text-v-text-primary mb-3">Operating Hours for Shift Coverage</h4>
+            <p className="text-xs text-v-text-secondary mb-4">
               Set the time range that will be displayed in the schedule builder day view. This determines when shifts can be scheduled.
             </p>
             
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
+                <label className="block text-sm font-medium text-v-text-primary mb-1">
                   Start Hour
                 </label>
                 <Input
@@ -516,13 +516,13 @@ export default function SchedulingConfiguration({
                   disabled={!canManage}
                   placeholder="6"
                 />
-                <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                <p className="text-xs text-v-text-secondary mt-1">
                   Hour of day to start showing shifts (0-23, e.g., 6 for 6 AM)
                 </p>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
+                <label className="block text-sm font-medium text-v-text-primary mb-1">
                   End Hour
                 </label>
                 <Input
@@ -539,13 +539,13 @@ export default function SchedulingConfiguration({
                   disabled={!canManage}
                   placeholder="24"
                 />
-                <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                <p className="text-xs text-v-text-secondary mt-1">
                   Hour of day to stop showing shifts (1-24, e.g., 24 for midnight)
                 </p>
               </div>
             </div>
             <div className="mt-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
-              <p className="text-xs text-gray-700 dark:text-gray-300">
+              <p className="text-xs text-v-text-secondary">
                 <strong>Example:</strong> Start: 6, End: 24 will show shifts from 6:00 AM to 12:00 AM (midnight).
                 This setting controls the time range visible in the day view of the schedule builder.
               </p>

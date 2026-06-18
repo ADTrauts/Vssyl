@@ -105,15 +105,15 @@ export default function CompanyStatsWidget({ businessId, settings, theme }: Widg
           return (
             <div
               key={index}
-              className="p-4 rounded-lg border border-gray-200 dark:border-slate-700 hover:border-gray-300 dark:border-slate-600 transition-colors"
+              className="p-4 rounded-lg border border-v-border hover:border-v-border transition-colors"
             >
               <div className="flex items-center space-x-3 mb-2">
                 <div className={`p-2 ${item.bgColor} rounded-lg`}>
                   <Icon className={`w-5 h-5 ${item.textColor}`} />
                 </div>
               </div>
-              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{item.value}</p>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{item.label}</p>
+              <p className="text-2xl font-bold text-v-text-primary">{item.value}</p>
+              <p className="text-sm text-v-text-secondary mt-1">{item.label}</p>
             </div>
           );
         })}

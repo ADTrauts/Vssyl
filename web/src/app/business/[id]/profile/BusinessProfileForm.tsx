@@ -52,7 +52,7 @@ const SIZE_OPTIONS = [
 function FormGroup({ label, children, required }: { label: string; children: React.ReactNode; required?: boolean }) {
   return (
     <div className="space-y-1">
-      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+      <label className="block text-sm font-medium text-v-text-secondary">
         {label} {required && <span className="text-red-500">*</span>}
       </label>
       {children}
@@ -129,7 +129,7 @@ export function BusinessProfileForm({ business, onUpdate, canEdit }: BusinessPro
       <Card>
         <div className="p-6">
           <div className="flex items-center justify-between mb-6">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Business Profile</h2>
+            <h2 className="text-xl font-semibold text-v-text-primary">Business Profile</h2>
             {canEdit && (
               <div className="flex gap-2">
                 {isEditing ? (
@@ -163,7 +163,7 @@ export function BusinessProfileForm({ business, onUpdate, canEdit }: BusinessPro
           <div className="space-y-6">
             {/* Basic Information */}
             <div>
-              <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Basic Information</h3>
+              <h3 className="text-lg font-medium text-v-text-primary mb-4">Basic Information</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormGroup label="Business Name" required>
                   <Input
@@ -193,7 +193,7 @@ export function BusinessProfileForm({ business, onUpdate, canEdit }: BusinessPro
                     value={formData.industry}
                     onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handleInputChange('industry', e.target.value)}
                     disabled={!isEditing}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-50 dark:bg-slate-800 disabled:text-gray-500 dark:text-gray-400"
+                    className="w-full px-3 py-2 border border-v-border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-v-background disabled:text-v-text-muted"
                   >
                     <option value="">Select industry</option>
                     {INDUSTRY_OPTIONS.map(industry => (
@@ -209,7 +209,7 @@ export function BusinessProfileForm({ business, onUpdate, canEdit }: BusinessPro
                     value={formData.size}
                     onChange={(e: React.ChangeEvent<HTMLSelectElement>) => handleInputChange('size', e.target.value)}
                     disabled={!isEditing}
-                    className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-gray-50 dark:bg-slate-800 disabled:text-gray-500 dark:text-gray-400"
+                    className="w-full px-3 py-2 border border-v-border rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent disabled:bg-v-background disabled:text-v-text-muted"
                   >
                     <option value="">Select size</option>
                     {SIZE_OPTIONS.map(size => (
@@ -224,7 +224,7 @@ export function BusinessProfileForm({ business, onUpdate, canEdit }: BusinessPro
 
             {/* Contact Information */}
             <div>
-              <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Contact Information</h3>
+              <h3 className="text-lg font-medium text-v-text-primary mb-4">Contact Information</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <FormGroup label="Website">
                   <Input
@@ -260,7 +260,7 @@ export function BusinessProfileForm({ business, onUpdate, canEdit }: BusinessPro
 
             {/* Description */}
             <div>
-              <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Description</h3>
+              <h3 className="text-lg font-medium text-v-text-primary mb-4">Description</h3>
               <FormGroup label="About the Business">
                 <Textarea
                   value={formData.description}

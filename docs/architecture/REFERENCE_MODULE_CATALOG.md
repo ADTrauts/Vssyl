@@ -101,6 +101,46 @@ UX reference slots live under `docs/ux/audits/` per [`REFERENCE_MODULE_PROGRAM.m
 
 ---
 
+## Business Administration — Platform Capabilities With Findings (2026-06-18)
+
+**Not** a Reference Module #N integer. Platform capability references under subdomain certification — separate OC taxonomy from architecture Reference Modules #1–#5.
+
+| Field | Value |
+|-------|-------|
+| **Certification** | **LEVEL 3 CERTIFIED** (ratified & promoted 2026-06-18) |
+| **Prior certification** | LEVEL 3 CERTIFIED WITH FINDINGS (BA-3) — superseded at promotion |
+| **Gates** | G1–G9 **23/27 (~85%)** — G2/G3/G6/G8/G9 PASS |
+| **Open majors** | **0** |
+| **Open advisories** | **6** (+ BA-F-013 hygiene) — tracked; do not block certification |
+
+### Platform capabilities
+
+| # | Capability | Designation | Primary audit |
+|---|------------|-------------|---------------|
+| **OC-1** | Org Chart Identity & Structure | **Reference Platform Capability With Findings** | [BUSINESS_ADMINISTRATION_PROMOTION_REVIEW.md](../business-administration/BUSINESS_ADMINISTRATION_PROMOTION_REVIEW.md) |
+| **OC-2** | Permission Sets & Module Access | **Reference Platform Capability With Findings** | [BA_1C_IMPLEMENTATION_REPORT.md](../business-administration/BA_1C_IMPLEMENTATION_REPORT.md) |
+| **OC-3** | Approval Boundaries | **Reference Platform Capability With Findings** | [BA_4_APPROVAL_HIERARCHY_ARCHITECTURE.md](../business-administration/BA_4_APPROVAL_HIERARCHY_ARCHITECTURE.md) |
+
+### Qualifying reference areas
+
+| Area | What to copy | Key artifacts |
+|------|--------------|---------------|
+| Org chart structure (#OC-1) | Thin routes; named services; PE dual; activity + domain events | `orgChartService`, `orgChartPolicyDual`, `orgChartActivityService` |
+| Permission sets (#OC-2) | Catalog vs PE dual layer; module access gating | `permissionService`, `PermissionManager.tsx` |
+| Approval boundaries (#OC-3) | Hierarchy CRUD; chain resolution; platform consumer API | `approvalHierarchyService`, `/api/org-chart/approval-hierarchy/*` |
+| Business profile (#OC-annex) | Service extraction; config realtime | `businessProfileService`, `businessConfigRealtimeService` |
+
+### What this designation is NOT
+
+- Not Level 4 Reference Implementation (File Hub only)
+- Not a Reference Module #N integer
+- Not Reference Domain (Business Operations program)
+- Not plain Reference Platform Capability (open advisories remain)
+
+**Governance records:** [BUSINESS_ADMINISTRATION_REFERENCE_STATUS_RECORD.md](../business-administration/BUSINESS_ADMINISTRATION_REFERENCE_STATUS_RECORD.md), [BUSINESS_ADMINISTRATION_CERTIFICATION_PROMOTION_RECORD.md](../business-administration/BUSINESS_ADMINISTRATION_CERTIFICATION_PROMOTION_RECORD.md), [BUSINESS_ADMINISTRATION_COUNCIL_RATIFICATION.md](../business-administration/BUSINESS_ADMINISTRATION_COUNCIL_RATIFICATION.md)
+
+---
+
 ## File Hub — Reference Module #1 (Level 4)
 
 **Copy for:** Any module with user data, deletes, sharing, search, or cross-module links.
@@ -416,4 +456,4 @@ Use this catalog when filling **“reference module pattern to copy”** columns
 
 ---
 
-*Last updated: 2026-06-14 (Inaugural Reference Workspace Registration — Approved with Findings)*
+*Last updated: 2026-06-18 (Business Administration L3 promotion; #OC-1/#OC-2/#OC-3 Reference Platform Capabilities With Findings)*

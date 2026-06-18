@@ -20,6 +20,8 @@ import {
   ArrowLeft
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import { useConfirm } from 'shared/hooks/useConfirm';
+import { BusinessAdminEmptyState } from '@/components/business/BusinessAdminEmptyState';
 import { getInstalledModules, getMarketplaceModules, installModule, uninstallModule } from '@/api/modules';
 import { businessAPI } from '@/api/business';
 
@@ -55,6 +57,7 @@ export default function BusinessModulesPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const { data: session } = useSession();
+  const { confirm, ConfirmDialog } = useConfirm();
   const businessId = params?.id as string;
 
   const [business, setBusiness] = useState<Business | null>(null);
@@ -230,7 +233,13 @@ export default function BusinessModulesPage() {
       return;
     }
 
-    if (!confirm('Are you sure you want to uninstall this module? This will remove it for all employees.')) {
+    const ok = await confirm({
+      title: 'Uninstall module?',
+      description: 'This will remove the module for all employees in your business.',
+      variant: 'destructive',
+      confirmLabel: 'Uninstall',
+    });
+    if (!ok) {
       return;
     }
 
@@ -312,9 +321,9 @@ export default function BusinessModulesPage() {
   const categories = getCategories();
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-slate-800">
+    <div className="min-h-screen bg-v-background">
       {/* Header */}
-      <div className="bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-700">
+      <div className="bg-v-surface border-b border-v-border">
         <div className="container mx-auto px-6 py-6">
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-4">
@@ -328,8 +337,8 @@ export default function BusinessModulesPage() {
               </Button>
               <div className="h-6 w-px bg-gray-300" />
               <div>
-                <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Module Management</h1>
-                <p className="text-sm text-gray-600 dark:text-gray-400">{business.name}</p>
+                <h1 className="text-2xl font-bold text-v-text-primary">Module Management</h1>
+                <p className="text-sm text-v-text-secondary">{business.name}</p>
               </div>
             </div>
             <div className="flex items-center space-x-3">
@@ -356,7 +365,7 @@ export default function BusinessModulesPage() {
                 placeholder="Search modules..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="w-full pl-10 pr-4 py-2 border border-v-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               />
             </div>
 
@@ -366,7 +375,7 @@ export default function BusinessModulesPage() {
               <select
                 value={selectedCategory}
                 onChange={(e) => setSelectedCategory(e.target.value)}
-                className="px-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="px-4 py-2 border border-v-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 {categories.map(category => (
                   <option key={category} value={category}>
@@ -388,7 +397,7 @@ export default function BusinessModulesPage() {
             className={`px-4 py-2 rounded-lg font-medium transition-colors ${
               activeTab === 'installed'
                 ? 'bg-blue-500 text-white'
-                : 'bg-white text-gray-700 hover:bg-gray-100'
+                : 'bg-v-surface text-gray-700 hover:bg-v-surface'
             }`}
           >
             Installed Modules ({filteredInstalled.length})
@@ -401,7 +410,7 @@ export default function BusinessModulesPage() {
             className={`px-4 py-2 rounded-lg font-medium transition-colors ${
               activeTab === 'marketplace'
                 ? 'bg-blue-500 text-white'
-                : 'bg-white text-gray-700 hover:bg-gray-100'
+                : 'bg-v-surface text-gray-700 hover:bg-v-surface'
             }`}
           >
             Marketplace ({filteredAvailable.length})
@@ -413,17 +422,15 @@ export default function BusinessModulesPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredInstalled.length === 0 ? (
               <div className="col-span-full">
-                <Card className="p-12 text-center">
-                  <Package className="w-16 h-16 mx-auto mb-4 text-gray-400" />
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
-                    No modules found
-                  </h3>
-                  <p className="text-gray-600 dark:text-gray-400">
-                    {searchQuery || selectedCategory !== 'all'
-                      ? 'Try adjusting your search or filters'
-                      : 'Install modules from the marketplace to get started'}
-                  </p>
-                </Card>
+                <BusinessAdminEmptyState
+                  icon={<Package className="w-16 h-16" />}
+                  title="No modules found"
+                  description={
+                    searchQuery || selectedCategory !== 'all'
+                      ? 'Try adjusting your search or filters.'
+                      : 'Install modules from the marketplace to get started.'
+                  }
+                />
               </div>
             ) : (
               filteredInstalled.map(module => {
@@ -436,8 +443,8 @@ export default function BusinessModulesPage() {
                           <Package className="w-6 h-6 text-blue-600" />
                         </div>
                         <div>
-                          <h3 className="font-semibold text-gray-900 dark:text-gray-100">{module.name}</h3>
-                          <p className="text-sm text-gray-600 dark:text-gray-400">{module.version}</p>
+                          <h3 className="font-semibold text-v-text-primary">{module.name}</h3>
+                          <p className="text-sm text-v-text-secondary">{module.version}</p>
                         </div>
                       </div>
                       {isCoreModule && (
@@ -445,11 +452,11 @@ export default function BusinessModulesPage() {
                       )}
                     </div>
 
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-4 line-clamp-2">
+                    <p className="text-sm text-v-text-secondary mb-4 line-clamp-2">
                       {module.description}
                     </p>
 
-                    <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400 mb-4">
+                    <div className="flex items-center justify-between text-sm text-v-text-muted mb-4">
                       <span className="flex items-center">
                         <Star className="w-4 h-4 text-yellow-400 mr-1" />
                         {module.rating.toFixed(1)}
@@ -489,7 +496,7 @@ export default function BusinessModulesPage() {
                     </div>
 
                     {isCoreModule && (
-                      <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 text-center">
+                      <p className="text-xs text-v-text-muted mt-2 text-center">
                         Core module - cannot be uninstalled
                       </p>
                     )}
@@ -502,29 +509,27 @@ export default function BusinessModulesPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {filteredAvailable.length === 0 ? (
               <div className="col-span-full">
-                <Card className="p-12 text-center">
-                  <Package className="w-16 h-16 mx-auto mb-4 text-gray-400" />
-                  <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
-                    No modules found
-                  </h3>
-                  <p className="text-gray-600 dark:text-gray-400">
-                    {searchQuery || selectedCategory !== 'all'
-                      ? 'Try adjusting your search or filters'
-                      : 'All available modules are already installed'}
-                  </p>
-                </Card>
+                <BusinessAdminEmptyState
+                  icon={<Package className="w-16 h-16" />}
+                  title="No modules found"
+                  description={
+                    searchQuery || selectedCategory !== 'all'
+                      ? 'Try adjusting your search or filters.'
+                      : 'All available modules are already installed.'
+                  }
+                />
               </div>
             ) : (
               filteredAvailable.map(module => (
                 <Card key={module.id} className="p-6 hover:shadow-lg transition-shadow">
                   <div className="flex items-start justify-between mb-4">
                     <div className="flex items-center space-x-3">
-                      <div className="w-12 h-12 bg-gray-100 dark:bg-slate-700 rounded-lg flex items-center justify-center">
-                        <Package className="w-6 h-6 text-gray-600 dark:text-gray-400" />
+                      <div className="w-12 h-12 bg-v-surface dark:bg-slate-700 rounded-lg flex items-center justify-center">
+                        <Package className="w-6 h-6 text-v-text-secondary" />
                       </div>
                       <div>
-                        <h3 className="font-semibold text-gray-900 dark:text-gray-100">{module.name}</h3>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">{module.version}</p>
+                        <h3 className="font-semibold text-v-text-primary">{module.name}</h3>
+                        <p className="text-sm text-v-text-secondary">{module.version}</p>
                       </div>
                     </div>
                     {module.pricingTier && module.pricingTier !== 'free' && (
@@ -534,11 +539,11 @@ export default function BusinessModulesPage() {
                     )}
                   </div>
 
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mb-4 line-clamp-2">
+                  <p className="text-sm text-v-text-secondary mb-4 line-clamp-2">
                     {module.description}
                   </p>
 
-                  <div className="flex items-center justify-between text-sm text-gray-500 dark:text-gray-400 mb-4">
+                  <div className="flex items-center justify-between text-sm text-v-text-muted mb-4">
                     <span className="flex items-center">
                       <Star className="w-4 h-4 text-yellow-400 mr-1" />
                       {module.rating.toFixed(1)}
@@ -547,7 +552,7 @@ export default function BusinessModulesPage() {
                       <Download className="w-4 h-4 mr-1" />
                       {module.downloads.toLocaleString()}
                     </span>
-                    <span className="text-xs text-gray-500 dark:text-gray-400">
+                    <span className="text-xs text-v-text-muted">
                       {module.category}
                     </span>
                   </div>
@@ -573,7 +578,7 @@ export default function BusinessModulesPage() {
                   </Button>
 
                   {module.basePrice && (
-                    <p className="text-xs text-gray-500 dark:text-gray-400 mt-2 text-center">
+                    <p className="text-xs text-v-text-muted mt-2 text-center">
                       ${module.basePrice}/month
                     </p>
                   )}
@@ -595,6 +600,7 @@ export default function BusinessModulesPage() {
           </Alert>
         </div>
       </div>
+      <ConfirmDialog />
     </div>
   );
 }

@@ -533,6 +533,17 @@ async function authorizeBusinessMemberCancelInvite(input: PolicyInput): Promise<
 }
 
 /**
+ * Bootstrap create — any authenticated user may create a business (founder flow).
+ */
+async function authorizeBusinessCreate(input: PolicyInput): Promise<PolicyDecision> {
+  const userId = resolveUserId(input);
+  if (!userId) {
+    return deny(input, 'INSUFFICIENT_ROLE');
+  }
+  return { allow: true, matchedPolicy: 'business_create_bootstrap' };
+}
+
+/**
  * Invitee accepts an invitation — actor must match invitation email (not admin/manage role).
  */
 async function authorizeBusinessMemberAcceptInvitation(input: PolicyInput): Promise<PolicyDecision> {
@@ -819,6 +830,14 @@ export async function authorize(input: PolicyInput): Promise<PolicyDecision> {
 
   if (action === POLICY_ACTIONS.BUSINESS_UPDATE) {
     return authorizeBusinessUpdate(input);
+  }
+
+  if (action === POLICY_ACTIONS.BUSINESS_CREATE) {
+    return authorizeBusinessCreate(input);
+  }
+
+  if (isOrgChartPolicyAction(action)) {
+    return authorizeOrgChartPolicy(input, action);
   }
 
   if (action === POLICY_ACTIONS.CHAT_CONVERSATION_CREATE) {
@@ -1668,6 +1687,25 @@ const WORKFORCE_COMMS_MEMBER_ACTIONS = new Set<string>([
   POLICY_ACTIONS.WORKFORCE_ACK_MANAGE,
 ]);
 
+const ORGCHART_MANAGE_ACTIONS = new Set<string>([
+  POLICY_ACTIONS.ORGCHART_TIER_WRITE,
+  POLICY_ACTIONS.ORGCHART_DEPARTMENT_WRITE,
+  POLICY_ACTIONS.ORGCHART_POSITION_WRITE,
+  POLICY_ACTIONS.ORGCHART_STRUCTURE_INITIALIZE,
+  POLICY_ACTIONS.ORGCHART_PERMISSION_SET_WRITE,
+  POLICY_ACTIONS.ORGCHART_EMPLOYEE_ASSIGN,
+  POLICY_ACTIONS.ORGCHART_APPROVAL_HIERARCHY_WRITE,
+]);
+
+const ORGCHART_READ_ACTIONS = new Set<string>([
+  POLICY_ACTIONS.ORGCHART_PERMISSION_READ,
+  POLICY_ACTIONS.ORGCHART_APPROVAL_HIERARCHY_READ,
+]);
+
+function isOrgChartPolicyAction(action: string): boolean {
+  return ORGCHART_MANAGE_ACTIONS.has(action) || ORGCHART_READ_ACTIONS.has(action);
+}
+
 function isSchedulingPolicyAction(action: string): boolean {
   return (
     SCHEDULING_ADMIN_ACTIONS.has(action) ||
@@ -1744,6 +1782,23 @@ async function authorizeSchedulingPolicy(
   }
 
   return { allow: true, matchedPolicy: 'scheduling_admin' };
+}
+
+async function authorizeOrgChartPolicy(
+  input: PolicyInput,
+  action: string
+): Promise<PolicyDecision> {
+  const businessId = resolveBusinessIdFromInput(input);
+  if (!businessId) {
+    return deny(input, 'POLICY_NOT_IMPLEMENTED');
+  }
+
+  if (ORGCHART_READ_ACTIONS.has(action)) {
+    return authorizeActiveBusinessMember(input, businessId, action.replace(':', '_'));
+  }
+
+  const matchedPolicy = action.replace(':', '_');
+  return authorizeBusinessMemberManagement(input, 'manage', matchedPolicy);
 }
 
 async function authorizeHRPolicy(input: PolicyInput, action: string): Promise<PolicyDecision> {

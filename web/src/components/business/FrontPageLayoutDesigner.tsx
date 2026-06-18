@@ -112,7 +112,7 @@ function SortableWidget({ widget, onEdit, onDelete, onToggleVisibility, onResize
       style={style}
       className={`${getSizeClass()} ${!widget.visible ? 'opacity-50' : ''}`}
     >
-      <Card className={`p-4 h-full border-2 ${isDragging ? 'border-blue-500' : 'border-gray-200'} hover:border-blue-400 transition-colors`}>
+      <Card className={`p-4 h-full border-2 ${isDragging ? 'border-blue-500' : 'border-v-border'} hover:border-blue-400 transition-colors`}>
         {/* Header */}
         <div className="flex items-start justify-between mb-3">
           <div className="flex items-center space-x-2 flex-1">
@@ -125,9 +125,9 @@ function SortableWidget({ widget, onEdit, onDelete, onToggleVisibility, onResize
             </div>
             <span className="text-2xl">{getWidgetIcon(widget.widgetType)}</span>
             <div className="flex-1">
-              <h4 className="font-semibold text-sm text-gray-900 dark:text-gray-100">{widget.title}</h4>
+              <h4 className="font-semibold text-sm text-v-text-primary">{widget.title}</h4>
               {widget.description && (
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{widget.description}</p>
+                <p className="text-xs text-v-text-muted mt-0.5">{widget.description}</p>
               )}
             </div>
           </div>
@@ -135,11 +135,11 @@ function SortableWidget({ widget, onEdit, onDelete, onToggleVisibility, onResize
           {/* Visibility Toggle */}
           <button
             onClick={onToggleVisibility}
-            className="p-1 hover:bg-gray-100 dark:hover:bg-slate-800 dark:bg-slate-700 rounded"
+            className="p-1 hover:bg-v-surface dark:hover:bg-slate-800 dark:bg-slate-700 rounded"
             title={widget.visible ? 'Hide widget' : 'Show widget'}
           >
             {widget.visible ? (
-              <Eye className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+              <Eye className="w-4 h-4 text-v-text-secondary" />
             ) : (
               <EyeOff className="w-4 h-4 text-gray-400" />
             )}
@@ -155,19 +155,19 @@ function SortableWidget({ widget, onEdit, onDelete, onToggleVisibility, onResize
 
         {/* Permissions Info */}
         {widget.visibility && (
-          <div className="mb-3 p-2 bg-gray-50 dark:bg-slate-800 rounded text-xs">
-            <div className="font-medium text-gray-700 dark:text-gray-300 mb-1">Visible to:</div>
+          <div className="mb-3 p-2 bg-v-background rounded text-xs">
+            <div className="font-medium text-v-text-secondary mb-1">Visible to:</div>
             {widget.visibility.visibleToRoles && widget.visibility.visibleToRoles.length > 0 && (
-              <div className="text-gray-600 dark:text-gray-400">Roles: {widget.visibility.visibleToRoles.join(', ')}</div>
+              <div className="text-v-text-secondary">Roles: {widget.visibility.visibleToRoles.join(', ')}</div>
             )}
             {widget.visibility.visibleToTiers && widget.visibility.visibleToTiers.length > 0 && (
-              <div className="text-gray-600 dark:text-gray-400">Tiers: {widget.visibility.visibleToTiers.join(', ')}</div>
+              <div className="text-v-text-secondary">Tiers: {widget.visibility.visibleToTiers.join(', ')}</div>
             )}
             {widget.visibility.visibleToPositions && widget.visibility.visibleToPositions.length > 0 && (
-              <div className="text-gray-600 dark:text-gray-400">Positions: {widget.visibility.visibleToPositions.join(', ')}</div>
+              <div className="text-v-text-secondary">Positions: {widget.visibility.visibleToPositions.join(', ')}</div>
             )}
             {widget.visibility.visibleToDepartments && widget.visibility.visibleToDepartments.length > 0 && (
-              <div className="text-gray-600 dark:text-gray-400">Depts: {widget.visibility.visibleToDepartments.join(', ')}</div>
+              <div className="text-v-text-secondary">Depts: {widget.visibility.visibleToDepartments.join(', ')}</div>
             )}
           </div>
         )}
@@ -178,21 +178,21 @@ function SortableWidget({ widget, onEdit, onDelete, onToggleVisibility, onResize
           <div className="flex items-center space-x-1">
             <button
               onClick={() => onResize('small')}
-              className={`p-1 rounded hover:bg-gray-100 ${widget.position.width <= 4 ? 'bg-blue-100' : ''}`}
+              className={`p-1 rounded hover:bg-v-surface ${widget.position.width <= 4 ? 'bg-blue-100' : ''}`}
               title="Small (1/3 width)"
             >
               <Minimize2 className="w-3 h-3" />
             </button>
             <button
               onClick={() => onResize('medium')}
-              className={`p-1 rounded hover:bg-gray-100 ${widget.position.width > 4 && widget.position.width <= 8 ? 'bg-blue-100' : ''}`}
+              className={`p-1 rounded hover:bg-v-surface ${widget.position.width > 4 && widget.position.width <= 8 ? 'bg-blue-100' : ''}`}
               title="Medium (2/3 width)"
             >
               <Grid className="w-3 h-3" />
             </button>
             <button
               onClick={() => onResize('large')}
-              className={`p-1 rounded hover:bg-gray-100 ${widget.position.width > 8 ? 'bg-blue-100' : ''}`}
+              className={`p-1 rounded hover:bg-v-surface ${widget.position.width > 8 ? 'bg-blue-100' : ''}`}
               title="Large (full width)"
             >
               <Maximize2 className="w-3 h-3" />
@@ -295,8 +295,8 @@ export default function FrontPageLayoutDesigner({
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div>
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Layout Designer</h3>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+          <h3 className="text-lg font-semibold text-v-text-primary">Layout Designer</h3>
+          <p className="text-sm text-v-text-secondary mt-1">
             Drag to reorder, resize widgets, and control visibility
           </p>
         </div>
@@ -343,10 +343,10 @@ export default function FrontPageLayoutDesigner({
 
       {/* Empty State */}
       {widgets.length === 0 && (
-        <div className="text-center py-12 bg-gray-50 dark:bg-slate-800 rounded-lg border-2 border-dashed border-gray-300 dark:border-slate-600">
+        <div className="text-center py-12 bg-v-background rounded-lg border-2 border-dashed border-v-border">
           <Grid className="w-12 h-12 text-gray-400 mx-auto mb-3" />
-          <h4 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">No widgets yet</h4>
-          <p className="text-gray-600 dark:text-gray-400 mb-4">Add your first widget to get started</p>
+          <h4 className="text-lg font-medium text-v-text-primary mb-2">No widgets yet</h4>
+          <p className="text-v-text-secondary mb-4">Add your first widget to get started</p>
           <Button onClick={onAddWidget} className="flex items-center space-x-2 mx-auto">
             <Plus className="w-4 h-4" />
             <span>Add Widget</span>

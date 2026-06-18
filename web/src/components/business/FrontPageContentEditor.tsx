@@ -48,8 +48,8 @@ export default function FrontPageContentEditor({
               <MessageSquare className="w-5 h-5 text-purple-600" />
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Welcome Message</h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Greeting shown when employees open the front page</p>
+              <h3 className="text-lg font-semibold text-v-text-primary">Welcome Message</h3>
+              <p className="text-sm text-v-text-secondary">Greeting shown when employees open the front page</p>
             </div>
           </div>
 
@@ -75,8 +75,8 @@ export default function FrontPageContentEditor({
               <ImageIcon className="w-5 h-5 text-green-600" />
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Hero Image</h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Background or banner image for the front page</p>
+              <h3 className="text-lg font-semibold text-v-text-primary">Hero Image</h3>
+              <p className="text-sm text-v-text-secondary">Background or banner image for the front page</p>
             </div>
           </div>
 
@@ -89,8 +89,8 @@ export default function FrontPageContentEditor({
 
           {content.heroImage && (
             <div className="mt-4">
-              <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Preview:</p>
-              <div className="relative w-full h-40 bg-gray-100 dark:bg-slate-700 rounded-lg overflow-hidden">
+              <p className="text-sm font-medium text-v-text-secondary mb-2">Preview:</p>
+              <div className="relative w-full h-40 bg-v-surface dark:bg-slate-700 rounded-lg overflow-hidden">
                 <img
                   src={content.heroImage}
                   alt="Hero"
@@ -111,13 +111,13 @@ export default function FrontPageContentEditor({
               <AlertCircle className="w-5 h-5 text-orange-600" />
             </div>
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Company Announcements</h3>
-              <p className="text-sm text-gray-600 dark:text-gray-400">
+              <h3 className="text-lg font-semibold text-v-text-primary">Company Announcements</h3>
+              <p className="text-sm text-v-text-secondary">
                 Announcements are published from Workforce Communications. Enable &quot;Show on front page&quot; when composing.
               </p>
             </div>
           </div>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+          <p className="text-sm text-v-text-secondary mb-4">
             Legacy inline announcements in front-page config are no longer edited here.
             {content.companyAnnouncements && content.companyAnnouncements.length > 0 && (
               <span className="block mt-2 text-amber-800">

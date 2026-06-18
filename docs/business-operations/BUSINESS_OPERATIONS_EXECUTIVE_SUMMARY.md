@@ -1,105 +1,154 @@
 # Business Operations Executive Summary
 
-**Audience:** Executive leadership, Architecture Council, Product  
-**Date:** 2026-06-14  
-**Program:** Business Operations Architecture Council Ratification + Program Closeout
+**Audience:** Executive leadership, Architecture Council, Platform Engineering  
+**Date:** 2026-06-18  
+**Program:** Business Operations Phase 0B — Domain Reality Assessment & Certification Planning  
+**Status:** Assessment complete — no implementation; no ledger updates
+
+**Entry point for detail:** [BUSINESS_OPERATIONS_REALITY_ASSESSMENT.md](./BUSINESS_OPERATIONS_REALITY_ASSESSMENT.md)
 
 ---
 
 ## Bottom line
 
-The Architecture Council **ratifies** certification for all three Business Operations product modules:
+Business Operations is a **platform enterprise domain** composed of **three built-in modules** — Scheduling, HR, and Workforce Communications — connected by org-chart identity and shared integration bridges. The domain has **substantial operational maturity** but is **NOT READY** for domain-level certification review or Reference Domain designation.
 
-- **HR** — Level 3 Certified With Findings + Reference Candidate #1 (Workforce Lifecycle)
-- **Scheduling** — Level 3 Certified With Findings + Reference Candidate #6 (Planning)
-- **Workforce Communications** — Level 3 Certified + Reference Candidate #7 (Broadcast & Acknowledgement)
+Phase 0B establishes the assessment baseline Admin Portal used: reality inventory, findings register, G1–G9 gate framework, ownership model, service boundaries, reference comparison, and modernization sequence. **Zero blocking findings** exist at domain gate; **10 major findings** (7 module + 3 domain) and **19 advisory** items require tracked closure before reference review.
 
-The **Business Operations modernization initiative is officially complete** for its trilogy scope. Zero certification blockers remain. Seven major findings across HR and Scheduling enter a **90-day tracked remediation plan**; Workforce Communications carries four advisory hygiene items only.
-
-**Ledger update is approved** (apply via Platform Engineering PR). **Analytics is not started** and is not authorized by this ratification.
+**Recommended next step:** **Package BO-1A — Domain Findings Closure & Integration Contracts** (planning charter only).
 
 ---
 
-## What the council decided
+## What Business Operations is
 
-| Question | Decision |
-|----------|----------|
-| HR ratified? | **YES** — L3 WITH FINDINGS |
-| Scheduling ratified? | **YES** — L3 WITH FINDINGS |
-| Workforce Communications ratified? | **YES** — L3 Certified |
-| Reference Candidates approved? | **HR #1, Scheduling #6, WC #7** |
-| Ledger update approved? | **YES** |
-| 90-day findings plan approved? | **YES** (deadline 2026-09-12) |
-| BO modernization complete? | **YES** |
-| Reference Implementation (L4)? | **NO** — File Hub only |
+| Question | Answer |
+|----------|--------|
+| Single module? | **No** — three modules (`scheduling`, `hr`, `workforce_comms`) |
+| Platform domain? | **Yes** — hybrid model: independent modules + shared integration layer |
+| Control plane? | **No** — tenant-scoped business workspace surfaces |
+| Admin Portal analog? | **No** — product domain, not platform-operator console |
 
 ---
 
-## Why this matters
+## Surface area (re-verified 2026-06-18)
 
-Business Operations began as three fragmented pillars with constitutional debt (fat controllers, missing platform adoption, no broadcast owner). The program delivered:
-
-1. **Platform citizenship** — Activity, notifications, Policy Engine, Global Trash, V-Link, and domain events for HR and Scheduling
-2. **A new domain** — Workforce Communications owns operational broadcast, audience, acknowledgement, and reporting (Phases A–G)
-3. **Governed boundaries** — Chat, Notifications, HR, and Scheduling ownership preserved
-4. **Certification truth** — Ledger rows, findings registers, and operation matrices replace planning-era assumptions
-
-Workforce Communications completes the **communications triad**: HR owns workforce lifecycle workflows, Scheduling owns planning and shift operations, WC owns broadcast distribution and compliance.
-
----
-
-## Findings and risk posture
-
-| Risk class | Count | Impact |
-|------------|-------|--------|
-| Certification blockers | **0** | None |
-| Major findings (90-day) | **7** | HR 3 + Scheduling 4 — tracked, not blocking |
-| Advisory findings | **15** | Hygiene and deferred features |
-| WC major findings | **0** | F-WC-001..005 closed in Phase G |
-
-The 90-day plan targets operation matrices, AI context service extraction, and Policy Engine coverage gaps — the same class of debt Calendar and Chat accepted at Level 3 with findings.
+| Layer | Count |
+|-------|-------|
+| Express route handlers | **151** (60 scheduling + 32 workforce-comms + 59 HR) |
+| Backend services | **54** primary (21 + 18 + 15) |
+| Controller files | **15** |
+| Prisma module models | **29+** (8 scheduling + 9 WC + HR sets) |
+| Frontend components | **61** (18 + 18 + 25) |
+| App pages | **16** |
+| WebSocket | Scheduling only (4 broadcast events) |
+| AI context providers | **8** (3 scheduling + 2 WC + HR) |
+| Policy Engine actions | **18+** across modules |
 
 ---
 
-## Reference candidate value
+## Major findings
 
-| Candidate | Teaches the platform |
-|-----------|---------------------|
-| **#1 HR** | Org-chart lifecycle, multi-entity V-Link, HR↔Scheduling bridges |
-| **#6 Scheduling** | Planning domain split, publish facade, domain events at scale |
-| **#7 WC** | Broadcast + ack compliance, full PE coverage, optional cross-module bridges |
+| ID | Theme | Severity |
+|----|-------|----------|
+| BO-F-D01 | Operation matrices not in `docs/architecture/audits/` | Domain major |
+| BO-F-D02 | HR↔Workforce Comms broadcast bridge unwired | Domain major |
+| BO-F-D03 | Scheduling AI manifest declares 8 actions; only 2 execute | Domain major |
+| F-SCH-004..007 | AI context Prisma, PE gaps, claim lifecycle, matrix path | Scheduling majors (4) |
+| F-HR-001..003 | PE read coverage, matrix path, AI context Prisma | HR majors (3) |
 
-None are Level 4 Reference Implementations. File Hub remains the sole platform constitution in code.
-
----
-
-## Immediate next steps
-
-| Priority | Action | Owner |
-|----------|--------|-------|
-| P0 | Apply [BUSINESS_OPERATIONS_LEDGER_FINAL_UPDATE.md](./BUSINESS_OPERATIONS_LEDGER_FINAL_UPDATE.md) to CERTIFICATION_LEDGER | Platform Engineering |
-| P1 | Open 7 major-finding tickets; start 90-day clock | Module owners |
-| P2 | Monthly council findings review | BO Program Steward |
+**Closed since Phase 0A:** Workforce Communications module shipped (32 routes); scheduling service extraction; domain events; manager team routes; constitutional services (activity, notifications, trash, V_Link).
 
 ---
 
-## Next major initiative (single recommendation)
+## Advisory findings (summary)
 
-**Business Operations Analytics (Stage 4)** — charter a separate program for G18 analytics surfaces, cross-module reporting, and scheduling/HR dashboard completion. Do not conflate with trilogy closeout or findings remediation.
+- Scheduling: analytics 501 trio, dashboard Prisma reads, no audit trail, search disabled
+- HR: API client consolidation, large controller, no `hr.*` domain events, partial audit
+- Workforce Comms: notification grouping, attachment activity, ack reminder job, matrix path
+- Domain: UX shell inconsistency, `hrScheduleService` naming, analytics deferral
 
-**Not authorized now:** Analytics implementation, new BO modules, constitutional redesign.
+Full register: [BUSINESS_OPERATIONS_FINDINGS_REGISTER.md](./BUSINESS_OPERATIONS_FINDINGS_REGISTER.md)
 
 ---
 
-## Document package
+## Certification posture (G1–G9)
 
-| # | Document |
-|---|----------|
-| 1 | [BUSINESS_OPERATIONS_COUNCIL_RATIFICATION.md](./BUSINESS_OPERATIONS_COUNCIL_RATIFICATION.md) |
-| 2 | [BUSINESS_OPERATIONS_LEDGER_FINAL_UPDATE.md](./BUSINESS_OPERATIONS_LEDGER_FINAL_UPDATE.md) |
-| 3 | [BUSINESS_OPERATIONS_REFERENCE_CANDIDATES.md](./BUSINESS_OPERATIONS_REFERENCE_CANDIDATES.md) |
-| 4 | [BUSINESS_OPERATIONS_FINDINGS_TRACKING_PLAN.md](./BUSINESS_OPERATIONS_FINDINGS_TRACKING_PLAN.md) |
-| 5 | [BUSINESS_OPERATIONS_PROGRAM_CLOSEOUT.md](./BUSINESS_OPERATIONS_PROGRAM_CLOSEOUT.md) |
-| 6 | This executive summary |
+| Gate | Score | Status |
+|------|-------|--------|
+| G1 Authorization | 2/3 | PARTIAL |
+| G2 Auditability | 2/3 | PARTIAL |
+| G3 Service boundaries | 2/3 | PASS WITH FINDINGS |
+| G4 API coherence | 2/3 | PASS WITH FINDINGS |
+| G5 Ownership | 3/3 | PASS |
+| G6 Test evidence | 2/3 | PARTIAL |
+| G7 Documentation | 2/3 | PARTIAL |
+| G8 Production safety | 1/3 | PARTIAL |
+| G9 UX consistency | 1/3 | **FAIL** |
+| **Total** | **17/27 (~63%)** | **NOT READY** |
 
-**Stop condition met.** Governance and closeout complete. No implementation. No ledger file edit. No Analytics start.
+Framework: [BUSINESS_OPERATIONS_CERTIFICATION_FRAMEWORK.md](./BUSINESS_OPERATIONS_CERTIFICATION_FRAMEWORK.md)
+
+| Target | Level |
+|--------|-------|
+| Current domain maturity | L2–L3 transition |
+| Likely path | **L3 WITH FINDINGS** at domain level after BO-1A |
+| Reference Domain | Candidate — not ready |
+| Reference Implementation | **Denied** — File Hub retains L4 |
+
+---
+
+## Reference assessment
+
+| Candidate | Verdict |
+|-----------|---------|
+| Reference Domain | **NOT READY** — integration + UX gaps |
+| Scheduling #6 (Planning) | WITH FINDINGS — close 4 majors |
+| HR #1 (Workforce Lifecycle) | WITH FINDINGS — close 3 majors |
+| Workforce Comms #7 (Broadcast) | **Strongest** — L3, advisory only |
+| BO AI control plane | **Not recommended** — module-local AI sufficient |
+
+Detail: [BUSINESS_OPERATIONS_REFERENCE_ASSESSMENT.md](./BUSINESS_OPERATIONS_REFERENCE_ASSESSMENT.md)
+
+---
+
+## Proposed modernization sequence
+
+| Order | Package | Focus |
+|-------|---------|-------|
+| ✅ | Phase 0B | Reality assessment (this program) |
+| **1** | **BO-1A** | Findings closure + integration contracts |
+| 2 | BO-1B | UX shell (ConfirmModal, tokens, EmptyState) |
+| 3 | BO-1C | Cross-module tests + bridge hardening |
+| 4 | BO-2 | Domain reference council review |
+| — | Stage 4 Analytics | **Deferred** — separate program |
+
+Detail: [BUSINESS_OPERATIONS_MODERNIZATION_ROADMAP.md](./BUSINESS_OPERATIONS_MODERNIZATION_ROADMAP.md)
+
+---
+
+## Files created (Phase 0B)
+
+| # | File |
+|---|------|
+| 1 | [BUSINESS_OPERATIONS_REALITY_ASSESSMENT.md](./BUSINESS_OPERATIONS_REALITY_ASSESSMENT.md) |
+| 2 | [BUSINESS_OPERATIONS_FINDINGS_REGISTER.md](./BUSINESS_OPERATIONS_FINDINGS_REGISTER.md) |
+| 3 | [BUSINESS_OPERATIONS_CERTIFICATION_FRAMEWORK.md](./BUSINESS_OPERATIONS_CERTIFICATION_FRAMEWORK.md) |
+| 4 | [BUSINESS_OPERATIONS_OWNERSHIP_MODEL.md](./BUSINESS_OPERATIONS_OWNERSHIP_MODEL.md) |
+| 5 | [BUSINESS_OPERATIONS_SERVICE_BOUNDARY_ANALYSIS.md](./BUSINESS_OPERATIONS_SERVICE_BOUNDARY_ANALYSIS.md) |
+| 6 | [BUSINESS_OPERATIONS_REFERENCE_ASSESSMENT.md](./BUSINESS_OPERATIONS_REFERENCE_ASSESSMENT.md) |
+| 7 | [BUSINESS_OPERATIONS_MODERNIZATION_ROADMAP.md](./BUSINESS_OPERATIONS_MODERNIZATION_ROADMAP.md) |
+| 8 | [BUSINESS_OPERATIONS_EXECUTIVE_SUMMARY.md](./BUSINESS_OPERATIONS_EXECUTIVE_SUMMARY.md) |
+
+**Phase 0A source material (not repeated):** [BUSINESS_OPERATIONS_CAPABILITY_MAP.md](./BUSINESS_OPERATIONS_CAPABILITY_MAP.md), [SCHEDULING_OPERATION_MATRIX.md](./SCHEDULING_OPERATION_MATRIX.md), [WORKFORCE_DOMAIN_BOUNDARY_ANALYSIS.md](./WORKFORCE_DOMAIN_BOUNDARY_ANALYSIS.md).
+
+---
+
+## Stop condition met
+
+- ✅ Assessment and planning complete
+- ✅ No implementation packages created (BO-1A recommended only)
+- ✅ No application code modified
+- ✅ No certification ledger updates
+- ✅ Findings and recommended next step returned
+
+**Next action:** Authorize **Package BO-1A** charter when ready to move from planning to implementation.

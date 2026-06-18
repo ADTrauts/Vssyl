@@ -4,13 +4,17 @@ import { BusinessRole } from '@prisma/client';
 
 export type OrgChartAccessLevel = 'member' | 'manage';
 
+export interface OrgChartPermissionRequest extends Request {
+  orgChartBusinessId?: string;
+}
+
 function getUserId(req: Request): string | undefined {
   const u = (req as { user?: { id: string } }).user;
   return u?.id;
 }
 
 async function checkBusinessAccess(
-  req: Request,
+  req: OrgChartPermissionRequest,
   res: Response,
   businessId: string,
   level: OrgChartAccessLevel
@@ -42,6 +46,7 @@ async function checkBusinessAccess(
     }
   }
 
+  req.orgChartBusinessId = businessId;
   return true;
 }
 
@@ -241,4 +246,50 @@ export async function requireManageForPermissionSetId(
   if (ok) {
     next();
   }
+}
+
+export async function requireManageForApprovalHierarchyId(
+  req: Request,
+  res: Response,
+  next: NextFunction
+): Promise<void> {
+  const id = req.params.id;
+  if (!id || typeof id !== 'string') {
+    res.status(400).json({ error: 'Invalid approval hierarchy id' });
+    return;
+  }
+  const row = await prisma.managerApprovalHierarchy.findUnique({
+    where: { id },
+    select: { businessId: true },
+  });
+  if (!row) {
+    res.status(404).json({ error: 'Approval hierarchy entry not found' });
+    return;
+  }
+  const ok = await checkBusinessAccess(req, res, row.businessId, 'manage');
+  if (ok) {
+    next();
+  }
+}
+
+export function requireMemberForApprovalHierarchyId() {
+  return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    const id = req.params.id;
+    if (!id || typeof id !== 'string') {
+      res.status(400).json({ error: 'Invalid approval hierarchy id' });
+      return;
+    }
+    const row = await prisma.managerApprovalHierarchy.findUnique({
+      where: { id },
+      select: { businessId: true },
+    });
+    if (!row) {
+      res.status(404).json({ error: 'Approval hierarchy entry not found' });
+      return;
+    }
+    const ok = await checkBusinessAccess(req, res, row.businessId, 'member');
+    if (ok) {
+      next();
+    }
+  };
 }

@@ -57,7 +57,7 @@ export default function QuickActionsWidget({ businessId, settings, theme }: Widg
       icon: Settings,
       onClick: () => router.push(`/business/${businessId}`),
       color: 'text-gray-600',
-      bgColor: 'bg-gray-100',
+      bgColor: 'bg-v-surface',
     },
   ];
 
@@ -82,12 +82,12 @@ export default function QuickActionsWidget({ businessId, settings, theme }: Widg
             >
               <div className="flex flex-col items-center space-y-2">
                 <div 
-                  className={`p-3 bg-white rounded-full shadow-sm`}
+                  className={`p-3 bg-v-surface rounded-full shadow-sm`}
                   style={{ color: theme?.primaryColor || action.color }}
                 >
                   <Icon className={`w-6 h-6`} />
                 </div>
-                <span className="text-xs font-medium text-gray-700 dark:text-gray-300 text-center">
+                <span className="text-xs font-medium text-v-text-secondary text-center">
                   {action.label}
                 </span>
               </div>

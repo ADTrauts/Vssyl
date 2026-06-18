@@ -211,7 +211,7 @@ export default function BusinessProfilePage() {
         <Card>
           <div className="text-center py-8">
             <h2 className="text-xl font-semibold text-red-600 mb-2">Error Loading Business</h2>
-            <p className="text-gray-600 dark:text-gray-400">{error}</p>
+            <p className="text-v-text-secondary">{error}</p>
             <Button onClick={loadBusinessData} className="mt-4">
               Try Again
             </Button>
@@ -226,8 +226,8 @@ export default function BusinessProfilePage() {
       <div className="container mx-auto px-4 py-8">
         <Card>
           <div className="text-center py-8">
-            <h2 className="text-xl font-semibold text-gray-600 dark:text-gray-400 mb-2">Business Not Found</h2>
-            <p className="text-gray-500 dark:text-gray-400">The business you're looking for doesn't exist or you don't have access to it.</p>
+            <h2 className="text-xl font-semibold text-v-text-secondary mb-2">Business Not Found</h2>
+            <p className="text-v-text-muted">The business you're looking for doesn't exist or you don't have access to it.</p>
           </div>
         </Card>
       </div>
@@ -242,9 +242,9 @@ export default function BusinessProfilePage() {
   const businessDashboardId = business.dashboards?.[0]?.id;
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden bg-gray-50 dark:bg-slate-800">
+    <div className="h-screen flex flex-col overflow-hidden bg-v-background">
       {/* Header Section - Fixed */}
-      <div className="flex-shrink-0 bg-white dark:bg-slate-900 border-b">
+      <div className="flex-shrink-0 bg-v-surface border-b">
         <div className="container mx-auto px-4 py-8">
           {/* Breadcrumb Navigation */}
           <div className="mb-6">
@@ -277,7 +277,7 @@ export default function BusinessProfilePage() {
               />
               <div>
                 <div className="flex items-center gap-2">
-                  <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">{business.name}</h1>
+                  <h1 className="text-3xl font-bold text-v-text-primary">{business.name}</h1>
                   <button
                     className="text-blue-600 text-sm hover:underline focus:outline-none"
                     onClick={() => setFollowersModalOpen(true)}
@@ -290,7 +290,7 @@ export default function BusinessProfilePage() {
                   <Badge color={business.einVerified ? 'green' : 'yellow'}>
                     {business.einVerified ? 'Verified' : 'Unverified'}
                   </Badge>
-                  <span className="text-gray-500 dark:text-gray-400">EIN: {business.ein}</span>
+                  <span className="text-v-text-muted">EIN: {business.ein}</span>
                 </div>
               </div>
             </div>
@@ -326,7 +326,7 @@ export default function BusinessProfilePage() {
           </div>
 
           {/* Tab Navigation */}
-          <div className="border-b border-gray-200 dark:border-slate-700">
+          <div className="border-b border-v-border">
             <nav className="-mb-px flex space-x-8">
               {[
                 { id: 'profile', label: 'Profile', icon: '🏢' },
@@ -340,7 +340,7 @@ export default function BusinessProfilePage() {
                   className={`py-2 px-1 border-b-2 font-medium text-sm ${
                     activeTab === tab.id
                       ? 'border-blue-500 text-blue-600'
-                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                      : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-v-border'
                   }`}
                 >
                   <span className="mr-2">{tab.icon}</span>
@@ -422,8 +422,8 @@ export default function BusinessProfilePage() {
             <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
               <span className="text-blue-600 text-2xl">👥</span>
             </div>
-            <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">Organization Chart & Permissions</h3>
-            <p className="text-gray-600 dark:text-gray-400 mb-6">
+            <h3 className="text-lg font-medium text-v-text-primary mb-2">Organization Chart & Permissions</h3>
+            <p className="text-v-text-secondary mb-6">
               Manage your organizational structure, permissions, and employee assignments
             </p>
             <Button
@@ -443,14 +443,14 @@ export default function BusinessProfilePage() {
       <Modal open={followersModalOpen} onClose={() => setFollowersModalOpen(false)} title="Followers">
         <div className="max-h-96 overflow-y-auto divide-y">
           {followers.length === 0 ? (
-            <div className="py-8 text-center text-gray-500 dark:text-gray-400">No followers yet.</div>
+            <div className="py-8 text-center text-v-text-muted">No followers yet.</div>
           ) : (
             followers.map(f => (
               <div key={f.id} className="flex items-center gap-3 py-3">
                 <Avatar nameOrEmail={f.name || f.email} size={32} />
                 <div>
-                  <div className="font-medium text-gray-900 dark:text-gray-100">{f.name || f.email}</div>
-                  <div className="text-xs text-gray-500 dark:text-gray-400">{f.email}</div>
+                  <div className="font-medium text-v-text-primary">{f.name || f.email}</div>
+                  <div className="text-xs text-v-text-muted">{f.email}</div>
                   <div className="text-xs text-gray-400">Followed {new Date(f.followedAt).toLocaleDateString()}</div>
                 </div>
               </div>

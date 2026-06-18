@@ -1,7 +1,7 @@
 # Platform Module Certification Ledger
 
 **Version:** 1.0.0  
-**Last updated:** 2026-06-18 (Admin Portal / Control Plane L3 promotion; Reference With Findings)  
+**Last updated:** 2026-06-18 (Business Administration L3 promotion; Reference Platform Capabilities With Findings #OC-1/#OC-2/#OC-3)  
 **Status:** Active — executive dashboard for platform architecture health  
 **Owner:** Platform Engineering / Architecture Governance
 
@@ -111,6 +111,7 @@ Track cross-cutting certification separately; modules depend on these.
 | Module Activity | Partial | High (drive writes) | 1 | Legacy read paths platform-wide |
 | **AI Platform** (twin, pipeline, tools) | **Partial** | **Partial** | **2 — Platform Compliant** | L2 certified 2026-06-03 — [AI_PLATFORM_LEVEL2_CERTIFICATION_REVIEW](./audits/AI_PLATFORM_LEVEL2_CERTIFICATION_REVIEW.md). **L3 readiness review** 2026-06-03 — [AI_PLATFORM_LEVEL3_READINESS_REVIEW](./audits/AI_PLATFORM_LEVEL3_READINESS_REVIEW.md): **not ready** (52/100); **defer L3** — prioritize UX certification (Calendar/Notifications) |
 | **Admin Portal / Control Plane** | **High** | **N/A** (control plane — FH module patterns not applicable) | **3 — Certified** | **LEVEL 3 CERTIFIED** · Ratified 2026-06-18; promoted 2026-06-18 · **Control Plane Reference With Findings** · G1–G9 PASS · **0 open findings** — [ADMIN_PORTAL_PROMOTION_REVIEW](./audits/ADMIN_PORTAL_PROMOTION_REVIEW.md), [ADMIN_PORTAL_CERTIFICATION_COUNCIL_RATIFICATION](./audits/ADMIN_PORTAL_CERTIFICATION_COUNCIL_RATIFICATION.md), [ADMIN_PORTAL_OPERATION_MATRIX](./audits/ADMIN_PORTAL_OPERATION_MATRIX.md), [ADMIN_PORTAL_POST_1A_READINESS_UPDATE](./audits/ADMIN_PORTAL_POST_1A_READINESS_UPDATE.md) |
+| **Business Administration** | *(platform subdomain)* | **High** | **Partial** (subdomain — core mounts remediated; integration mounts partial) | **N/A** (subdomain — not a single FH-pattern module) | **3 — Certified** | **LEVEL 3 CERTIFIED** · Ratified 2026-06-18; promoted 2026-06-18 · **Reference Platform Capabilities With Findings #OC-1 (Org Chart), #OC-2 (Permissions), #OC-3 (Approval Boundaries)** · G1–G9 **23/27 (~85%)** · **0 open majors** — [BUSINESS_ADMINISTRATION_PROMOTION_REVIEW](../business-administration/BUSINESS_ADMINISTRATION_PROMOTION_REVIEW.md), [BUSINESS_ADMINISTRATION_COUNCIL_RATIFICATION](../business-administration/BUSINESS_ADMINISTRATION_COUNCIL_RATIFICATION.md), [BUSINESS_ADMINISTRATION_CERTIFICATION_PROMOTION_RECORD](../business-administration/BUSINESS_ADMINISTRATION_CERTIFICATION_PROMOTION_RECORD.md), [BA_4_APPROVAL_HIERARCHY_IMPLEMENTATION_REPORT](../business-administration/BA_4_APPROVAL_HIERARCHY_IMPLEMENTATION_REPORT.md), [BUSINESS_ADMINISTRATION_OPERATION_MATRIX](../business-administration/BUSINESS_ADMINISTRATION_OPERATION_MATRIX.md) |
 | AI Tools / Actions | Partial | Partial (drive/HR/scheduling services) | 2 | [AI_TOOL_ACTION_COMPLIANCE_MATRIX](./audits/AI_TOOL_ACTION_COMPLIANCE_MATRIX.md) — catalog tools **C**; built-in L3 module actions **C**; LifeTwin stubs deferred L3 |
 | Platform Scheduler | Partial | Partial | 1 | Inventory-first per §22 |
 | Manifest / Capability governance | Partial | High (drive manifest) | 1 | Reconcile-on-startup incomplete for all built-ins |
@@ -367,6 +368,7 @@ Waves align with [`PLATFORM_MODULE_MODERNIZATION_ROADMAP.md`](../plans/PLATFORM_
 
 | Date | Change |
 |------|--------|
+| 2026-06-18 | **Business Administration** — promoted to **LEVEL 3 CERTIFIED** (BA-F-005 closed; G8 PASS); Reference Platform Capabilities With Findings #OC-1/#OC-2/#OC-3; supersedes WITH FINDINGS notation — [BUSINESS_ADMINISTRATION_CERTIFICATION_PROMOTION_RECORD](../business-administration/BUSINESS_ADMINISTRATION_CERTIFICATION_PROMOTION_RECORD.md) |
 | 2026-06-18 | **Admin Portal / Control Plane** — promoted to **LEVEL 3 CERTIFIED** (0 open findings; G9 PASS); Reference With Findings; supersedes WITH FINDINGS notation — [ADMIN_PORTAL_CERTIFICATION_PROMOTION_RECORD](./audits/ADMIN_PORTAL_CERTIFICATION_PROMOTION_RECORD.md) |
 | 2026-06-03 | **Reference UX #4 AI Experience** — Approved with Findings — [REFERENCE_MODULE_AI](../ux/audits/REFERENCE_MODULE_AI.md) |
 | 2026-06-12 | **Reference UX #3 Todo** — Approved with Findings — [REFERENCE_MODULE_TODO](../ux/audits/REFERENCE_MODULE_TODO.md) |

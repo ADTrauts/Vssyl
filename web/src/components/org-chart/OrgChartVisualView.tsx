@@ -437,11 +437,11 @@ export function OrgChartVisualView({
     return (
       <Card className="p-12 text-center">
         <div className="max-w-md mx-auto">
-          <div className="w-16 h-16 bg-gray-100 dark:bg-slate-700 rounded-full flex items-center justify-center mx-auto mb-4">
+          <div className="w-16 h-16 bg-v-surface dark:bg-slate-700 rounded-full flex items-center justify-center mx-auto mb-4">
             <Building2 className="w-8 h-8 text-gray-400" />
           </div>
-          <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">No Positions Yet</h3>
-          <p className="text-gray-500 dark:text-gray-400 mb-6">
+          <h3 className="text-lg font-medium text-v-text-primary mb-2">No Positions Yet</h3>
+          <p className="text-v-text-muted mb-6">
             Create your first positions in the Organization Chart tab to see the visual hierarchy.
           </p>
         </div>
@@ -453,7 +453,7 @@ export function OrgChartVisualView({
     return (
       <Card className="p-12 text-center">
         <Spinner size={32} />
-        <p className="mt-4 text-gray-600 dark:text-gray-400">Building organization chart...</p>
+        <p className="mt-4 text-v-text-secondary">Building organization chart...</p>
       </Card>
     );
   }
@@ -513,7 +513,7 @@ export function OrgChartVisualView({
                 Drag positions to reorganize reporting relationships
               </div>
             )}
-            <div className="text-sm text-gray-600 dark:text-gray-400">
+            <div className="text-sm text-v-text-secondary">
               <span className="font-medium">{positions.length}</span> positions
             </div>
             <Button
@@ -533,7 +533,7 @@ export function OrgChartVisualView({
       <Card className="p-0 overflow-hidden">
         <div
           ref={containerRef}
-          className={`w-full h-[600px] bg-gray-50 overflow-hidden ${
+          className={`w-full h-[600px] bg-v-background overflow-hidden ${
             isReorganizing ? 'cursor-default' : isPanning ? 'cursor-grabbing' : 'cursor-grab'
           }`}
           onMouseDown={handleMouseDown}
@@ -567,7 +567,7 @@ export function OrgChartVisualView({
       <Card className="p-4">
         <div className="flex items-center justify-between">
           <div className="flex items-center space-x-6">
-            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Tier Levels:</span>
+            <span className="text-sm font-medium text-v-text-secondary">Tier Levels:</span>
             {[
               { level: 1, name: 'C-Suite', color: '#ef4444' },
               { level: 2, name: 'VP', color: '#f97316' },
@@ -580,11 +580,11 @@ export function OrgChartVisualView({
                   className="w-3 h-3 rounded-full"
                   style={{ backgroundColor: tier.color }}
                 />
-                <span className="text-xs text-gray-600 dark:text-gray-400">{tier.name}</span>
+                <span className="text-xs text-v-text-secondary">{tier.name}</span>
               </div>
             ))}
           </div>
-          <div className="text-xs text-gray-500 dark:text-gray-400">
+          <div className="text-xs text-v-text-muted">
             {isReorganizing ? (
               <span className="text-blue-600 font-medium">
                 Click and drag positions to new managers • Green highlight shows valid drop target

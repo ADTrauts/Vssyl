@@ -402,13 +402,13 @@ export default function BusinessSettingsPage() {
   }
 
   return (
-    <div className="h-screen flex flex-col overflow-hidden bg-gray-50 dark:bg-gray-900">
-      <div className="flex-shrink-0 p-6 space-y-6 bg-white dark:bg-slate-800 border-b dark:border-slate-700">
+    <div className="h-screen flex flex-col overflow-hidden bg-v-background dark:bg-gray-900">
+      <div className="flex-shrink-0 p-6 space-y-6 bg-v-surface border-b dark:border-slate-700">
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Business Settings</h1>
-            <p className="text-gray-700 dark:text-gray-300 mt-2">
+            <h1 className="text-3xl font-bold text-v-text-primary">Business Settings</h1>
+            <p className="text-v-text-secondary mt-2">
               Configure your business profile, branding, and preferences
             </p>
             <p className="text-sm mt-2">
@@ -435,7 +435,7 @@ export default function BusinessSettingsPage() {
         </div>
 
         {/* Tabs */}
-        <div className="border-b border-gray-200 dark:border-slate-700">
+        <div className="border-b border-v-border">
           <nav className="flex space-x-8">
             {tabs.map((tab) => {
               const Icon = tab.icon;
@@ -448,7 +448,7 @@ export default function BusinessSettingsPage() {
                   className={`flex items-center space-x-2 py-4 px-1 border-b-2 font-medium text-sm ${
                     isActive
                       ? 'border-blue-500 text-blue-600'
-                      : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:border-gray-300 dark:hover:border-slate-600'
+                      : 'border-transparent text-v-text-secondary hover:text-gray-700 dark:hover:text-gray-200 hover:border-v-border dark:hover:border-slate-600'
                   }`}
                 >
                   <Icon className="w-4 h-4" />
@@ -467,7 +467,7 @@ export default function BusinessSettingsPage() {
         {activeTab === 'profile' && (
           <Card className="p-6">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Business Profile</h2>
+              <h2 className="text-xl font-semibold text-v-text-primary">Business Profile</h2>
               <div className="flex items-center space-x-3">
                 <Avatar 
                   src={business.logo} 
@@ -486,7 +486,7 @@ export default function BusinessSettingsPage() {
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-v-text-secondary mb-2">
                   Business Name *
                 </label>
                 <input
@@ -495,8 +495,8 @@ export default function BusinessSettingsPage() {
                   onChange={(e) => setProfileForm(prev => ({ ...prev, name: e.target.value }))}
                   disabled={!canManage}
                   className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                    formErrors.name ? 'border-red-300' : 'border-gray-300'
-                  } ${!canManage ? 'bg-gray-50 cursor-not-allowed' : ''}`}
+                    formErrors.name ? 'border-red-300' : 'border-v-border'
+                  } ${!canManage ? 'bg-v-background cursor-not-allowed' : ''}`}
                 />
                 {formErrors.name && (
                   <p className="mt-1 text-sm text-red-600 flex items-center">
@@ -507,7 +507,7 @@ export default function BusinessSettingsPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-v-text-secondary mb-2">
                   Industry
                 </label>
                 <input
@@ -515,22 +515,22 @@ export default function BusinessSettingsPage() {
                   value={profileForm.industry}
                   onChange={(e) => setProfileForm(prev => ({ ...prev, industry: e.target.value }))}
                   disabled={!canManage}
-                  className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                    !canManage ? 'bg-gray-50 cursor-not-allowed' : ''
+                  className={`w-full px-3 py-2 border border-v-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                    !canManage ? 'bg-v-background cursor-not-allowed' : ''
                   }`}
                 />
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-v-text-secondary mb-2">
                   Company Size
                 </label>
                 <select
                   value={profileForm.size}
                   onChange={(e) => setProfileForm(prev => ({ ...prev, size: e.target.value }))}
                   disabled={!canManage}
-                  className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                    !canManage ? 'bg-gray-50 cursor-not-allowed' : ''
+                  className={`w-full px-3 py-2 border border-v-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                    !canManage ? 'bg-v-background cursor-not-allowed' : ''
                   }`}
                 >
                   <option value="">Select size</option>
@@ -543,7 +543,7 @@ export default function BusinessSettingsPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-v-text-secondary mb-2">
                   Website
                 </label>
                 <input
@@ -553,8 +553,8 @@ export default function BusinessSettingsPage() {
                   placeholder="https://example.com"
                   disabled={!canManage}
                   className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                    formErrors.website ? 'border-red-300' : 'border-gray-300'
-                  } ${!canManage ? 'bg-gray-50 cursor-not-allowed' : ''}`}
+                    formErrors.website ? 'border-red-300' : 'border-v-border'
+                  } ${!canManage ? 'bg-v-background cursor-not-allowed' : ''}`}
                 />
                 {formErrors.website && (
                   <p className="mt-1 text-sm text-red-600 flex items-center">
@@ -565,7 +565,7 @@ export default function BusinessSettingsPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-v-text-secondary mb-2">
                   Phone
                 </label>
                 <input
@@ -575,8 +575,8 @@ export default function BusinessSettingsPage() {
                   placeholder="+1 (555) 123-4567"
                   disabled={!canManage}
                   className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                    formErrors.phone ? 'border-red-300' : 'border-gray-300'
-                  } ${!canManage ? 'bg-gray-50 cursor-not-allowed' : ''}`}
+                    formErrors.phone ? 'border-red-300' : 'border-v-border'
+                  } ${!canManage ? 'bg-v-background cursor-not-allowed' : ''}`}
                 />
                 {formErrors.phone && (
                   <p className="mt-1 text-sm text-red-600 flex items-center">
@@ -587,7 +587,7 @@ export default function BusinessSettingsPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-v-text-secondary mb-2">
                   Email
                 </label>
                 <input
@@ -597,8 +597,8 @@ export default function BusinessSettingsPage() {
                   placeholder="contact@business.com"
                   disabled={!canManage}
                   className={`w-full px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                    formErrors.email ? 'border-red-300' : 'border-gray-300'
-                  } ${!canManage ? 'bg-gray-50 cursor-not-allowed' : ''}`}
+                    formErrors.email ? 'border-red-300' : 'border-v-border'
+                  } ${!canManage ? 'bg-v-background cursor-not-allowed' : ''}`}
                 />
                 {formErrors.email && (
                   <p className="mt-1 text-sm text-red-600 flex items-center">
@@ -609,7 +609,7 @@ export default function BusinessSettingsPage() {
               </div>
 
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-v-text-secondary mb-2">
                   Description
                 </label>
                 <textarea
@@ -618,8 +618,8 @@ export default function BusinessSettingsPage() {
                   rows={4}
                   placeholder="Tell us about your business..."
                   disabled={!canManage}
-                  className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                    !canManage ? 'bg-gray-50 cursor-not-allowed' : ''
+                  className={`w-full px-3 py-2 border border-v-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                    !canManage ? 'bg-v-background cursor-not-allowed' : ''
                   }`}
                 />
               </div>
@@ -639,11 +639,11 @@ export default function BusinessSettingsPage() {
         {/* Branding Settings */}
         {activeTab === 'branding' && (
           <Card className="p-6">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-6">Branding & Appearance</h2>
+            <h2 className="text-xl font-semibold text-v-text-primary mb-6">Branding & Appearance</h2>
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-v-text-secondary mb-2">
                   Primary Color
                 </label>
                 <div className="flex items-center space-x-3">
@@ -652,7 +652,7 @@ export default function BusinessSettingsPage() {
                     value={brandingForm.primaryColor}
                     onChange={(e) => setBrandingForm(prev => ({ ...prev, primaryColor: e.target.value }))}
                     disabled={!canManage}
-                    className={`w-12 h-10 border border-gray-300 rounded-lg cursor-pointer ${
+                    className={`w-12 h-10 border border-v-border rounded-lg cursor-pointer ${
                       !canManage ? 'cursor-not-allowed opacity-50' : ''
                     }`}
                   />
@@ -662,8 +662,8 @@ export default function BusinessSettingsPage() {
                     onChange={(e) => setBrandingForm(prev => ({ ...prev, primaryColor: e.target.value }))}
                     disabled={!canManage}
                     className={`flex-1 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                      formErrors.primaryColor ? 'border-red-300' : 'border-gray-300'
-                    } ${!canManage ? 'bg-gray-50 cursor-not-allowed' : ''}`}
+                      formErrors.primaryColor ? 'border-red-300' : 'border-v-border'
+                    } ${!canManage ? 'bg-v-background cursor-not-allowed' : ''}`}
                   />
                 </div>
                 {formErrors.primaryColor && (
@@ -675,7 +675,7 @@ export default function BusinessSettingsPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-v-text-secondary mb-2">
                   Secondary Color
                 </label>
                 <div className="flex items-center space-x-3">
@@ -684,7 +684,7 @@ export default function BusinessSettingsPage() {
                     value={brandingForm.secondaryColor}
                     onChange={(e) => setBrandingForm(prev => ({ ...prev, secondaryColor: e.target.value }))}
                     disabled={!canManage}
-                    className={`w-12 h-10 border border-gray-300 rounded-lg cursor-pointer ${
+                    className={`w-12 h-10 border border-v-border rounded-lg cursor-pointer ${
                       !canManage ? 'cursor-not-allowed opacity-50' : ''
                     }`}
                   />
@@ -694,8 +694,8 @@ export default function BusinessSettingsPage() {
                     onChange={(e) => setBrandingForm(prev => ({ ...prev, secondaryColor: e.target.value }))}
                     disabled={!canManage}
                     className={`flex-1 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                      formErrors.secondaryColor ? 'border-red-300' : 'border-gray-300'
-                    } ${!canManage ? 'bg-gray-50 cursor-not-allowed' : ''}`}
+                      formErrors.secondaryColor ? 'border-red-300' : 'border-v-border'
+                    } ${!canManage ? 'bg-v-background cursor-not-allowed' : ''}`}
                   />
                 </div>
                 {formErrors.secondaryColor && (
@@ -707,7 +707,7 @@ export default function BusinessSettingsPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-v-text-secondary mb-2">
                   Accent Color
                 </label>
                 <div className="flex items-center space-x-3">
@@ -716,7 +716,7 @@ export default function BusinessSettingsPage() {
                     value={brandingForm.accentColor}
                     onChange={(e) => setBrandingForm(prev => ({ ...prev, accentColor: e.target.value }))}
                     disabled={!canManage}
-                    className={`w-12 h-10 border border-gray-300 rounded-lg cursor-pointer ${
+                    className={`w-12 h-10 border border-v-border rounded-lg cursor-pointer ${
                       !canManage ? 'cursor-not-allowed opacity-50' : ''
                     }`}
                   />
@@ -726,8 +726,8 @@ export default function BusinessSettingsPage() {
                     onChange={(e) => setBrandingForm(prev => ({ ...prev, accentColor: e.target.value }))}
                     disabled={!canManage}
                     className={`flex-1 px-3 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                      formErrors.accentColor ? 'border-red-300' : 'border-gray-300'
-                    } ${!canManage ? 'bg-gray-50 cursor-not-allowed' : ''}`}
+                      formErrors.accentColor ? 'border-red-300' : 'border-v-border'
+                    } ${!canManage ? 'bg-v-background cursor-not-allowed' : ''}`}
                   />
                 </div>
                 {formErrors.accentColor && (
@@ -739,15 +739,15 @@ export default function BusinessSettingsPage() {
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-v-text-secondary mb-2">
                   Font Family
                 </label>
                 <select
                   value={brandingForm.fontFamily}
                   onChange={(e) => setBrandingForm(prev => ({ ...prev, fontFamily: e.target.value }))}
                   disabled={!canManage}
-                  className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
-                    !canManage ? 'bg-gray-50 cursor-not-allowed' : ''
+                  className={`w-full px-3 py-2 border border-v-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent ${
+                    !canManage ? 'bg-v-background cursor-not-allowed' : ''
                   }`}
                 >
                   {FONT_OPTIONS.map(font => (
@@ -758,7 +758,7 @@ export default function BusinessSettingsPage() {
                 </select>
                 {brandingForm.fontFamily && (
                   <p 
-                    className="mt-2 text-sm text-gray-600 dark:text-gray-400"
+                    className="mt-2 text-sm text-v-text-secondary"
                     style={{ fontFamily: brandingForm.fontFamily }}
                   >
                     {FONT_OPTIONS.find(f => f.value === brandingForm.fontFamily)?.preview}
@@ -767,7 +767,7 @@ export default function BusinessSettingsPage() {
               </div>
 
               <div className="md:col-span-2">
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-v-text-secondary mb-2">
                   Custom CSS
                 </label>
                 <textarea
@@ -776,8 +776,8 @@ export default function BusinessSettingsPage() {
                   rows={6}
                   placeholder="/* Add custom CSS here */"
                   disabled={!canManage}
-                  className={`w-full px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm ${
-                    !canManage ? 'bg-gray-50 cursor-not-allowed' : ''
+                  className={`w-full px-3 py-2 border border-v-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent font-mono text-sm ${
+                    !canManage ? 'bg-v-background cursor-not-allowed' : ''
                   }`}
                 />
               </div>
@@ -797,13 +797,13 @@ export default function BusinessSettingsPage() {
         {/* Security Settings */}
         {activeTab === 'security' && (
           <Card className="p-6">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-6">Security & Access</h2>
+            <h2 className="text-xl font-semibold text-v-text-primary mb-6">Security & Access</h2>
             
             <div className="space-y-6">
               <div>
-                <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Single Sign-On (SSO)</h3>
-                <div className="bg-gray-50 dark:bg-slate-800 p-4 rounded-lg">
-                  <p className="text-gray-600 dark:text-gray-400 mb-4">
+                <h3 className="text-lg font-medium text-v-text-primary mb-4">Single Sign-On (SSO)</h3>
+                <div className="bg-v-background p-4 rounded-lg">
+                  <p className="text-v-text-secondary mb-4">
                     Configure SSO to allow your team to sign in with your organization's identity provider.
                   </p>
                   <Button variant="secondary" disabled={!canManage}>
@@ -814,9 +814,9 @@ export default function BusinessSettingsPage() {
               </div>
 
               <div>
-                <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Two-Factor Authentication</h3>
-                <div className="bg-gray-50 dark:bg-slate-800 p-4 rounded-lg">
-                  <p className="text-gray-600 dark:text-gray-400 mb-4">
+                <h3 className="text-lg font-medium text-v-text-primary mb-4">Two-Factor Authentication</h3>
+                <div className="bg-v-background p-4 rounded-lg">
+                  <p className="text-v-text-secondary mb-4">
                     Require two-factor authentication for all team members.
                   </p>
                   <Button variant="secondary" disabled={!canManage}>
@@ -827,16 +827,16 @@ export default function BusinessSettingsPage() {
               </div>
 
               <div>
-                <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Session Management</h3>
+                <h3 className="text-lg font-medium text-v-text-primary mb-4">Session Management</h3>
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="font-medium text-gray-900 dark:text-gray-100">Session Timeout</p>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">Automatically sign out inactive users</p>
+                      <p className="font-medium text-v-text-primary">Session Timeout</p>
+                      <p className="text-sm text-v-text-muted">Automatically sign out inactive users</p>
                     </div>
                     <select 
-                      className={`px-3 py-2 border border-gray-300 rounded-lg ${
-                        !canManage ? 'bg-gray-50 cursor-not-allowed' : ''
+                      className={`px-3 py-2 border border-v-border rounded-lg ${
+                        !canManage ? 'bg-v-background cursor-not-allowed' : ''
                       }`}
                       disabled={!canManage}
                     >
@@ -854,35 +854,35 @@ export default function BusinessSettingsPage() {
         {/* Billing Settings */}
         {activeTab === 'billing' && (
           <Card className="p-6">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-6">Business Billing & Subscription</h2>
+            <h2 className="text-xl font-semibold text-v-text-primary mb-6">Business Billing & Subscription</h2>
             
             <div className="space-y-6">
               {/* Enterprise Plan Overview */}
               <div className="bg-gradient-to-r from-purple-50 to-blue-50 p-6 rounded-lg border">
                 <div className="flex items-center justify-between mb-4">
                   <div>
-                    <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Enterprise Plan</h3>
-                    <p className="text-gray-600 dark:text-gray-400">Per-user pricing for your business team</p>
+                    <h3 className="text-lg font-semibold text-v-text-primary">Enterprise Plan</h3>
+                    <p className="text-v-text-secondary">Per-user pricing for your business team</p>
                   </div>
                   <Badge color="blue">Business</Badge>
                 </div>
                 
                 <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                  <div className="bg-white dark:bg-slate-900 p-4 rounded-lg">
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Team Members</p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{business?.members?.length || 0}</p>
+                  <div className="bg-v-surface p-4 rounded-lg">
+                    <p className="text-sm text-v-text-secondary">Team Members</p>
+                    <p className="text-2xl font-bold text-v-text-primary">{business?.members?.length || 0}</p>
                   </div>
-                  <div className="bg-white dark:bg-slate-900 p-4 rounded-lg">
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Cost per User</p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">$25-50</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">per month</p>
+                  <div className="bg-v-surface p-4 rounded-lg">
+                    <p className="text-sm text-v-text-secondary">Cost per User</p>
+                    <p className="text-2xl font-bold text-v-text-primary">$25-50</p>
+                    <p className="text-xs text-v-text-muted">per month</p>
                   </div>
-                  <div className="bg-white dark:bg-slate-900 p-4 rounded-lg">
-                    <p className="text-sm text-gray-600 dark:text-gray-400">Estimated Total</p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                  <div className="bg-v-surface p-4 rounded-lg">
+                    <p className="text-sm text-v-text-secondary">Estimated Total</p>
+                    <p className="text-2xl font-bold text-v-text-primary">
                       ${((business?.members?.length || 0) * 35).toFixed(0)}
                     </p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">per month</p>
+                    <p className="text-xs text-v-text-muted">per month</p>
                   </div>
                 </div>
                 
@@ -898,49 +898,49 @@ export default function BusinessSettingsPage() {
 
               {/* Enterprise Features */}
               <div>
-                <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Enterprise Features Included</h3>
+                <h3 className="text-lg font-medium text-v-text-primary mb-4">Enterprise Features Included</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="bg-gray-50 dark:bg-slate-800 p-4 rounded-lg">
+                  <div className="bg-v-background p-4 rounded-lg">
                     <div className="flex items-center space-x-3">
                       <div className="p-2 bg-green-100 rounded">
                         <CheckCircle className="w-4 h-4 text-green-600" />
                       </div>
                       <div>
-                        <p className="font-medium text-gray-900 dark:text-gray-100">Enterprise Modules</p>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">Access to all business-grade modules</p>
+                        <p className="font-medium text-v-text-primary">Enterprise Modules</p>
+                        <p className="text-sm text-v-text-secondary">Access to all business-grade modules</p>
                       </div>
                     </div>
                   </div>
-                  <div className="bg-gray-50 dark:bg-slate-800 p-4 rounded-lg">
+                  <div className="bg-v-background p-4 rounded-lg">
                     <div className="flex items-center space-x-3">
                       <div className="p-2 bg-green-100 rounded">
                         <CheckCircle className="w-4 h-4 text-green-600" />
                       </div>
                       <div>
-                        <p className="font-medium text-gray-900 dark:text-gray-100">Org Chart & Permissions</p>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">Advanced team management</p>
+                        <p className="font-medium text-v-text-primary">Org Chart & Permissions</p>
+                        <p className="text-sm text-v-text-secondary">Advanced team management</p>
                       </div>
                     </div>
                   </div>
-                  <div className="bg-gray-50 dark:bg-slate-800 p-4 rounded-lg">
+                  <div className="bg-v-background p-4 rounded-lg">
                     <div className="flex items-center space-x-3">
                       <div className="p-2 bg-green-100 rounded">
                         <CheckCircle className="w-4 h-4 text-green-600" />
                       </div>
                       <div>
-                        <p className="font-medium text-gray-900 dark:text-gray-100">Advanced Analytics</p>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">Business intelligence & insights</p>
+                        <p className="font-medium text-v-text-primary">Advanced Analytics</p>
+                        <p className="text-sm text-v-text-secondary">Business intelligence & insights</p>
                       </div>
                     </div>
                   </div>
-                  <div className="bg-gray-50 dark:bg-slate-800 p-4 rounded-lg">
+                  <div className="bg-v-background p-4 rounded-lg">
                     <div className="flex items-center space-x-3">
                       <div className="p-2 bg-green-100 rounded">
                         <CheckCircle className="w-4 h-4 text-green-600" />
                       </div>
                       <div>
-                        <p className="font-medium text-gray-900 dark:text-gray-100">Priority Support</p>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">24/7 business support</p>
+                        <p className="font-medium text-v-text-primary">Priority Support</p>
+                        <p className="text-sm text-v-text-secondary">24/7 business support</p>
                       </div>
                     </div>
                   </div>
@@ -953,16 +953,16 @@ export default function BusinessSettingsPage() {
         {/* Notifications Settings */}
         {activeTab === 'notifications' && (
           <Card className="p-6">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-6">Notification Preferences</h2>
+            <h2 className="text-xl font-semibold text-v-text-primary mb-6">Notification Preferences</h2>
             
             <div className="space-y-6">
               <div>
-                <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Email Notifications</h3>
+                <h3 className="text-lg font-medium text-v-text-primary mb-4">Email Notifications</h3>
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="font-medium text-gray-900 dark:text-gray-100">New member invitations</p>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">Get notified when someone invites a new member</p>
+                      <p className="font-medium text-v-text-primary">New member invitations</p>
+                      <p className="text-sm text-v-text-muted">Get notified when someone invites a new member</p>
                     </div>
                     <input 
                       type="checkbox" 
@@ -973,8 +973,8 @@ export default function BusinessSettingsPage() {
                   </div>
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="font-medium text-gray-900 dark:text-gray-100">File sharing</p>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">Get notified when files are shared with you</p>
+                      <p className="font-medium text-v-text-primary">File sharing</p>
+                      <p className="text-sm text-v-text-muted">Get notified when files are shared with you</p>
                     </div>
                     <input 
                       type="checkbox" 
@@ -985,8 +985,8 @@ export default function BusinessSettingsPage() {
                   </div>
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="font-medium text-gray-900 dark:text-gray-100">Security alerts</p>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">Get notified about security-related events</p>
+                      <p className="font-medium text-v-text-primary">Security alerts</p>
+                      <p className="text-sm text-v-text-muted">Get notified about security-related events</p>
                     </div>
                     <input 
                       type="checkbox" 
@@ -999,12 +999,12 @@ export default function BusinessSettingsPage() {
               </div>
 
               <div>
-                <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">In-App Notifications</h3>
+                <h3 className="text-lg font-medium text-v-text-primary mb-4">In-App Notifications</h3>
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="font-medium text-gray-900 dark:text-gray-100">Real-time updates</p>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">Show notifications for real-time activity</p>
+                      <p className="font-medium text-v-text-primary">Real-time updates</p>
+                      <p className="text-sm text-v-text-muted">Show notifications for real-time activity</p>
                     </div>
                     <input 
                       type="checkbox" 
@@ -1015,8 +1015,8 @@ export default function BusinessSettingsPage() {
                   </div>
                   <div className="flex items-center justify-between">
                     <div>
-                      <p className="font-medium text-gray-900 dark:text-gray-100">Sound notifications</p>
-                      <p className="text-sm text-gray-500 dark:text-gray-400">Play sound for new notifications</p>
+                      <p className="font-medium text-v-text-primary">Sound notifications</p>
+                      <p className="text-sm text-v-text-muted">Play sound for new notifications</p>
                     </div>
                     <input 
                       type="checkbox" 
@@ -1076,15 +1076,15 @@ export default function BusinessSettingsPage() {
                   nameOrEmail={business.name}
                 />
               </div>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+              <p className="text-sm text-v-text-secondary mb-4">
                 Upload a new logo for {business.name}
               </p>
             </div>
             
-            <div className="border-2 border-dashed border-gray-300 dark:border-slate-600 rounded-lg p-6 text-center">
+            <div className="border-2 border-dashed border-v-border rounded-lg p-6 text-center">
               <Upload className="w-12 h-12 text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-600 dark:text-gray-400 mb-2">Drop your logo here or click to browse</p>
-              <p className="text-sm text-gray-500 dark:text-gray-400 mb-4">PNG, JPG up to 5MB</p>
+              <p className="text-v-text-secondary mb-2">Drop your logo here or click to browse</p>
+              <p className="text-sm text-v-text-muted mb-4">PNG, JPG up to 5MB</p>
               <input
                 ref={fileInputRef}
                 type="file"

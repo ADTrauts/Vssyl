@@ -197,14 +197,14 @@ export default function BusinessModulesPage() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-slate-800">
+    <div className="min-h-screen bg-v-background">
       {/* Header */}
-      <div className="bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-slate-700">
+      <div className="bg-v-surface border-b border-v-border">
         <div className="container mx-auto px-6 py-6">
           <div className="flex items-center justify-between">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Enterprise Modules</h1>
-              <p className="text-gray-600 dark:text-gray-400 mt-1">
+              <h1 className="text-2xl font-bold text-v-text-primary">Enterprise Modules</h1>
+              <p className="text-v-text-secondary mt-1">
                 Manage enterprise modules for your business workspace
               </p>
             </div>
@@ -233,8 +233,8 @@ export default function BusinessModulesPage() {
             <Card className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Total Modules</p>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                  <p className="text-sm text-v-text-secondary">Total Modules</p>
+                  <p className="text-2xl font-bold text-v-text-primary">
                     {configuration?.enabledModules?.length || 0}
                   </p>
                 </div>
@@ -244,8 +244,8 @@ export default function BusinessModulesPage() {
             <Card className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Active Modules</p>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                  <p className="text-sm text-v-text-secondary">Active Modules</p>
+                  <p className="text-2xl font-bold text-v-text-primary">
                     {configuration?.enabledModules?.filter(m => m.status === 'enabled').length || 0}
                   </p>
                 </div>
@@ -255,8 +255,8 @@ export default function BusinessModulesPage() {
             <Card className="p-4">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Enterprise Tier</p>
-                  <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">✓</p>
+                  <p className="text-sm text-v-text-secondary">Enterprise Tier</p>
+                  <p className="text-2xl font-bold text-v-text-primary">✓</p>
                 </div>
                 <Settings className="w-6 h-6 text-purple-400" />
               </div>
@@ -266,14 +266,14 @@ export default function BusinessModulesPage() {
           {/* Installed Modules */}
           <Card className="p-6">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Installed Modules</h2>
+              <h2 className="text-xl font-semibold text-v-text-primary">Installed Modules</h2>
               <div className="flex items-center space-x-3">
                 <div className="relative">
                   <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                   <input
                     type="text"
                     placeholder="Search modules..."
-                    className="pl-10 pr-4 py-2 border border-gray-300 dark:border-slate-600 rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="pl-10 pr-4 py-2 border border-v-border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
                 <Button
@@ -297,27 +297,27 @@ export default function BusinessModulesPage() {
             ) : configuration?.enabledModules && configuration.enabledModules.length > 0 ? (
               <div className="space-y-4">
                 {configuration.enabledModules.map((module) => (
-                  <div key={module.id} className="flex items-center justify-between p-4 bg-gray-50 dark:bg-slate-800 rounded-lg border border-gray-200 dark:border-slate-700 hover:border-gray-300 dark:border-slate-600 transition-colors">
+                  <div key={module.id} className="flex items-center justify-between p-4 bg-v-background rounded-lg border border-v-border hover:border-v-border transition-colors">
                     <div className="flex items-center space-x-4">
                       <div className={`p-3 rounded-lg ${
                         module.status === 'enabled' 
                           ? 'bg-green-100 text-green-600' 
-                          : 'bg-gray-100 text-gray-600'
+                          : 'bg-v-surface text-gray-600'
                       }`}>
                         <Package className="w-5 h-5" />
                       </div>
                       <div>
-                        <h3 className="text-sm font-medium text-gray-900 dark:text-gray-100">
+                        <h3 className="text-sm font-medium text-v-text-primary">
                           {module.name || module.id}
                         </h3>
-                        <p className="text-xs text-gray-600 dark:text-gray-400">
+                        <p className="text-xs text-v-text-secondary">
                           {module.description || 'Enterprise Module'}
                         </p>
                         <div className="flex items-center space-x-2 mt-1">
                           <span className={`inline-flex items-center px-2 py-1 rounded-full text-xs font-medium ${
                             module.status === 'enabled'
                               ? 'bg-green-100 text-green-800'
-                              : 'bg-gray-100 text-gray-800'
+                              : 'bg-v-surface text-gray-800'
                           }`}>
                             {module.status === 'enabled' ? 'Active' : 'Inactive'}
                           </span>
@@ -365,8 +365,8 @@ export default function BusinessModulesPage() {
             ) : (
               <div className="text-center py-12">
                 <Package className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">No Modules Installed</h3>
-                <p className="text-gray-600 dark:text-gray-400 mb-6">
+                <h3 className="text-lg font-medium text-v-text-primary mb-2">No Modules Installed</h3>
+                <p className="text-v-text-secondary mb-6">
                   Get started by browsing and installing enterprise modules for your business.
                 </p>
                 <Button onClick={() => setShowModuleSelection(true)}>
@@ -379,7 +379,7 @@ export default function BusinessModulesPage() {
 
           {/* Module Categories */}
           <Card className="p-6">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Module Categories</h2>
+            <h2 className="text-xl font-semibold text-v-text-primary mb-4">Module Categories</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {[
                 { name: 'Analytics', icon: '📊', count: 3, color: 'bg-blue-50 text-blue-600' },

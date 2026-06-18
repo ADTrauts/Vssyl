@@ -90,15 +90,15 @@ export default function AnnouncementsWidget({ businessId, settings, theme }: Wid
               }
             >
               <div className="flex items-start justify-between mb-2">
-                <h4 className="font-semibold text-gray-900 dark:text-gray-100">{announcement.title}</h4>
+                <h4 className="font-semibold text-v-text-primary">{announcement.title}</h4>
                 <span className={`px-2 py-1 text-xs font-medium rounded ${priorityBadgeClass(announcement.priority)}`}>
                   {priorityLabel(announcement.priority)}
                 </span>
               </div>
-              <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">
+              <p className="text-sm text-v-text-secondary mb-2">
                 {announcement.summary || announcement.body?.slice(0, 200)}
               </p>
-              <div className="flex items-center text-xs text-gray-500 dark:text-gray-400">
+              <div className="flex items-center text-xs text-v-text-muted">
                 <Clock className="w-3 h-3 mr-1" />
                 {formatWorkforceDate(announcement.publishedAt)}
                 {fpPriority === 'urgent' && (

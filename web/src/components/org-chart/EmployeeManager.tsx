@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { Card, Button, Input, Spinner, Badge, Avatar } from 'shared/components';
+import { useConfirm } from 'shared/hooks/useConfirm';
 import { 
   getBusinessEmployees,
   getVacantPositions,
@@ -32,6 +33,7 @@ import {
   Mail
 } from 'lucide-react';
 import { getBusinessMembers, inviteEmployee, type BusinessMember } from '@/api/member';
+import { BusinessAdminEmptyState } from '@/components/business/BusinessAdminEmptyState';
 
 interface OrgChartData {
   tiers: OrganizationalTier[];
@@ -52,6 +54,7 @@ type EditingItem = EmployeePosition | null;
 
 export function EmployeeManager({ orgChartData, businessId, onUpdate }: EmployeeManagerProps) {
   const { data: session } = useSession();
+  const { confirm, ConfirmDialog } = useConfirm();
   const [employees, setEmployees] = useState<EmployeePosition[]>([]);
   const [vacantPositions, setVacantPositions] = useState<Position[]>([]);
   const [loading, setLoading] = useState(false);
@@ -226,7 +229,14 @@ export function EmployeeManager({ orgChartData, businessId, onUpdate }: Employee
   };
 
   const handleRemoveEmployee = async (userId: string, positionId: string) => {
-    if (!session?.accessToken || !confirm('Are you sure you want to remove this employee from this position?')) return;
+    if (!session?.accessToken) return;
+    const ok = await confirm({
+      title: 'Remove employee from position?',
+      description: 'This removes the assignment but does not remove the user from the business.',
+      variant: 'destructive',
+      confirmLabel: 'Remove',
+    });
+    if (!ok) return;
 
     setLoading(true);
     try {
@@ -312,8 +322,8 @@ export function EmployeeManager({ orgChartData, businessId, onUpdate }: Employee
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Employee Management</h2>
-          <p className="text-gray-600 dark:text-gray-400">Assign and manage team members across positions</p>
+          <h2 className="text-xl font-semibold text-v-text-primary">Employee Management</h2>
+          <p className="text-v-text-secondary">Assign and manage team members across positions</p>
         </div>
         <div className="flex items-center space-x-2">
           <Button
@@ -336,7 +346,7 @@ export function EmployeeManager({ orgChartData, businessId, onUpdate }: Employee
               onClick={() => toggleSection('employees')}
             >
               <Users className="w-5 h-5 text-blue-600" />
-              <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">Current Employees</h3>
+              <h3 className="text-lg font-medium text-v-text-primary">Current Employees</h3>
               <Badge color="blue">{employees.filter(emp => emp.isActive).length}</Badge>
               {expandedSections.has('employees') ? (
                 <ChevronDown className="w-5 h-5 text-gray-400" />
@@ -358,21 +368,15 @@ export function EmployeeManager({ orgChartData, businessId, onUpdate }: Employee
           {expandedSections.has('employees') && (
             <div className="mt-4 space-y-4">
               {employees.filter(emp => emp.isActive).length === 0 ? (
-                <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                  <Users className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-                  <p>No employees assigned yet</p>
-                  <Button
-                    variant="secondary"
-                    onClick={() => startEdit('assign', 'create')}
-                    className="mt-2"
-                  >
-                    Assign First Employee
-                  </Button>
-                </div>
+                <BusinessAdminEmptyState
+                  icon={<Users className="w-12 h-12" />}
+                  title="No employees assigned yet"
+                  description="Assign team members to positions or invite new employees to get started."
+                />
               ) : (
                 <div className="grid gap-4">
                   {employees.filter(emp => emp.isActive).map((employee) => (
-                    <div key={employee.id} className="border border-gray-200 dark:border-slate-700 rounded-lg p-4">
+                    <div key={employee.id} className="border border-v-border rounded-lg p-4">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-3">
                           <Avatar
@@ -380,13 +384,13 @@ export function EmployeeManager({ orgChartData, businessId, onUpdate }: Employee
                             size={40}
                           />
                           <div>
-                            <h4 className="font-medium text-gray-900 dark:text-gray-100">
+                            <h4 className="font-medium text-v-text-primary">
                               {availableUsers.find(u => u.id === employee.userId)?.name || 'Unknown User'}
                             </h4>
-                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                            <p className="text-sm text-v-text-secondary">
                               {availableUsers.find(u => u.id === employee.userId)?.email || 'Unknown Email'}
                             </p>
-                            <div className="flex items-center space-x-4 mt-1 text-xs text-gray-500 dark:text-gray-400">
+                            <div className="flex items-center space-x-4 mt-1 text-xs text-v-text-muted">
                               <span className="flex items-center">
                                 <UserCheck className="w-3 h-3 mr-1" />
                                 {getPositionName(employee.positionId)}
@@ -424,7 +428,7 @@ export function EmployeeManager({ orgChartData, businessId, onUpdate }: Employee
                       </div>
                       
                       {/* Assignment Details */}
-                      <div className="mt-3 pt-3 border-t border-gray-100 text-xs text-gray-500 dark:text-gray-400">
+                      <div className="mt-3 pt-3 border-t border-gray-100 text-xs text-v-text-muted">
                         <div className="flex items-center justify-between">
                           <span>Assigned: {new Date(employee.effectiveDate).toLocaleDateString()}</span>
                           <span>Status: {employee.isActive ? 'Active' : 'Inactive'}</span>
@@ -448,7 +452,7 @@ export function EmployeeManager({ orgChartData, businessId, onUpdate }: Employee
           >
             <div className="flex items-center space-x-3">
               <AlertCircle className="w-5 h-5 text-yellow-600" />
-              <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">Vacant Positions</h3>
+              <h3 className="text-lg font-medium text-v-text-primary">Vacant Positions</h3>
               <Badge color="yellow">{vacantPositions.length}</Badge>
             </div>
             {expandedSections.has('vacant-positions') ? (
@@ -461,27 +465,28 @@ export function EmployeeManager({ orgChartData, businessId, onUpdate }: Employee
           {expandedSections.has('vacant-positions') && (
             <div className="mt-4 space-y-4">
               {vacantPositions.length === 0 ? (
-                <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                  <CheckCircle className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-                  <p>All positions are filled</p>
-                </div>
+                <BusinessAdminEmptyState
+                  icon={<CheckCircle className="w-12 h-12" />}
+                  title="All positions are filled"
+                  description="Every open position currently has an assigned employee."
+                />
               ) : (
                 <div className="grid gap-4">
                   {vacantPositions.map((position) => {
                     const capacity = getPositionCapacity(position.id);
                     return (
-                      <div key={position.id} className="border border-gray-200 dark:border-slate-700 rounded-lg p-4">
+                      <div key={position.id} className="border border-v-border rounded-lg p-4">
                         <div className="flex items-center justify-between">
                           <div className="flex items-center space-x-3">
                             <div className="w-10 h-10 bg-yellow-100 rounded-full flex items-center justify-center">
                               <UserCheck className="w-5 h-5 text-yellow-600" />
                             </div>
                             <div>
-                              <h4 className="font-medium text-gray-900 dark:text-gray-100">{position.name}</h4>
+                              <h4 className="font-medium text-v-text-primary">{position.name}</h4>
                               {position.description && (
-                                <p className="text-sm text-gray-600 dark:text-gray-400">{position.description}</p>
+                                <p className="text-sm text-v-text-secondary">{position.description}</p>
                               )}
-                              <div className="flex items-center space-x-4 mt-1 text-xs text-gray-500 dark:text-gray-400">
+                              <div className="flex items-center space-x-4 mt-1 text-xs text-v-text-muted">
                                 <span className="flex items-center">
                                   <Building2 className="w-3 h-3 mr-1" />
                                   {getDepartmentName(position.id)}
@@ -525,18 +530,18 @@ export function EmployeeManager({ orgChartData, businessId, onUpdate }: Employee
       {/* Assign Employee Modal */}
       {editMode === 'assign' && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-slate-900 rounded-lg p-6 w-full max-w-md mx-4">
-            <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Assign Employee to Position</h3>
+          <div className="bg-v-surface rounded-lg p-6 w-full max-w-md mx-4">
+            <h3 className="text-lg font-medium text-v-text-primary mb-4">Assign Employee to Position</h3>
             <form onSubmit={handleAssignSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-sm font-medium text-v-text-secondary mb-1">
                   Employee
                 </label>
                 <select
                   value={assignForm.userId}
                   onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setAssignForm({ ...assignForm, userId: e.target.value })}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-v-border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 >
                   <option value="">Select an employee</option>
                   {assignForm.positionId ? 
@@ -554,14 +559,14 @@ export function EmployeeManager({ orgChartData, businessId, onUpdate }: Employee
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-sm font-medium text-v-text-secondary mb-1">
                   Position
                 </label>
                 <select
                   value={assignForm.positionId}
                   onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setAssignForm({ ...assignForm, positionId: e.target.value })}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-v-border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 >
                   <option value="">Select a position</option>
                   {orgChartData?.positions?.map((position: Position) => {
@@ -575,7 +580,7 @@ export function EmployeeManager({ orgChartData, businessId, onUpdate }: Employee
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-sm font-medium text-v-text-secondary mb-1">
                   Effective Date
                 </label>
                 <Input
@@ -601,18 +606,18 @@ export function EmployeeManager({ orgChartData, businessId, onUpdate }: Employee
       {/* Transfer Employee Modal */}
       {editMode === 'transfer' && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-slate-900 rounded-lg p-6 w-full max-w-md mx-4">
-            <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Transfer Employee</h3>
+          <div className="bg-v-surface rounded-lg p-6 w-full max-w-md mx-4">
+            <h3 className="text-lg font-medium text-v-text-primary mb-4">Transfer Employee</h3>
             <form onSubmit={handleTransferSubmit} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-sm font-medium text-v-text-secondary mb-1">
                   Employee
                 </label>
                 <select
                   value={transferForm.userId}
                   onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setTransferForm({ ...transferForm, userId: e.target.value })}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-v-border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 >
                   <option value="">Select an employee</option>
                   {employees.filter(emp => emp.isActive).map(emp => {
@@ -626,14 +631,14 @@ export function EmployeeManager({ orgChartData, businessId, onUpdate }: Employee
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-sm font-medium text-v-text-secondary mb-1">
                   From Position
                 </label>
                 <select
                   value={transferForm.fromPositionId}
                   onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setTransferForm({ ...transferForm, fromPositionId: e.target.value })}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-v-border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 >
                   <option value="">Select current position</option>
                   {employees
@@ -647,14 +652,14 @@ export function EmployeeManager({ orgChartData, businessId, onUpdate }: Employee
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-sm font-medium text-v-text-secondary mb-1">
                   To Position
                 </label>
                 <select
                   value={transferForm.toPositionId}
                   onChange={(e: React.ChangeEvent<HTMLSelectElement>) => setTransferForm({ ...transferForm, toPositionId: e.target.value })}
                   required
-                  className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  className="w-full px-3 py-2 border border-v-border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 >
                   <option value="">Select new position</option>
                   {orgChartData?.positions?.map((position: Position) => {
@@ -668,7 +673,7 @@ export function EmployeeManager({ orgChartData, businessId, onUpdate }: Employee
                 </select>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-sm font-medium text-v-text-secondary mb-1">
                   Effective Date
                 </label>
                 <Input
@@ -694,11 +699,11 @@ export function EmployeeManager({ orgChartData, businessId, onUpdate }: Employee
       {/* Invite New Employee Modal */}
       {showInviteForm && (
         <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white dark:bg-slate-900 rounded-lg p-6 w-full max-w-md mx-4">
-            <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Invite New Employee</h3>
+          <div className="bg-v-surface rounded-lg p-6 w-full max-w-md mx-4">
+            <h3 className="text-lg font-medium text-v-text-primary mb-4">Invite New Employee</h3>
             <form onSubmit={handleInviteEmployee} className="space-y-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-sm font-medium text-v-text-secondary mb-1">
                   Email Address *
                 </label>
                 <Input
@@ -708,12 +713,12 @@ export function EmployeeManager({ orgChartData, businessId, onUpdate }: Employee
                   placeholder="employee@example.com"
                   required
                 />
-                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                <p className="mt-1 text-xs text-v-text-muted">
                   They'll receive an invitation to join your business
                 </p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-sm font-medium text-v-text-secondary mb-1">
                   Position Title (Optional)
                 </label>
                 <Input
@@ -722,7 +727,7 @@ export function EmployeeManager({ orgChartData, businessId, onUpdate }: Employee
                   onChange={(e) => setInviteForm({ ...inviteForm, title: e.target.value })}
                   placeholder="e.g., Software Engineer, Sales Manager"
                 />
-                <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
+                <p className="mt-1 text-xs text-v-text-muted">
                   You can assign them to an org chart position after they accept
                 </p>
               </div>
@@ -745,6 +750,7 @@ export function EmployeeManager({ orgChartData, businessId, onUpdate }: Employee
           </div>
         </div>
       )}
+      <ConfirmDialog />
     </div>
   );
 }
