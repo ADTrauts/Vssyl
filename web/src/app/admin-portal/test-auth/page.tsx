@@ -3,8 +3,17 @@
 import React, { useState, useEffect } from 'react';
 import { Card, Button } from 'shared/components';
 import { Shield, CheckCircle, XCircle } from 'lucide-react';
+import { AdminPortalDebugPageGate } from '../../../components/admin-portal/AdminPortalDebugPageGate';
 
 export default function TestAuthPage() {
+  return (
+    <AdminPortalDebugPageGate>
+      <TestAuthPageContent />
+    </AdminPortalDebugPageGate>
+  );
+}
+
+function TestAuthPageContent() {
   const [testResult, setTestResult] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -38,14 +47,14 @@ export default function TestAuthPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Authentication Test</h1>
-        <p className="text-gray-700 dark:text-gray-300 mt-2">Test the admin portal authentication</p>
+        <h1 className="text-3xl font-bold text-v-text-primary">Authentication Test</h1>
+        <p className="text-v-text-secondary mt-2">Test the admin portal authentication</p>
       </div>
 
       <Card className="p-6">
         <div className="flex items-center space-x-3 mb-4">
           <Shield className="w-6 h-6 text-blue-600" />
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Admin Authentication Test</h2>
+          <h2 className="text-xl font-semibold text-v-text-primary">Admin Authentication Test</h2>
         </div>
 
         <Button 
@@ -85,7 +94,7 @@ export default function TestAuthPage() {
       </Card>
 
       <Card className="p-6">
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Debug Information</h2>
+        <h2 className="text-xl font-semibold text-v-text-primary mb-4">Debug Information</h2>
         <div className="space-y-2 text-sm">
           <p><strong>Test Endpoint:</strong> /api/admin-portal/test</p>
           <p><strong>Expected Response:</strong> Authentication success with user details</p>

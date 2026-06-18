@@ -115,10 +115,10 @@ export default function PipelineCompliancePanel() {
       {error && <Alert>{error}</Alert>}
       {message && <p className="text-sm text-green-700 dark:text-green-400">{message}</p>}
 
-      <section className="border border-gray-200 dark:border-slate-600 rounded-lg p-4 space-y-4">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Retention policy</h2>
+      <section className="border border-v-border rounded-lg p-4 space-y-4">
+        <h2 className="text-lg font-semibold text-v-text-primary">Retention policy</h2>
         <label className="block text-sm max-w-xs">
-          <span className="text-gray-700 dark:text-gray-300">Keep diagnostics (days)</span>
+          <span className="text-v-text-secondary">Keep diagnostics (days)</span>
           <input
             type="number"
             min={7}
@@ -130,7 +130,7 @@ export default function PipelineCompliancePanel() {
                 diagnosticRetentionDays: Number.parseInt(e.target.value, 10) || 90,
               })
             }
-            className="mt-1 w-full rounded border border-gray-300 dark:border-slate-600 px-3 py-2 bg-white dark:bg-slate-900"
+            className="mt-1 w-full rounded border border-v-border px-3 py-2 bg-v-surface"
           />
         </label>
         <label className="flex items-center gap-2 text-sm">
@@ -158,18 +158,18 @@ export default function PipelineCompliancePanel() {
         </Button>
       </section>
 
-      <section className="border border-gray-200 dark:border-slate-600 rounded-lg p-4 space-y-4">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Export diagnostics</h2>
+      <section className="border border-v-border rounded-lg p-4 space-y-4">
+        <h2 className="text-lg font-semibold text-v-text-primary">Export diagnostics</h2>
         <div className="flex flex-wrap gap-3 items-end">
           <label className="block text-sm">
-            <span className="text-gray-700 dark:text-gray-300">Last N days</span>
+            <span className="text-v-text-secondary">Last N days</span>
             <input
               type="number"
               min={1}
               max={90}
               value={exportDays}
               onChange={(e) => setExportDays(Number.parseInt(e.target.value, 10) || 30)}
-              className="mt-1 w-24 rounded border border-gray-300 dark:border-slate-600 px-3 py-2 bg-white dark:bg-slate-900"
+              className="mt-1 w-24 rounded border border-v-border px-3 py-2 bg-v-surface"
             />
           </label>
           <label className="flex items-center gap-2 text-sm pb-2">
@@ -191,7 +191,7 @@ export default function PipelineCompliancePanel() {
 
       <section className="border border-red-200 dark:border-red-900 rounded-lg p-4 space-y-3">
         <h2 className="text-lg font-semibold text-red-900 dark:text-red-200">Purge expired</h2>
-        <p className="text-sm text-gray-700 dark:text-gray-300">
+        <p className="text-sm text-v-text-secondary">
           Deletes persisted diagnostics older than the retention window. Run dry-run first.
         </p>
         <div className="flex gap-2">

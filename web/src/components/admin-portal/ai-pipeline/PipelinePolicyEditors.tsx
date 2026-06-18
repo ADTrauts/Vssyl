@@ -51,7 +51,7 @@ function PipelinePolicyEditModal({
   return (
     <Modal open={open} onClose={onClose} title={title} size="large">
       <div className="space-y-4">{children}</div>
-      <div className="flex flex-wrap gap-2 justify-end pt-4 mt-4 border-t border-gray-200 dark:border-slate-700">
+      <div className="flex flex-wrap gap-2 justify-end pt-4 mt-4 border-t border-v-border">
         <Button variant="secondary" onClick={onClose} disabled={saving}>
           Cancel
         </Button>
@@ -64,8 +64,8 @@ function PipelinePolicyEditModal({
 }
 
 const inputClass =
-  'mt-1 w-full rounded border border-gray-300 dark:border-slate-600 px-3 py-2 bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100';
-const labelClass = 'block text-sm text-gray-700 dark:text-gray-300';
+  'mt-1 w-full rounded border border-v-border px-3 py-2 bg-v-surface text-v-text-primary';
+const labelClass = 'block text-sm text-v-text-secondary';
 
 interface IntentEditorProps {
   intents: PipelineIntentDefinition[];
@@ -98,9 +98,9 @@ export function PipelineIntentEditor({ intents, onSaved }: IntentEditorProps) {
       {message && !editing && (
         <p className="text-sm text-green-700 dark:text-green-400">{message}</p>
       )}
-      <div className="overflow-x-auto border border-gray-200 dark:border-slate-600 rounded-lg">
-        <table className="min-w-full text-sm divide-y divide-gray-200 dark:divide-slate-600">
-          <thead className="bg-gray-50 dark:bg-slate-900">
+      <div className="overflow-x-auto border border-v-border rounded-lg">
+        <table className="min-w-full text-sm divide-y divide-v-border">
+          <thead className="bg-v-surface-muted">
             <tr>
               <th className="px-4 py-2 text-left">Intent</th>
               <th className="px-4 py-2 text-left">Grounding</th>
@@ -108,7 +108,7 @@ export function PipelineIntentEditor({ intents, onSaved }: IntentEditorProps) {
               <th className="px-4 py-2 text-right">Actions</th>
             </tr>
           </thead>
-          <tbody className="bg-white dark:bg-slate-800 divide-y divide-gray-200 dark:divide-slate-600">
+          <tbody className="bg-v-surface divide-y divide-v-border">
             {intents.map((intent) => (
               <tr key={intent.id}>
                 <td className="px-4 py-2 font-mono text-indigo-700 dark:text-indigo-300">{intent.id}</td>
@@ -116,7 +116,7 @@ export function PipelineIntentEditor({ intents, onSaved }: IntentEditorProps) {
                   {intent.groundingRequired ? (
                     <Badge className="bg-amber-100 text-amber-900">Required</Badge>
                   ) : (
-                    <Badge className="bg-gray-100 text-gray-700">Optional</Badge>
+                    <Badge className="bg-v-surface-muted text-gray-700">Optional</Badge>
                   )}
                 </td>
                 <td className="px-4 py-2">{intent.enabled ? 'Yes' : 'No'}</td>
@@ -161,7 +161,7 @@ export function PipelineIntentEditor({ intents, onSaved }: IntentEditorProps) {
                 onChange={(e) => setEditing({ ...editing, description: e.target.value })}
               />
             </label>
-            <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+            <label className="flex items-center gap-2 text-sm text-v-text-secondary">
               <input
                 type="checkbox"
                 checked={editing.groundingRequired}
@@ -169,7 +169,7 @@ export function PipelineIntentEditor({ intents, onSaved }: IntentEditorProps) {
               />
               Grounding required
             </label>
-            <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+            <label className="flex items-center gap-2 text-sm text-v-text-secondary">
               <input
                 type="checkbox"
                 checked={editing.enabled}
@@ -217,12 +217,12 @@ export function PipelineGroundingEditor({ rules, onSaved }: GroundingEditorProps
         {rules.map((rule) => (
           <li
             key={rule.intentId}
-            className="border border-gray-200 dark:border-slate-600 rounded-lg p-4 bg-white dark:bg-slate-900 flex justify-between gap-4"
+            className="border border-v-border rounded-lg p-4 bg-v-surface flex justify-between gap-4"
           >
             <div>
               <p className="font-mono text-indigo-700 dark:text-indigo-300">{rule.intentId}</p>
-              <p className="text-gray-700 dark:text-gray-300 mt-1">{rule.requirementSummary}</p>
-              <p className="text-xs text-gray-600 dark:text-gray-400 mt-2">
+              <p className="text-v-text-secondary mt-1">{rule.requirementSummary}</p>
+              <p className="text-xs text-v-text-muted mt-2">
                 Required: {rule.requiredSources.join(', ') || '—'} · Optional:{' '}
                 {rule.optionalSources.join(', ') || '—'}
               </p>
@@ -322,16 +322,16 @@ export function PipelineContextSourceEditor({ sources, onSaved }: SourceEditorPr
         {sources.map((src) => (
           <div
             key={src.id}
-            className="border border-gray-200 dark:border-slate-600 rounded-lg p-3 bg-white dark:bg-slate-900"
+            className="border border-v-border rounded-lg p-3 bg-v-surface"
           >
             <div className="flex items-center justify-between gap-2">
-              <span className="font-medium text-gray-900 dark:text-gray-100">{src.label}</span>
+              <span className="font-medium text-v-text-primary">{src.label}</span>
               <Button size="sm" variant="secondary" onClick={() => setEditing({ ...src })}>
                 Edit
               </Button>
             </div>
-            <p className="text-sm text-gray-700 dark:text-gray-300 mt-1">{src.description}</p>
-            <p className="text-xs text-gray-500 mt-2 font-mono">{src.id}</p>
+            <p className="text-sm text-v-text-secondary mt-1">{src.description}</p>
+            <p className="text-xs text-v-text-muted mt-2 font-mono">{src.id}</p>
           </div>
         ))}
       </div>
@@ -366,7 +366,7 @@ export function PipelineContextSourceEditor({ sources, onSaved }: SourceEditorPr
                 onChange={(e) => setEditing({ ...editing, description: e.target.value })}
               />
             </label>
-            <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+            <label className="flex items-center gap-2 text-sm text-v-text-secondary">
               <input
                 type="checkbox"
                 checked={editing.enabled}
@@ -374,7 +374,7 @@ export function PipelineContextSourceEditor({ sources, onSaved }: SourceEditorPr
               />
               Enabled
             </label>
-            <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+            <label className="flex items-center gap-2 text-sm text-v-text-secondary">
               <input
                 type="checkbox"
                 checked={editing.wiredInTwin}
@@ -425,11 +425,11 @@ export function PipelineToolPolicyEditor({ policies, onSaved }: ToolEditorProps)
         {policies.map((policy) => (
           <div
             key={policy.toolId}
-            className="border border-gray-200 dark:border-slate-600 rounded-lg p-4 bg-white dark:bg-slate-900 flex justify-between gap-4"
+            className="border border-v-border rounded-lg p-4 bg-v-surface flex justify-between gap-4"
           >
             <div>
               <span className="font-mono text-indigo-700 dark:text-indigo-300">{policy.toolId}</span>
-              <p className="text-gray-700 dark:text-gray-300 mt-1">{policy.purpose}</p>
+              <p className="text-v-text-secondary mt-1">{policy.purpose}</p>
             </div>
             <Button size="sm" variant="secondary" onClick={() => setEditing({ ...policy })}>
               Edit
@@ -468,7 +468,7 @@ export function PipelineToolPolicyEditor({ policies, onSaved }: ToolEditorProps)
                 onChange={(e) => setEditing({ ...editing, fallbackBehavior: e.target.value })}
               />
             </label>
-            <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">
+            <label className="flex items-center gap-2 text-sm text-v-text-secondary">
               <input
                 type="checkbox"
                 checked={editing.enabled}
@@ -505,9 +505,9 @@ export function PipelineWeakPhrasesEditor({ phrases, onSaved }: PhrasesEditorPro
     <div className="space-y-3">
       {error && <Alert>{error}</Alert>}
       {message && <p className="text-sm text-green-700 dark:text-green-400">{message}</p>}
-      <p className="text-sm text-gray-600 dark:text-gray-400">One phrase per line.</p>
+      <p className="text-sm text-v-text-muted">One phrase per line.</p>
       <textarea
-        className="w-full min-h-[200px] rounded border border-gray-300 dark:border-slate-600 px-3 py-2 bg-white dark:bg-slate-900 font-mono text-sm text-gray-900 dark:text-gray-100"
+        className="w-full min-h-[200px] rounded border border-v-border px-3 py-2 bg-v-surface font-mono text-sm text-v-text-primary"
         value={text}
         onChange={(e) => setText(e.target.value)}
       />

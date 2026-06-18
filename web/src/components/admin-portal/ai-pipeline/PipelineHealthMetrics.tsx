@@ -1,7 +1,9 @@
 'use client';
 
 import React from 'react';
+import { BarChart3 } from 'lucide-react';
 import type { PipelineCatalog, PipelineQualityStats } from '../../../types/adminAiPipeline';
+import { AdminPortalEmptyState } from '../AdminPortalEmptyState';
 import PipelineEnforcementBadge from './PipelineEnforcementBadge';
 
 function MetricCard({
@@ -20,21 +22,21 @@ function MetricCard({
       className={`rounded-lg border p-4 ${
         highlight
           ? 'border-red-200 bg-red-50 dark:border-red-900 dark:bg-red-950/30'
-          : 'border-gray-200 bg-white dark:border-slate-700 dark:bg-slate-900'
+          : 'border-gray-200 bg-white dark:border-slate-700 bg-v-surface'
       }`}
     >
-      <p className="text-xs font-medium text-gray-600 dark:text-gray-400">{label}</p>
-      <p className="text-xl font-semibold text-gray-900 dark:text-gray-100 mt-1">{value}</p>
-      {sub && <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{sub}</p>}
+      <p className="text-xs font-medium text-v-text-muted">{label}</p>
+      <p className="text-xl font-semibold text-v-text-primary mt-1">{value}</p>
+      {sub && <p className="text-xs text-v-text-muted dark:text-v-text-muted mt-1">{sub}</p>}
     </div>
   );
 }
 
 function SkeletonCard() {
   return (
-    <div className="rounded-lg border border-gray-200 dark:border-slate-700 p-4 animate-pulse bg-white dark:bg-slate-900">
-      <div className="h-3 w-24 bg-gray-200 dark:bg-slate-700 rounded mb-2" />
-      <div className="h-7 w-16 bg-gray-200 dark:bg-slate-700 rounded" />
+    <div className="rounded-lg border border-v-border p-4 animate-pulse bg-v-surface">
+      <div className="h-3 w-24 bg-v-surface-muted rounded mb-2" />
+      <div className="h-7 w-16 bg-v-surface-muted rounded" />
     </div>
   );
 }
@@ -60,16 +62,18 @@ export default function PipelineHealthMetrics({
 
   if (!stats) {
     return (
-      <p className="text-sm text-gray-600 dark:text-gray-400 py-4">
-        No quality metrics yet. Run Test Lab or twin queries after migrations are applied.
-      </p>
+      <AdminPortalEmptyState
+        icon={<BarChart3 className="w-12 h-12" />}
+        title="No quality metrics yet"
+        description="Run Test Lab or twin queries after migrations are applied."
+      />
     );
   }
 
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-center gap-2">
-        <span className="text-xs text-gray-500 dark:text-gray-400">
+        <span className="text-xs text-v-text-muted dark:text-v-text-muted">
           Last {stats.timeRangeDays} days
         </span>
         <PipelineEnforcementBadge enforcement={catalog?.enforcement} />

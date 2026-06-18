@@ -555,9 +555,9 @@ export default function ModulesPage() {
             <Upload className="w-4 h-4 mr-2" />
             Submit Module
           </Button>
-          <Button variant="secondary" onClick={() => router.push('/modules/admin')}>
+          <Button variant="secondary" onClick={() => router.push('/admin-portal/modules')}>
             <Settings className="w-4 h-4 mr-2" />
-            Admin Review
+            Module Governance
           </Button>
         </div>
       </div>

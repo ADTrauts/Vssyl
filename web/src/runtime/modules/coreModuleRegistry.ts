@@ -309,18 +309,6 @@ export const CORE_MODULE_DEFINITIONS: ModuleDefinition[] = [
     category: 'utility',
     capabilities: ['read', 'write', 'ai', 'businessWorkspace'],
   }),
-  coreModule({
-    id: 'admin',
-    name: 'Admin',
-    description: 'Administrative controls',
-    icon: 'admin',
-    supportedContexts: ['admin', 'business'],
-    widgets: [],
-    routes: [],
-    category: 'admin',
-    capabilities: ['read', 'admin'],
-    status: 'active',
-  }),
 ];
 
 export const CORE_MODULE_BY_ID: Record<string, ModuleDefinition> = Object.fromEntries(

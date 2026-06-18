@@ -5,6 +5,7 @@ import { authenticateJWT } from '../../middleware/auth';
 import { logger } from '../../lib/logger';
 import { geolocationService } from '../../services/geolocationService';
 import { requireAdmin } from './adminPortalShared';
+import * as adminAiPipelineDiagnosticsService from '../../services/admin/adminAiPipelineDiagnosticsService';
 import { DigitalLifeTwinService } from '../../ai/core/DigitalLifeTwinService';
 import { buildPipelineTrace } from '../../ai/pipeline/buildPipelineTrace';
 import { mapOrchestrationToPipelineTraceInput } from '../../ai/pipeline/mapPipelineTraceInputs';
@@ -820,70 +821,13 @@ export function registerAdminPortalAiPipelineRoutes(router: express.Router): voi
     try {
       const limit = parseLimit(req.query.limit);
       const userIdFilter = typeof req.query.userId === 'string' ? req.query.userId : undefined;
-      const catalog = await getEffectivePipelineCatalog();
-
-      const dbTraces = await listPipelineDiagnosticsFromDb({ limit, userId: userIdFilter });
-      const seen = new Set(dbTraces.map((t) => t.traceId));
-
-      if (dbTraces.length >= limit) {
-        return res.json({
-          success: true,
-          data: { traces: enrichTracesForAdmin(dbTraces, catalog), total: dbTraces.length },
-        });
-      }
-
-      const legacy: AIPipelineTrace[] = [];
-      const historyRows = await prisma.aIConversationHistory.findMany({
-        where: userIdFilter ? { userId: userIdFilter } : undefined,
-        orderBy: { createdAt: 'desc' },
-        take: limit,
-        select: {
-          id: true,
-          userId: true,
-          userQuery: true,
-          aiResponse: true,
-          confidence: true,
-          context: true,
-          createdAt: true,
-        },
+      const result = await adminAiPipelineDiagnosticsService.listAdminPipelineDiagnostics({
+        limit,
+        userId: userIdFilter,
       });
-
-      for (const row of historyRows) {
-        const embedded = extractCanonicalPipelineTraceFromHistoryContext(row.context);
-        const trace =
-          embedded ??
-          buildPipelineTrace(
-            {
-              ...mapOrchestrationToPipelineTraceInput({
-                userId: row.userId,
-                userMessage: row.userQuery,
-                finalResponse: row.aiResponse,
-                confidence: row.confidence,
-                queryContext:
-                  row.context && typeof row.context === 'object' && !Array.isArray(row.context)
-                    ? (row.context as Record<string, unknown>)
-                    : undefined,
-                traceId: `history-${row.id}`,
-              }),
-              createdAt: row.createdAt.toISOString(),
-            },
-            { catalog }
-          );
-        if (seen.has(trace.traceId)) continue;
-        seen.add(trace.traceId);
-        legacy.push({
-          ...trace,
-          conversationHistoryId: row.id,
-        });
-      }
-
-      const combined = [...dbTraces, ...legacy]
-        .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
-        .slice(0, limit);
-
       res.json({
         success: true,
-        data: { traces: enrichTracesForAdmin(combined, catalog), total: combined.length },
+        data: { traces: result.traces, total: result.total },
       });
     } catch (error: unknown) {
       const err = error instanceof Error ? error : new Error(String(error));
@@ -898,77 +842,14 @@ export function registerAdminPortalAiPipelineRoutes(router: express.Router): voi
   router.get('/ai-pipeline/diagnostics/:traceId', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
     try {
       const { traceId } = req.params;
-      const catalog = await getEffectivePipelineCatalog();
-
-      const fromDb = await findPipelineDiagnosticById(traceId);
-      if (fromDb) {
-        const row = await prisma.aIPipelineDiagnostic.findUnique({
-          where: { id: traceId },
-          select: { source: true },
-        });
-        const source = row?.source === 'TEST_LAB' ? 'TEST_LAB' : 'TWIN';
-        return res.json({
-          success: true,
-          data: enrichSingleTraceForAdmin(fromDb, catalog, source),
-        });
+      const lookup = await adminAiPipelineDiagnosticsService.getAdminPipelineDiagnosticByTraceId(traceId);
+      if (!lookup.found) {
+        return res.status(404).json({ error: 'Diagnostic trace not found' });
       }
-
-      const fromMemory = getPipelineTraceById(traceId);
-      if (fromMemory) {
-        return res.json({
-          success: true,
-          data: enrichSingleTraceForAdmin(fromMemory, catalog, 'TWIN'),
-        });
-      }
-
-      if (traceId.startsWith('history-')) {
-        const historyId = traceId.slice('history-'.length);
-        const row = await prisma.aIConversationHistory.findUnique({
-          where: { id: historyId },
-          select: {
-            id: true,
-            userId: true,
-            userQuery: true,
-            aiResponse: true,
-            confidence: true,
-            context: true,
-            createdAt: true,
-          },
-        });
-        if (!row) {
-          return res.status(404).json({ error: 'Diagnostic trace not found' });
-        }
-        const embedded = extractCanonicalPipelineTraceFromHistoryContext(row.context);
-        const trace =
-          embedded ??
-          buildPipelineTrace(
-            {
-              ...mapOrchestrationToPipelineTraceInput({
-                userId: row.userId,
-                userMessage: row.userQuery,
-                finalResponse: row.aiResponse,
-                confidence: row.confidence,
-                queryContext:
-                  row.context && typeof row.context === 'object' && !Array.isArray(row.context)
-                    ? (row.context as Record<string, unknown>)
-                    : undefined,
-                traceId: `history-${row.id}`,
-              }),
-              createdAt: row.createdAt.toISOString(),
-            },
-            { catalog }
-          );
-        return res.json({
-          success: true,
-          data: enrichSingleTraceForAdmin(
-            { ...trace, conversationHistoryId: row.id },
-            catalog,
-            'TWIN'
-          ),
-        });
-      }
-
-      return res.status(404).json({ error: 'Diagnostic trace not found' });
+      return res.json({
+        success: true,
+        data: lookup.data,
+      });
     } catch (error: unknown) {
       const err = error instanceof Error ? error : new Error(String(error));
       void logger.error('Failed to get pipeline diagnostic', {

@@ -2,7 +2,9 @@
 
 import React, { useCallback, useEffect, useState } from 'react';
 import { Spinner, Alert, Button, Badge } from 'shared/components';
+import { BarChart3, AlertTriangle, Shield } from 'lucide-react';
 import { adminApiService } from '../../../lib/adminApiService';
+import { AdminPortalEmptyState } from '../AdminPortalEmptyState';
 import type { PipelineQualityStats } from '../../../types/adminAiPipeline';
 import { PipelineWeakPhrasesEditor } from './PipelinePolicyEditors';
 import PipelineEnforcementSettingsEditor from './PipelineEnforcementSettings';
@@ -46,13 +48,13 @@ export default function PipelineQualityDashboard() {
       )}
       <div className="flex flex-wrap gap-3 items-end">
         <div>
-          <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+          <label className="block text-xs font-medium text-v-text-secondary mb-1">
             Time range (days)
           </label>
           <select
             value={days}
             onChange={(e) => setDays(Number(e.target.value))}
-            className="rounded-lg border border-gray-300 dark:border-slate-600 px-3 py-2 text-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100"
+            className="rounded-lg border border-v-border px-3 py-2 text-sm bg-v-surface text-v-text-primary"
           >
             <option value={7}>7 days</option>
             <option value={14}>14 days</option>
@@ -60,14 +62,14 @@ export default function PipelineQualityDashboard() {
           </select>
         </div>
         <div>
-          <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+          <label className="block text-xs font-medium text-v-text-secondary mb-1">
             User ID (optional)
           </label>
           <input
             type="text"
             value={userIdFilter}
             onChange={(e) => setUserIdFilter(e.target.value)}
-            className="rounded-lg border border-gray-300 dark:border-slate-600 px-3 py-2 text-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100"
+            className="rounded-lg border border-v-border px-3 py-2 text-sm bg-v-surface text-v-text-primary"
           />
         </div>
         <Button variant="secondary" onClick={() => void loadStats()}>
@@ -96,23 +98,23 @@ export default function PipelineQualityDashboard() {
 
           {stats.byDay.length > 0 && (
             <section>
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">
+              <h2 className="text-lg font-semibold text-v-text-primary mb-3">
                 Risk by day
               </h2>
-              <div className="overflow-x-auto border border-gray-200 dark:border-slate-600 rounded-lg">
+              <div className="overflow-x-auto border border-v-border rounded-lg">
                 <table className="min-w-full text-sm">
-                  <thead className="bg-gray-50 dark:bg-slate-900">
+                  <thead className="bg-v-surface-muted">
                     <tr>
-                      <th className="px-4 py-2 text-left text-gray-700 dark:text-gray-300">Date</th>
-                      <th className="px-4 py-2 text-left text-gray-700 dark:text-gray-300">Total</th>
-                      <th className="px-4 py-2 text-left text-gray-700 dark:text-gray-300">At risk</th>
+                      <th className="px-4 py-2 text-left text-v-text-secondary">Date</th>
+                      <th className="px-4 py-2 text-left text-v-text-secondary">Total</th>
+                      <th className="px-4 py-2 text-left text-v-text-secondary">At risk</th>
                     </tr>
                   </thead>
-                  <tbody className="divide-y divide-gray-200 dark:divide-slate-600 bg-white dark:bg-slate-800">
+                  <tbody className="divide-y divide-v-border bg-v-surface">
                     {stats.byDay.map((row) => (
                       <tr key={row.date}>
-                        <td className="px-4 py-2 text-gray-900 dark:text-gray-100">{row.date}</td>
-                        <td className="px-4 py-2 text-gray-700 dark:text-gray-300">{row.total}</td>
+                        <td className="px-4 py-2 text-v-text-primary">{row.date}</td>
+                        <td className="px-4 py-2 text-v-text-secondary">{row.total}</td>
                         <td className="px-4 py-2">
                           <Badge
                             className={
@@ -134,28 +136,36 @@ export default function PipelineQualityDashboard() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
             <section>
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">
+              <h2 className="text-lg font-semibold text-v-text-primary mb-3">
                 Top issues
               </h2>
               {stats.topIssues.length === 0 ? (
-                <p className="text-gray-700 dark:text-gray-300 text-sm">No issues recorded yet.</p>
+                <AdminPortalEmptyState
+                  icon={<AlertTriangle className="w-12 h-12" />}
+                  title="No issues recorded yet"
+                  description=""
+                />
               ) : (
-                <ul className="space-y-2 text-sm text-gray-700 dark:text-gray-300">
+                <ul className="space-y-2 text-sm text-v-text-secondary">
                   {stats.topIssues.map((item) => (
                     <li key={item.issue} className="flex justify-between gap-2">
                       <span>{item.issue}</span>
-                      <Badge className="bg-gray-100 text-gray-800 shrink-0">{item.count}</Badge>
+                      <Badge className="bg-v-surface-muted text-gray-800 shrink-0">{item.count}</Badge>
                     </li>
                   ))}
                 </ul>
               )}
             </section>
             <section>
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">
+              <h2 className="text-lg font-semibold text-v-text-primary mb-3">
                 Intents with risk
               </h2>
               {stats.intentsAtRisk.length === 0 ? (
-                <p className="text-gray-700 dark:text-gray-300 text-sm">No at-risk intents yet.</p>
+                <AdminPortalEmptyState
+                  icon={<Shield className="w-12 h-12" />}
+                  title="No at-risk intents yet"
+                  description=""
+                />
               ) : (
                 <ul className="space-y-2">
                   {stats.intentsAtRisk.map((item) => (
@@ -172,10 +182,11 @@ export default function PipelineQualityDashboard() {
           </div>
         </>
       ) : (
-        <p className="text-gray-700 dark:text-gray-300 text-sm">
-          No persisted diagnostics yet. Twin responses populate this dashboard after the migration
-          is applied.
-        </p>
+        <AdminPortalEmptyState
+          icon={<BarChart3 className="w-12 h-12" />}
+          title="No persisted diagnostics yet"
+          description="Twin responses populate this dashboard after the migration is applied."
+        />
       )}
 
       {catalogError && <Alert>{catalogError}</Alert>}
@@ -186,7 +197,7 @@ export default function PipelineQualityDashboard() {
       ) : (
         catalog && (
           <section>
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-3">
+            <h2 className="text-lg font-semibold text-v-text-primary mb-3">
               Monitored generic phrases
             </h2>
             <PipelineWeakPhrasesEditor
@@ -214,11 +225,11 @@ function StatCard({
       className={`rounded-lg border p-4 ${
         highlight
           ? 'border-red-200 bg-red-50 dark:border-red-900 dark:bg-red-950/30'
-          : 'border-gray-200 bg-white dark:border-slate-700 dark:bg-slate-900'
+          : 'border-gray-200 bg-white dark:border-slate-700 bg-v-surface'
       }`}
     >
-      <p className="text-xs font-medium text-gray-600 dark:text-gray-400">{label}</p>
-      <p className="text-xl font-semibold text-gray-900 dark:text-gray-100 mt-1">{value}</p>
+      <p className="text-xs font-medium text-v-text-muted">{label}</p>
+      <p className="text-xl font-semibold text-v-text-primary mt-1">{value}</p>
     </div>
   );
 }

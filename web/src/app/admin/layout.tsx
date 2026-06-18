@@ -10,16 +10,13 @@ export default async function AdminLayout({
 }) {
   const session = await getServerSession(authOptions);
 
-  // Redirect to login if no session
   if (!session) {
     redirect('/auth/login');
   }
 
-  // Check if user is admin
   if (session.user.role !== 'ADMIN') {
     redirect('/dashboard');
   }
 
-  // Redirect to the new admin portal
-  redirect('/admin-portal');
-} 
+  return <>{children}</>;
+}

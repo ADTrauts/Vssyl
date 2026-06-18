@@ -1,10 +1,5 @@
-import React from 'react';
-import RetentionManagementDashboard from '../../../components/RetentionManagementDashboard';
+import { redirect } from 'next/navigation';
 
-export default function RetentionManagementPage() {
-  return (
-    <div>
-      <RetentionManagementDashboard />
-    </div>
-  );
-} 
+export default function LegacyRetentionRedirect() {
+  redirect('/admin-portal/retention');
+}

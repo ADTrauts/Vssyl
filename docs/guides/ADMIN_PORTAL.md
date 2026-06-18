@@ -1,218 +1,89 @@
-# Admin Portal Implementation
+# Admin Portal
 
-## Overview
+## What it is
 
-The Admin Portal is a comprehensive administrative interface for the Block on Block platform, providing enterprise-grade management capabilities for system administrators.
+The **Admin Portal** (`/admin-portal`) is a **platform control plane + governance surface**. It is **not** a product module and is **not** installable through the module marketplace or business workspace module registry.
 
-## Features Implemented
+- **Canonical entry:** `/admin-portal` (requires platform `ADMIN` role)
+- **Canonical module governance:** `/admin-portal/modules` (submissions, certification, AI context status)
+- **Legacy handoff:** `/modules/admin` redirects to `/admin-portal/modules` (do not add duplicate governance UI there)
 
-### 1. Admin Portal Structure
-- **URL**: `/admin-portal`
-- **Authentication**: Admin role required
-- **Layout**: Professional admin interface with sidebar navigation
-
-### 2. Core Admin Sections
-
-#### Dashboard (`/admin-portal/dashboard`)
-- System overview with key metrics
-- Quick stats (users, businesses, revenue, system health)
-- Recent activity feed
-- System alerts
-- Quick action buttons
-
-#### User Management (`/admin-portal/users`)
-- Comprehensive user table with search and filtering
-- User actions (ban, suspend, reset password, impersonate)
-- Bulk operations
-- User analytics and statistics
-- Block ID management
-
-#### Content Moderation (`/admin-portal/moderation`)
-- Reported content management
-- Content filtering by type and status
-- Moderation actions (remove, warn, ignore)
-- Content analytics
-- Moderation rules configuration
-
-#### Platform Analytics (`/admin-portal/analytics`)
-- System health monitoring (CPU, memory, disk, network)
-- User growth metrics
-- Revenue analytics
-- Performance metrics
-- Error rate tracking
-
-#### Financial Management (`/admin-portal/billing`)
-- Subscription management
-- Payment processing
-- Developer payouts
-- Revenue tracking
-- Financial reports
-
-#### Security & Compliance (`/admin-portal/security`)
-- Security event monitoring
-- Audit log management
-- Compliance reporting (GDPR, SOC2, ISO27001)
-- Threat detection
-- Security alerts
-
-#### System Administration (`/admin-portal/system`)
-- System health monitoring
-- Service management
-- Configuration management
-- Automation tasks
-- System actions
-
-## Technical Implementation
-
-### Authentication & Security
-- Admin role verification on all routes
-- Session-based authentication
-- IP whitelisting support (configurable)
-- Comprehensive audit logging
-- Admin action tracking
-
-### UI Components
-- Professional admin interface
-- Responsive design
-- Collapsible sidebar navigation
-- Real-time system status indicators
-- Interactive data tables with filtering
-
-### Data Management
-- Mock data implementation (ready for API integration)
-- TypeScript interfaces for all data structures
-- Error handling and loading states
-- Pagination support
-
-## File Structure
-
-```
-web/src/app/admin-portal/
-├── layout.tsx (Admin portal layout with authentication)
-├── page.tsx (Redirects to dashboard)
-├── dashboard/
-│   └── page.tsx (Admin overview dashboard)
-├── users/
-│   └── page.tsx (User management)
-├── moderation/
-│   └── page.tsx (Content moderation)
-├── analytics/
-│   └── page.tsx (Platform analytics)
-├── billing/
-│   └── page.tsx (Financial management)
-├── security/
-│   └── page.tsx (Security monitoring)
-└── system/
-    └── page.tsx (System administration)
-
-web/src/components/admin-portal/
-├── AdminStatCard.tsx (Reusable stat card component)
-├── AdminNavigation.tsx (Sidebar navigation component)
-└── AdminHeader.tsx (Header component)
-```
-
-## Usage
-
-### Accessing the Admin Portal
-1. Log in with an admin account
-2. Navigate to `/admin-portal`
-3. The portal will automatically redirect to `/admin-portal/dashboard`
-
-### Admin Requirements
-- User must have `role: 'ADMIN'` in the database
-- Session must be valid
-- Admin permissions are enforced at the layout level
-
-### Navigation
-- Use the sidebar to navigate between admin sections
-- Each section provides specific administrative functions
-- Quick actions are available from the dashboard
-
-## Security Features
-
-### Admin Access Control
-- Role-based access control (RBAC)
-- Admin-only route protection
-- Session validation
-- IP-based access restrictions (configurable)
-
-### Audit Logging
-- All admin actions are logged
-- User impersonation tracking
-- Security event monitoring
-- Compliance reporting
-
-### Data Protection
-- Sensitive data masking
-- Secure admin session management
-- Admin action approval workflows
-- Emergency access procedures
-
-## Future Enhancements
-
-### Planned Features
-1. **Real-time Monitoring**: Live system metrics and alerts
-2. **Advanced Analytics**: Custom reports and data visualization
-3. **Automation**: Automated admin tasks and workflows
-4. **API Integration**: Connect to actual backend services
-5. **Multi-factor Authentication**: Enhanced admin security
-6. **Compliance Tools**: Advanced compliance reporting
-7. **Developer Management**: Module marketplace administration
-8. **System Configuration**: Dynamic system settings management
-
-### Technical Improvements
-1. **Performance**: Optimize for large datasets
-2. **Scalability**: Support for enterprise-scale deployments
-3. **Customization**: Configurable admin interface
-4. **Integration**: Third-party service integrations
-5. **Mobile Support**: Responsive admin interface
-
-## Development Notes
-
-### Current Status
-- ✅ Core admin portal structure implemented
-- ✅ All major admin sections created
-- ✅ TypeScript interfaces defined
-- ✅ Mock data implemented
-- ✅ UI components created
-- ✅ Authentication and security features
-- ✅ Error handling and loading states
-
-### Next Steps
-1. **API Integration**: Replace mock data with real API calls
-2. **Backend Services**: Implement admin-specific backend services
-3. **Testing**: Comprehensive testing of all admin features
-4. **Documentation**: Complete admin user documentation
-5. **Deployment**: Production deployment and monitoring
-
-## Security Considerations
-
-### Admin Access
-- Admin accounts should be created manually
-- Strong password requirements
-- Regular security audits
-- Admin session timeouts
-
-### Data Protection
-- All admin actions are logged
-- Sensitive data is masked in logs
-- Admin access is restricted by IP (configurable)
-- Emergency access procedures in place
-
-### Compliance
-- GDPR compliance for admin actions
-- SOC2 compliance reporting
-- Audit trail maintenance
-- Data retention policies
-
-## Support
-
-For questions or issues with the admin portal:
-1. Check the system logs for errors
-2. Verify admin permissions
-3. Review security event logs
-4. Contact system administrators
+**Architecture references:** [Control Plane Architecture](../architecture/audits/ADMIN_PORTAL_CONTROL_PLANE_ARCHITECTURE.md) · [Satellite Mount Map](../architecture/audits/ADMIN_PORTAL_SATELLITE_MOUNT_MAP.md) · [Operation Matrix](../architecture/audits/ADMIN_PORTAL_OPERATION_MATRIX.md)
 
 ---
 
-**Note**: This admin portal is designed for internal use by authorized administrators only. All access is logged and monitored for security purposes. 
+## Access & security
+
+| Requirement | Detail |
+|-------------|--------|
+| Role | Platform `ADMIN` on all admin-portal API routes |
+| Session | NextAuth session with JWT forwarded to Express |
+| Debug / test surfaces | Disabled unless `ADMIN_PORTAL_DEBUG_ENABLED=true` (Package 0E-E) |
+| Dangerous DB migration ops | Disabled unless `ADMIN_PORTAL_DANGEROUS_OPS_ENABLED=true` + confirm token (Package 0E-B) |
+
+Admin Portal routes use `authenticateJWT` + `requireAdmin` from `adminPortalShared.ts` on the canonical `/api/admin-portal/*` mount.
+
+---
+
+## Primary sections
+
+| Section | Path | Notes |
+|---------|------|-------|
+| Dashboard | `/admin-portal/dashboard` | Live stats via `adminApiService` (no mock health fallback) |
+| Users | `/admin-portal/users` | User management, impersonation lab |
+| Moderation | `/admin-portal/moderation` | Reported content |
+| Support | `/admin-portal/support` | Support tickets (live API; error + retry on failure) |
+| Modules | `/admin-portal/modules` | **Canonical** module governance + certification + AI context |
+| Developers | `/admin-portal/developers` | Developer / marketplace ops |
+| Analytics / BI / AI | `/admin-portal/analytics`, `business-intelligence`, `ai-system`, `ai-pipeline` | See boundary docs for ownership |
+| System | `/admin-portal/system`, `system-logs`, `security`, `performance` | Platform operations |
+
+---
+
+## Module governance boundary (AP-F-009 / AP-F-010)
+
+- **Do not** register `admin` as a core/installable module id in `coreModuleRegistry.ts` or `config/modules.ts`.
+- **Do not** build parallel submission review UI under `/modules/admin`.
+- Marketplace browsing remains at `/modules`; platform operators use **Admin Portal → Modules** for governance.
+
+---
+
+## API integration
+
+Frontend calls use the Next.js API proxy (`/api/...`) via `web/src/lib/adminApiService.ts` — not raw production backend URLs.
+
+Primary backend mount: `/api/admin-portal/*` (canonical). Satellite mounts (AI providers, logs, overrides, etc.) are documented in the [Satellite Mount Map](../architecture/audits/ADMIN_PORTAL_SATELLITE_MOUNT_MAP.md).
+
+---
+
+## Development
+
+```bash
+pnpm dev   # from repo root — web ~3000, server ~5000
+```
+
+Enable debug/test tools locally only when needed:
+
+```bash
+ADMIN_PORTAL_DEBUG_ENABLED=true
+ADMIN_PORTAL_DANGEROUS_OPS_ENABLED=true   # migration delete/reset only
+```
+
+---
+
+## File layout (high level)
+
+```
+web/src/app/admin-portal/          # Control plane pages
+web/src/components/admin-portal/   # Portal shell components
+web/src/lib/adminApiService.ts     # API client
+server/src/routes/admin-portal/    # Canonical backend domains
+```
+
+---
+
+## Related memory bank
+
+Product intent and feature status: `memory-bank/adminProductContext.md`
+
+**Last updated:** 2026-06-17 (Stage 0B-B registry cleanup)

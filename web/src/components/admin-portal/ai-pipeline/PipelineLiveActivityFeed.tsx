@@ -26,7 +26,7 @@ function activityTone(trace: AIPipelineTrace): string {
   if (trace.retrievalPerformed && !trace.genericResponseRisk) {
     return 'border-l-4 border-l-green-500';
   }
-  return 'border-l-4 border-l-gray-300 dark:border-l-slate-600';
+  return 'border-l-4 border-l-v-border';
 }
 
 export default function PipelineLiveActivityFeed({
@@ -38,11 +38,11 @@ export default function PipelineLiveActivityFeed({
 }) {
   if (loading) {
     return (
-      <div className="border border-gray-200 dark:border-slate-700 rounded-lg p-4 bg-white dark:bg-slate-900 min-h-[280px] animate-pulse">
-        <div className="h-5 w-40 bg-gray-200 dark:bg-slate-700 rounded mb-4" />
+      <div className="border border-v-border rounded-lg p-4 bg-v-surface min-h-[280px] animate-pulse">
+        <div className="h-5 w-40 bg-v-surface-muted rounded mb-4" />
         <div className="space-y-3">
           {Array.from({ length: 5 }).map((_, i) => (
-            <div key={i} className="h-16 bg-gray-100 dark:bg-slate-800 rounded" />
+            <div key={i} className="h-16 bg-v-surface-muted rounded" />
           ))}
         </div>
       </div>
@@ -51,11 +51,11 @@ export default function PipelineLiveActivityFeed({
 
   if (traces.length === 0) {
     return (
-      <div className="border border-gray-200 dark:border-slate-700 rounded-lg p-6 bg-white dark:bg-slate-900 min-h-[280px]">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">
+      <div className="border border-v-border rounded-lg p-6 bg-v-surface min-h-[280px]">
+        <h2 className="text-lg font-semibold text-v-text-primary mb-2">
           Live pipeline activity
         </h2>
-        <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">
+        <p className="text-sm text-v-text-muted mb-3">
           No traces yet. Use Test Lab or send twin queries to populate diagnostics.
         </p>
         <Link
@@ -69,12 +69,12 @@ export default function PipelineLiveActivityFeed({
   }
 
   return (
-    <div className="border border-gray-200 dark:border-slate-700 rounded-lg p-4 bg-white dark:bg-slate-900 min-h-[280px]">
+    <div className="border border-v-border rounded-lg p-4 bg-v-surface min-h-[280px]">
       <div className="flex items-center justify-between mb-3">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+        <h2 className="text-lg font-semibold text-v-text-primary">
           Live pipeline activity
         </h2>
-        <span className="text-xs text-gray-500 dark:text-gray-400">Refreshes every 60s</span>
+        <span className="text-xs text-v-text-muted dark:text-v-text-muted">Refreshes every 60s</span>
       </div>
       <ul className="space-y-2 max-h-[420px] overflow-y-auto">
         {traces.map((trace) => {
@@ -83,10 +83,10 @@ export default function PipelineLiveActivityFeed({
           return (
             <li
               key={trace.traceId}
-              className={`rounded-lg border border-gray-200 dark:border-slate-700 pl-3 pr-3 py-2 ${activityTone(trace)}`}
+              className={`rounded-lg border border-v-border pl-3 pr-3 py-2 ${activityTone(trace)}`}
             >
               <div className="flex flex-wrap items-center justify-between gap-2">
-                <time className="text-xs text-gray-500 dark:text-gray-400">
+                <time className="text-xs text-v-text-muted dark:text-v-text-muted">
                   {new Date(trace.createdAt).toLocaleString()}
                 </time>
                 <div className="flex flex-wrap gap-1">
@@ -99,7 +99,7 @@ export default function PipelineLiveActivityFeed({
               <p className="text-sm font-mono text-indigo-700 dark:text-indigo-300 mt-1">
                 {primaryIntent}
               </p>
-              <p className="text-xs text-gray-600 dark:text-gray-400 truncate mt-0.5">
+              <p className="text-xs text-v-text-muted truncate mt-0.5">
                 {trace.userMessage}
               </p>
               <div className="flex flex-wrap gap-2 mt-2 text-xs">

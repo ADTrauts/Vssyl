@@ -4,8 +4,17 @@ import React, { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
 import { adminApiService } from '../../../lib/adminApiService';
 import { useImpersonation } from '../../../contexts/ImpersonationContext';
+import { AdminPortalDebugPageGate } from '../../../components/admin-portal/AdminPortalDebugPageGate';
 
 export default function DebugAuthPage() {
+  return (
+    <AdminPortalDebugPageGate>
+      <DebugAuthPageContent />
+    </AdminPortalDebugPageGate>
+  );
+}
+
+function DebugAuthPageContent() {
   const { data: session, status } = useSession();
   const { isImpersonating, currentSession, startImpersonation, endImpersonation } = useImpersonation();
   const [testResults, setTestResults] = useState<any>({});
@@ -96,13 +105,13 @@ export default function DebugAuthPage() {
 
   return (
     <div className="space-y-6">
-      <div className="bg-white dark:bg-slate-900 rounded-lg shadow p-6">
+      <div className="bg-v-surface rounded-lg shadow p-6">
         <h1 className="text-2xl font-bold mb-4">Authentication Debug</h1>
         
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div className="space-y-4">
             <h2 className="text-lg font-semibold">Session Status</h2>
-            <div className="bg-gray-50 dark:bg-slate-800 p-4 rounded">
+            <div className="bg-v-surface-muted p-4 rounded">
               <p><strong>Status:</strong> {status}</p>
               <p><strong>Has Session:</strong> {session ? 'Yes' : 'No'}</p>
               <p><strong>User Email:</strong> {session?.user?.email || 'None'}</p>
@@ -114,7 +123,7 @@ export default function DebugAuthPage() {
 
           <div className="space-y-4">
             <h2 className="text-lg font-semibold">Impersonation Status</h2>
-            <div className="bg-gray-50 dark:bg-slate-800 p-4 rounded">
+            <div className="bg-v-surface-muted p-4 rounded">
               <p><strong>Is Impersonating:</strong> {isImpersonating ? 'Yes' : 'No'}</p>
               <p><strong>Target User:</strong> {currentSession?.targetUser?.name || 'None'}</p>
               <p><strong>Target Email:</strong> {currentSession?.targetUser?.email || 'None'}</p>
@@ -153,7 +162,7 @@ export default function DebugAuthPage() {
         {Object.keys(testResults).length > 0 && (
           <div className="mt-6">
             <h2 className="text-lg font-semibold mb-4">Test Results</h2>
-            <div className="bg-gray-50 dark:bg-slate-800 p-4 rounded">
+            <div className="bg-v-surface-muted p-4 rounded">
               <pre className="text-sm overflow-auto">
                 {JSON.stringify(testResults, null, 2)}
               </pre>

@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { Card, Button, Badge, Alert, Spinner, Modal, Input } from 'shared/components';
+import { useConfirm } from 'shared';
 import { 
   FileText, 
   Search, 
@@ -30,6 +31,7 @@ import { useSession } from 'next-auth/react';
 
 export default function SystemLogsPage() {
   const { data: session } = useSession();
+  const { confirm, ConfirmDialog } = useConfirm();
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [analytics, setAnalytics] = useState<LogAnalytics | null>(null);
   const [alerts, setAlerts] = useState<LogAlert[]>([]);
@@ -125,7 +127,13 @@ export default function SystemLogsPage() {
 
   const deleteAlert = async (alertId: string) => {
     if (!session?.accessToken) return;
-    if (!confirm('Are you sure you want to delete this alert?')) return;
+    const ok = await confirm({
+      title: 'Delete alert?',
+      description: 'Are you sure you want to delete this alert?',
+      variant: 'destructive',
+      confirmLabel: 'Delete',
+    });
+    if (!ok) return;
 
     try {
       await logsApi.deleteLogAlert(alertId, session.accessToken);
@@ -227,9 +235,9 @@ export default function SystemLogsPage() {
       case 'info':
         return <Info className="w-4 h-4 text-blue-500" />;
       case 'debug':
-        return <Bug className="w-4 h-4 text-gray-500 dark:text-gray-400" />;
+        return <Bug className="w-4 h-4 text-v-text-muted dark:text-v-text-muted" />;
       default:
-        return <Activity className="w-4 h-4 text-gray-500 dark:text-gray-400" />;
+        return <Activity className="w-4 h-4 text-v-text-muted dark:text-v-text-muted" />;
     }
   };
 
@@ -242,9 +250,9 @@ export default function SystemLogsPage() {
       case 'info':
         return 'bg-blue-100 text-blue-700 border-blue-300';
       case 'debug':
-        return 'bg-gray-100 text-gray-700 border-gray-300';
+        return 'bg-v-surface-muted text-gray-700 border-v-border';
       default:
-        return 'bg-gray-100 text-gray-700 border-gray-300';
+        return 'bg-v-surface-muted text-gray-700 border-v-border';
     }
   };
 
@@ -255,7 +263,7 @@ export default function SystemLogsPage() {
       case 'vssyl-web':
         return <Monitor className="w-4 h-4 text-blue-500" />;
       default:
-        return <Activity className="w-4 h-4 text-gray-500 dark:text-gray-400" />;
+        return <Activity className="w-4 h-4 text-v-text-muted dark:text-v-text-muted" />;
     }
   };
 
@@ -272,7 +280,7 @@ export default function SystemLogsPage() {
     return (
       <div className="flex items-center justify-center p-8">
         <Spinner size={48} />
-        <span className="ml-2 text-gray-700 dark:text-gray-300">Loading system logs...</span>
+        <span className="ml-2 text-v-text-secondary">Loading system logs...</span>
       </div>
     );
   }
@@ -282,8 +290,8 @@ export default function SystemLogsPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">System Logs</h1>
-          <p className="text-gray-700 dark:text-gray-300 mt-2">Advanced log monitoring and analytics</p>
+          <h1 className="text-3xl font-bold text-v-text-primary">System Logs</h1>
+          <p className="text-v-text-secondary mt-2">Advanced log monitoring and analytics</p>
         </div>
         <div className="flex items-center space-x-3">
           <button
@@ -291,7 +299,7 @@ export default function SystemLogsPage() {
             className={`flex items-center space-x-2 px-3 py-2 rounded-lg transition-colors ${
               autoRefresh 
                 ? 'bg-green-100 text-green-700 border border-green-300' 
-                : 'bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-slate-600'
+                : 'bg-v-surface-muted bg-v-surface-muted text-v-text-secondary border border-v-border'
             }`}
           >
             <RefreshCw className={`w-4 h-4 ${autoRefresh ? 'animate-spin' : ''}`} />
@@ -310,14 +318,14 @@ export default function SystemLogsPage() {
       </div>
 
       {/* Tab Navigation */}
-      <div className="border-b border-gray-200 dark:border-slate-700">
+      <div className="border-b border-v-border">
         <nav className="-mb-px flex space-x-8">
           <button
             onClick={() => setActiveTab('logs')}
             className={`py-2 px-1 border-b-2 font-medium text-sm ${
               activeTab === 'logs'
                 ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:border-gray-300 dark:hover:border-slate-600'
+                : 'border-transparent text-v-text-muted hover:text-v-text-secondary dark:hover:text-gray-200 hover:border-v-border dark:hover:border-slate-600'
             }`}
           >
             <FileText className="w-5 h-5 inline-block mr-2" />
@@ -328,7 +336,7 @@ export default function SystemLogsPage() {
             className={`py-2 px-1 border-b-2 font-medium text-sm ${
               activeTab === 'analytics'
                 ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:border-gray-300 dark:hover:border-slate-600'
+                : 'border-transparent text-v-text-muted hover:text-v-text-secondary dark:hover:text-gray-200 hover:border-v-border dark:hover:border-slate-600'
             }`}
           >
             <BarChart3 className="w-5 h-5 inline-block mr-2" />
@@ -339,7 +347,7 @@ export default function SystemLogsPage() {
             className={`py-2 px-1 border-b-2 font-medium text-sm ${
               activeTab === 'alerts'
                 ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:border-gray-300 dark:hover:border-slate-600'
+                : 'border-transparent text-v-text-muted hover:text-v-text-secondary dark:hover:text-gray-200 hover:border-v-border dark:hover:border-slate-600'
             }`}
           >
             <Bell className="w-5 h-5 inline-block mr-2" />
@@ -350,7 +358,7 @@ export default function SystemLogsPage() {
             className={`py-2 px-1 border-b-2 font-medium text-sm ${
               activeTab === 'settings'
                 ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:border-gray-300 dark:hover:border-slate-600'
+                : 'border-transparent text-v-text-muted hover:text-v-text-secondary dark:hover:text-gray-200 hover:border-v-border dark:hover:border-slate-600'
             }`}
           >
             <Settings className="w-5 h-5 inline-block mr-2" />
@@ -380,7 +388,7 @@ export default function SystemLogsPage() {
           <Card className="p-4">
             <div className="flex items-center space-x-4">
               <div className="flex-1 flex items-center space-x-2">
-                <Search className="w-5 h-5 text-gray-500 dark:text-gray-400" />
+                <Search className="w-5 h-5 text-v-text-muted dark:text-v-text-muted" />
                 <Input
                   placeholder="Search logs..."
                   value={searchTerm}
@@ -412,10 +420,10 @@ export default function SystemLogsPage() {
 
             {/* Advanced Filters */}
             {showFilters && (
-              <div className="mt-4 p-4 bg-gray-50 dark:bg-slate-800 rounded-lg">
+              <div className="mt-4 p-4 bg-v-surface-muted rounded-lg">
                 <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    <label className="block text-sm font-medium text-v-text-secondary mb-1">
                       Level
                     </label>
                     <select
@@ -424,7 +432,7 @@ export default function SystemLogsPage() {
                         ...filters,
                         level: e.target.value === 'all' ? undefined : e.target.value as LogFilters['level']
                       })}
-                      className="w-full p-2 border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100 rounded-md"
+                      className="w-full p-2 border border-v-border bg-v-surface text-v-text-primary rounded-md"
                     >
                       <option value="all">All Levels</option>
                       <option value="error">Error</option>
@@ -434,7 +442,7 @@ export default function SystemLogsPage() {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    <label className="block text-sm font-medium text-v-text-secondary mb-1">
                       Service
                     </label>
                     <select
@@ -443,7 +451,7 @@ export default function SystemLogsPage() {
                         ...filters,
                         service: e.target.value === 'all' ? undefined : e.target.value as LogFilters['service']
                       })}
-                      className="w-full p-2 border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100 rounded-md"
+                      className="w-full p-2 border border-v-border bg-v-surface text-v-text-primary rounded-md"
                     >
                       <option value="all">All Services</option>
                       <option value="vssyl-server">Backend</option>
@@ -451,7 +459,7 @@ export default function SystemLogsPage() {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    <label className="block text-sm font-medium text-v-text-secondary mb-1">
                       Operation
                     </label>
                     <Input
@@ -464,7 +472,7 @@ export default function SystemLogsPage() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                    <label className="block text-sm font-medium text-v-text-secondary mb-1">
                       Time Range
                     </label>
                     <select
@@ -495,7 +503,7 @@ export default function SystemLogsPage() {
                           startDate
                         });
                       }}
-                      className="w-full p-2 border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100 rounded-md"
+                      className="w-full p-2 border border-v-border bg-v-surface text-v-text-primary rounded-md"
                     >
                       <option value="1h">Last Hour</option>
                       <option value="24h">Last 24 Hours</option>
@@ -511,9 +519,9 @@ export default function SystemLogsPage() {
 
           {/* Logs List */}
           <Card className="p-0">
-            <div className="p-4 border-b border-gray-200 dark:border-slate-700">
-              <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100">System Logs</h3>
-              <p className="text-sm text-gray-700 dark:text-gray-300">
+            <div className="p-4 border-b border-v-border">
+              <h3 className="text-lg font-medium text-v-text-primary">System Logs</h3>
+              <p className="text-sm text-v-text-secondary">
                 {logs.length} log entries found
                 {autoRefresh && (
                   <span className="ml-2 text-green-600">
@@ -527,7 +535,7 @@ export default function SystemLogsPage() {
               {logs.map((log) => (
                 <div
                   key={log.id}
-                  className="p-4 hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800 cursor-pointer"
+                  className="p-4 hover:bg-v-surface-muted bg-v-surface cursor-pointer"
                   onClick={() => setSelectedLog(log)}
                 >
                   <div className="flex items-start space-x-3">
@@ -539,19 +547,19 @@ export default function SystemLogsPage() {
                         <Badge className={getLevelColor(log.level)}>
                           {log.level.toUpperCase()}
                         </Badge>
-                        <div className="flex items-center space-x-1 text-gray-600 dark:text-gray-400">
+                        <div className="flex items-center space-x-1 text-v-text-muted">
                           {getServiceIcon(log.service)}
                           <span className="text-sm">{log.service}</span>
                         </div>
-                        <div className="flex items-center space-x-1 text-gray-600 dark:text-gray-400">
+                        <div className="flex items-center space-x-1 text-v-text-muted">
                           <Clock className="w-4 h-4" />
                           <span className="text-sm">{formatTimestamp(log.timestamp)}</span>
                         </div>
                       </div>
-                      <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
+                      <p className="text-sm font-medium text-v-text-primary mb-1">
                         {truncateMessage(log.message)}
                       </p>
-                      <div className="flex items-center space-x-4 text-xs text-gray-600 dark:text-gray-400">
+                      <div className="flex items-center space-x-4 text-xs text-v-text-muted">
                         {log.metadata?.operation ? (
                           <span>Operation: {log.metadata.operation as string}</span>
                         ) : null}
@@ -575,8 +583,8 @@ export default function SystemLogsPage() {
 
             {logs.length === 0 && !loading && (
               <div className="p-8 text-center">
-                <FileText className="w-12 h-12 text-gray-500 dark:text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-600 dark:text-gray-400">No logs found matching your criteria</p>
+                <FileText className="w-12 h-12 text-v-text-muted dark:text-v-text-muted mx-auto mb-4" />
+                <p className="text-v-text-muted">No logs found matching your criteria</p>
               </div>
             )}
           </Card>
@@ -587,7 +595,7 @@ export default function SystemLogsPage() {
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           {/* Overview Metrics */}
           <Card className="p-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Overview</h3>
+            <h3 className="text-lg font-semibold text-v-text-primary mb-4">Overview</h3>
             <div className="grid grid-cols-2 gap-4">
               <div className="p-4 bg-blue-50 rounded-lg">
                 <p className="text-sm text-blue-600 font-medium">Total Logs</p>
@@ -610,7 +618,7 @@ export default function SystemLogsPage() {
 
           {/* Logs by Level */}
           <Card className="p-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Logs by Level</h3>
+            <h3 className="text-lg font-semibold text-v-text-primary mb-4">Logs by Level</h3>
             <div className="space-y-3">
               {Object.entries(analytics.logsByLevel).map(([level, count]) => (
                 <div key={level} className="flex items-center justify-between">
@@ -618,7 +626,7 @@ export default function SystemLogsPage() {
                     {getLevelIcon(level)}
                     <span className="font-medium capitalize">{level}</span>
                   </div>
-                  <span className="text-sm text-gray-700 dark:text-gray-300">{count.toLocaleString()}</span>
+                  <span className="text-sm text-v-text-secondary">{count.toLocaleString()}</span>
                 </div>
               ))}
             </div>
@@ -626,11 +634,11 @@ export default function SystemLogsPage() {
 
           {/* Top Errors */}
           <Card className="p-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Top Errors</h3>
+            <h3 className="text-lg font-semibold text-v-text-primary mb-4">Top Errors</h3>
             <div className="space-y-3">
               {analytics.topErrors.slice(0, 5).map((error, index) => (
                 <div key={index} className="flex items-center justify-between">
-                  <span className="text-sm text-gray-900 dark:text-gray-100 truncate flex-1 mr-2">{error.message}</span>
+                  <span className="text-sm text-v-text-primary truncate flex-1 mr-2">{error.message}</span>
                   <Badge className="bg-red-100 text-red-700">{error.count}</Badge>
                 </div>
               ))}
@@ -639,12 +647,12 @@ export default function SystemLogsPage() {
 
           {/* Performance Metrics */}
           <Card className="p-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Slowest Operations</h3>
+            <h3 className="text-lg font-semibold text-v-text-primary mb-4">Slowest Operations</h3>
             <div className="space-y-3">
               {analytics.performanceMetrics.slowestOperations.slice(0, 5).map((operation, index) => (
                 <div key={index} className="flex items-center justify-between">
-                  <span className="text-sm text-gray-900 dark:text-gray-100">{operation.operation}</span>
-                  <span className="text-sm text-gray-700 dark:text-gray-300">{operation.avgDuration.toFixed(0)}ms</span>
+                  <span className="text-sm text-v-text-primary">{operation.operation}</span>
+                  <span className="text-sm text-v-text-secondary">{operation.avgDuration.toFixed(0)}ms</span>
                 </div>
               ))}
             </div>
@@ -655,7 +663,7 @@ export default function SystemLogsPage() {
       {activeTab === 'alerts' && (
         <Card className="p-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Log Alerts</h3>
+            <h3 className="text-lg font-semibold text-v-text-primary">Log Alerts</h3>
             <Button onClick={() => setShowCreateAlert(true)}>
               <Bell className="w-4 h-4 mr-2" />
               Create Alert
@@ -665,19 +673,19 @@ export default function SystemLogsPage() {
           <div className="space-y-3">
             {alerts.length === 0 ? (
               <div className="text-center py-8">
-                <Bell className="w-12 h-12 text-gray-500 dark:text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-600 dark:text-gray-400">No alerts configured</p>
+                <Bell className="w-12 h-12 text-v-text-muted dark:text-v-text-muted mx-auto mb-4" />
+                <p className="text-v-text-muted">No alerts configured</p>
               </div>
             ) : (
               alerts.map((alert) => (
-                <div key={alert.id} className="p-4 border border-gray-200 dark:border-slate-700 rounded-lg">
+                <div key={alert.id} className="p-4 border border-v-border rounded-lg">
                   <div className="flex items-center justify-between">
                     <div>
-                      <h4 className="font-medium text-gray-900 dark:text-gray-100">{alert.name}</h4>
-                      <p className="text-sm text-gray-700 dark:text-gray-300">{alert.description}</p>
+                      <h4 className="font-medium text-v-text-primary">{alert.name}</h4>
+                      <p className="text-sm text-v-text-secondary">{alert.description}</p>
                     </div>
                     <div className="flex items-center space-x-2">
-                      <Badge className={alert.enabled ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'}>
+                      <Badge className={alert.enabled ? 'bg-green-100 text-green-700' : 'bg-v-surface-muted text-gray-700'}>
                         {alert.enabled ? 'Enabled' : 'Disabled'}
                       </Badge>
                       <Button 
@@ -713,8 +721,8 @@ export default function SystemLogsPage() {
         <Card className="p-6">
           <div className="flex items-center justify-between mb-6">
             <div>
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Log Retention Settings</h3>
-              <p className="text-sm text-gray-700 dark:text-gray-300 mt-1">
+              <h3 className="text-lg font-semibold text-v-text-primary">Log Retention Settings</h3>
+              <p className="text-sm text-v-text-secondary mt-1">
                 Configure how long different types of logs are retained before automatic cleanup
               </p>
             </div>
@@ -726,7 +734,7 @@ export default function SystemLogsPage() {
           <div className="space-y-6">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-v-text-secondary mb-2">
                   Default Logs Retention
                 </label>
                 <div className="flex items-center space-x-2">
@@ -741,15 +749,15 @@ export default function SystemLogsPage() {
                     })}
                     className="flex-1"
                   />
-                  <span className="text-sm text-gray-600 dark:text-gray-400">days</span>
+                  <span className="text-sm text-v-text-muted">days</span>
                 </div>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                <p className="text-xs text-v-text-muted dark:text-v-text-muted mt-1">
                   Info, debug, and warning logs
                 </p>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-v-text-secondary mb-2">
                   Error Logs Retention
                 </label>
                 <div className="flex items-center space-x-2">
@@ -764,15 +772,15 @@ export default function SystemLogsPage() {
                     })}
                     className="flex-1"
                   />
-                  <span className="text-sm text-gray-600 dark:text-gray-400">days</span>
+                  <span className="text-sm text-v-text-muted">days</span>
                 </div>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                <p className="text-xs text-v-text-muted dark:text-v-text-muted mt-1">
                   Error and critical logs
                 </p>
               </div>
 
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                <label className="block text-sm font-medium text-v-text-secondary mb-2">
                   Audit Logs Retention
                 </label>
                 <div className="flex items-center space-x-2">
@@ -787,19 +795,19 @@ export default function SystemLogsPage() {
                     })}
                     className="flex-1"
                   />
-                  <span className="text-sm text-gray-600 dark:text-gray-400">days</span>
+                  <span className="text-sm text-v-text-muted">days</span>
                 </div>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                <p className="text-xs text-v-text-muted dark:text-v-text-muted mt-1">
                   Audit and security logs
                 </p>
               </div>
             </div>
 
-            <div className="border-t border-gray-200 dark:border-slate-700 pt-6">
+            <div className="border-t border-v-border pt-6">
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <h4 className="text-md font-medium text-gray-900 dark:text-gray-100">Automatic Cleanup</h4>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                  <h4 className="text-md font-medium text-v-text-primary">Automatic Cleanup</h4>
+                  <p className="text-sm text-v-text-muted mt-1">
                     Automatically delete old logs based on retention policies
                   </p>
                 </div>
@@ -813,16 +821,16 @@ export default function SystemLogsPage() {
                     })}
                     className="sr-only peer"
                   />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white dark:bg-slate-900 after:border-gray-300 dark:border-slate-600 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                  <div className="w-11 h-6 bg-v-surface-muted peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-v-surface after:border-v-border after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                 </label>
               </div>
             </div>
 
-            <div className="border-t border-gray-200 dark:border-slate-700 pt-6">
+            <div className="border-t border-v-border pt-6">
               <div className="flex items-center justify-between mb-4">
                 <div>
-                  <h4 className="text-md font-medium text-gray-900 dark:text-gray-100">Log Retention System</h4>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                  <h4 className="text-md font-medium text-v-text-primary">Log Retention System</h4>
+                  <p className="text-sm text-v-text-muted mt-1">
                     Enable or disable the entire log retention system
                   </p>
                 </div>
@@ -836,7 +844,7 @@ export default function SystemLogsPage() {
                     })}
                     className="sr-only peer"
                   />
-                  <div className="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white dark:bg-slate-900 after:border-gray-300 dark:border-slate-600 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                  <div className="w-11 h-6 bg-v-surface-muted peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-v-surface after:border-v-border after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                 </label>
               </div>
             </div>
@@ -869,7 +877,7 @@ export default function SystemLogsPage() {
           <div className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-sm font-medium text-v-text-secondary mb-1">
                   Level
                 </label>
                 <Badge className={getLevelColor(selectedLog.level)}>
@@ -877,7 +885,7 @@ export default function SystemLogsPage() {
                 </Badge>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-sm font-medium text-v-text-secondary mb-1">
                   Service
                 </label>
                 <div className="flex items-center space-x-2">
@@ -886,35 +894,35 @@ export default function SystemLogsPage() {
                 </div>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-sm font-medium text-v-text-secondary mb-1">
                   Timestamp
                 </label>
-                <p className="text-sm text-gray-900 dark:text-gray-100">{formatTimestamp(selectedLog.timestamp)}</p>
+                <p className="text-sm text-v-text-primary">{formatTimestamp(selectedLog.timestamp)}</p>
               </div>
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-sm font-medium text-v-text-secondary mb-1">
                   Environment
                 </label>
-                <p className="text-sm text-gray-900 dark:text-gray-100">{selectedLog.environment}</p>
+                <p className="text-sm text-v-text-primary">{selectedLog.environment}</p>
               </div>
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+              <label className="block text-sm font-medium text-v-text-secondary mb-1">
                 Message
               </label>
-              <div className="p-3 bg-gray-50 dark:bg-slate-800 rounded-md">
-                <p className="text-sm text-gray-900 dark:text-gray-100">{selectedLog.message}</p>
+              <div className="p-3 bg-v-surface-muted rounded-md">
+                <p className="text-sm text-v-text-primary">{selectedLog.message}</p>
               </div>
             </div>
 
             {selectedLog.metadata && Object.keys(selectedLog.metadata).length > 0 && (
               <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                <label className="block text-sm font-medium text-v-text-secondary mb-1">
                   Metadata
                 </label>
-                <div className="p-3 bg-gray-50 dark:bg-slate-800 rounded-md">
-                  <pre className="text-xs text-gray-900 dark:text-gray-100 overflow-auto">
+                <div className="p-3 bg-v-surface-muted rounded-md">
+                  <pre className="text-xs text-v-text-primary overflow-auto">
                     {JSON.stringify(selectedLog.metadata, null, 2)}
                   </pre>
                 </div>
@@ -923,6 +931,7 @@ export default function SystemLogsPage() {
           </div>
         )}
       </Modal>
+      <ConfirmDialog />
     </div>
   );
 }

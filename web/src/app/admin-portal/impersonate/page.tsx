@@ -7,7 +7,7 @@ import React, {
   useCallback,
   useMemo,
 } from 'react';
-import { Card, Button, Input, Alert, Spinner } from 'shared/components';
+import { Card, Button, Input, Alert, Spinner, ConfirmModal } from 'shared/components';
 import { adminApiService } from '../../../lib/adminApiService';
 import { useImpersonation } from '../../../contexts/ImpersonationContext';
 import { 
@@ -661,13 +661,13 @@ export default function ImpersonationLabPage() {
         <Alert type="success" title="Personas Ready">
           <p>{businessSuccess}</p>
           {seededPersonas.length > 0 && (
-            <ul className="mt-3 space-y-1 text-sm text-gray-700 dark:text-gray-300">
+            <ul className="mt-3 space-y-1 text-sm text-v-text-secondary">
               {seededPersonas.map((persona) => (
                 <li key={persona.userId}>
                   <strong>{persona.role}</strong>: {persona.name || persona.email}{' '}
                   ({persona.email})
                   {persona.temporaryPassword && (
-                    <span className="block text-xs text-gray-700 dark:text-gray-300 dark:text-gray-400">
+                    <span className="block text-xs text-v-text-secondary dark:text-v-text-muted">
                       Temporary password:{' '}
                       <span className="font-mono">
                         {persona.temporaryPassword}
@@ -684,10 +684,10 @@ export default function ImpersonationLabPage() {
       <Card className="p-6">
         <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+            <h2 className="text-lg font-semibold text-v-text-primary">
               Choose a business workspace
             </h2>
-            <p className="text-sm text-gray-700 dark:text-gray-300">
+            <p className="text-sm text-v-text-secondary">
               Explore active modules, HR features, and available personas for
               each business.
             </p>
@@ -714,7 +714,7 @@ export default function ImpersonationLabPage() {
           <Spinner size={32} />
         </div>
           ) : businesses.length === 0 ? (
-            <div className="text-center py-16 text-gray-700 dark:text-gray-300 dark:text-gray-400">
+            <div className="text-center py-16 text-v-text-secondary dark:text-v-text-muted">
               No businesses found. Try adjusting your search.
       </div>
           ) : (
@@ -729,17 +729,17 @@ export default function ImpersonationLabPage() {
                     className={`text-left border rounded-lg p-4 transition-all ${
                       isSelected
                         ? 'border-blue-500 shadow-lg shadow-blue-100 bg-blue-50'
-                        : 'border-gray-200 dark:border-slate-700 hover:border-blue-300 hover:shadow-md'
+                        : 'border-v-border hover:border-blue-300 hover:shadow-md'
                     }`}
                   >
                     <div className="flex items-center justify-between">
                       <div className="flex items-center space-x-2">
                         <Building2
                           className={`w-5 h-5 ${
-                            isSelected ? 'text-blue-600' : 'text-gray-700 dark:text-gray-300 dark:text-gray-400'
+                            isSelected ? 'text-blue-600' : 'text-v-text-secondary dark:text-v-text-muted'
                           }`}
                         />
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                        <h3 className="text-lg font-semibold text-v-text-primary">
                           {business.name}
                         </h3>
                       </div>
@@ -747,25 +747,25 @@ export default function ImpersonationLabPage() {
                         {business.tier}
                       </span>
                     </div>
-                    <div className="mt-3 text-sm text-gray-700 dark:text-gray-300 space-y-1">
+                    <div className="mt-3 text-sm text-v-text-secondary space-y-1">
                       {business.industry && (
                         <div className="flex items-center space-x-2">
-                          <Layers className="w-4 h-4 text-gray-700 dark:text-gray-300 dark:text-gray-400" />
+                          <Layers className="w-4 h-4 text-v-text-secondary dark:text-v-text-muted" />
                           <span>{business.industry}</span>
                         </div>
                       )}
                       {business.size && (
                         <div className="flex items-center space-x-2">
-                          <Users className="w-4 h-4 text-gray-700 dark:text-gray-300 dark:text-gray-400" />
+                          <Users className="w-4 h-4 text-v-text-secondary dark:text-v-text-muted" />
                           <span>{business.size} employees</span>
                         </div>
                       )}
                       <div className="flex items-center space-x-2">
-                        <Calendar className="w-4 h-4 text-gray-700 dark:text-gray-300 dark:text-gray-400" />
+                        <Calendar className="w-4 h-4 text-v-text-secondary dark:text-v-text-muted" />
                         <span>Created {formatDate(business.createdAt)}</span>
                       </div>
                     </div>
-                    <div className="mt-3 flex items-center space-x-4 text-xs text-gray-700 dark:text-gray-300 dark:text-gray-400">
+                    <div className="mt-3 flex items-center space-x-4 text-xs text-v-text-secondary dark:text-v-text-muted">
                       <span>{business.memberCount} members</span>
                       <span>{business.moduleCount} modules</span>
                     </div>
@@ -780,7 +780,7 @@ export default function ImpersonationLabPage() {
           )}
 
           {businessTotalPages > 1 && (
-            <div className="flex items-center justify-between mt-6 pt-6 border-t border-gray-200 dark:border-slate-700">
+            <div className="flex items-center justify-between mt-6 pt-6 border-t border-v-border">
               <Button
                 onClick={() => setBusinessPage((prev) => Math.max(1, prev - 1))}
                 disabled={businessPage === 1}
@@ -789,7 +789,7 @@ export default function ImpersonationLabPage() {
               >
                 Previous
               </Button>
-              <span className="text-sm text-gray-700 dark:text-gray-300">
+              <span className="text-sm text-v-text-secondary">
                 Page {businessPage} of {businessTotalPages}
               </span>
               <Button
@@ -814,10 +814,10 @@ export default function ImpersonationLabPage() {
           <Card className="p-6 space-y-6">
             <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
           <div>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                <h3 className="text-lg font-semibold text-v-text-primary">
                   {selectedBusiness.name} Overview
                 </h3>
-                <p className="text-sm text-gray-700 dark:text-gray-300">
+                <p className="text-sm text-v-text-secondary">
                   Tier: <strong>{selectedBusiness.tier}</strong> • Members:{' '}
                   <strong>{selectedBusiness.memberCount}</strong> • Modules:{' '}
                   <strong>{selectedBusiness.moduleCount}</strong>
@@ -841,12 +841,12 @@ export default function ImpersonationLabPage() {
         </div>
 
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div className="bg-gray-50 dark:bg-slate-800 rounded-lg p-4">
-                <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+              <div className="bg-v-surface-muted rounded-lg p-4">
+                <h4 className="text-sm font-semibold text-v-text-secondary">
                   HR Features
                 </h4>
                 {hrFeatures.length > 0 ? (
-                  <ul className="mt-2 space-y-1 text-sm text-gray-700 dark:text-gray-300">
+                  <ul className="mt-2 space-y-1 text-sm text-v-text-secondary">
                     {hrFeatures.map((feature) => (
                       <li key={feature} className="flex items-center">
                         <Sparkles className="w-4 h-4 text-blue-500 mr-2" />
@@ -855,18 +855,18 @@ export default function ImpersonationLabPage() {
                     ))}
                   </ul>
                 ) : (
-                  <p className="mt-2 text-sm text-gray-700 dark:text-gray-300 dark:text-gray-400">
+                  <p className="mt-2 text-sm text-v-text-secondary dark:text-v-text-muted">
                     No HR feature flags detected.
                   </p>
                 )}
               </div>
-              <div className="bg-gray-50 dark:bg-slate-800 rounded-lg p-4 space-y-2">
-                <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300">Context</h4>
-                <label className="block text-xs text-gray-700 dark:text-gray-300 dark:text-gray-400 uppercase tracking-wide">
+              <div className="bg-v-surface-muted rounded-lg p-4 space-y-2">
+                <h4 className="text-sm font-semibold text-v-text-secondary">Context</h4>
+                <label className="block text-xs text-v-text-secondary dark:text-v-text-muted uppercase tracking-wide">
                   Workspace Focus
                 </label>
                 <select
-                  className="w-full border-gray-200 dark:border-slate-700 rounded-md text-sm"
+                  className="w-full border-v-border rounded-md text-sm"
                   value={businessImpersonationContext}
                   onChange={(e) =>
                     setBusinessImpersonationContext(e.target.value)
@@ -878,7 +878,7 @@ export default function ImpersonationLabPage() {
                     </option>
                   ))}
                 </select>
-                <label className="block text-xs text-gray-700 dark:text-gray-300 dark:text-gray-400 uppercase tracking-wide">
+                <label className="block text-xs text-v-text-secondary dark:text-v-text-muted uppercase tracking-wide">
                   Session Reason
                 </label>
                 <Input
@@ -888,17 +888,17 @@ export default function ImpersonationLabPage() {
                     setBusinessImpersonationReason(e.target.value)
                   }
                 />
-                <p className="text-xs text-gray-700 dark:text-gray-300 dark:text-gray-400">
+                <p className="text-xs text-v-text-secondary dark:text-v-text-muted">
                   Reason and context are recorded in the audit log for
                   traceability.
                 </p>
               </div>
-              <div className="bg-gray-50 dark:bg-slate-800 rounded-lg p-4">
-                <h4 className="text-sm font-semibold text-gray-700 dark:text-gray-300">
+              <div className="bg-v-surface-muted rounded-lg p-4">
+                <h4 className="text-sm font-semibold text-v-text-secondary">
                   Recently Installed Modules
                 </h4>
                 {businessModules.length > 0 ? (
-                  <ul className="mt-2 space-y-1 text-sm text-gray-700 dark:text-gray-300">
+                  <ul className="mt-2 space-y-1 text-sm text-v-text-secondary">
                     {businessModules.slice(0, 5).map((module) => (
                       <li key={module.id} className="flex items-center">
                         <Gauge className="w-4 h-4 text-purple-500 mr-2" />
@@ -906,7 +906,7 @@ export default function ImpersonationLabPage() {
                           <div className="font-medium">
                             {module.moduleName}
                           </div>
-                          <div className="text-xs text-gray-700 dark:text-gray-300 dark:text-gray-400">
+                          <div className="text-xs text-v-text-secondary dark:text-v-text-muted">
                             {module.category || 'Uncategorized'} •{' '}
                             {formatDate(module.installedAt)}
                           </div>
@@ -915,7 +915,7 @@ export default function ImpersonationLabPage() {
                     ))}
                   </ul>
                 ) : (
-                  <p className="mt-2 text-sm text-gray-700 dark:text-gray-300 dark:text-gray-400">
+                  <p className="mt-2 text-sm text-v-text-secondary dark:text-v-text-muted">
                     No recent module installations.
                   </p>
                 )}
@@ -926,10 +926,10 @@ export default function ImpersonationLabPage() {
           <Card className="p-6">
             <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4 mb-4">
               <div>
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                <h3 className="text-lg font-semibold text-v-text-primary">
                   Available Personas
                 </h3>
-                <p className="text-sm text-gray-700 dark:text-gray-300">
+                <p className="text-sm text-v-text-secondary">
                   Select a team member to launch a scoped impersonation session.
                 </p>
               </div>
@@ -959,7 +959,7 @@ export default function ImpersonationLabPage() {
                     value={businessMembersSearch}
                     onChange={(e) => setBusinessMembersSearch(e.target.value)}
                   />
-                  <Filter className="w-4 h-4 text-gray-700 dark:text-gray-300 dark:text-gray-400" />
+                  <Filter className="w-4 h-4 text-v-text-secondary dark:text-v-text-muted" />
                 </div>
               </div>
             </div>
@@ -969,7 +969,7 @@ export default function ImpersonationLabPage() {
                 <Spinner size={32} />
               </div>
             ) : filteredBusinessMembers.length === 0 ? (
-              <div className="text-center py-12 text-gray-700 dark:text-gray-300 dark:text-gray-400 space-y-3">
+              <div className="text-center py-12 text-v-text-secondary dark:text-v-text-muted space-y-3">
                 <p>No matching personas found for the current filters.</p>
                 <Button
                   onClick={handleSeedPersonas}
@@ -992,17 +992,17 @@ export default function ImpersonationLabPage() {
                 {filteredBusinessMembers.map((member) => (
                   <div
                     key={member.id}
-                    className="flex flex-col md:flex-row md:items-center md:justify-between p-4 border rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800 transition-colors gap-3"
+                    className="flex flex-col md:flex-row md:items-center md:justify-between p-4 border rounded-lg hover:bg-v-surface-muted bg-v-surface transition-colors gap-3"
                   >
                     <div className="flex items-center space-x-4">
                       <div className="w-10 h-10 bg-indigo-100 rounded-full flex items-center justify-center">
                         <Eye className="w-5 h-5 text-indigo-600" />
                       </div>
                       <div>
-                        <h4 className="font-medium text-gray-900 dark:text-gray-100">
+                        <h4 className="font-medium text-v-text-primary">
                           {member.user.name || member.user.email}
                         </h4>
-                        <div className="text-sm text-gray-700 dark:text-gray-300 space-x-3">
+                        <div className="text-sm text-v-text-secondary space-x-3">
                           <span className="uppercase text-xs font-semibold px-2 py-1 bg-indigo-100 text-indigo-700 rounded-full">
                             {member.role}
                           </span>
@@ -1011,7 +1011,7 @@ export default function ImpersonationLabPage() {
                             <span>{member.department}</span>
         )}
       </div>
-                        <div className="text-xs text-gray-700 dark:text-gray-300 dark:text-gray-400 mt-1">
+                        <div className="text-xs text-v-text-secondary dark:text-v-text-muted mt-1">
                           Joined {formatDate(member.joinedAt)}
                         </div>
                       </div>
@@ -1035,7 +1035,7 @@ export default function ImpersonationLabPage() {
           </Card>
         </>
       ) : (
-        <Card className="p-10 text-center text-gray-700 dark:text-gray-300 dark:text-gray-400">
+        <Card className="p-10 text-center text-v-text-secondary dark:text-v-text-muted">
           Select a business on the left to view personas you can impersonate.
         </Card>
       )}
@@ -1079,8 +1079,8 @@ export default function ImpersonationLabPage() {
 
       <Card className="p-6">
         <div className="flex items-center justify-between mb-4">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Users</h2>
-          <span className="text-sm text-gray-700 dark:text-gray-300">
+          <h2 className="text-lg font-semibold text-v-text-primary">Users</h2>
+          <span className="text-sm text-v-text-secondary">
             {filteredUsers.length} users matched
           </span>
         </div>
@@ -1094,17 +1094,17 @@ export default function ImpersonationLabPage() {
           {filteredUsers.map((user) => (
               <div
                 key={user.id}
-                className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800 transition-colors"
+                className="flex items-center justify-between p-4 border rounded-lg hover:bg-v-surface-muted bg-v-surface transition-colors"
               >
               <div className="flex items-center space-x-4">
                 <div className="w-10 h-10 bg-blue-100 rounded-full flex items-center justify-center">
                   <User className="w-5 h-5 text-blue-600" />
                 </div>
                 <div>
-                    <h3 className="font-medium text-gray-900 dark:text-gray-100">
+                    <h3 className="font-medium text-v-text-primary">
                       {user.name || user.email}
                     </h3>
-                  <div className="flex items-center space-x-4 text-sm text-gray-700 dark:text-gray-300">
+                  <div className="flex items-center space-x-4 text-sm text-v-text-secondary">
                     <span className="flex items-center space-x-1">
                       <Mail className="w-3 h-3" />
                       <span>{user.email}</span>
@@ -1118,7 +1118,7 @@ export default function ImpersonationLabPage() {
                       <span>Joined {formatDate(user.createdAt)}</span>
                     </span>
                   </div>
-                  <div className="flex items-center space-x-4 text-xs text-gray-700 dark:text-gray-300 dark:text-gray-400 mt-1">
+                  <div className="flex items-center space-x-4 text-xs text-v-text-secondary dark:text-v-text-muted mt-1">
                     <span>{user._count?.businesses || 0} businesses</span>
                     <span>{user._count?.files || 0} files</span>
                     {user.emailVerified && (
@@ -1147,7 +1147,7 @@ export default function ImpersonationLabPage() {
         )}
 
         {userTotalPages > 1 && (
-          <div className="flex items-center justify-between mt-6 pt-6 border-t border-gray-200 dark:border-slate-700">
+          <div className="flex items-center justify-between mt-6 pt-6 border-t border-v-border">
             <Button
               onClick={() => setUserPage((prev) => Math.max(1, prev - 1))}
               disabled={userPage === 1}
@@ -1156,7 +1156,7 @@ export default function ImpersonationLabPage() {
             >
               Previous
             </Button>
-            <span className="text-sm text-gray-700 dark:text-gray-300">
+            <span className="text-sm text-v-text-secondary">
               Page {userPage} of {userTotalPages}
             </span>
             <Button
@@ -1189,26 +1189,26 @@ export default function ImpersonationLabPage() {
     <div className="space-y-6">
       <div className="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
         <div className="flex items-center space-x-3">
-          <Link href="/admin-portal" className="p-2 hover:bg-gray-100 dark:hover:bg-slate-800 dark:bg-slate-700 rounded-lg transition-colors">
-            <ArrowLeft className="w-5 h-5 text-gray-700 dark:text-gray-300" />
+          <Link href="/admin-portal" className="p-2 hover:bg-v-surface-muted hover:bg-v-surface-muted bg-v-surface-muted rounded-lg transition-colors">
+            <ArrowLeft className="w-5 h-5 text-v-text-secondary" />
           </Link>
           <div>
-            <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+            <h1 className="text-2xl font-bold text-v-text-primary">
               Impersonation Lab
             </h1>
-            <p className="text-gray-700 dark:text-gray-300">
+            <p className="text-v-text-secondary">
               Switch between full-business personas or quick user views for
               debugging and support.
             </p>
           </div>
         </div>
-        <div className="inline-flex bg-gray-100 dark:bg-slate-700 p-1 rounded-lg">
+        <div className="inline-flex bg-v-surface-muted bg-v-surface-muted p-1 rounded-lg">
           <button
             onClick={() => setActiveTab('business')}
             className={`px-4 py-2 rounded-md text-sm font-medium transition ${
               activeTab === 'business'
-                ? 'bg-white dark:bg-slate-900 shadow text-gray-900 dark:text-gray-100'
-                : 'text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100'
+                ? 'bg-v-surface shadow text-v-text-primary'
+                : 'text-v-text-secondary hover:text-v-text-primary'
             }`}
           >
             Business Personas
@@ -1217,8 +1217,8 @@ export default function ImpersonationLabPage() {
             onClick={() => setActiveTab('user')}
             className={`px-4 py-2 rounded-md text-sm font-medium transition ${
               activeTab === 'user'
-                ? 'bg-white dark:bg-slate-900 shadow text-gray-900 dark:text-gray-100'
-                : 'text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100'
+                ? 'bg-v-surface shadow text-v-text-primary'
+                : 'text-v-text-secondary hover:text-v-text-primary'
             }`}
           >
             User Directory
@@ -1228,97 +1228,36 @@ export default function ImpersonationLabPage() {
 
       {activeTab === 'business' ? renderBusinessTab() : renderUserTab()}
 
-      {/* Confirmation Modal */}
-      {showConfirmModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black bg-opacity-50">
-          <div className="bg-white dark:bg-slate-900 rounded-lg p-6 max-w-md w-full mx-4">
-            <div className="flex items-center justify-between mb-4">
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                View User Dashboard
-              </h2>
-              <button
-                onClick={() => setShowConfirmModal(false)}
-                className="text-gray-700 dark:text-gray-300 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-300"
-              >
-                <XCircle className="w-5 h-5" />
-              </button>
-            </div>
-            
-            {selectedUser && (
-              <div className="space-y-4">
-                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-                  <div className="flex items-center space-x-2">
-                    <Monitor className="w-5 h-5 text-blue-600" />
-                    <h3 className="font-medium text-blue-900">
-                      Embedded View
-                    </h3>
-                  </div>
-                  <p className="text-sm text-blue-800 mt-2">
-                    You will view this user's dashboard within the admin portal.
-                    You can exit the view at any time without ending the
-                    impersonation session.
-                  </p>
+      <ConfirmModal
+        open={showConfirmModal && !!selectedUser}
+        onClose={() => setShowConfirmModal(false)}
+        onConfirm={confirmUserImpersonation}
+        title="View user dashboard"
+        loading={impersonating}
+        description={
+          selectedUser ? (
+            <div className="space-y-3">
+              <p className="text-sm text-v-text-secondary">
+                You will view this user&apos;s dashboard within the admin portal. You can exit the view
+                at any time without ending the impersonation session.
+              </p>
+              <div className="rounded-lg border border-v-border bg-v-surface-muted p-3 text-sm space-y-1">
+                <div>
+                  <strong>Name:</strong> {selectedUser.name || selectedUser.email}
                 </div>
-
-                <div className="bg-gray-50 dark:bg-slate-800 rounded-lg p-4">
-                  <h4 className="font-medium text-gray-900 dark:text-gray-100 mb-2">
-                    User Details
-                  </h4>
-                  <div className="space-y-2 text-sm">
-                    <div>
-                      <strong>Name:</strong>{' '}
-                      {selectedUser.name || selectedUser.email}
-                    </div>
-                    <div>
-                      <strong>Email:</strong> {selectedUser.email}
-                    </div>
-                    <div>
-                      <strong>Role:</strong> {selectedUser.role}
-                    </div>
-                    <div>
-                      <strong>Joined:</strong>{' '}
-                      {formatDate(selectedUser.createdAt)}
-                    </div>
-                    <div>
-                      <strong>Businesses:</strong>{' '}
-                      {selectedUser._count?.businesses || 0}
-                    </div>
-                    <div>
-                      <strong>Files:</strong>{' '}
-                      {selectedUser._count?.files || 0}
-                    </div>
-                  </div>
+                <div>
+                  <strong>Email:</strong> {selectedUser.email}
                 </div>
-
-                <div className="flex items-center justify-end space-x-3">
-                  <Button
-                    onClick={() => setShowConfirmModal(false)}
-                    variant="secondary"
-                    disabled={impersonating}
-                  >
-                    Cancel
-                  </Button>
-                                  <Button
-                    onClick={confirmUserImpersonation}
-                  disabled={impersonating}
-                  size="md"
-                  className="flex items-center space-x-2"
-                >
-                    {impersonating ? (
-                      <Spinner size={16} />
-                    ) : (
-                      <Monitor className="w-4 h-4" />
-                    )}
-                    <span>
-                      {impersonating ? 'Starting...' : 'View Dashboard'}
-                    </span>
-                  </Button>
+                <div>
+                  <strong>Role:</strong> {selectedUser.role}
                 </div>
               </div>
-            )}
-          </div>
-        </div>
-      )}
+            </div>
+          ) : null
+        }
+        variant="standard"
+        confirmLabel="View dashboard"
+      />
     </div>
   );
 }

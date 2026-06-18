@@ -142,31 +142,6 @@ export function PositionAwareModuleProvider({ children }: PositionAwareModulePro
           if (hasBusinessMembers) {
             availableModules = availableModules.filter(m => m.id !== 'connections');
           }
-
-          // Add admin module if user has admin permissions
-          const userPosition = businessConfig.getUserPosition(session.user.id);
-          if (userPosition) {
-            const positionPermissions = businessConfig.configuration?.positionPermissions[userPosition.id] || [];
-            const tierPermissions = businessConfig.configuration?.tierPermissions[userPosition.tierId] || [];
-            
-            if (positionPermissions.includes('*') || tierPermissions.includes('*') || 
-                positionPermissions.includes('admin') || tierPermissions.includes('admin')) {
-              
-              if (!availableModules.some(m => m.id === 'admin')) {
-                availableModules.push({
-                  id: 'admin',
-                  name: 'Admin',
-                  description: 'Administrative controls',
-                  icon: 'shield',
-                  path: '/admin',
-                  permissions: ['view', 'manage'],
-                  category: 'admin',
-                  accessReason: 'admin',
-                  businessModule: false
-                });
-              }
-            }
-          }
         } catch (error) {
           console.error('Error filtering business modules:', error);
         }

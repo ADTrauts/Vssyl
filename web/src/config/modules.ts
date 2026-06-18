@@ -59,16 +59,6 @@ export const MODULES: ModuleConfig[] = [
     category: 'business',
   },
   {
-    id: 'admin',
-    name: 'Admin',
-    description: 'Administrative controls and settings',
-    icon: 'shield',
-    path: '/admin',
-    permissions: ['view', 'manage'],
-    ownerOnly: true,
-    category: 'admin',
-  },
-  {
     id: 'analytics',
     name: 'Analytics',
     description: 'Business analytics and insights',

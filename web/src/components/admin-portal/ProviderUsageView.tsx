@@ -141,8 +141,8 @@ export default function ProviderUsageView({ provider, dateRange }: ProviderUsage
         <Card className="p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs text-gray-700 dark:text-gray-300 mb-1">Total Tokens</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+              <p className="text-xs text-v-text-secondary mb-1">Total Tokens</p>
+              <p className="text-2xl font-bold text-v-text-primary">
                 {summary.totalTokens?.toLocaleString() || 0}
               </p>
             </div>
@@ -153,8 +153,8 @@ export default function ProviderUsageView({ provider, dateRange }: ProviderUsage
         <Card className="p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs text-gray-700 dark:text-gray-300 mb-1">Total Requests</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+              <p className="text-xs text-v-text-secondary mb-1">Total Requests</p>
+              <p className="text-2xl font-bold text-v-text-primary">
                 {summary.totalRequests?.toLocaleString() || 0}
               </p>
             </div>
@@ -165,8 +165,8 @@ export default function ProviderUsageView({ provider, dateRange }: ProviderUsage
         <Card className="p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs text-gray-700 dark:text-gray-300 mb-1">Total Cost</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+              <p className="text-xs text-v-text-secondary mb-1">Total Cost</p>
+              <p className="text-2xl font-bold text-v-text-primary">
                 ${summary.totalCost?.toFixed(2) || '0.00'}
               </p>
             </div>
@@ -177,7 +177,7 @@ export default function ProviderUsageView({ provider, dateRange }: ProviderUsage
         <Card className="p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs text-gray-700 dark:text-gray-300 mb-1">Provider</p>
+              <p className="text-xs text-v-text-secondary mb-1">Provider</p>
               <Badge color={provider === 'combined' ? 'blue' : 'gray'}>
                 {provider === 'combined' ? 'Combined' : provider.toUpperCase()}
               </Badge>
@@ -190,7 +190,7 @@ export default function ProviderUsageView({ provider, dateRange }: ProviderUsage
       {/* Usage Trends (historical snapshots) */}
       {usageTrends.length > 0 && (
         <Card className="p-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Cost Trends</h3>
+          <h3 className="text-lg font-semibold text-v-text-primary mb-4">Cost Trends</h3>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={usageTrends}>
@@ -237,23 +237,23 @@ export default function ProviderUsageView({ provider, dateRange }: ProviderUsage
       {provider === 'combined' && byProvider.openai && byProvider.anthropic && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card className="p-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">OpenAI Usage</h3>
+            <h3 className="text-lg font-semibold text-v-text-primary mb-4">OpenAI Usage</h3>
             <div className="space-y-3">
               <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-700 dark:text-gray-300">Tokens</span>
-                <span className="font-semibold text-gray-900 dark:text-gray-100">
+                <span className="text-sm text-v-text-secondary">Tokens</span>
+                <span className="font-semibold text-v-text-primary">
                   {byProvider.openai.tokens?.toLocaleString() || 0}
                 </span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-700 dark:text-gray-300">Requests</span>
-                <span className="font-semibold text-gray-900 dark:text-gray-100">
+                <span className="text-sm text-v-text-secondary">Requests</span>
+                <span className="font-semibold text-v-text-primary">
                   {byProvider.openai.requests?.toLocaleString() || 0}
                 </span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-700 dark:text-gray-300">Cost</span>
-                <span className="font-semibold text-gray-900 dark:text-gray-100">
+                <span className="text-sm text-v-text-secondary">Cost</span>
+                <span className="font-semibold text-v-text-primary">
                   ${byProvider.openai.cost?.toFixed(2) || '0.00'}
                 </span>
               </div>
@@ -261,23 +261,23 @@ export default function ProviderUsageView({ provider, dateRange }: ProviderUsage
           </Card>
 
           <Card className="p-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Anthropic Usage</h3>
+            <h3 className="text-lg font-semibold text-v-text-primary mb-4">Anthropic Usage</h3>
             <div className="space-y-3">
               <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-700 dark:text-gray-300">Tokens</span>
-                <span className="font-semibold text-gray-900 dark:text-gray-100">
+                <span className="text-sm text-v-text-secondary">Tokens</span>
+                <span className="font-semibold text-v-text-primary">
                   {byProvider.anthropic.tokens?.toLocaleString() || 0}
                 </span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-700 dark:text-gray-300">Requests</span>
-                <span className="font-semibold text-gray-900 dark:text-gray-100">
+                <span className="text-sm text-v-text-secondary">Requests</span>
+                <span className="font-semibold text-v-text-primary">
                   {byProvider.anthropic.requests?.toLocaleString() || 0}
                 </span>
               </div>
               <div className="flex justify-between items-center">
-                <span className="text-sm text-gray-700 dark:text-gray-300">Cost</span>
-                <span className="font-semibold text-gray-900 dark:text-gray-100">
+                <span className="text-sm text-v-text-secondary">Cost</span>
+                <span className="font-semibold text-v-text-primary">
                   ${byProvider.anthropic.cost?.toFixed(2) || '0.00'}
                 </span>
               </div>
@@ -290,28 +290,28 @@ export default function ProviderUsageView({ provider, dateRange }: ProviderUsage
       {byProvider[provider === 'combined' ? 'openai' : provider]?.models && 
        byProvider[provider === 'combined' ? 'openai' : provider].models.length > 0 && (
         <Card className="p-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Usage by Model</h3>
+          <h3 className="text-lg font-semibold text-v-text-primary mb-4">Usage by Model</h3>
           <div className="overflow-x-auto">
             <table className="w-full">
               <thead>
-                <tr className="border-b border-gray-200 dark:border-slate-700">
-                  <th className="text-left py-2 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Model</th>
-                  <th className="text-right py-2 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Tokens</th>
-                  <th className="text-right py-2 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Requests</th>
-                  <th className="text-right py-2 px-4 text-sm font-semibold text-gray-700 dark:text-gray-300">Cost</th>
+                <tr className="border-b border-v-border">
+                  <th className="text-left py-2 px-4 text-sm font-semibold text-v-text-secondary">Model</th>
+                  <th className="text-right py-2 px-4 text-sm font-semibold text-v-text-secondary">Tokens</th>
+                  <th className="text-right py-2 px-4 text-sm font-semibold text-v-text-secondary">Requests</th>
+                  <th className="text-right py-2 px-4 text-sm font-semibold text-v-text-secondary">Cost</th>
                 </tr>
               </thead>
               <tbody>
                 {byProvider[provider === 'combined' ? 'openai' : provider].models.map((model: any, idx: number) => (
                   <tr key={idx} className="border-b border-gray-100">
-                    <td className="py-2 px-4 text-sm text-gray-900 dark:text-gray-100">{model.model}</td>
-                    <td className="py-2 px-4 text-sm text-gray-700 dark:text-gray-300 text-right">
+                    <td className="py-2 px-4 text-sm text-v-text-primary">{model.model}</td>
+                    <td className="py-2 px-4 text-sm text-v-text-secondary text-right">
                       {model.tokens?.toLocaleString() || 0}
                     </td>
-                    <td className="py-2 px-4 text-sm text-gray-700 dark:text-gray-300 text-right">
+                    <td className="py-2 px-4 text-sm text-v-text-secondary text-right">
                       {model.requests?.toLocaleString() || 0}
                     </td>
-                    <td className="py-2 px-4 text-sm text-gray-700 dark:text-gray-300 text-right">
+                    <td className="py-2 px-4 text-sm text-v-text-secondary text-right">
                       ${model.cost?.toFixed(2) || '0.00'}
                     </td>
                   </tr>

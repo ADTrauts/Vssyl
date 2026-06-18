@@ -2,6 +2,7 @@
 
 import React, { useMemo, useState } from 'react';
 import { Button, Alert, Badge, Modal } from 'shared/components';
+import { useConfirm } from 'shared';
 import { adminApiService } from '../../../../lib/adminApiService';
 import { PipelineIntentEditor } from '../PipelinePolicyEditors';
 import PipelineRegistryDependencyChips from './PipelineRegistryDependencyChips';
@@ -10,10 +11,11 @@ import PipelineRegistryValidationPanel from './PipelineRegistryValidationPanel';
 import { usePipelineRegistry } from './usePipelineRegistry';
 
 const inputClass =
-  'mt-1 w-full rounded border border-gray-300 dark:border-slate-600 px-3 py-2 bg-white dark:bg-slate-900 text-gray-900 dark:text-gray-100';
-const labelClass = 'block text-sm text-gray-700 dark:text-gray-300';
+  'mt-1 w-full rounded border border-v-border px-3 py-2 bg-v-surface text-v-text-primary';
+const labelClass = 'block text-sm text-v-text-secondary';
 
 export default function PipelineIntentRegistrySection() {
+  const { confirm, ConfirmDialog } = useConfirm();
   const {
     catalog,
     graph,
@@ -103,7 +105,13 @@ export default function PipelineIntentRegistrySection() {
       setValidation(v);
       return;
     }
-    if (!window.confirm(`Archive intent "${id}"? Dependencies may be affected.`)) return;
+    const ok = await confirm({
+      title: 'Archive intent?',
+      description: `Archive intent "${id}"? Dependencies may be affected.`,
+      variant: 'destructive',
+      confirmLabel: 'Archive',
+    });
+    if (!ok) return;
     const res = await adminApiService.archiveAiPipelineIntent(id);
     if (!res.error) void reload();
   };
@@ -123,19 +131,19 @@ export default function PipelineIntentRegistrySection() {
       createLabel="Create intent"
     >
       {error && <Alert>{error}</Alert>}
-      {loading && <p className="text-sm text-gray-500">Loading registry…</p>}
+      {loading && <p className="text-sm text-v-text-muted">Loading registry…</p>}
       {!loading && catalog && (
         <>
-          <div className="overflow-x-auto border border-gray-200 dark:border-slate-600 rounded-lg mb-4">
+          <div className="overflow-x-auto border border-v-border rounded-lg mb-4">
             <table className="min-w-full text-sm">
-              <thead className="bg-gray-50 dark:bg-slate-900">
+              <thead className="bg-v-surface-muted">
                 <tr>
                   <th className="px-4 py-2 text-left">Intent</th>
                   <th className="px-4 py-2 text-left">Status</th>
                   <th className="px-4 py-2 text-right">Registry</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200 dark:divide-slate-600">
+              <tbody className="divide-y divide-v-border">
                 {filteredIntents.map((intent) => (
                   <tr key={intent.id}>
                     <td className="px-4 py-2">
@@ -147,9 +155,9 @@ export default function PipelineIntentRegistrySection() {
                     </td>
                     <td className="px-4 py-2">
                       {intent.isSystem && <Badge className="bg-blue-100 text-blue-900 mr-1">System</Badge>}
-                      {intent.archived && <Badge className="bg-gray-200 text-gray-800">Archived</Badge>}
+                      {intent.archived && <Badge className="bg-v-surface-muted text-gray-800">Archived</Badge>}
                       {!intent.enabled && !intent.archived && (
-                        <Badge className="bg-gray-100 text-gray-600">Disabled</Badge>
+                        <Badge className="bg-v-surface-muted text-gray-600">Disabled</Badge>
                       )}
                     </td>
                     <td className="px-4 py-2 text-right space-x-1">
@@ -245,7 +253,7 @@ export default function PipelineIntentRegistrySection() {
               Create grounding rule now
             </label>
           )}
-          <div className="flex justify-end gap-2 pt-4 border-t border-gray-200 dark:border-slate-700">
+          <div className="flex justify-end gap-2 pt-4 border-t border-v-border">
             <Button variant="secondary" onClick={() => setCreating(false)}>
               Cancel
             </Button>
@@ -255,6 +263,7 @@ export default function PipelineIntentRegistrySection() {
           </div>
         </div>
       </Modal>
+      <ConfirmDialog />
     </PipelineRegistryPageShell>
   );
 }

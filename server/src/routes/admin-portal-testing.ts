@@ -4,18 +4,12 @@ import { promisify } from 'util';
 import path from 'path';
 import { authenticateJWT } from '../middleware/auth';
 import { logger } from '../lib/logger';
+import { requireAdmin, requireAdminPortalDebugEnabled } from './admin-portal/adminPortalAuth';
 
 const execAsync = promisify(exec);
 const router: express.Router = express.Router();
 
-// Middleware to require admin role
-const requireAdmin = (req: Request, res: Response, next: () => void) => {
-  const user = req.user;
-  if (!user || user.role !== 'ADMIN') {
-    return res.status(403).json({ error: 'Admin access required' });
-  }
-  next();
-};
+router.use(requireAdminPortalDebugEnabled);
 
 /**
  * GET /api/admin-portal/testing/status

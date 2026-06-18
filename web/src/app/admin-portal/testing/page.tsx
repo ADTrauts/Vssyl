@@ -16,6 +16,8 @@ import {
   AlertTriangle,
   RefreshCw
 } from 'lucide-react';
+import { AdminPortalDebugPageGate } from '../../../components/admin-portal/AdminPortalDebugPageGate';
+import { AdminPortalEmptyState } from '../../../components/admin-portal/AdminPortalEmptyState';
 
 interface TestFile {
   path: string;
@@ -48,6 +50,14 @@ interface CoverageInfo {
 }
 
 export default function TestingPage() {
+  return (
+    <AdminPortalDebugPageGate>
+      <TestingPageContent />
+    </AdminPortalDebugPageGate>
+  );
+}
+
+function TestingPageContent() {
   const { data: session, status } = useSession();
   const [testFiles, setTestFiles] = useState<TestFile[]>([]);
   const [testResults, setTestResults] = useState<TestResults | null>(null);
@@ -131,7 +141,7 @@ export default function TestingPage() {
       <div className="flex items-center justify-center p-8">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-2 text-gray-700 dark:text-gray-300">Loading...</p>
+          <p className="mt-2 text-v-text-secondary">Loading...</p>
         </div>
       </div>
     );
@@ -141,8 +151,8 @@ export default function TestingPage() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Testing</h1>
-        <p className="text-gray-700 dark:text-gray-300 mt-2">Run and monitor backend unit tests</p>
+        <h1 className="text-3xl font-bold text-v-text-primary">Testing</h1>
+        <p className="text-v-text-secondary mt-2">Run and monitor backend unit tests</p>
       </div>
 
       {/* Quick Actions */}
@@ -150,15 +160,15 @@ export default function TestingPage() {
         <button
           onClick={() => runTests()}
           disabled={running}
-          className="p-4 border rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800 transition-colors text-left disabled:opacity-50 disabled:cursor-not-allowed"
+          className="p-4 border rounded-lg hover:bg-v-surface-muted bg-v-surface transition-colors text-left disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <div className="flex items-center space-x-3">
             <div className="p-2 rounded-lg bg-blue-100">
               <Play className="w-5 h-5 text-blue-600" />
             </div>
             <div>
-              <h3 className="font-medium text-gray-900 dark:text-gray-100">Run All Tests</h3>
-              <p className="text-sm text-gray-700 dark:text-gray-300">Execute all test suites</p>
+              <h3 className="font-medium text-v-text-primary">Run All Tests</h3>
+              <p className="text-sm text-v-text-secondary">Execute all test suites</p>
             </div>
           </div>
         </button>
@@ -166,30 +176,30 @@ export default function TestingPage() {
         <button
           onClick={loadCoverage}
           disabled={loading}
-          className="p-4 border rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800 transition-colors text-left disabled:opacity-50 disabled:cursor-not-allowed"
+          className="p-4 border rounded-lg hover:bg-v-surface-muted bg-v-surface transition-colors text-left disabled:opacity-50 disabled:cursor-not-allowed"
         >
           <div className="flex items-center space-x-3">
             <div className="p-2 rounded-lg bg-green-100">
               <TrendingUp className="w-5 h-5 text-green-600" />
             </div>
             <div>
-              <h3 className="font-medium text-gray-900 dark:text-gray-100">Generate Coverage</h3>
-              <p className="text-sm text-gray-700 dark:text-gray-300">View test coverage report</p>
+              <h3 className="font-medium text-v-text-primary">Generate Coverage</h3>
+              <p className="text-sm text-v-text-secondary">View test coverage report</p>
             </div>
           </div>
         </button>
 
         <button
           onClick={loadTestFiles}
-          className="p-4 border rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800 transition-colors text-left"
+          className="p-4 border rounded-lg hover:bg-v-surface-muted bg-v-surface transition-colors text-left"
         >
           <div className="flex items-center space-x-3">
             <div className="p-2 rounded-lg bg-purple-100">
               <RefreshCw className="w-5 h-5 text-purple-600" />
             </div>
             <div>
-              <h3 className="font-medium text-gray-900 dark:text-gray-100">Refresh List</h3>
-              <p className="text-sm text-gray-700 dark:text-gray-300">Reload test files</p>
+              <h3 className="font-medium text-v-text-primary">Refresh List</h3>
+              <p className="text-sm text-v-text-secondary">Reload test files</p>
             </div>
           </div>
         </button>
@@ -197,47 +207,47 @@ export default function TestingPage() {
 
       {/* Diagnostic Tools */}
       <Card className="p-6">
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Diagnostic Tools</h2>
+        <h2 className="text-xl font-semibold text-v-text-primary mb-4">Diagnostic Tools</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <Link
             href="/admin-portal/test-auth"
-            className="p-4 border rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800 transition-colors"
+            className="p-4 border rounded-lg hover:bg-v-surface-muted bg-v-surface transition-colors"
           >
-            <h3 className="font-medium text-gray-900 dark:text-gray-100">Test Auth</h3>
-            <p className="text-sm text-gray-700 dark:text-gray-300 mt-1">Validate admin authentication flow</p>
+            <h3 className="font-medium text-v-text-primary">Test Auth</h3>
+            <p className="text-sm text-v-text-secondary mt-1">Validate admin authentication flow</p>
           </Link>
           <Link
             href="/admin-portal/test-api"
-            className="p-4 border rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800 transition-colors"
+            className="p-4 border rounded-lg hover:bg-v-surface-muted bg-v-surface transition-colors"
           >
-            <h3 className="font-medium text-gray-900 dark:text-gray-100">Test API</h3>
-            <p className="text-sm text-gray-700 dark:text-gray-300 mt-1">Run direct admin API checks</p>
+            <h3 className="font-medium text-v-text-primary">Test API</h3>
+            <p className="text-sm text-v-text-secondary mt-1">Run direct admin API checks</p>
           </Link>
           <Link
             href="/admin-portal/debug-session"
-            className="p-4 border rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800 transition-colors"
+            className="p-4 border rounded-lg hover:bg-v-surface-muted bg-v-surface transition-colors"
           >
-            <h3 className="font-medium text-gray-900 dark:text-gray-100">Debug Session</h3>
-            <p className="text-sm text-gray-700 dark:text-gray-300 mt-1">Inspect session and client debug data</p>
+            <h3 className="font-medium text-v-text-primary">Debug Session</h3>
+            <p className="text-sm text-v-text-secondary mt-1">Inspect session and client debug data</p>
           </Link>
         </div>
       </Card>
 
       {/* Test Files List */}
       <Card className="p-6">
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Test Files</h2>
+        <h2 className="text-xl font-semibold text-v-text-primary mb-4">Test Files</h2>
         {testFiles.length > 0 ? (
           <div className="space-y-2">
             {testFiles.map((file, index) => (
               <div
                 key={index}
-                className="flex items-center justify-between p-3 border rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800"
+                className="flex items-center justify-between p-3 border rounded-lg hover:bg-v-surface-muted bg-v-surface"
               >
                 <div className="flex items-center space-x-3">
-                  <FileText className="w-5 h-5 text-gray-700 dark:text-gray-300 dark:text-gray-400" />
+                  <FileText className="w-5 h-5 text-v-text-secondary dark:text-v-text-muted" />
                   <div>
-                    <p className="font-medium text-gray-900 dark:text-gray-100">{file.name}</p>
-                    <p className="text-sm text-gray-700 dark:text-gray-300">{file.relativePath}</p>
+                    <p className="font-medium text-v-text-primary">{file.name}</p>
+                    <p className="text-sm text-v-text-secondary">{file.relativePath}</p>
                   </div>
                 </div>
                 <button
@@ -251,10 +261,11 @@ export default function TestingPage() {
             ))}
           </div>
         ) : (
-          <div className="text-center py-8 text-gray-700 dark:text-gray-300">
-            <FileText className="w-12 h-12 mx-auto mb-3 text-gray-700 dark:text-gray-300 dark:text-gray-400" />
-            <p>No test files found. Click "Refresh List" to load test files.</p>
-          </div>
+          <AdminPortalEmptyState
+            icon={<FileText className="w-12 h-12" />}
+            title="No test files found"
+            description='Click "Refresh List" to load test files.'
+          />
         )}
       </Card>
 
@@ -262,9 +273,9 @@ export default function TestingPage() {
       {testResults && (
         <Card className="p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Test Results</h2>
+            <h2 className="text-xl font-semibold text-v-text-primary">Test Results</h2>
             {testResults.timestamp && (
-              <span className="text-sm text-gray-700 dark:text-gray-300">
+              <span className="text-sm text-v-text-secondary">
                 {new Date(testResults.timestamp).toLocaleString()}
               </span>
             )}
@@ -282,16 +293,16 @@ export default function TestingPage() {
               {/* Summary Stats */}
               {testResults.results.testFiles && (
                 <div className="grid grid-cols-2 gap-4">
-                  <div className="p-4 bg-gray-50 dark:bg-slate-800 rounded-lg">
-                    <p className="text-sm text-gray-700 dark:text-gray-300 mb-1">Test Files</p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                  <div className="p-4 bg-v-surface-muted rounded-lg">
+                    <p className="text-sm text-v-text-secondary mb-1">Test Files</p>
+                    <p className="text-2xl font-bold text-v-text-primary">
                       {testResults.results.testFiles.passed} / {testResults.results.testFiles.total}
                     </p>
                   </div>
                   {testResults.results.tests && (
-                    <div className="p-4 bg-gray-50 dark:bg-slate-800 rounded-lg">
-                      <p className="text-sm text-gray-700 dark:text-gray-300 mb-1">Tests</p>
-                      <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                    <div className="p-4 bg-v-surface-muted rounded-lg">
+                      <p className="text-sm text-v-text-secondary mb-1">Tests</p>
+                      <p className="text-2xl font-bold text-v-text-primary">
                         {testResults.results.tests.passed} / {testResults.results.tests.total}
                       </p>
                       {testResults.results.tests.failed > 0 && (
@@ -307,7 +318,7 @@ export default function TestingPage() {
               {/* Raw Output */}
               {testResults.results.raw && (
                 <div className="mt-4">
-                  <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Output</h3>
+                  <h3 className="text-sm font-medium text-v-text-secondary mb-2">Output</h3>
                   <pre className="p-4 bg-gray-900 text-gray-100 rounded-lg overflow-auto text-xs max-h-96">
                     {testResults.results.raw}
                   </pre>
@@ -339,9 +350,9 @@ export default function TestingPage() {
       {coverage && (
         <Card className="p-6">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Coverage Report</h2>
+            <h2 className="text-xl font-semibold text-v-text-primary">Coverage Report</h2>
             {coverage.timestamp && (
-              <span className="text-sm text-gray-700 dark:text-gray-300">
+              <span className="text-sm text-v-text-secondary">
                 {new Date(coverage.timestamp).toLocaleString()}
               </span>
             )}
@@ -349,21 +360,21 @@ export default function TestingPage() {
 
           {coverage.overall ? (
             <div className="grid grid-cols-3 gap-4">
-              <div className="p-4 bg-gray-50 dark:bg-slate-800 rounded-lg">
-                <p className="text-sm text-gray-700 dark:text-gray-300 mb-1">Statements</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+              <div className="p-4 bg-v-surface-muted rounded-lg">
+                <p className="text-sm text-v-text-secondary mb-1">Statements</p>
+                <p className="text-2xl font-bold text-v-text-primary">
                   {coverage.overall.statements.toFixed(1)}%
                 </p>
               </div>
-              <div className="p-4 bg-gray-50 dark:bg-slate-800 rounded-lg">
-                <p className="text-sm text-gray-700 dark:text-gray-300 mb-1">Branches</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+              <div className="p-4 bg-v-surface-muted rounded-lg">
+                <p className="text-sm text-v-text-secondary mb-1">Branches</p>
+                <p className="text-2xl font-bold text-v-text-primary">
                   {coverage.overall.branches.toFixed(1)}%
                 </p>
               </div>
-              <div className="p-4 bg-gray-50 dark:bg-slate-800 rounded-lg">
-                <p className="text-sm text-gray-700 dark:text-gray-300 mb-1">Functions</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+              <div className="p-4 bg-v-surface-muted rounded-lg">
+                <p className="text-sm text-v-text-secondary mb-1">Functions</p>
+                <p className="text-2xl font-bold text-v-text-primary">
                   {coverage.overall.functions.toFixed(1)}%
                 </p>
               </div>
@@ -384,7 +395,7 @@ export default function TestingPage() {
 
           {coverage.raw && (
             <div className="mt-4">
-              <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Raw Output</h3>
+              <h3 className="text-sm font-medium text-v-text-secondary mb-2">Raw Output</h3>
               <pre className="p-4 bg-gray-900 text-gray-100 rounded-lg overflow-auto text-xs max-h-96">
                 {coverage.raw}
               </pre>

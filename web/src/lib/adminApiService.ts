@@ -1391,37 +1391,6 @@ class AdminApiService {
     }).catch(error => ({ error: error.message }));
   }
 
-  async getAIProviderExpensesOpenAI(period: string = 'month') {
-    return fetch(`/api/admin/ai-providers/expenses/openai?period=${period}`, {
-      headers: await this.getAuthHeaders(),
-      credentials: 'include'
-    }).then(async res => {
-      if (!res.ok) {
-        const error = await res.json().catch(() => ({}));
-        return { error: error.error || `HTTP ${res.status}` };
-      }
-      const data = await res.json();
-      return { data: data.success && data.data ? data.data : data };
-    }).catch(error => ({ error: error.message }));
-  }
-
-  async getAIProviderExpensesAnthropic(startDate?: string, endDate?: string) {
-    const params = new URLSearchParams();
-    if (startDate) params.append('startDate', startDate);
-    if (endDate) params.append('endDate', endDate);
-    return fetch(`/api/admin/ai-providers/expenses/anthropic${params.toString() ? '?' + params.toString() : ''}`, {
-      headers: await this.getAuthHeaders(),
-      credentials: 'include'
-    }).then(async res => {
-      if (!res.ok) {
-        const error = await res.json().catch(() => ({}));
-        return { error: error.error || `HTTP ${res.status}` };
-      }
-      const data = await res.json();
-      return { data: data.success && data.data ? data.data : data };
-    }).catch(error => ({ error: error.message }));
-  }
-
   async getAIProviderExpensesCombined(period: string = 'month', startDate?: string, endDate?: string) {
     const params = new URLSearchParams();
     params.append('period', period);
@@ -1526,82 +1495,6 @@ class AdminApiService {
       console.error('Error in getBusinessAIPatterns:', error);
       return { error: error instanceof Error ? error.message : 'Unknown error' };
     }
-  }
-
-  // ============================================================================
-  // CENTRALIZED AI METHODS
-  // ============================================================================
-
-  async getCentralizedAIHealth(): Promise<ApiResponse<any>> {
-    const headers = await this.getAuthHeaders();
-    const response = await fetch('/api/centralized-ai/health', {
-      method: 'GET',
-      headers,
-      credentials: 'include'
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      return { error: errorData.error || `HTTP ${response.status}` };
-    }
-
-    const responseData = await response.json();
-    const data = responseData.success && responseData.data ? responseData.data : responseData;
-    return { data };
-  }
-
-  async getCentralizedAIPatterns(): Promise<ApiResponse<any>> {
-    const headers = await this.getAuthHeaders();
-    const response = await fetch('/api/centralized-ai/patterns', {
-      method: 'GET',
-      headers,
-      credentials: 'include'
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      return { error: errorData.error || `HTTP ${response.status}` };
-    }
-
-    const responseData = await response.json();
-    const data = responseData.success && responseData.data ? responseData.data : responseData;
-    return { data };
-  }
-
-  async getCentralizedAIInsights(): Promise<ApiResponse<any>> {
-    const headers = await this.getAuthHeaders();
-    const response = await fetch('/api/centralized-ai/insights', {
-      method: 'GET',
-      headers,
-      credentials: 'include'
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      return { error: errorData.error || `HTTP ${response.status}` };
-    }
-
-    const responseData = await response.json();
-    const data = responseData.success && responseData.data ? responseData.data : responseData;
-    return { data };
-  }
-
-  async getCentralizedAIPrivacySettings(): Promise<ApiResponse<any>> {
-    const headers = await this.getAuthHeaders();
-    const response = await fetch('/api/centralized-ai/privacy/settings', {
-      method: 'GET',
-      headers,
-      credentials: 'include'
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({}));
-      return { error: errorData.error || `HTTP ${response.status}` };
-    }
-
-    const responseData = await response.json();
-    const data = responseData.success && responseData.data ? responseData.data : responseData;
-    return { data };
   }
 
   // ============================================================================
@@ -1957,7 +1850,8 @@ export interface DashboardStats {
   activeUsers: number;
   totalBusinesses: number;
   monthlyRevenue: number;
-  systemHealth: number;
+  systemHealth: number | null;
+  systemHealthStatus?: 'available' | 'unavailable';
   userGrowthTrend?: number;
   businessGrowthTrend?: number;
   revenueGrowthTrend?: number;

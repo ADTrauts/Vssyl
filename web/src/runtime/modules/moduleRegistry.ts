@@ -2,6 +2,16 @@ import { CORE_MODULE_BY_ID, CORE_MODULE_DEFINITIONS } from './coreModuleRegistry
 import { supportsContext } from './contextMapping';
 import type { ModuleDefinition, WorkspaceContextType } from './types';
 
+/**
+ * Platform control-plane module ids that must never appear as installable product modules.
+ * Admin Portal lives at `/admin-portal`, not in the workspace module registry (AP-F-009).
+ */
+export const NON_INSTALLABLE_MODULE_IDS = new Set<string>(['admin']);
+
+export function isInstallableProductModule(moduleId: string): boolean {
+  return !NON_INSTALLABLE_MODULE_IDS.has(normalizeModuleId(moduleId));
+}
+
 export function normalizeModuleId(rawId: string): string {
   const id = rawId.toLowerCase().trim();
   if (
@@ -61,6 +71,7 @@ export function getModulesForContext(
     : null;
 
   return CORE_MODULE_DEFINITIONS.filter((module) => {
+    if (!isInstallableProductModule(module.id)) return false;
     if (!supportsContext(module.supportedContexts, context)) return false;
     if (module.status === 'disabled' && !options?.includeDisabled) return false;
     if (installedSet && module.isCore !== true && !installedSet.has(module.id)) {

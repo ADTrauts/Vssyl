@@ -60,12 +60,12 @@ export default function SuggestionCorrelationDryRunPanel() {
 
   return (
     <div className="space-y-6">
-      <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg p-4 space-y-4">
+      <div className="bg-v-surface border border-v-border rounded-lg p-4 space-y-4">
         <div>
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+          <h2 className="text-lg font-semibold text-v-text-primary">
             Ambient suggestion correlation (dry-run)
           </h2>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+          <p className="text-sm text-v-text-muted mt-1">
             Replay fixture domain events through correlation + ranking. No signals or suggestions are
             persisted.
           </p>
@@ -73,7 +73,7 @@ export default function SuggestionCorrelationDryRunPanel() {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label className="block text-sm font-medium text-v-text-secondary mb-1">
               Fixture
             </label>
             <select
@@ -83,7 +83,7 @@ export default function SuggestionCorrelationDryRunPanel() {
                   e.target.value as 'meeting_prep' | 'thread_spike' | 'document_upload'
                 )
               }
-              className="w-full rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-3 py-2 text-gray-900 dark:text-gray-100"
+              className="w-full rounded-lg border border-v-border bg-v-surface px-3 py-2 text-v-text-primary"
             >
               {FIXTURES.map((f) => (
                 <option key={f.id} value={f.id}>
@@ -93,7 +93,7 @@ export default function SuggestionCorrelationDryRunPanel() {
             </select>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label className="block text-sm font-medium text-v-text-secondary mb-1">
               Recent suggestions (24h sim)
             </label>
             <input
@@ -102,7 +102,7 @@ export default function SuggestionCorrelationDryRunPanel() {
               max={10}
               value={recentCount}
               onChange={(e) => setRecentCount(Number(e.target.value) || 0)}
-              className="w-full rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-3 py-2 text-gray-900 dark:text-gray-100"
+              className="w-full rounded-lg border border-v-border bg-v-surface px-3 py-2 text-v-text-primary"
             />
           </div>
         </div>
@@ -113,7 +113,7 @@ export default function SuggestionCorrelationDryRunPanel() {
       </div>
 
       {!metricsLoading && metrics && (
-        <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg p-4">
+        <div className="bg-v-surface border border-v-border rounded-lg p-4">
           <h3 className="text-sm font-semibold text-gray-800 dark:text-gray-200 mb-3">
             Funnel metrics ({metrics.windowDays}d)
           </h3>
@@ -140,10 +140,10 @@ export default function SuggestionCorrelationDryRunPanel() {
       {error && <Alert>{error}</Alert>}
 
       {result && (
-        <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg p-4 space-y-4">
+        <div className="bg-v-surface border border-v-border rounded-lg p-4 space-y-4">
           <div>
-            <p className="text-sm text-gray-700 dark:text-gray-300">{result.description}</p>
-            <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+            <p className="text-sm text-v-text-secondary">{result.description}</p>
+            <p className="text-xs text-v-text-muted mt-1">
               Trigger: {result.triggerEvent.type} · Rules evaluated:{' '}
               {result.evaluatedRuleIds.join(', ') || 'none'} · Prior signals:{' '}
               {result.priorSignalCount}
@@ -151,7 +151,7 @@ export default function SuggestionCorrelationDryRunPanel() {
           </div>
 
           {result.candidates.length === 0 ? (
-            <p className="text-sm text-gray-600 dark:text-gray-400">No candidates from fixture.</p>
+            <p className="text-sm text-v-text-muted">No candidates from fixture.</p>
           ) : (
             <ul className="space-y-3">
               {result.candidates.map((c) => (
@@ -160,19 +160,19 @@ export default function SuggestionCorrelationDryRunPanel() {
                   className="rounded-lg border border-purple-200 dark:border-purple-900/50 p-3 text-sm"
                 >
                   <div className="flex flex-wrap items-center gap-2 mb-2">
-                    <span className="font-medium text-gray-900 dark:text-gray-100">{c.suggestionType}</span>
+                    <span className="font-medium text-v-text-primary">{c.suggestionType}</span>
                     <Badge size="sm" color="blue">
                       {c.correlationRuleId}
                     </Badge>
                     <Badge size="sm" color={c.rankingAccepted ? 'green' : 'yellow'}>
                       {c.rankingAccepted ? 'Would create' : c.rankingRejectionReason ?? 'Rejected'}
                     </Badge>
-                    <span className="text-xs text-gray-600 dark:text-gray-400">
+                    <span className="text-xs text-v-text-muted">
                       {Math.round(c.adjustedConfidence * 100)}% conf
                     </span>
                   </div>
-                  <p className="text-gray-700 dark:text-gray-300">{c.explainSummary}</p>
-                  <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+                  <p className="text-v-text-secondary">{c.explainSummary}</p>
+                  <p className="text-xs text-v-text-muted mt-1">
                     Modules: {c.contextModules.join(', ') || '—'} · Source events:{' '}
                     {c.sourceEventIds.length}
                   </p>

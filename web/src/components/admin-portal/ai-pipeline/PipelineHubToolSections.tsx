@@ -11,6 +11,7 @@ import {
   Wrench,
   History,
   FileDown,
+  Cloud,
 } from 'lucide-react';
 
 interface ToolCard {
@@ -101,6 +102,13 @@ const SECTIONS: Array<{ title: string; description: string; cards: ToolCard[] }>
         icon: FileDown,
         color: 'teal',
       },
+      {
+        title: 'Provider Governance',
+        description: 'OpenAI and Anthropic usage from official admin APIs.',
+        path: '/admin-portal/ai-pipeline#provider-governance',
+        icon: Cloud,
+        color: 'blue',
+      },
     ],
   },
 ];
@@ -122,8 +130,8 @@ export default function PipelineHubToolSections() {
     <div className="space-y-8">
       {SECTIONS.map((section) => (
         <section key={section.title}>
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{section.title}</h2>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mb-3">{section.description}</p>
+          <h2 className="text-lg font-semibold text-v-text-primary">{section.title}</h2>
+          <p className="text-sm text-v-text-muted mb-3">{section.description}</p>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             {section.cards.map((card) => {
               const Icon = card.icon;
@@ -132,15 +140,15 @@ export default function PipelineHubToolSections() {
                 <Link
                   key={card.path}
                   href={card.path}
-                  className="block border border-gray-200 dark:border-slate-700 rounded-lg p-4 bg-white dark:bg-slate-900 hover:border-indigo-300 dark:hover:border-indigo-600 transition-colors"
+                  className="block border border-v-border rounded-lg p-4 bg-v-surface hover:border-indigo-300 dark:hover:border-indigo-600 transition-colors"
                 >
                   <div className="flex items-start gap-3">
                     <div className={`p-2 rounded-lg ${colors.bg}`}>
                       <Icon className={`w-5 h-5 ${colors.text}`} />
                     </div>
                     <div>
-                      <h3 className="font-semibold text-gray-900 dark:text-gray-100">{card.title}</h3>
-                      <p className="text-sm text-gray-700 dark:text-gray-300 mt-1">{card.description}</p>
+                      <h3 className="font-semibold text-v-text-primary">{card.title}</h3>
+                      <p className="text-sm text-v-text-secondary mt-1">{card.description}</p>
                     </div>
                   </div>
                 </Link>

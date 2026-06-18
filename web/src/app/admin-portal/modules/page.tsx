@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { Card, Button, Badge, Alert, Spinner, Modal, Input, Tabs } from 'shared/components';
+import { Card, Button, Badge, Alert, Spinner, Modal, Input, Tabs, ConfirmModal } from 'shared/components';
 import { adminApiService } from '../../../lib/adminApiService';
 import SecurityDashboard from '../../../components/admin/SecurityDashboard';
 import {
@@ -283,86 +283,7 @@ export default function AdminModulesPage() {
     } catch (err) {
       console.error('Error loading module data:', err);
       setError('Failed to load module data. Please try again.');
-      
-      // Fallback to mock data
-      setSubmissions([
-        {
-          id: '1',
-          moduleId: '1',
-          submitterId: '1',
-          submitter: {
-            id: '1',
-            name: 'John Developer',
-            email: 'john@example.com'
-          },
-          status: 'PENDING',
-          submittedAt: new Date(Date.now() - 86400000).toISOString(),
-          module: {
-            id: '1',
-            name: 'Advanced Calendar',
-            description: 'Enhanced calendar with team scheduling and integrations',
-            version: '2.0.0',
-            category: 'PRODUCTIVITY',
-            developer: {
-              id: '1',
-              name: 'John Developer',
-              email: 'john@example.com'
-            },
-            manifest: {
-              permissions: ['calendar:read', 'calendar:write', 'team:read'],
-              dependencies: ['react', 'date-fns'],
-              entryPoint: '/calendar',
-              settings: {}
-            },
-            permissions: ['calendar:read', 'calendar:write', 'team:read'],
-            dependencies: ['react', 'date-fns'],
-            downloads: 150,
-            rating: 4.2,
-            reviewCount: 12,
-            pricingTier: 'premium',
-            revenueSplit: 0.7
-          }
-        },
-        {
-          id: '2',
-          moduleId: '2',
-          submitterId: '2',
-          submitter: {
-            id: '2',
-            name: 'Sarah Designer',
-            email: 'sarah@example.com'
-          },
-          status: 'APPROVED',
-          submittedAt: new Date(Date.now() - 172800000).toISOString(),
-          reviewedAt: new Date(Date.now() - 86400000).toISOString(),
-          module: {
-            id: '2',
-            name: 'Design System',
-            description: 'Comprehensive design system with components and guidelines',
-            version: '1.5.0',
-            category: 'DEVELOPMENT',
-            developer: {
-              id: '2',
-              name: 'Sarah Designer',
-              email: 'sarah@example.com'
-            },
-            manifest: {
-              permissions: ['design:read'],
-              dependencies: ['react', 'styled-components'],
-              entryPoint: '/design-system',
-              settings: {}
-            },
-            permissions: ['design:read'],
-            dependencies: ['react', 'styled-components'],
-            downloads: 89,
-            rating: 4.8,
-            reviewCount: 8,
-            pricingTier: 'free',
-            revenueSplit: 0.7
-          }
-        }
-      ]);
-
+      setSubmissions([]);
       setStats(null);
     } finally {
       setLoading(false);
@@ -1002,8 +923,8 @@ export default function AdminModulesPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">Module Management</h1>
-          <p className="text-gray-700 dark:text-gray-300">Review submissions, manage marketplace, and track developer performance</p>
+          <h1 className="text-2xl font-bold text-v-text-primary">Module Management</h1>
+          <p className="text-v-text-secondary">Review submissions, manage marketplace, and track developer performance</p>
         </div>
         <div className="flex items-center space-x-3">
           <Button
@@ -1030,7 +951,7 @@ export default function AdminModulesPage() {
 
       {/* Tabs */}
       <Tabs value={activeTab} onValueChange={(value) => setActiveTab(value as 'submissions' | 'ai-context')}>
-        <Tabs.List className="border-b border-gray-200 dark:border-slate-700">
+        <Tabs.List className="border-b border-v-border">
           <Tabs.Trigger value="submissions" className="px-4 py-2">
             <Package className="w-4 h-4 mr-2 inline" />
             Submissions
@@ -1052,8 +973,8 @@ export default function AdminModulesPage() {
                 <Package className="w-6 h-6 text-blue-600" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Total Submissions</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{stats.totalSubmissions}</p>
+                <p className="text-sm font-medium text-v-text-secondary">Total Submissions</p>
+                <p className="text-2xl font-bold text-v-text-primary">{stats.totalSubmissions}</p>
               </div>
             </div>
           </Card>
@@ -1064,8 +985,8 @@ export default function AdminModulesPage() {
                 <Clock className="w-6 h-6 text-yellow-600" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Pending Reviews</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{stats.pendingReviews}</p>
+                <p className="text-sm font-medium text-v-text-secondary">Pending Reviews</p>
+                <p className="text-2xl font-bold text-v-text-primary">{stats.pendingReviews}</p>
               </div>
             </div>
           </Card>
@@ -1076,8 +997,8 @@ export default function AdminModulesPage() {
                 <DollarSign className="w-6 h-6 text-green-600" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Total Revenue</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">${(stats.totalRevenue || 0).toLocaleString()}</p>
+                <p className="text-sm font-medium text-v-text-secondary">Total Revenue</p>
+                <p className="text-2xl font-bold text-v-text-primary">${(stats.totalRevenue || 0).toLocaleString()}</p>
               </div>
             </div>
           </Card>
@@ -1088,8 +1009,8 @@ export default function AdminModulesPage() {
                 <Users className="w-6 h-6 text-purple-600" />
               </div>
               <div className="ml-4">
-                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Active Developers</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{stats.activeDevelopers}</p>
+                <p className="text-sm font-medium text-v-text-secondary">Active Developers</p>
+                <p className="text-2xl font-bold text-v-text-primary">{stats.activeDevelopers}</p>
               </div>
             </div>
           </Card>
@@ -1101,7 +1022,7 @@ export default function AdminModulesPage() {
         <div className="flex flex-col lg:flex-row gap-4">
           <div className="flex-1">
             <div className="relative">
-              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+              <span className="absolute left-3 top-1/2 -translate-y-1/2 text-v-text-muted">
                 <Search className="w-4 h-4" />
               </span>
               <Input
@@ -1115,7 +1036,7 @@ export default function AdminModulesPage() {
           
           <div className="flex gap-3">
             <select
-              className="px-3 py-2 border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 dark:bg-slate-800 text-gray-900 dark:text-gray-100 rounded"
+              className="px-3 py-2 border border-v-border bg-v-surface bg-v-surface text-v-text-primary rounded"
               value={filters.status}
               onChange={(e) => setFilters(prev => ({ ...prev, status: e.target.value }))}
             >
@@ -1126,7 +1047,7 @@ export default function AdminModulesPage() {
             </select>
 
             <select
-              className="px-3 py-2 border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 dark:bg-slate-800 text-gray-900 dark:text-gray-100 rounded"
+              className="px-3 py-2 border border-v-border bg-v-surface bg-v-surface text-v-text-primary rounded"
               value={filters.category}
               onChange={(e) => setFilters(prev => ({ ...prev, category: e.target.value }))}
             >
@@ -1178,7 +1099,13 @@ export default function AdminModulesPage() {
       {/* Error Alert */}
       {error && (
         <Alert onClose={() => setError(null)}>
-          {error}
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <span>{error}</span>
+            <Button variant="secondary" size="sm" onClick={loadData} disabled={loading}>
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Try again
+            </Button>
+          </div>
         </Alert>
       )}
 
@@ -1189,23 +1116,33 @@ export default function AdminModulesPage() {
             <div className="flex justify-center py-8">
               <Spinner size={32} />
             </div>
+          ) : error ? (
+            <div className="text-center py-8">
+              <AlertTriangle className="w-12 h-12 mx-auto text-yellow-500 mb-4" />
+              <h3 className="text-lg font-medium text-v-text-primary mb-2">Unable to load submissions</h3>
+              <p className="text-v-text-secondary mb-4">{error}</p>
+              <Button variant="secondary" onClick={loadData} disabled={loading}>
+                <RefreshCw className="w-4 h-4 mr-2" />
+                Try again
+              </Button>
+            </div>
           ) : filteredSubmissions.length === 0 ? (
             <div className="text-center py-8">
-              <Package className="w-12 h-12 mx-auto text-gray-500 dark:text-gray-400 mb-4" />
-              <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">No submissions found</h3>
-              <p className="text-gray-700 dark:text-gray-300">No module submissions match your current filters.</p>
+              <Package className="w-12 h-12 mx-auto text-v-text-muted dark:text-v-text-muted mb-4" />
+              <h3 className="text-lg font-medium text-v-text-primary mb-2">No submissions found</h3>
+              <p className="text-v-text-secondary">No module submissions match your current filters.</p>
             </div>
           ) : (
             <div className="space-y-4">
               {filteredSubmissions.map((submission) => (
-                <div key={submission.id} className="border border-gray-200 dark:border-slate-700 rounded-lg p-6">
+                <div key={submission.id} className="border border-v-border rounded-lg p-6">
                   {(() => {
                     const readiness = getReadinessChecklist(submission);
                     const scanStatus = getLatestArtifactScanStatus(submission);
                     return (
-                      <div className="mb-4 rounded-lg border border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 p-3">
+                      <div className="mb-4 rounded-lg border border-v-border bg-v-surface-muted p-3">
                         <div className="flex flex-wrap items-center gap-2 mb-2">
-                          <span className="text-xs font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide">
+                          <span className="text-xs font-semibold text-v-text-secondary uppercase tracking-wide">
                             Review Checklist
                           </span>
                           <Badge color={readiness.artifactScanPassed ? 'green' : 'yellow'} size="sm">
@@ -1216,10 +1153,10 @@ export default function AdminModulesPage() {
                           )}
                         </div>
                         <div className="grid grid-cols-1 md:grid-cols-3 gap-2 text-xs">
-                          <div className={readiness.artifactScanPassed ? 'text-green-700 dark:text-green-300' : 'text-gray-700 dark:text-gray-300'}>
+                          <div className={readiness.artifactScanPassed ? 'text-green-700 dark:text-green-300' : 'text-v-text-secondary'}>
                             {readiness.artifactScanPassed ? '✓' : '•'} Artifact scan passed
                           </div>
-                          <div className={readiness.runtimeReady ? 'text-green-700 dark:text-green-300' : 'text-gray-700 dark:text-gray-300'}>
+                          <div className={readiness.runtimeReady ? 'text-green-700 dark:text-green-300' : 'text-v-text-secondary'}>
                             {readiness.runtimeReady ? '✓' : '•'} Runtime path ready
                           </div>
                           <div className={readiness.publishReady ? 'text-green-700 dark:text-green-300' : 'text-yellow-700 dark:text-yellow-300'}>
@@ -1244,7 +1181,7 @@ export default function AdminModulesPage() {
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
                       <div className="flex items-center space-x-3 mb-2">
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                        <h3 className="text-lg font-semibold text-v-text-primary">
                           {submission.module.name}
                         </h3>
                         {getStatusBadge(submission.status)}
@@ -1254,29 +1191,29 @@ export default function AdminModulesPage() {
                         </Badge>
                       </div>
                       
-                      <p className="text-gray-700 dark:text-gray-300 mb-3">{submission.module.description}</p>
+                      <p className="text-v-text-secondary mb-3">{submission.module.description}</p>
                       
                       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 text-sm">
                         <div>
-                          <span className="font-medium text-gray-700 dark:text-gray-300">Developer:</span>
-                          <p className="text-gray-700 dark:text-gray-300">{submission.submitter.name}</p>
+                          <span className="font-medium text-v-text-secondary">Developer:</span>
+                          <p className="text-v-text-secondary">{submission.submitter.name}</p>
                         </div>
                         <div>
-                          <span className="font-medium text-gray-700 dark:text-gray-300">Version:</span>
-                          <p className="text-gray-700 dark:text-gray-300">{submission.module.version}</p>
+                          <span className="font-medium text-v-text-secondary">Version:</span>
+                          <p className="text-v-text-secondary">{submission.module.version}</p>
                         </div>
                         <div>
-                          <span className="font-medium text-gray-700 dark:text-gray-300">Submitted:</span>
-                          <p className="text-gray-700 dark:text-gray-300">{formatDate(submission.submittedAt)}</p>
+                          <span className="font-medium text-v-text-secondary">Submitted:</span>
+                          <p className="text-v-text-secondary">{formatDate(submission.submittedAt)}</p>
                         </div>
                         <div>
-                          <span className="font-medium text-gray-700 dark:text-gray-300">Pricing:</span>
-                          <p className="text-gray-700 dark:text-gray-300 capitalize">{submission.module.pricingTier || 'free'}</p>
+                          <span className="font-medium text-v-text-secondary">Pricing:</span>
+                          <p className="text-v-text-secondary capitalize">{submission.module.pricingTier || 'free'}</p>
                         </div>
                       </div>
 
                       {submission.module.downloads !== undefined && (
-                        <div className="flex items-center space-x-4 mt-3 text-sm text-gray-700 dark:text-gray-300">
+                        <div className="flex items-center space-x-4 mt-3 text-sm text-v-text-secondary">
                           <span className="flex items-center">
                             <Download className="w-4 h-4 mr-1" />
                             {submission.module.downloads} downloads
@@ -1300,13 +1237,13 @@ export default function AdminModulesPage() {
                             setSelectedSubmissions(prev => prev.filter(id => id !== submission.id));
                           }
                         }}
-                        className="rounded border-gray-300 dark:border-slate-600"
+                        className="rounded border-v-border"
                       />
                     </div>
                   </div>
 
                   {submission.status === 'PENDING' && (
-                    <div className="flex space-x-3 pt-4 border-t border-gray-200 dark:border-slate-700 mt-4">
+                    <div className="flex space-x-3 pt-4 border-t border-v-border mt-4">
                       <Button
                         variant="primary"
                         size="sm"
@@ -1362,10 +1299,10 @@ export default function AdminModulesPage() {
                   )}
 
                   {submission.status === 'APPROVED' && (
-                    <div className="pt-4 border-t border-gray-200 dark:border-slate-700 mt-4 space-y-3">
+                    <div className="pt-4 border-t border-v-border mt-4 space-y-3">
                       <div className="flex flex-wrap items-center justify-between gap-2">
-                        <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
-                          <History className="w-4 h-4 text-gray-700 dark:text-gray-300" />
+                        <h4 className="text-sm font-semibold text-v-text-primary flex items-center gap-2">
+                          <History className="w-4 h-4 text-v-text-secondary" />
                           Version history & rollback
                         </h4>
                         <div className="flex flex-wrap gap-2">
@@ -1401,7 +1338,7 @@ export default function AdminModulesPage() {
                           </Button>
                         </div>
                       </div>
-                      <p className="text-xs text-gray-700 dark:text-gray-300">
+                      <p className="text-xs text-v-text-secondary">
                         Promoting marks the chosen artifact-backed version as current for the marketplace. Requires a
                         passed artifact scan.
                       </p>
@@ -1412,20 +1349,20 @@ export default function AdminModulesPage() {
                         </div>
                       )}
                       {versionByModuleId[submission.module.id] === 'error' && (
-                        <p className="text-sm text-gray-700 dark:text-gray-300">Could not load versions. Try again.</p>
+                        <p className="text-sm text-v-text-secondary">Could not load versions. Try again.</p>
                       )}
                       {Array.isArray(versionByModuleId[submission.module.id]) &&
                         (versionByModuleId[submission.module.id] as ModuleVersionRow[]).length === 0 && (
-                          <p className="text-sm text-gray-700 dark:text-gray-300">
+                          <p className="text-sm text-v-text-secondary">
                             No artifact versions on file yet. Versions appear after a developer uploads and finalizes a
                             build.
                           </p>
                         )}
                       {Array.isArray(versionByModuleId[submission.module.id]) &&
                         (versionByModuleId[submission.module.id] as ModuleVersionRow[]).length > 0 && (
-                          <div className="overflow-x-auto rounded border border-gray-200 dark:border-slate-700">
+                          <div className="overflow-x-auto rounded border border-v-border">
                             <table className="min-w-full text-sm">
-                              <thead className="bg-gray-50 dark:bg-slate-800 text-left text-gray-700 dark:text-gray-300">
+                              <thead className="bg-v-surface-muted text-left text-v-text-secondary">
                                 <tr>
                                   <th className="px-3 py-2 font-medium">Version</th>
                                   <th className="px-3 py-2 font-medium">Status</th>
@@ -1438,13 +1375,13 @@ export default function AdminModulesPage() {
                               <tbody>
                                 {(versionByModuleId[submission.module.id] as ModuleVersionRow[]).map(row => (
                                   <tr key={row.id} className="border-t border-gray-100 dark:border-slate-700">
-                                    <td className="px-3 py-2 text-gray-900 dark:text-gray-100 font-mono">{row.version}</td>
-                                    <td className="px-3 py-2 text-gray-700 dark:text-gray-300">{row.status}</td>
-                                    <td className="px-3 py-2 text-gray-700 dark:text-gray-300">{row.isCurrent ? 'Yes' : '—'}</td>
-                                    <td className="px-3 py-2 text-gray-700 dark:text-gray-300">
+                                    <td className="px-3 py-2 text-v-text-primary font-mono">{row.version}</td>
+                                    <td className="px-3 py-2 text-v-text-secondary">{row.status}</td>
+                                    <td className="px-3 py-2 text-v-text-secondary">{row.isCurrent ? 'Yes' : '—'}</td>
+                                    <td className="px-3 py-2 text-v-text-secondary">
                                       {row.artifact?.scanStatus ?? '—'}
                                     </td>
-                                    <td className="px-3 py-2 text-gray-700 dark:text-gray-300">{formatDate(row.createdAt)}</td>
+                                    <td className="px-3 py-2 text-v-text-secondary">{formatDate(row.createdAt)}</td>
                                     <td className="px-3 py-2">
                                       {!row.isCurrent &&
                                         row.artifact?.scanStatus === 'PASSED' && (
@@ -1482,26 +1419,26 @@ export default function AdminModulesPage() {
       {/* Review Modal */}
       <Modal open={showReviewModal} onClose={() => setShowReviewModal(false)}>
         <div className="p-6">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
+          <h2 className="text-lg font-semibold text-v-text-primary mb-4">
             {reviewAction === 'approve' ? 'Approve' : 'Reject'} Module
           </h2>
           
           {selectedSubmission && (
             <div className="mb-4">
-              <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">
+              <p className="text-sm text-v-text-secondary mb-2">
                 Reviewing: <strong>{selectedSubmission.module.name}</strong>
               </p>
-              <p className="text-sm text-gray-700 dark:text-gray-300">
+              <p className="text-sm text-v-text-secondary">
                 Submitted by: {selectedSubmission.submitter.name} ({selectedSubmission.submitter.email})
               </p>
-              <p className="text-sm text-gray-700 dark:text-gray-300">
+              <p className="text-sm text-v-text-secondary">
                 Category: {selectedSubmission.module.category}
               </p>
             </div>
           )}
 
           <div className="mb-4">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+            <label className="block text-sm font-medium text-v-text-secondary mb-2">
               Review Notes {reviewAction === 'reject' && '*'}
             </label>
             <textarea
@@ -1512,7 +1449,7 @@ export default function AdminModulesPage() {
                 : 'Please provide a reason for rejection...'
               }
               rows={4}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 dark:bg-slate-800 text-gray-900 dark:text-gray-100 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full px-3 py-2 border border-v-border bg-v-surface bg-v-surface text-v-text-primary rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
               required={reviewAction === 'reject'}
             />
           </div>
@@ -1547,33 +1484,33 @@ export default function AdminModulesPage() {
 
       <Modal open={showSubmissionDetailsModal} onClose={() => setShowSubmissionDetailsModal(false)}>
         <div className="p-6 max-w-2xl">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
+          <h2 className="text-lg font-semibold text-v-text-primary mb-4">
             Module Submission Details
           </h2>
           {selectedSubmissionDetails && (
             <div className="space-y-4 text-sm">
               <div>
-                <p className="text-gray-900 dark:text-gray-100 font-medium">{selectedSubmissionDetails.module.name}</p>
-                <p className="text-gray-700 dark:text-gray-300">{selectedSubmissionDetails.module.description}</p>
+                <p className="text-v-text-primary font-medium">{selectedSubmissionDetails.module.name}</p>
+                <p className="text-v-text-secondary">{selectedSubmissionDetails.module.description}</p>
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-                <div className="rounded border border-gray-200 dark:border-slate-700 p-3">
-                  <p className="text-xs text-gray-700 dark:text-gray-300 uppercase mb-1">Submitter</p>
-                  <p className="text-gray-900 dark:text-gray-100">{selectedSubmissionDetails.submitter.name}</p>
-                  <p className="text-gray-700 dark:text-gray-300">{selectedSubmissionDetails.submitter.email}</p>
+                <div className="rounded border border-v-border p-3">
+                  <p className="text-xs text-v-text-secondary uppercase mb-1">Submitter</p>
+                  <p className="text-v-text-primary">{selectedSubmissionDetails.submitter.name}</p>
+                  <p className="text-v-text-secondary">{selectedSubmissionDetails.submitter.email}</p>
                 </div>
-                <div className="rounded border border-gray-200 dark:border-slate-700 p-3">
-                  <p className="text-xs text-gray-700 dark:text-gray-300 uppercase mb-1">Latest artifact</p>
+                <div className="rounded border border-v-border p-3">
+                  <p className="text-xs text-v-text-secondary uppercase mb-1">Latest artifact</p>
                   {(() => {
                     const smart = getSmartScanSummary(selectedSubmissionDetails.module.versions?.[0]?.artifact?.scanSummary);
                     return smart ? (
-                      <p className="text-gray-700 dark:text-gray-300 text-sm">
+                      <p className="text-v-text-secondary text-sm">
                         SmartScan: <span className="font-mono">{smart.verdict}</span> (risk {smart.riskScore})
                       </p>
                     ) : null;
                   })()}
-                  <p className="text-gray-900 dark:text-gray-100">
+                  <p className="text-v-text-primary">
                     Scan: {getLatestArtifactScanStatus(selectedSubmissionDetails) || 'Not available'}
                   </p>
                   {(() => {
@@ -1584,34 +1521,34 @@ export default function AdminModulesPage() {
                       </p>
                     ) : null;
                   })()}
-                  <p className="text-gray-700 dark:text-gray-300">
+                  <p className="text-v-text-secondary">
                     Version: {selectedSubmissionDetails.module.versions?.[0]?.version || selectedSubmissionDetails.module.version}
                   </p>
                 </div>
               </div>
 
-              <div className="rounded border border-gray-200 dark:border-slate-700 p-3">
-                <p className="text-xs text-gray-700 dark:text-gray-300 uppercase mb-2">Version scan history</p>
+              <div className="rounded border border-v-border p-3">
+                <p className="text-xs text-v-text-secondary uppercase mb-2">Version scan history</p>
                 {selectedSubmissionDetails && versionByModuleId[selectedSubmissionDetails.module.id] === 'loading' && (
-                  <div className="flex items-center gap-2 text-gray-700 dark:text-gray-300">
+                  <div className="flex items-center gap-2 text-v-text-secondary">
                     <Spinner size={16} />
                     <span>Loading version scan details...</span>
                   </div>
                 )}
                 {selectedSubmissionDetails && versionByModuleId[selectedSubmissionDetails.module.id] === 'error' && (
-                  <p className="text-gray-700 dark:text-gray-300">Could not load version scans. Try Security Scan again.</p>
+                  <p className="text-v-text-secondary">Could not load version scans. Try Security Scan again.</p>
                 )}
                 {selectedSubmissionDetails &&
                   Array.isArray(versionByModuleId[selectedSubmissionDetails.module.id]) &&
                   (versionByModuleId[selectedSubmissionDetails.module.id] as ModuleVersionRow[]).length === 0 && (
-                    <p className="text-gray-700 dark:text-gray-300">No version scans recorded yet.</p>
+                    <p className="text-v-text-secondary">No version scans recorded yet.</p>
                   )}
                 {selectedSubmissionDetails &&
                   Array.isArray(versionByModuleId[selectedSubmissionDetails.module.id]) &&
                   (versionByModuleId[selectedSubmissionDetails.module.id] as ModuleVersionRow[]).length > 0 && (
                     <div className="space-y-1">
                       {(versionByModuleId[selectedSubmissionDetails.module.id] as ModuleVersionRow[]).map((row) => (
-                        <div key={row.id} className="flex items-center justify-between text-gray-700 dark:text-gray-300">
+                        <div key={row.id} className="flex items-center justify-between text-v-text-secondary">
                           <span className="font-mono text-xs">{row.version}</span>
                           <span className="text-xs">
                             {(row.artifact?.scanStatus || 'NOT_AVAILABLE')}
@@ -1632,14 +1569,14 @@ export default function AdminModulesPage() {
               <ModuleCertificationReviewPanel certification={getCertification(selectedSubmissionDetails)} />
 
               <div>
-                <p className="text-xs text-gray-700 dark:text-gray-300 uppercase mb-2">Declared permissions</p>
+                <p className="text-xs text-v-text-secondary uppercase mb-2">Declared permissions</p>
                 <div className="flex flex-wrap gap-2">
                   {(selectedSubmissionDetails.module.permissions || []).length > 0 ? (
                     (selectedSubmissionDetails.module.permissions || []).map((perm) => (
                       <Badge key={perm} color="gray" size="sm">{perm}</Badge>
                     ))
                   ) : (
-                    <span className="text-gray-700 dark:text-gray-300">No permissions declared.</span>
+                    <span className="text-v-text-secondary">No permissions declared.</span>
                   )}
                 </div>
               </div>
@@ -1662,59 +1599,41 @@ export default function AdminModulesPage() {
         </div>
       </Modal>
 
-      <Modal open={!!promotePreviousModal} onClose={() => !promoteLoading && setPromotePreviousModal(null)}>
-        <div className="p-6 max-w-md">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">Promote previous version</h2>
-          {promotePreviousModal && (
-            <p className="text-sm text-gray-700 dark:text-gray-300 mb-4">
+      <ConfirmModal
+        open={!!promotePreviousModal}
+        onClose={() => !promoteLoading && setPromotePreviousModal(null)}
+        onConfirm={confirmPromotePrevious}
+        title="Promote previous version"
+        loading={promoteLoading}
+        description={
+          promotePreviousModal ? (
+            <>
               This will archive the current published version and make the immediately previous scanned version the
-              active one for <strong>{promotePreviousModal.moduleName}</strong>. Continue?
-            </p>
-          )}
-          <div className="flex justify-end gap-3">
-            <Button variant="secondary" onClick={() => setPromotePreviousModal(null)} disabled={promoteLoading}>
-              Cancel
-            </Button>
-            <Button variant="primary" onClick={confirmPromotePrevious} disabled={promoteLoading}>
-              {promoteLoading ? (
-                <>
-                  <Spinner size={16} />
-                  Promoting…
-                </>
-              ) : (
-                'Confirm promote'
-              )}
-            </Button>
-          </div>
-        </div>
-      </Modal>
+              active one for <strong>{promotePreviousModal.moduleName}</strong>.
+            </>
+          ) : undefined
+        }
+        variant="destructive"
+        confirmLabel="Confirm promote"
+      />
 
-      <Modal open={!!promoteRowModal} onClose={() => !promoteLoading && setPromoteRowModal(null)}>
-        <div className="p-6 max-w-md">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">Promote this version</h2>
-          {promoteRowModal && (
-            <p className="text-sm text-gray-700 dark:text-gray-300 mb-4">
+      <ConfirmModal
+        open={!!promoteRowModal}
+        onClose={() => !promoteLoading && setPromoteRowModal(null)}
+        onConfirm={confirmPromoteVersion}
+        title="Promote this version"
+        loading={promoteLoading}
+        description={
+          promoteRowModal ? (
+            <>
               Set version <strong className="font-mono">{promoteRowModal.version}</strong> as the current published
               version for <strong>{promoteRowModal.moduleName}</strong>?
-            </p>
-          )}
-          <div className="flex justify-end gap-3">
-            <Button variant="secondary" onClick={() => setPromoteRowModal(null)} disabled={promoteLoading}>
-              Cancel
-            </Button>
-            <Button variant="primary" onClick={confirmPromoteVersion} disabled={promoteLoading}>
-              {promoteLoading ? (
-                <>
-                  <Spinner size={16} />
-                  Promoting…
-                </>
-              ) : (
-                'Confirm promote'
-              )}
-            </Button>
-          </div>
-        </div>
-      </Modal>
+            </>
+          ) : undefined
+        }
+        variant="destructive"
+        confirmLabel="Confirm promote"
+      />
 
         </Tabs.Content>
 
@@ -1729,8 +1648,8 @@ export default function AdminModulesPage() {
                     <Package className="w-6 h-6 text-blue-600" />
                   </div>
                   <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Total Modules</p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{aiContextSummary.totalModules}</p>
+                    <p className="text-sm font-medium text-v-text-secondary">Total Modules</p>
+                    <p className="text-2xl font-bold text-v-text-primary">{aiContextSummary.totalModules}</p>
                   </div>
                 </div>
               </Card>
@@ -1741,8 +1660,8 @@ export default function AdminModulesPage() {
                     <CheckCircle className="w-6 h-6 text-green-600" />
                   </div>
                   <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Registered</p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{aiContextSummary.registered}</p>
+                    <p className="text-sm font-medium text-v-text-secondary">Registered</p>
+                    <p className="text-2xl font-bold text-v-text-primary">{aiContextSummary.registered}</p>
                   </div>
                 </div>
               </Card>
@@ -1753,8 +1672,8 @@ export default function AdminModulesPage() {
                     <AlertTriangle className="w-6 h-6 text-yellow-600" />
                   </div>
                   <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Missing Context</p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{aiContextSummary.notRegistered}</p>
+                    <p className="text-sm font-medium text-v-text-secondary">Missing Context</p>
+                    <p className="text-2xl font-bold text-v-text-primary">{aiContextSummary.notRegistered}</p>
                   </div>
                 </div>
               </Card>
@@ -1765,9 +1684,9 @@ export default function AdminModulesPage() {
                     <Zap className="w-6 h-6" />
                   </div>
                   <div className="ml-4">
-                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Health Status</p>
+                    <p className="text-sm font-medium text-v-text-secondary">Health Status</p>
                     <p className="text-2xl font-bold capitalize">{aiContextSummary.healthStatus}</p>
-                    <p className="text-xs text-gray-500 dark:text-gray-400">{aiContextSummary.registrationRate}% registered</p>
+                    <p className="text-xs text-v-text-muted dark:text-v-text-muted">{aiContextSummary.registrationRate}% registered</p>
                   </div>
                 </div>
               </Card>
@@ -1779,7 +1698,7 @@ export default function AdminModulesPage() {
             <div className="flex flex-col lg:flex-row gap-4">
               <div className="flex-1">
                 <div className="relative">
-                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-gray-400">
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-v-text-muted">
                     <Search className="w-4 h-4" />
                   </span>
                   <Input
@@ -1793,7 +1712,7 @@ export default function AdminModulesPage() {
               
               <div className="flex gap-3">
                 <select
-                  className="px-3 py-2 border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 dark:bg-slate-800 text-gray-900 dark:text-gray-100 rounded"
+                  className="px-3 py-2 border border-v-border bg-v-surface bg-v-surface text-v-text-primary rounded"
                   value={aiContextFilter}
                   onChange={(e) => setAiContextFilter(e.target.value as 'all' | 'registered' | 'not-registered')}
                 >
@@ -1835,18 +1754,18 @@ export default function AdminModulesPage() {
                 </div>
               ) : filteredAIContextModules.length === 0 ? (
                 <div className="text-center py-8">
-                  <Brain className="w-12 h-12 mx-auto text-gray-400 mb-4" />
-                  <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">No modules found</h3>
-                  <p className="text-gray-700 dark:text-gray-300">No modules match your current filters.</p>
+                  <Brain className="w-12 h-12 mx-auto text-v-text-muted mb-4" />
+                  <h3 className="text-lg font-medium text-v-text-primary mb-2">No modules found</h3>
+                  <p className="text-v-text-secondary">No modules match your current filters.</p>
                 </div>
               ) : (
                 <div className="space-y-4">
                   {filteredAIContextModules.map((module) => (
-                    <div key={module.moduleId} className="border border-gray-200 dark:border-slate-700 rounded-lg p-6">
+                    <div key={module.moduleId} className="border border-v-border rounded-lg p-6">
                       <div className="flex items-start justify-between">
                         <div className="flex-1">
                           <div className="flex items-center space-x-3 mb-2">
-                            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+                            <h3 className="text-lg font-semibold text-v-text-primary">
                               {module.moduleName}
                             </h3>
                             {module.aiContextRegistered ? (
@@ -1866,7 +1785,7 @@ export default function AdminModulesPage() {
                               </Badge>
                             )}
                           </div>
-                          <p className="text-sm text-gray-700 dark:text-gray-300 mb-3">
+                          <p className="text-sm text-v-text-secondary mb-3">
                             <span className="font-medium">ID:</span> {module.moduleId}
                             {module.description && (
                               <> • {module.description}</>
@@ -1876,8 +1795,8 @@ export default function AdminModulesPage() {
                           {module.aiContextRegistered && module.aiContext ? (
                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
                               <div>
-                                <p className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Keywords</p>
-                                <p className="text-sm text-gray-900 dark:text-gray-100">{module.aiContext.keywords.length} keywords</p>
+                                <p className="text-xs font-medium text-v-text-secondary mb-1">Keywords</p>
+                                <p className="text-sm text-v-text-primary">{module.aiContext.keywords.length} keywords</p>
                                 <div className="flex flex-wrap gap-1 mt-2">
                                   {module.aiContext.keywords.slice(0, 5).map((keyword, idx) => (
                                     <span key={idx} className="px-2 py-0.5 bg-blue-50 text-blue-700 text-xs rounded">
@@ -1885,15 +1804,15 @@ export default function AdminModulesPage() {
                                     </span>
                                   ))}
                                   {module.aiContext.keywords.length > 5 && (
-                                    <span className="px-2 py-0.5 bg-gray-50 dark:bg-slate-800 text-gray-600 dark:text-gray-400 text-xs rounded">
+                                    <span className="px-2 py-0.5 bg-v-surface-muted text-v-text-muted text-xs rounded">
                                       +{module.aiContext.keywords.length - 5}
                                     </span>
                                   )}
                                 </div>
                               </div>
                               <div>
-                                <p className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Patterns</p>
-                                <p className="text-sm text-gray-900 dark:text-gray-100">{module.aiContext.patterns.length} patterns</p>
+                                <p className="text-xs font-medium text-v-text-secondary mb-1">Patterns</p>
+                                <p className="text-sm text-v-text-primary">{module.aiContext.patterns.length} patterns</p>
                                 <div className="flex flex-wrap gap-1 mt-2">
                                   {module.aiContext.patterns.slice(0, 3).map((pattern, idx) => (
                                     <span key={idx} className="px-2 py-0.5 bg-purple-50 text-purple-700 text-xs rounded truncate max-w-[200px]">
@@ -1901,15 +1820,15 @@ export default function AdminModulesPage() {
                                     </span>
                                   ))}
                                   {module.aiContext.patterns.length > 3 && (
-                                    <span className="px-2 py-0.5 bg-gray-50 dark:bg-slate-800 text-gray-600 dark:text-gray-400 text-xs rounded">
+                                    <span className="px-2 py-0.5 bg-v-surface-muted text-v-text-muted text-xs rounded">
                                       +{module.aiContext.patterns.length - 3}
                                     </span>
                                   )}
                                 </div>
                               </div>
                               <div>
-                                <p className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">Context Providers</p>
-                                <p className="text-sm text-gray-900 dark:text-gray-100">{module.aiContext.contextProviders.length} providers</p>
+                                <p className="text-xs font-medium text-v-text-secondary mb-1">Context Providers</p>
+                                <p className="text-sm text-v-text-primary">{module.aiContext.contextProviders.length} providers</p>
                                 <div className="flex flex-wrap gap-1 mt-2">
                                   {module.aiContext.contextProviders.map((provider, idx) => (
                                     <span key={idx} className="px-2 py-0.5 bg-green-50 text-green-700 text-xs rounded">
@@ -1997,26 +1916,26 @@ export default function AdminModulesPage() {
       >
         {selectedModule && selectedModule.aiContext && (
           <div className="p-6">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">
+            <h2 className="text-2xl font-bold text-v-text-primary mb-4">
               AI Context Details: {selectedModule.moduleName}
             </h2>
             
             <div className="space-y-6">
               {/* Purpose */}
               <div>
-                <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Purpose</h3>
-                <p className="text-gray-900 dark:text-gray-100">{selectedModule.aiContext.purpose}</p>
+                <h3 className="text-sm font-semibold text-v-text-secondary mb-2">Purpose</h3>
+                <p className="text-v-text-primary">{selectedModule.aiContext.purpose}</p>
               </div>
 
               {/* Category */}
               <div>
-                <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Category</h3>
+                <h3 className="text-sm font-semibold text-v-text-secondary mb-2">Category</h3>
                 <Badge color="gray" size="sm">{selectedModule.aiContext.category}</Badge>
               </div>
 
               {/* Keywords */}
               <div>
-                <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                <h3 className="text-sm font-semibold text-v-text-secondary mb-2">
                   Keywords ({selectedModule.aiContext.keywords.length})
                 </h3>
                 <div className="flex flex-wrap gap-2">
@@ -2028,7 +1947,7 @@ export default function AdminModulesPage() {
 
               {/* Patterns */}
               <div>
-                <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                <h3 className="text-sm font-semibold text-v-text-secondary mb-2">
                   Patterns ({selectedModule.aiContext.patterns.length})
                 </h3>
                 <div className="space-y-1">
@@ -2043,7 +1962,7 @@ export default function AdminModulesPage() {
               {/* Concepts */}
               {selectedModule.aiContext.concepts && selectedModule.aiContext.concepts.length > 0 && (
                 <div>
-                  <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                  <h3 className="text-sm font-semibold text-v-text-secondary mb-2">
                     Concepts ({selectedModule.aiContext.concepts.length})
                   </h3>
                   <div className="flex flex-wrap gap-2">
@@ -2057,14 +1976,14 @@ export default function AdminModulesPage() {
               {/* Entities */}
               {selectedModule.aiContext.entities && selectedModule.aiContext.entities.length > 0 && (
                 <div>
-                  <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                  <h3 className="text-sm font-semibold text-v-text-secondary mb-2">
                     Entities ({selectedModule.aiContext.entities.length})
                   </h3>
                   <div className="space-y-2">
                     {selectedModule.aiContext.entities.map((entity: any, idx: number) => (
-                      <div key={idx} className="p-3 bg-gray-50 dark:bg-slate-800 rounded">
-                        <div className="font-medium text-gray-900 dark:text-gray-100">{entity.name} / {entity.pluralName}</div>
-                        <div className="text-sm text-gray-600 dark:text-gray-400">{entity.description}</div>
+                      <div key={idx} className="p-3 bg-v-surface-muted rounded">
+                        <div className="font-medium text-v-text-primary">{entity.name} / {entity.pluralName}</div>
+                        <div className="text-sm text-v-text-muted">{entity.description}</div>
                       </div>
                     ))}
                   </div>
@@ -2074,14 +1993,14 @@ export default function AdminModulesPage() {
               {/* Actions */}
               {selectedModule.aiContext.actions && selectedModule.aiContext.actions.length > 0 && (
                 <div>
-                  <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                  <h3 className="text-sm font-semibold text-v-text-secondary mb-2">
                     Actions ({selectedModule.aiContext.actions.length})
                   </h3>
                   <div className="space-y-2">
                     {selectedModule.aiContext.actions.map((action: any, idx: number) => (
-                      <div key={idx} className="p-3 bg-gray-50 dark:bg-slate-800 rounded">
-                        <div className="font-medium text-gray-900 dark:text-gray-100">{action.name}</div>
-                        <div className="text-sm text-gray-600 dark:text-gray-400">{action.description}</div>
+                      <div key={idx} className="p-3 bg-v-surface-muted rounded">
+                        <div className="font-medium text-v-text-primary">{action.name}</div>
+                        <div className="text-sm text-v-text-muted">{action.description}</div>
                         {action.permissions && action.permissions.length > 0 && (
                           <div className="mt-2 flex flex-wrap gap-1">
                             {action.permissions.map((perm: string, pIdx: number) => (
@@ -2097,7 +2016,7 @@ export default function AdminModulesPage() {
 
               {/* Context Providers */}
               <div>
-                <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
+                <h3 className="text-sm font-semibold text-v-text-secondary mb-2">
                   Context Providers ({selectedModule.aiContext.contextProviders.length})
                 </h3>
                 <div className="space-y-3">
@@ -2143,25 +2062,25 @@ export default function AdminModulesPage() {
       >
         {selectedModule && selectedModule.aiContext && (
           <div className="p-6">
-            <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-4">
+            <h2 className="text-2xl font-bold text-v-text-primary mb-4">
               Test Context Providers: {selectedModule.moduleName}
             </h2>
             
             {selectedModule.aiContext.contextProviders.length === 0 ? (
               <div className="text-center py-8">
-                <AlertTriangle className="w-12 h-12 mx-auto text-gray-400 mb-4" />
-                <p className="text-gray-600 dark:text-gray-400">This module has no context providers to test.</p>
+                <AlertTriangle className="w-12 h-12 mx-auto text-v-text-muted mb-4" />
+                <p className="text-v-text-muted">This module has no context providers to test.</p>
               </div>
             ) : (
               <div className="space-y-4">
                 {selectedModule.aiContext.contextProviders.map((provider, idx) => {
                   const result = providerTestResults[provider.name];
                   return (
-                    <div key={idx} className="border border-gray-200 dark:border-slate-700 rounded-lg p-4">
+                    <div key={idx} className="border border-v-border rounded-lg p-4">
                       <div className="flex items-center justify-between mb-2">
                         <div>
-                          <div className="font-medium text-gray-900 dark:text-gray-100">{provider.name}</div>
-                          <div className="text-sm text-gray-600 dark:text-gray-400">{provider.endpoint}</div>
+                          <div className="font-medium text-v-text-primary">{provider.name}</div>
+                          <div className="text-sm text-v-text-muted">{provider.endpoint}</div>
                         </div>
                         {result ? (
                           result.skipped ? (

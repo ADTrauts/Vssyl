@@ -23,6 +23,7 @@ describe('moduleRegistry', () => {
     const ids = personalModules.map((m) => m.id);
     expect(ids).not.toContain('hr');
     expect(ids).not.toContain('scheduling');
+    expect(ids).not.toContain('admin');
     expect(ids).toContain('drive');
     expect(ids).toContain('chat');
     expect(ids).toContain('place');

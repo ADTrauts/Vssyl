@@ -10,11 +10,15 @@ This file documents the product context for all admin-facing features, including
 
 ## 1. Header & Purpose
 - **Purpose:**  
-  The Admin Portal provides a comprehensive "God Mode" interface for platform administrators to manage users, organizations, system settings, and monitor platform activity. It centralizes administrative controls for security, compliance, and operational oversight with a dedicated admin portal at `/admin-portal`.
+  The Admin Portal provides a comprehensive platform control plane at `/admin-portal` for **platform administrators** (`ADMIN` role). It is a **hybrid control plane + governance surface** — not an installable product module. It centralizes user/org management, module governance, security oversight, and operational controls.
+- **Not a product module:** Admin Portal must not appear in `coreModuleRegistry`, business workspace install flows, or the module marketplace as module id `admin`.
+- **Canonical module governance:** `/admin-portal/modules` (legacy `/modules/admin` redirects here as of Stage 0B-B).
 - **Cross-References:**  
   - [developerProductContext.md] (developer tools, monitoring)
   - [systemPatterns.md] (admin patterns, access control)
   - [databaseContext.md] (user/org models, audit logs)
+  - [docs/architecture/audits/ADMIN_PORTAL_CONTROL_PLANE_ARCHITECTURE.md](../docs/architecture/audits/ADMIN_PORTAL_CONTROL_PLANE_ARCHITECTURE.md)
+  - [docs/guides/ADMIN_PORTAL.md](../docs/guides/ADMIN_PORTAL.md)
 
 ## 2. Problem Space
 - Need for centralized management of users, organizations, and permissions.
@@ -43,6 +47,10 @@ This file documents the product context for all admin-facing features, including
 
 #### **Admin Portal Infrastructure** ✅
 - ✅ **Dedicated Admin Portal**: `/admin-portal` route with separate authentication
+- ✅ **Control-plane model**: Not registered as installable module id `admin` (Stage 0B-B)
+- ✅ **Module governance canonical path**: `/admin-portal/modules`; `/modules/admin` redirects (Stage 0B-B)
+- ✅ **Compliance gates (0E)**: `ADMIN_PORTAL_DEBUG_ENABLED` for debug/test surfaces; `ADMIN_PORTAL_DANGEROUS_OPS_ENABLED` for migration delete/reset
+- ✅ **No mock fallbacks (0E-C)**: Support, modules, and dashboard use live API data with error + retry
 - ✅ **Admin Layout**: Professional admin interface with sidebar navigation
 - ✅ **Role-Based Access**: ADMIN role required for all admin portal access
 - ✅ **Session Management**: Secure admin sessions with JWT authentication

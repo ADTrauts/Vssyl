@@ -12,13 +12,14 @@ import type { AIPipelineTrace } from '../../../../types/adminAiPipeline';
 export default function AiPipelineDiagnosticsPage() {
   const searchParams = useSearchParams();
   const traceIdParam = searchParams?.get('traceId') ?? null;
+  const userIdParam = searchParams?.get('userId') ?? '';
 
   const [traces, setTraces] = useState<AIPipelineTrace[]>([]);
   const [selected, setSelected] = useState<AIPipelineTrace | null>(null);
   const [evidenceBundle, setEvidenceBundle] = useState<
     import('../../../../types/adminAiPipeline').PipelineEvidenceBundle | null
   >(null);
-  const [userIdFilter, setUserIdFilter] = useState('');
+  const [userIdFilter, setUserIdFilter] = useState(userIdParam);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -81,14 +82,14 @@ export default function AiPipelineDiagnosticsPage() {
     >
       <div className="flex flex-wrap gap-2 items-end mb-4">
         <div>
-          <label className="block text-xs font-medium text-gray-700 dark:text-gray-300 mb-1">
+          <label className="block text-xs font-medium text-v-text-secondary mb-1">
             Filter by user ID
           </label>
           <input
             type="text"
             value={userIdFilter}
             onChange={(e) => setUserIdFilter(e.target.value)}
-            className="rounded-lg border border-gray-300 dark:border-slate-600 px-3 py-2 text-sm bg-white dark:bg-slate-800 text-gray-900 dark:text-gray-100"
+            className="rounded-lg border border-v-border px-3 py-2 text-sm bg-v-surface text-v-text-primary"
             placeholder="Optional"
           />
         </div>
@@ -109,11 +110,11 @@ export default function AiPipelineDiagnosticsPage() {
             selectedId={selected?.traceId}
             onSelect={(t) => void handleSelect(t)}
           />
-          <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg p-4 min-h-[200px]">
+          <div className="bg-v-surface border border-v-border rounded-lg p-4 min-h-[200px]">
             {selected ? (
               <PipelineTraceDetail trace={selected} evidenceBundle={evidenceBundle} />
             ) : (
-              <p className="text-gray-700 dark:text-gray-300 text-sm">Select a trace to view details.</p>
+              <p className="text-v-text-secondary text-sm">Select a trace to view details.</p>
             )}
           </div>
         </div>

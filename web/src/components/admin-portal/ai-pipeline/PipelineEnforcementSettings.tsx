@@ -40,8 +40,8 @@ export default function PipelineEnforcementSettingsEditor({
   return (
     <section className="border border-amber-200 dark:border-amber-800 rounded-lg p-4 bg-amber-50/40 dark:bg-amber-950/20 space-y-4">
       <div>
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Grounding enforcement</h2>
-        <p className="text-sm text-gray-700 dark:text-gray-300 mt-1">
+        <h2 className="text-lg font-semibold text-v-text-primary">Grounding enforcement</h2>
+        <p className="text-sm text-v-text-secondary mt-1">
           Phase 4: block or disclose when grounding is required but retrieval did not run. Regenerate mode
           runs a Place/location retrieval pass before the model call.
         </p>
@@ -53,9 +53,9 @@ export default function PipelineEnforcementSettingsEditor({
         Enforcement enabled
       </label>
       <label className="block text-sm max-w-md">
-        <span className="text-gray-700 dark:text-gray-300">Mode</span>
+        <span className="text-v-text-secondary">Mode</span>
         <select
-          className="mt-1 w-full rounded border border-gray-300 dark:border-slate-600 px-3 py-2 bg-white dark:bg-slate-900"
+          className="mt-1 w-full rounded border border-v-border px-3 py-2 bg-v-surface"
           value={mode}
           onChange={(e) =>
             setMode(e.target.value as PipelineEnforcementSettings['enforcementMode'])

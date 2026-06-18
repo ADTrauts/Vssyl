@@ -4,6 +4,7 @@ import { BehavioralMonitoringService } from '../services/behavioralMonitoringSer
 import { SecurityPoliciesService } from '../services/securityPoliciesService';
 import { prisma } from '../lib/prisma';
 import { logger } from '../lib/logger';
+import * as adminSecurityService from '../services/admin/adminSecurityService';
 
 function logSrvErr(operation: string, message: string, err: unknown, context?: Record<string, unknown>): void {
   const e = err instanceof Error ? err : new Error(String(err));
@@ -42,23 +43,17 @@ router.get('/metrics', async (req, res) => {
   try {
     logSrvDebug('adminsecurityroutes_loading_security_metrics', '📊 Loading security metrics...');
     
-    // Get basic metrics from database
-    const totalModules = await prisma.module.count();
-    const approvedModules = await prisma.module.count({
-      where: { status: 'APPROVED' }
-    });
-    
-    // Mock metrics for now - in production, these would come from real monitoring data
-    const metrics = {
-      totalModules,
-      monitoredModules: approvedModules,
-      securityViolations: Math.floor(Math.random() * 10),
-      criticalAlerts: Math.floor(Math.random() * 3),
-      complianceScore: Math.floor(Math.random() * 20) + 80, // 80-100%
-      threatLevel: Math.random() > 0.8 ? 'high' : Math.random() > 0.6 ? 'medium' : 'low'
+    const metrics = await adminSecurityService.getAdminSecurityModuleMetrics();
+    const responseMetrics = {
+      totalModules: metrics.totalModules,
+      monitoredModules: metrics.monitoredModules,
+      securityViolations: metrics.securityViolations,
+      criticalAlerts: metrics.criticalAlerts,
+      complianceScore: metrics.complianceScore,
+      threatLevel: metrics.threatLevel,
     };
 
-    res.json({ success: true, data: metrics });
+    res.json({ success: true, data: responseMetrics });
   } catch (error) {
     logSrvErr('adminsecurityroutes_error_loading_security_metrics', 'Error loading security metrics:', error);
     await logger.error('Security metrics loading failed', {
@@ -120,16 +115,7 @@ router.get('/monitoring', async (req, res) => {
   try {
     logSrvDebug('adminsecurityroutes_loading_monitoring_status', '🔍 Loading monitoring status...');
     
-    // Get approved modules
-    const modules = await prisma.module.findMany({
-      where: { status: 'APPROVED' },
-      select: {
-        id: true,
-        name: true,
-        status: true,
-        updatedAt: true
-      }
-    });
+    const modules = await adminSecurityService.listApprovedModulesForMonitoring();
 
     // Mock monitoring status for each module
     const monitoringStatus = modules.map(module => ({
@@ -162,19 +148,7 @@ router.post('/monitoring/:moduleId/start', async (req, res) => {
     const { moduleId } = req.params;
     logSrvDebug('adminsecurity_monitoring_start', 'Starting monitoring for module', { moduleId });
     
-    // Get module data
-    const module = await prisma.module.findUnique({
-      where: { id: moduleId },
-      include: {
-        developer: {
-          select: {
-            id: true,
-            name: true,
-            email: true
-          }
-        }
-      }
-    });
+    const module = await adminSecurityService.getModuleForSecurityOperation(moduleId);
 
     if (!module) {
       return res.status(404).json({ success: false, error: 'Module not found' });
@@ -239,19 +213,7 @@ router.post('/test/:moduleId', async (req, res) => {
     const { moduleId } = req.params;
     logSrvDebug('adminsecurity_test_run', 'Running security test for module', { moduleId });
     
-    // Get module data
-    const module = await prisma.module.findUnique({
-      where: { id: moduleId },
-      include: {
-        developer: {
-          select: {
-            id: true,
-            name: true,
-            email: true
-          }
-        }
-      }
-    });
+    const module = await adminSecurityService.getModuleForSecurityOperation(moduleId);
 
     if (!module) {
       return res.status(404).json({ success: false, error: 'Module not found' });

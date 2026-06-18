@@ -44,35 +44,35 @@ export default function AITestLabPanel() {
 
   return (
     <div className="space-y-6">
-      <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg p-4 space-y-4">
+      <div className="bg-v-surface border border-v-border rounded-lg p-4 space-y-4">
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          <label className="block text-sm font-medium text-v-text-secondary mb-1">
             User prompt
           </label>
           <textarea
             value={query}
             onChange={(e) => setQuery(e.target.value)}
             rows={4}
-            className="w-full rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-3 py-2 text-gray-900 dark:text-gray-100"
+            className="w-full rounded-lg border border-v-border bg-v-surface px-3 py-2 text-v-text-primary"
             placeholder="e.g. Any yoga clubs or workshops near me?"
           />
         </div>
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+          <label className="block text-sm font-medium text-v-text-secondary mb-1">
             Target user ID (optional)
           </label>
           <input
             type="text"
             value={userId}
             onChange={(e) => setUserId(e.target.value)}
-            className="w-full rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-3 py-2 text-gray-900 dark:text-gray-100"
+            className="w-full rounded-lg border border-v-border bg-v-surface px-3 py-2 text-v-text-primary"
             placeholder="Defaults to your admin user"
           />
         </div>
         <Button onClick={runTest} disabled={loading}>
           {loading ? 'Running…' : 'Run test (dry-run)'}
         </Button>
-        <p className="text-xs text-gray-600 dark:text-gray-400">
+        <p className="text-xs text-v-text-muted">
           Dry-run: no history write, no learning side-effects. Uses live twin pipeline.
         </p>
       </div>
@@ -80,10 +80,10 @@ export default function AITestLabPanel() {
       {error && <Alert>{error}</Alert>}
 
       {result && (
-        <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg p-4 space-y-4">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Response preview</h2>
-          <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{result.response}</p>
-          <p className="text-sm text-gray-600 dark:text-gray-400">
+        <div className="bg-v-surface border border-v-border rounded-lg p-4 space-y-4">
+          <h2 className="text-lg font-semibold text-v-text-primary">Response preview</h2>
+          <p className="text-v-text-secondary whitespace-pre-wrap">{result.response}</p>
+          <p className="text-sm text-v-text-muted">
             Confidence: {Math.round((result.confidence ?? 0) * 100)}%
             {result.metadata?.provider ? ` · Provider: ${result.metadata.provider}` : ''}
           </p>
@@ -91,12 +91,12 @@ export default function AITestLabPanel() {
       )}
 
       {trace && (
-        <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg p-4">
-          <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">
+        <div className="bg-v-surface border border-v-border rounded-lg p-4">
+          <h2 className="text-lg font-semibold text-v-text-primary mb-4">
             Pipeline diagnostics
           </h2>
           {trace.contextDensity && (
-            <div className="mb-6 pb-6 border-b border-gray-200 dark:border-slate-700">
+            <div className="mb-6 pb-6 border-b border-v-border">
               <ContextDensityPanel report={trace.contextDensity} />
             </div>
           )}

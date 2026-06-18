@@ -168,7 +168,7 @@ export default function ModerationPage() {
       case 'resolved': return 'bg-green-100 text-green-700';
       case 'pending': return 'bg-yellow-100 text-yellow-700';
       case 'reviewed': return 'bg-blue-100 text-blue-700';
-      default: return 'bg-gray-100 text-gray-700';
+      default: return 'bg-v-surface-muted text-gray-700';
     }
   };
 
@@ -177,8 +177,8 @@ export default function ModerationPage() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Content Moderation</h1>
-            <p className="text-gray-700 dark:text-gray-300 mt-2">Manage reported content and moderation rules</p>
+            <h1 className="text-3xl font-bold text-v-text-primary">Content Moderation</h1>
+            <p className="text-v-text-secondary mt-2">Manage reported content and moderation rules</p>
           </div>
         </div>
         <div className="flex items-center justify-center h-64">
@@ -193,8 +193,8 @@ export default function ModerationPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Content Moderation</h1>
-          <p className="text-gray-700 dark:text-gray-300 mt-2">Manage reported content and moderation rules</p>
+          <h1 className="text-3xl font-bold text-v-text-primary">Content Moderation</h1>
+          <p className="text-v-text-secondary mt-2">Manage reported content and moderation rules</p>
         </div>
         <div className="flex items-center space-x-3">
           <button
@@ -202,7 +202,7 @@ export default function ModerationPage() {
             className={`flex items-center space-x-2 px-3 py-2 rounded-lg transition-colors ${
               autoRefresh 
                 ? 'bg-green-100 text-green-700 border border-green-300' 
-                : 'bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-slate-600'
+                : 'bg-v-surface-muted bg-v-surface-muted text-v-text-secondary border border-v-border'
             }`}
           >
             <RefreshCw className={`w-4 h-4 ${autoRefresh ? 'animate-spin' : ''}`} />
@@ -233,8 +233,8 @@ export default function ModerationPage() {
           <Card className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Total Reports</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{stats.totalReports}</p>
+                <p className="text-sm font-medium text-v-text-secondary">Total Reports</p>
+                <p className="text-2xl font-bold text-v-text-primary">{stats.totalReports}</p>
               </div>
               <div className="p-2 bg-blue-100 rounded-lg">
                 <FileText className="w-6 h-6 text-blue-600" />
@@ -245,7 +245,7 @@ export default function ModerationPage() {
           <Card className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Pending Review</p>
+                <p className="text-sm font-medium text-v-text-secondary">Pending Review</p>
                 <p className="text-2xl font-bold text-orange-600">{stats.pendingReview}</p>
               </div>
               <div className="p-2 bg-orange-100 rounded-lg">
@@ -257,7 +257,7 @@ export default function ModerationPage() {
           <Card className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Auto-Moderated</p>
+                <p className="text-sm font-medium text-v-text-secondary">Auto-Moderated</p>
                 <p className="text-2xl font-bold text-green-600">{stats.autoModerated}</p>
               </div>
               <div className="p-2 bg-green-100 rounded-lg">
@@ -269,7 +269,7 @@ export default function ModerationPage() {
           <Card className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Avg Response Time</p>
+                <p className="text-sm font-medium text-v-text-secondary">Avg Response Time</p>
                 <p className="text-2xl font-bold text-purple-600">{stats.averageResponseTime}m</p>
               </div>
               <div className="p-2 bg-purple-100 rounded-lg">
@@ -284,14 +284,14 @@ export default function ModerationPage() {
       <Card className="p-6">
         <div className="flex items-center space-x-4">
           <div className="flex items-center space-x-2">
-            <Filter className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Filters:</span>
+            <Filter className="w-4 h-4 text-v-text-muted" />
+            <span className="text-sm font-medium text-v-text-secondary">Filters:</span>
           </div>
           
           <select
             value={filters.status}
             onChange={(e) => setFilters({ ...filters, status: e.target.value })}
-            className="px-3 py-2 border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 dark:bg-slate-800 text-gray-900 dark:text-gray-100 rounded-lg text-sm"
+            className="px-3 py-2 border border-v-border bg-v-surface bg-v-surface text-v-text-primary rounded-lg text-sm"
           >
             <option value="all">All statuses</option>
             <option value="pending">Pending</option>
@@ -302,7 +302,7 @@ export default function ModerationPage() {
           <select
             value={filters.severity}
             onChange={(e) => setFilters({ ...filters, severity: e.target.value })}
-            className="px-3 py-2 border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 dark:bg-slate-800 text-gray-900 dark:text-gray-100 rounded-lg text-sm"
+            className="px-3 py-2 border border-v-border bg-v-surface bg-v-surface text-v-text-primary rounded-lg text-sm"
           >
             <option value="all">All severities</option>
             <option value="critical">Critical</option>
@@ -314,7 +314,7 @@ export default function ModerationPage() {
           <select
             value={filters.contentType}
             onChange={(e) => setFilters({ ...filters, contentType: e.target.value })}
-            className="px-3 py-2 border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 dark:bg-slate-800 text-gray-900 dark:text-gray-100 rounded-lg text-sm"
+            className="px-3 py-2 border border-v-border bg-v-surface bg-v-surface text-v-text-primary rounded-lg text-sm"
           >
             <option value="all">All content types</option>
             <option value="post">Posts</option>
@@ -326,7 +326,7 @@ export default function ModerationPage() {
           <select
             value={filters.timeRange}
             onChange={(e) => setFilters({ ...filters, timeRange: e.target.value })}
-            className="px-3 py-2 border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 dark:bg-slate-800 text-gray-900 dark:text-gray-100 rounded-lg text-sm"
+            className="px-3 py-2 border border-v-border bg-v-surface bg-v-surface text-v-text-primary rounded-lg text-sm"
           >
             <option value="1h">Last hour</option>
             <option value="24h">Last 24 hours</option>
@@ -386,7 +386,7 @@ export default function ModerationPage() {
       {/* Content Reports */}
       <Card className="p-6">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Content Reports</h3>
+          <h3 className="text-lg font-semibold text-v-text-primary">Content Reports</h3>
           <div className="flex items-center space-x-2">
             <button
               onClick={() => setShowBulkActions(!showBulkActions)}
@@ -401,12 +401,12 @@ export default function ModerationPage() {
         <div className="space-y-3">
           {reports.length === 0 ? (
             <div className="text-center py-8">
-              <Shield className="w-12 h-12 text-gray-500 dark:text-gray-400 mx-auto mb-4" />
-              <p className="text-gray-600 dark:text-gray-400">No content reports found</p>
+              <Shield className="w-12 h-12 text-v-text-muted dark:text-v-text-muted mx-auto mb-4" />
+              <p className="text-v-text-muted">No content reports found</p>
             </div>
           ) : (
             reports.map((report) => (
-              <div key={report.id} className="border border-gray-200 dark:border-slate-700 rounded-lg p-4 hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800">
+              <div key={report.id} className="border border-v-border rounded-lg p-4 hover:bg-v-surface-muted bg-v-surface">
                 <div className="flex items-start justify-between">
                   <div className="flex items-start space-x-3 flex-1">
                     <input
@@ -417,7 +417,7 @@ export default function ModerationPage() {
                     />
                     <div className="flex-1">
                       <div className="flex items-center space-x-3 mb-2">
-                        <h4 className="font-medium text-gray-900 dark:text-gray-100">
+                        <h4 className="font-medium text-v-text-primary">
                           {report.content.title || `Content ${report.content.id}`}
                         </h4>
                         <span className={`px-2 py-1 rounded-full text-xs font-medium ${getSeverityColor(report.severity)}`}>
@@ -433,20 +433,20 @@ export default function ModerationPage() {
                         )}
                       </div>
                       
-                      <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">{report.reason}</p>
+                      <p className="text-sm text-v-text-secondary mb-2">{report.reason}</p>
                       
                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
                         <div>
-                          <span className="font-medium text-gray-900 dark:text-gray-100">Content Type:</span>
-                          <span className="ml-2 text-gray-700 dark:text-gray-300">{report.contentType}</span>
+                          <span className="font-medium text-v-text-primary">Content Type:</span>
+                          <span className="ml-2 text-v-text-secondary">{report.contentType}</span>
                         </div>
                         <div>
-                          <span className="font-medium text-gray-900 dark:text-gray-100">Reporter:</span>
-                          <span className="ml-2 text-gray-700 dark:text-gray-300">{report.reporter.name || report.reporter.email}</span>
+                          <span className="font-medium text-v-text-primary">Reporter:</span>
+                          <span className="ml-2 text-v-text-secondary">{report.reporter.name || report.reporter.email}</span>
                         </div>
                         <div>
-                          <span className="font-medium text-gray-900 dark:text-gray-100">Reported:</span>
-                          <span className="ml-2 text-gray-700 dark:text-gray-300">
+                          <span className="font-medium text-v-text-primary">Reported:</span>
+                          <span className="ml-2 text-v-text-secondary">
                             {new Date(report.createdAt).toLocaleString()}
                           </span>
                         </div>
@@ -507,7 +507,7 @@ export default function ModerationPage() {
       {/* Moderation Rules */}
       <Card className="p-6">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Moderation Rules</h3>
+          <h3 className="text-lg font-semibold text-v-text-primary">Moderation Rules</h3>
           <button className="flex items-center space-x-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
             <Settings className="w-4 h-4" />
             <span className="text-sm font-medium">Add Rule</span>
@@ -516,13 +516,13 @@ export default function ModerationPage() {
 
         <div className="space-y-3">
           {rules.map((rule) => (
-            <div key={rule.id} className="border border-gray-200 dark:border-slate-700 rounded-lg p-4">
+            <div key={rule.id} className="border border-v-border rounded-lg p-4">
               <div className="flex items-center justify-between">
                 <div className="flex-1">
                   <div className="flex items-center space-x-3 mb-2">
-                    <h4 className="font-medium text-gray-900 dark:text-gray-100">{rule.name}</h4>
+                    <h4 className="font-medium text-v-text-primary">{rule.name}</h4>
                     <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                      rule.enabled ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-700'
+                      rule.enabled ? 'bg-green-100 text-green-700' : 'bg-v-surface-muted text-gray-700'
                     }`}>
                       {rule.enabled ? 'Active' : 'Inactive'}
                     </span>
@@ -530,16 +530,16 @@ export default function ModerationPage() {
                       Priority {rule.priority}
                     </span>
                   </div>
-                  <p className="text-sm text-gray-700 dark:text-gray-300 mb-2">{rule.description}</p>
-                  <div className="text-xs text-gray-600 dark:text-gray-400">
+                  <p className="text-sm text-v-text-secondary mb-2">{rule.description}</p>
+                  <div className="text-xs text-v-text-muted">
                     <span className="font-medium">Conditions:</span> {rule.conditions.join(', ')}
                   </div>
-                  <div className="text-xs text-gray-600 dark:text-gray-400">
+                  <div className="text-xs text-v-text-muted">
                     <span className="font-medium">Actions:</span> {rule.actions.join(', ')}
                   </div>
                 </div>
                 <div className="flex items-center space-x-2">
-                  <button className="p-2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-400">
+                  <button className="p-2 text-v-text-muted hover:text-gray-600 dark:hover:text-v-text-muted">
                     <Settings className="w-4 h-4" />
                   </button>
                 </div>

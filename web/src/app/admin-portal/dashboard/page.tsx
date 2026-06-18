@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
-import { Card } from 'shared/components';
+import { Card, Button } from 'shared/components';
 import { 
   Users, 
   Briefcase, 
@@ -13,9 +13,11 @@ import {
   Shield,
   AlertTriangle,
   CheckCircle,
-  Clock
+  RefreshCw,
 } from 'lucide-react';
 import { adminApiService, DashboardStats } from '../../../lib/adminApiService';
+import { formatDashboardSystemHealth } from '../../../lib/adminPortalDashboard';
+import { AdminPortalEmptyState } from '../../../components/admin-portal/AdminPortalEmptyState';
 
 interface StatCardProps {
   title: string;
@@ -38,8 +40,8 @@ const StatCard = ({ title, value, trend, icon: Icon, color = 'blue' }: StatCardP
     <Card className="p-6">
       <div className="flex items-center justify-between">
         <div>
-          <p className="text-sm font-medium text-gray-700 dark:text-gray-300">{title}</p>
-          <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{value}</p>
+          <p className="text-sm font-medium text-v-text-secondary">{title}</p>
+          <p className="text-2xl font-bold text-v-text-primary">{value}</p>
           {trend !== undefined && trend !== null && (
             <div className={`flex items-center mt-1 ${getTrendColor(trend)}`}>
               {React.createElement(getTrendIcon(trend), { className: 'w-4 h-4 mr-1' })}
@@ -101,13 +103,11 @@ export default function AdminDashboard() {
         throw new Error(statsResponse.error);
       }
 
-      setStats(statsResponse.data as DashboardStats || {
-        totalUsers: 0,
-        activeUsers: 0,
-        totalBusinesses: 0,
-        monthlyRevenue: 0,
-        systemHealth: 99.9
-      });
+      if (!statsResponse.data) {
+        throw new Error('Dashboard stats unavailable');
+      }
+
+      setStats(statsResponse.data as DashboardStats);
 
       // Load real system alerts from API
       try {
@@ -139,6 +139,7 @@ export default function AdminDashboard() {
       }
     } catch (error) {
       console.error('Error loading dashboard data:', error);
+      setStats(null);
       setError('Failed to load dashboard data');
     } finally {
       setLoading(false);
@@ -150,7 +151,7 @@ export default function AdminDashboard() {
       <div className="flex items-center justify-center p-8">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-2 text-gray-700 dark:text-gray-300">Loading session...</p>
+          <p className="mt-2 text-v-text-secondary">Loading session...</p>
         </div>
       </div>
     );
@@ -161,7 +162,7 @@ export default function AdminDashboard() {
       <div className="flex items-center justify-center p-8">
         <div className="text-center">
           <div className="text-red-600 text-xl mb-2">Authentication Required</div>
-          <p className="text-gray-700 dark:text-gray-300">Please log in to access the admin dashboard.</p>
+          <p className="text-v-text-secondary">Please log in to access the admin dashboard.</p>
         </div>
       </div>
     );
@@ -172,7 +173,7 @@ export default function AdminDashboard() {
       <div className="flex items-center justify-center p-8">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-2 text-gray-700 dark:text-gray-300">Loading dashboard...</p>
+          <p className="mt-2 text-v-text-secondary">Loading dashboard...</p>
         </div>
       </div>
     );
@@ -182,16 +183,22 @@ export default function AdminDashboard() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Admin Dashboard</h1>
-          <p className="text-gray-700 dark:text-gray-300 mt-2">Platform overview and quick actions</p>
+          <h1 className="text-3xl font-bold text-v-text-primary">Admin Dashboard</h1>
+          <p className="text-v-text-secondary mt-2">Platform overview and quick actions</p>
         </div>
         <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-          <div className="flex">
-            <AlertTriangle className="w-5 h-5 text-red-400" />
-            <div className="ml-3">
-              <h3 className="text-sm font-medium text-red-800">Error Loading Dashboard</h3>
-              <p className="text-sm text-red-700 mt-1">{error}</p>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+            <div className="flex">
+              <AlertTriangle className="w-5 h-5 text-red-400" />
+              <div className="ml-3">
+                <h3 className="text-sm font-medium text-red-800">Error Loading Dashboard</h3>
+                <p className="text-sm text-red-700 mt-1">{error}</p>
+              </div>
             </div>
+            <Button variant="secondary" size="sm" onClick={loadDashboardData} disabled={loading}>
+              <RefreshCw className="w-4 h-4 mr-2" />
+              Try again
+            </Button>
           </div>
         </div>
       </div>
@@ -202,8 +209,8 @@ export default function AdminDashboard() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Admin Dashboard</h1>
-        <p className="text-gray-700 dark:text-gray-300 mt-2">Platform overview and quick actions</p>
+        <h1 className="text-3xl font-bold text-v-text-primary">Admin Dashboard</h1>
+        <p className="text-v-text-secondary mt-2">Platform overview and quick actions</p>
       </div>
 
       {/* Quick Stats */}
@@ -231,7 +238,7 @@ export default function AdminDashboard() {
         />
         <StatCard
           title="System Health"
-          value={`${stats?.systemHealth || 99.9}%`}
+          value={formatDashboardSystemHealth(stats?.systemHealth, stats?.systemHealthStatus)}
           icon={Activity}
           color="green"
         />
@@ -239,44 +246,44 @@ export default function AdminDashboard() {
 
       {/* Quick Actions */}
       <div>
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Quick Actions</h2>
+        <h2 className="text-xl font-semibold text-v-text-primary mb-4">Quick Actions</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           <button 
             onClick={() => window.location.href = '/admin-portal/users'}
-            className="p-4 border border-gray-200 dark:border-slate-700 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800 transition-colors text-left group cursor-pointer"
+            className="p-4 border border-v-border rounded-lg hover:bg-v-surface-muted bg-v-surface transition-colors text-left group cursor-pointer"
           >
             <div className="p-2 rounded-lg bg-red-100 w-fit mb-3">
               <Shield className="w-5 h-5 text-red-600" />
             </div>
-            <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-1">Manage Users</h3>
-            <p className="text-sm text-gray-700 dark:text-gray-300">Ban, suspend, or manage user accounts</p>
+            <h3 className="font-medium text-v-text-primary mb-1">Manage Users</h3>
+            <p className="text-sm text-v-text-secondary">Ban, suspend, or manage user accounts</p>
           </button>
           <button 
             onClick={() => window.location.href = '/admin-portal/moderation'}
-            className="p-4 border border-gray-200 dark:border-slate-700 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800 transition-colors text-left group cursor-pointer"
+            className="p-4 border border-v-border rounded-lg hover:bg-v-surface-muted bg-v-surface transition-colors text-left group cursor-pointer"
           >
             <div className="p-2 rounded-lg bg-blue-100 w-fit mb-3">
               <Activity className="w-5 h-5 text-blue-600" />
             </div>
-            <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-1">Review Content</h3>
-            <p className="text-sm text-gray-700 dark:text-gray-300">Review reported content and violations</p>
+            <h3 className="font-medium text-v-text-primary mb-1">Review Content</h3>
+            <p className="text-sm text-v-text-secondary">Review reported content and violations</p>
           </button>
           <button 
             onClick={() => window.location.href = '/admin-portal/performance'}
-            className="p-4 border border-gray-200 dark:border-slate-700 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800 transition-colors text-left group cursor-pointer"
+            className="p-4 border border-v-border rounded-lg hover:bg-v-surface-muted bg-v-surface transition-colors text-left group cursor-pointer"
           >
             <div className="p-2 rounded-lg bg-green-100 w-fit mb-3">
               <CheckCircle className="w-5 h-5 text-green-600" />
             </div>
-            <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-1">System Health</h3>
-            <p className="text-sm text-gray-700 dark:text-gray-300">Check system performance and metrics</p>
+            <h3 className="font-medium text-v-text-primary mb-1">System Health</h3>
+            <p className="text-sm text-v-text-secondary">Check system performance and metrics</p>
           </button>
         </div>
       </div>
 
       {/* System Alerts */}
       <div>
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">System Alerts</h2>
+        <h2 className="text-xl font-semibold text-v-text-primary mb-4">System Alerts</h2>
         <div className="space-y-3">
           {alerts.length > 0 ? (
             alerts.map((alert, index) => (
@@ -300,7 +307,7 @@ export default function AdminDashboard() {
               </div>
             ))
           ) : (
-            <div className="p-4 border rounded-lg text-gray-700 dark:text-gray-300 bg-gray-50 dark:bg-slate-800 border-gray-200 dark:border-slate-700">
+            <div className="p-4 border rounded-lg text-v-text-secondary bg-v-surface-muted border-v-border">
               <div className="flex items-center space-x-3">
                 <CheckCircle className="w-5 h-5 text-green-600" />
                 <div>
@@ -315,7 +322,7 @@ export default function AdminDashboard() {
 
       {/* Recent Activity */}
       <div>
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Recent Activity</h2>
+        <h2 className="text-xl font-semibold text-v-text-primary mb-4">Recent Activity</h2>
         <Card className="p-6">
           {recentActivity.length > 0 ? (
             <div className="space-y-4">
@@ -367,20 +374,22 @@ export default function AdminDashboard() {
                     <div className={`w-2 h-2 ${getActivityColor(activity.action)} rounded-full`}></div>
                     <div className="flex-1">
                       <p className="text-sm font-medium">{formatAction(activity.action)}</p>
-                      <p className="text-xs text-gray-600 dark:text-gray-400">
+                      <p className="text-xs text-v-text-muted">
                         {userEmail}
                         {resourceInfo && ` • ${resourceInfo}`}
                       </p>
                     </div>
-                    <span className="text-xs text-gray-600 dark:text-gray-400">{formatTimestamp(activity.timestamp)}</span>
+                    <span className="text-xs text-v-text-muted">{formatTimestamp(activity.timestamp)}</span>
                   </div>
                 );
               })}
             </div>
           ) : (
-            <div className="text-center py-8 text-gray-600 dark:text-gray-400">
-              <p className="text-sm">No recent activity</p>
-            </div>
+            <AdminPortalEmptyState
+              icon={<Activity className="w-12 h-12" />}
+              title="No recent activity"
+              description=""
+            />
           )}
         </Card>
       </div>

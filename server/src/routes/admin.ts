@@ -1,6 +1,7 @@
 import express, { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { authenticateJWT } from '../middleware/auth';
+import { requireAdmin } from './admin-portal/adminPortalAuth';
 import { AuditService } from '../services/auditService';
 import { userNumberService } from '../services/userNumberService';
 import { logger } from '../lib/logger';
@@ -31,15 +32,6 @@ function logSrvDebug(operation: string, message: string, context?: Record<string
 
 
 const router: express.Router = express.Router();
-
-// Middleware to require admin role
-const requireAdmin = (req: Request, res: Response, next: () => void) => {
-  const user = req.user;
-  if (!user || user.role !== 'ADMIN') {
-    return res.status(403).json({ error: 'Admin access required' });
-  }
-  next();
-};
 
 // Get all users with their Block IDs
 router.get('/users/block-ids', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {

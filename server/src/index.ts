@@ -94,8 +94,7 @@ import aiIdentityRouter from './routes/ai-identity';
 import aiSessionPreferencesRouter from './routes/ai-session-preferences';
 import aiAutonomyRouter from './routes/ai-autonomy';
 import aiIntelligenceRouter from './routes/ai-intelligence';
-import aiCentralizedRouter from './routes/ai-centralized';
-import { requireAdmin } from './routes/admin-portal/adminPortalShared';
+import { requireAdmin } from './routes/admin-portal/adminPortalAuth';
 import {
   centralizedAiDeprecatedMiddleware,
 } from './middleware/centralizedAiFence';
@@ -119,6 +118,7 @@ import orgChartRouter from './routes/org-chart';
 import businessAIRouter from './routes/businessAI';
 import adminBusinessAIRouter from './routes/adminBusinessAI';
 import aiContextDebugRouter from './routes/ai-context-debug';
+import { aiContextDebugTransitionalMiddleware } from './middleware/aiContextDebugTransitional';
 import aiConversationsRouter from './routes/aiConversations';
 import userMemoryFactsRouter from './routes/userMemoryFacts';
 import aiQueriesRouter from './routes/aiQueries';
@@ -906,13 +906,12 @@ app.use('/api/ai/patterns', authenticateJWT, aiPatternsRouter);
 app.use('/api/ai/user-context', authenticateJWT, aiUserContextRouter);
 /** @deprecated Wave 1B — use /api/ai/user-context; retained for non-GET CRUD callers during migration */
 app.use('/api/ai/context', authenticateJWT, aiUserContextRouter);
-/** Wave 1D — admin-only scaffold; deprecated duplicates return 410. Twin path: POST /api/ai/twin */
+/** Wave 1D / 0D-B / 0D-G — admin-only retired mount; all paths return 410. Twin path: POST /api/ai/twin */
 app.use(
   '/api/centralized-ai',
   authenticateJWT,
   requireAdmin,
-  centralizedAiDeprecatedMiddleware,
-  aiCentralizedRouter
+  centralizedAiDeprecatedMiddleware
 );
 app.use('/api/billing', authenticateJWT, billingRouter);
 app.use('/api/pricing', pricingRouter); // Public read access, admin write access
@@ -929,7 +928,7 @@ app.use('/api/org-chart', orgChartRouter);
 app.use('/api/calendar', authenticateJWT, calendarRouter);
 app.use('/api/business-ai', businessAIRouter);
 app.use('/api/admin/business-ai', adminBusinessAIRouter);
-app.use('/api/ai-context-debug', aiContextDebugRouter);
+app.use('/api/ai-context-debug', aiContextDebugTransitionalMiddleware, aiContextDebugRouter);
 app.use('/api/ai-conversations', authenticateJWT, aiConversationsRouter);
 app.use('/api/ai/memory/facts', authenticateJWT, userMemoryFactsRouter);
 app.use('/api/ai/queries', authenticateJWT, aiQueriesRouter);

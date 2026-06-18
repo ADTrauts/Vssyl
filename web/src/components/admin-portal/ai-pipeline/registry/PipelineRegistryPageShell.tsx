@@ -38,10 +38,10 @@ export default function PipelineRegistryPageShell({
   return (
     <div className="space-y-4">
       <div>
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{title}</h2>
-        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{description}</p>
+        <h2 className="text-lg font-semibold text-v-text-primary">{title}</h2>
+        <p className="text-sm text-v-text-muted mt-1">{description}</p>
         {summary && (
-          <p className="text-xs text-gray-500 dark:text-gray-500 mt-2">
+          <p className="text-xs text-v-text-muted dark:text-v-text-muted mt-2">
             Custom intents: {summary.customIntentCount} · Policy-only tools:{' '}
             {summary.policyOnlyToolCount} · Orphans: {summary.orphanCount} · Archived:{' '}
             {summary.archivedCount}
@@ -54,7 +54,7 @@ export default function PipelineRegistryPageShell({
           placeholder="Search by id…"
           value={search}
           onChange={(e) => onSearchChange(e.target.value)}
-          className="rounded border border-gray-300 dark:border-slate-600 px-3 py-1.5 text-sm bg-white dark:bg-slate-900"
+          className="rounded border border-v-border px-3 py-1.5 text-sm bg-v-surface"
         />
         {(['all', 'enabled', 'system', 'custom', 'archived'] as RegistryFilter[]).map((f) => (
           <Button
@@ -66,7 +66,7 @@ export default function PipelineRegistryPageShell({
             {f}
           </Button>
         ))}
-        <label className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 ml-2">
+        <label className="flex items-center gap-2 text-sm text-v-text-muted ml-2">
           <input
             type="checkbox"
             checked={includeArchived}

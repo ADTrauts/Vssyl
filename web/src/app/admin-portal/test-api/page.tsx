@@ -3,8 +3,17 @@
 import React, { useState } from 'react';
 import { Card, Button } from 'shared/components';
 import { getSession } from 'next-auth/react';
+import { AdminPortalDebugPageGate } from '../../../components/admin-portal/AdminPortalDebugPageGate';
 
 export default function TestApiPage() {
+  return (
+    <AdminPortalDebugPageGate>
+      <TestApiPageContent />
+    </AdminPortalDebugPageGate>
+  );
+}
+
+function TestApiPageContent() {
   const [result, setResult] = useState<any>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -44,8 +53,8 @@ export default function TestApiPage() {
   return (
     <div className="space-y-6">
       <div>
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">API Test</h1>
-        <p className="text-gray-700 dark:text-gray-300 mt-2">Test the admin API directly</p>
+        <h1 className="text-3xl font-bold text-v-text-primary">API Test</h1>
+        <p className="text-v-text-secondary mt-2">Test the admin API directly</p>
       </div>
 
       <Card className="p-6">

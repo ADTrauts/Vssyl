@@ -20,22 +20,22 @@ function EvidenceList({
   emptyLabel: string;
 }) {
   if (items.length === 0) {
-    return <p className="text-sm text-gray-600 dark:text-gray-400">{emptyLabel}</p>;
+    return <p className="text-sm text-v-text-muted">{emptyLabel}</p>;
   }
   return (
     <ul className="space-y-2">
       {items.map((item, idx) => (
         <li
           key={`${item.label}-${idx}`}
-          className="border border-gray-200 dark:border-slate-600 rounded-lg p-3 bg-gray-50 dark:bg-slate-900/50"
+          className="border border-v-border rounded-lg p-3 bg-v-surface-muted/50"
         >
-          <p className="font-medium text-gray-900 dark:text-gray-100">{item.label}</p>
-          <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+          <p className="font-medium text-v-text-primary">{item.label}</p>
+          <p className="text-xs text-v-text-muted mt-1">
             {item.sourceType ? `Type: ${item.sourceType}` : 'Type: —'}
             {item.confidence ? ` · Confidence: ${item.confidence}` : ''}
           </p>
           {item.detail && (
-            <p className="text-sm text-gray-700 dark:text-gray-300 mt-1">{item.detail}</p>
+            <p className="text-sm text-v-text-secondary mt-1">{item.detail}</p>
           )}
         </li>
       ))}
@@ -56,7 +56,7 @@ export default function PipelineEvidenceViewer({ bundle, trace }: PipelineEviden
   return (
     <section className="space-y-3">
       {trace && <PipelineContextUsedPanel trace={trace} />}
-      <h3 className="font-semibold text-gray-900 dark:text-gray-100">Evidence & confidence</h3>
+      <h3 className="font-semibold text-v-text-primary">Evidence & confidence</h3>
       <div className="flex flex-wrap gap-2">
         {tabs.map((t) => (
           <button
@@ -66,7 +66,7 @@ export default function PipelineEvidenceViewer({ bundle, trace }: PipelineEviden
             className={`px-3 py-1.5 rounded-lg text-sm border transition-colors ${
               tab === t.id
                 ? 'bg-indigo-100 border-indigo-300 text-indigo-900 dark:bg-indigo-900/40 dark:border-indigo-600 dark:text-indigo-100'
-                : 'bg-white border-gray-200 text-gray-700 dark:bg-slate-800 dark:border-slate-600 dark:text-gray-300'
+                : 'bg-white border-gray-200 text-gray-700 bg-v-surface dark:border-slate-600 dark:text-v-text-muted'
             }`}
           >
             {t.label} ({t.count})
@@ -87,8 +87,8 @@ export default function PipelineEvidenceViewer({ bundle, trace }: PipelineEviden
           )}
           {bundle.assembledContextBlocks.length > 0 && (
             <div>
-              <p className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-1">Context blocks</p>
-              <ul className="text-sm text-gray-700 dark:text-gray-300 list-disc pl-5">
+              <p className="text-xs font-medium text-v-text-muted mb-1">Context blocks</p>
+              <ul className="text-sm text-v-text-secondary list-disc pl-5">
                 {bundle.assembledContextBlocks.map((b) => (
                   <li key={b.title}>
                     {b.title}
@@ -105,7 +105,7 @@ export default function PipelineEvidenceViewer({ bundle, trace }: PipelineEviden
       {tab === 'structured' && (
         <div className="space-y-3">
           {bundle.structuredConfidence && (
-            <p className="text-sm text-gray-700 dark:text-gray-300">
+            <p className="text-sm text-v-text-secondary">
               Model confidence: <strong>{bundle.structuredConfidence.level ?? '—'}</strong>
               {bundle.structuredConfidence.explanation
                 ? ` — ${bundle.structuredConfidence.explanation}`
@@ -122,11 +122,11 @@ export default function PipelineEvidenceViewer({ bundle, trace }: PipelineEviden
       {tab === 'tools' && (
         <div>
           {bundle.toolOutputs.length === 0 ? (
-            <p className="text-sm text-gray-600 dark:text-gray-400">No tools were invoked.</p>
+            <p className="text-sm text-v-text-muted">No tools were invoked.</p>
           ) : (
             <table className="min-w-full text-sm">
               <thead>
-                <tr className="text-left text-gray-600 dark:text-gray-400">
+                <tr className="text-left text-v-text-muted">
                   <th className="py-1 pr-4">Tool</th>
                   <th className="py-1 pr-4">Round</th>
                   <th className="py-1">Success</th>
@@ -148,22 +148,22 @@ export default function PipelineEvidenceViewer({ bundle, trace }: PipelineEviden
 
       {tab === 'retrieval' && (
         <div className="space-y-3">
-          <p className="text-sm text-gray-700 dark:text-gray-300">
+          <p className="text-sm text-v-text-secondary">
             Sources used: {bundle.sourcesUsed.length > 0 ? bundle.sourcesUsed.join(', ') : '—'}
           </p>
-          <p className="text-sm text-gray-700 dark:text-gray-300">
+          <p className="text-sm text-v-text-secondary">
             Memory — facts: {bundle.memoryRetrieved.facts}, recalled:{' '}
             {bundle.memoryRetrieved.recalledMessages}, thread:{' '}
             {bundle.memoryRetrieved.threadMemory ? 'yes' : 'no'}
           </p>
           {bundle.retrievalRecords.length === 0 ? (
-            <p className="text-sm text-gray-600 dark:text-gray-400">No retrieval records.</p>
+            <p className="text-sm text-v-text-muted">No retrieval records.</p>
           ) : (
             <ul className="space-y-2">
               {bundle.retrievalRecords.map((r, i) => (
                 <li
                   key={`${r.source}-${i}`}
-                  className="text-sm border border-gray-200 dark:border-slate-600 rounded p-2"
+                  className="text-sm border border-v-border rounded p-2"
                 >
                   <span className="font-mono text-indigo-700 dark:text-indigo-300">{r.source}</span>
                   {r.provider ? ` · ${r.provider}` : ''} · items: {r.itemCount}

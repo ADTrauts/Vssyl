@@ -1,8 +1,24 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import request from 'supertest';
 import { createTestApp } from '../../__tests__/helpers/app';
 import { createTestAdminUser, createTestUser, createAuthHeader, cleanupTestUsers } from '../../__tests__/helpers/auth';
 import type { User } from '@prisma/client';
+
+vi.mock('../../services/systemMonitoringService', () => ({
+  SystemMonitoringService: {
+    getSystemHealth: vi.fn(async () => ({
+      cpu: 20,
+      memory: 30,
+      disk: 40,
+      network: 5,
+      uptime: '1d 0h 0m',
+      responseTime: 10,
+      activeConnections: 2,
+      errorRate: 0,
+      timestamp: new Date(),
+    })),
+  },
+}));
 
 describe('Admin Portal Routes', () => {
   const app = createTestApp();
@@ -77,6 +93,7 @@ describe('Admin Portal Routes', () => {
       expect(response.body.data).toHaveProperty('totalBusinesses');
       expect(response.body.data).toHaveProperty('monthlyRevenue');
       expect(response.body.data).toHaveProperty('systemHealth');
+      expect(response.body.data).toHaveProperty('systemHealthStatus');
       expect(response.body.data).toHaveProperty('userGrowthTrend');
       expect(response.body.data).toHaveProperty('businessGrowthTrend');
       expect(response.body.data).toHaveProperty('revenueGrowthTrend');
@@ -85,7 +102,11 @@ describe('Admin Portal Routes', () => {
       expect(typeof response.body.data.totalUsers).toBe('number');
       expect(typeof response.body.data.totalBusinesses).toBe('number');
       expect(typeof response.body.data.monthlyRevenue).toBe('number');
-      expect(typeof response.body.data.systemHealth).toBe('number');
+      expect(
+        response.body.data.systemHealth === null || typeof response.body.data.systemHealth === 'number',
+      ).toBe(true);
+      expect(['available', 'unavailable']).toContain(response.body.data.systemHealthStatus);
+      expect(response.body.data.systemHealth).not.toBe(99.9);
     });
 
     it('should reject dashboard stats for non-admin', async () => {

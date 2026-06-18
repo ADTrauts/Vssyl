@@ -1,13 +1,13 @@
 import type { Request, Response } from 'express';
 import type express from 'express';
-import type { Prisma } from '@prisma/client';
-import crypto from 'crypto';
-import bcrypt from 'bcrypt';
-import { prisma } from '../../lib/prisma';
 import { authenticateJWT } from '../../middleware/auth';
-import { AdminService } from '../../services/adminService';
 import { logger } from '../../lib/logger';
-import { requireAdmin, ALLOWED_CONTENT_REPORT_STATUSES } from './adminPortalShared';
+import { requireAdmin, enforceDangerousMigrationOpGate, logDangerousMigrationOpExecuted, DANGEROUS_MIGRATION_OP_CONFIRM } from './adminPortalShared';
+import { ADMIN_AUDIT_ACTIONS } from '../../services/admin/adminAuditTaxonomy';
+import * as adminAnalyticsService from '../../services/admin/adminAnalyticsService';
+import * as adminSupportService from '../../services/admin/adminSupportService';
+import * as adminSystemOpsService from '../../services/admin/adminSystemOpsService';
+import * as adminPerformanceService from '../../services/admin/adminPerformanceService';
 
 export function registerAdminPortalPlatformRoutes(router: express.Router): void {
 // Business Intelligence Routes
@@ -20,7 +20,7 @@ router.get('/business-intelligence', authenticateJWT, requireAdmin, async (req: 
       return res.status(401).json({ error: 'User not authenticated' });
     }
 
-    const data = await AdminService.getBusinessIntelligence({
+    const data = await adminAnalyticsService.getBusinessIntelligence({
       dateRange: dateRange as string,
       userType: userType as string
     });
@@ -56,7 +56,7 @@ router.get('/business-intelligence/export', authenticateJWT, requireAdmin, async
       return res.status(401).json({ error: 'User not authenticated' });
     }
 
-    const exportData = await AdminService.exportBusinessIntelligence({
+    const exportData = await adminAnalyticsService.exportBusinessIntelligence({
       dateRange: dateRange as string,
       userType: userType as string
     });
@@ -96,7 +96,7 @@ router.post('/business-intelligence/ab-tests', authenticateJWT, requireAdmin, as
       return res.status(401).json({ error: 'User not authenticated' });
     }
 
-    const result = await AdminService.createABTest(testData, adminUser.id);
+    const result = await adminAnalyticsService.createABTest(testData, adminUser.id);
 
     await logger.info('Admin created A/B test', {
       operation: 'admin_create_ab_test',
@@ -129,7 +129,7 @@ router.get('/business-intelligence/ab-tests/:testId/results', authenticateJWT, r
       return res.status(401).json({ error: 'User not authenticated' });
     }
 
-    const results = await AdminService.getABTestResults(testId);
+    const results = await adminAnalyticsService.getABTestResults(testId);
 
     await logger.info('Admin retrieved A/B test results', {
       operation: 'admin_get_ab_test_results',
@@ -164,7 +164,7 @@ router.patch('/business-intelligence/ab-tests/:testId', authenticateJWT, require
       return res.status(401).json({ error: 'User not authenticated' });
     }
 
-    const result = await AdminService.updateABTest(testId, updates, adminUser.id);
+    const result = await adminAnalyticsService.updateABTest(testId, updates, adminUser.id);
 
     await logger.info('Admin updated A/B test', {
       operation: 'admin_update_ab_test',
@@ -197,7 +197,7 @@ router.get('/business-intelligence/user-segments', authenticateJWT, requireAdmin
       return res.status(401).json({ error: 'User not authenticated' });
     }
     
-    const segments = await AdminService.getUserSegments();
+    const segments = await adminAnalyticsService.getUserSegments();
 
     await logger.info('Admin retrieved user segments', {
       operation: 'admin_get_user_segments',
@@ -229,7 +229,7 @@ router.post('/business-intelligence/user-segments', authenticateJWT, requireAdmi
       return res.status(401).json({ error: 'User not authenticated' });
     }
 
-    const result = await AdminService.createUserSegment(segmentData, adminUser.id);
+    const result = await adminAnalyticsService.createUserSegment(segmentData, adminUser.id);
 
     await logger.info('Admin created user segment', {
       operation: 'admin_create_user_segment',
@@ -261,7 +261,7 @@ router.get('/business-intelligence/predictive-insights', authenticateJWT, requir
       return res.status(401).json({ error: 'User not authenticated' });
     }
     
-    const insights = await AdminService.getPredictiveInsights();
+    const insights = await adminAnalyticsService.getPredictiveInsights();
 
     await logger.info('Admin retrieved predictive insights', {
       operation: 'admin_get_predictive_insights',
@@ -292,7 +292,7 @@ router.get('/business-intelligence/competitive-analysis', authenticateJWT, requi
       return res.status(401).json({ error: 'User not authenticated' });
     }
     
-    const analysis = await AdminService.getCompetitiveAnalysis();
+    const analysis = await adminAnalyticsService.getCompetitiveAnalysis();
 
     await logger.info('Admin retrieved competitive analysis', {
       operation: 'admin_get_competitive_analysis',
@@ -324,7 +324,7 @@ router.post('/business-intelligence/custom-report', authenticateJWT, requireAdmi
       return res.status(401).json({ error: 'User not authenticated' });
     }
 
-    const report = await AdminService.generateCustomReport(reportConfig, adminUser.id);
+    const report = await adminAnalyticsService.generateCustomReport(reportConfig, adminUser.id);
 
     await logger.info('Admin generated custom report', {
       operation: 'admin_generate_custom_report',
@@ -358,7 +358,7 @@ router.get('/support/tickets', authenticateJWT, requireAdmin, async (req: Reques
       return res.status(401).json({ error: 'User not authenticated' });
     }
 
-    const tickets = await AdminService.getSupportTickets({
+    const tickets = await adminSupportService.getSupportTickets({
       status: status as string,
       priority: priority as string,
       category: category as string,
@@ -395,7 +395,7 @@ router.get('/support/stats', authenticateJWT, requireAdmin, async (req: Request,
       return res.status(401).json({ error: 'User not authenticated' });
     }
     
-    const stats = await AdminService.getSupportStats();
+    const stats = await adminSupportService.getSupportStats();
 
     await logger.info('Admin retrieved support statistics', {
       operation: 'admin_get_support_stats',
@@ -428,7 +428,7 @@ router.patch('/support/tickets/:ticketId', authenticateJWT, requireAdmin, async 
       return res.status(401).json({ error: 'User not authenticated' });
     }
 
-    const result = await AdminService.updateSupportTicket(ticketId, action, data, adminUser.id);
+    const result = await adminSupportService.updateSupportTicket(ticketId, action, data, adminUser.id);
 
     await logger.info('Admin updated support ticket', {
       operation: 'admin_update_support_ticket',
@@ -462,7 +462,7 @@ router.get('/support/knowledge-base', authenticateJWT, requireAdmin, async (req:
       return res.status(401).json({ error: 'User not authenticated' });
     }
     
-    const articles = await AdminService.getKnowledgeBase();
+    const articles = await adminSupportService.getKnowledgeBase();
 
     await logger.info('Admin retrieved knowledge base', {
       operation: 'admin_get_knowledge_base',
@@ -495,7 +495,7 @@ router.patch('/support/knowledge-base/:articleId', authenticateJWT, requireAdmin
       return res.status(401).json({ error: 'User not authenticated' });
     }
 
-    const result = await AdminService.updateKnowledgeArticle(articleId, action, data, adminUser.id);
+    const result = await adminSupportService.updateKnowledgeArticle(articleId, action, data, adminUser.id);
 
     await logger.info('Admin updated knowledge article', {
       operation: 'admin_update_knowledge_article',
@@ -529,7 +529,7 @@ router.get('/support/live-chats', authenticateJWT, requireAdmin, async (req: Req
       return res.status(401).json({ error: 'User not authenticated' });
     }
     
-    const chats = await AdminService.getLiveChats();
+    const chats = await adminSupportService.getLiveChats();
 
     await logger.info('Admin retrieved live chats', {
       operation: 'admin_get_live_chats',
@@ -561,7 +561,7 @@ router.post('/support/live-chats/:chatId/join', authenticateJWT, requireAdmin, a
       return res.status(401).json({ error: 'User not authenticated' });
     }
 
-    const result = await AdminService.joinLiveChat(chatId, adminUser.id);
+    const result = await adminSupportService.joinLiveChat(chatId, adminUser.id);
 
     await logger.info('Admin joined live chat', {
       operation: 'admin_join_live_chat',
@@ -594,7 +594,7 @@ router.get('/support/analytics', authenticateJWT, requireAdmin, async (req: Requ
       return res.status(401).json({ error: 'User not authenticated' });
     }
     
-    const analytics = await AdminService.getSupportAnalytics();
+    const analytics = await adminSupportService.getSupportAnalytics();
 
     await logger.info('Admin retrieved support analytics', {
       operation: 'admin_get_support_analytics',
@@ -626,7 +626,7 @@ router.post('/support/tickets', authenticateJWT, requireAdmin, async (req: Reque
       return res.status(401).json({ error: 'User not authenticated' });
     }
 
-    const result = await AdminService.createSupportTicket(ticketData, adminUser.id);
+    const result = await adminSupportService.createSupportTicket(ticketData, adminUser.id);
 
     await logger.info('Admin created support ticket', {
       operation: 'admin_create_support_ticket',
@@ -649,9 +649,15 @@ router.post('/support/tickets', authenticateJWT, requireAdmin, async (req: Reque
   }
 });
 
-// Customer-facing support ticket creation (no authentication required)
-router.post('/support/tickets/customer', async (req: Request, res: Response) => {
+// Admin-only: create a support ticket on behalf of a customer (contact fields in body)
+router.post('/support/tickets/customer', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
   try {
+    const adminUser = req.user;
+
+    if (!adminUser) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+
     const { title, description, category, priority, contactEmail, contactPhone, userId, userName } = req.body;
 
     // Validate required fields
@@ -672,11 +678,12 @@ router.post('/support/tickets/customer', async (req: Request, res: Response) => 
       customerName: userName || 'Anonymous',
     };
 
-    const result = await AdminService.createSupportTicket(ticketData);
+    const result = await adminSupportService.createSupportTicket(ticketData, adminUser.id);
 
-    await logger.info('Customer support ticket created', {
-      operation: 'customer_create_support_ticket',
-      ticketId: (result as any).id
+    await logger.info('Admin created customer support ticket', {
+      operation: 'admin_create_customer_support_ticket',
+      adminId: adminUser.id,
+      ticketId: (result as { id: string }).id,
     });
 
     res.json({
@@ -707,7 +714,7 @@ router.post('/support/knowledge-base', authenticateJWT, requireAdmin, async (req
       return res.status(401).json({ error: 'User not authenticated' });
     }
 
-    const result = await AdminService.createKnowledgeArticle(articleData, adminUser.id);
+    const result = await adminSupportService.createKnowledgeArticle(articleData, adminUser.id);
 
     await logger.info('Admin created knowledge article', {
       operation: 'admin_create_knowledge_article',
@@ -739,7 +746,7 @@ router.get('/support/export', authenticateJWT, requireAdmin, async (req: Request
       return res.status(401).json({ error: 'User not authenticated' });
     }
 
-    const exportData = await AdminService.exportSupportData({
+    const exportData = await adminSupportService.exportSupportData({
       status: status as string,
       priority: priority as string,
       category: category as string,
@@ -782,7 +789,7 @@ router.get('/performance/metrics', authenticateJWT, requireAdmin, async (req: Re
       return res.status(401).json({ error: 'User not authenticated' });
     }
 
-    const metrics = await AdminService.getPerformanceMetrics({
+    const metrics = await adminPerformanceService.getPerformanceMetrics({
       timeRange: timeRange as string,
       metricType: metricType as string
     });
@@ -816,7 +823,7 @@ router.get('/performance/scalability', authenticateJWT, requireAdmin, async (req
       return res.status(401).json({ error: 'User not authenticated' });
     }
     
-    const scalability = await AdminService.getScalabilityMetrics();
+    const scalability = await adminPerformanceService.getScalabilityMetrics();
 
     await logger.info('Admin retrieved scalability metrics', {
       operation: 'admin_get_scalability_metrics',
@@ -847,7 +854,7 @@ router.get('/performance/optimization', authenticateJWT, requireAdmin, async (re
       return res.status(401).json({ error: 'User not authenticated' });
     }
     
-    const recommendations = await AdminService.getOptimizationRecommendations();
+    const recommendations = await adminPerformanceService.getOptimizationRecommendations();
 
     await logger.info('Admin retrieved optimization recommendations', {
       operation: 'admin_get_optimization_recommendations',
@@ -880,7 +887,7 @@ router.patch('/performance/optimization/:recommendationId', authenticateJWT, req
       return res.status(401).json({ error: 'User not authenticated' });
     }
 
-    const result = await AdminService.updateOptimizationRecommendation(recommendationId, action, adminUser.id);
+    const result = await adminPerformanceService.updateOptimizationRecommendation(recommendationId, action, adminUser.id);
 
     await logger.info('Admin updated optimization recommendation', {
       operation: 'admin_update_optimization_recommendation',
@@ -915,7 +922,7 @@ router.get('/performance/alerts', authenticateJWT, requireAdmin, async (req: Req
       return res.status(401).json({ error: 'User not authenticated' });
     }
 
-    const alerts = await AdminService.getPerformanceAlerts({
+    const alerts = await adminPerformanceService.getPerformanceAlerts({
       severity: severity as string,
       status: status as string
     });
@@ -951,7 +958,7 @@ router.patch('/performance/alerts/:alertId', authenticateJWT, requireAdmin, asyn
       return res.status(401).json({ error: 'User not authenticated' });
     }
 
-    const result = await AdminService.updatePerformanceAlert(alertId, action, adminUser.id);
+    const result = await adminPerformanceService.updatePerformanceAlert(alertId, action, adminUser.id);
 
     await logger.info('Admin updated performance alert', {
       operation: 'admin_update_performance_alert',
@@ -985,7 +992,7 @@ router.get('/performance/analytics', authenticateJWT, requireAdmin, async (req: 
       return res.status(401).json({ error: 'User not authenticated' });
     }
     
-    const analytics = await AdminService.getPerformanceAnalytics();
+    const analytics = await adminPerformanceService.getPerformanceAnalytics();
 
     await logger.info('Admin retrieved performance analytics', {
       operation: 'admin_get_performance_analytics',
@@ -1017,7 +1024,7 @@ router.post('/performance/alerts/configure', authenticateJWT, requireAdmin, asyn
       return res.status(401).json({ error: 'User not authenticated' });
     }
 
-    const result = await AdminService.configurePerformanceAlert(alertConfig, adminUser.id);
+    const result = await adminPerformanceService.configurePerformanceAlert(alertConfig, adminUser.id);
 
     await logger.info('Admin configured performance alert', {
       operation: 'admin_configure_performance_alert',
@@ -1048,89 +1055,16 @@ router.get('/database/schema-check', authenticateJWT, requireAdmin, async (req: 
       return res.status(401).json({ error: 'User not authenticated' });
     }
 
-    // Check critical tables that are causing 500 errors
-    const criticalTables = [
-      'pricing_configs',
-      'price_changes',
-      'module_ai_context_registry',
-      'subscriptions',
-      'invoices',
-      'developer_revenues',
-      'content_reports',
-      'security_events',
-      'module_subscriptions'
-    ];
-
-    const tableChecks = await Promise.all(
-      criticalTables.map(async (tableName) => {
-        try {
-          const result = await prisma.$queryRaw<Array<{table_name: string}>>`
-            SELECT table_name 
-            FROM information_schema.tables 
-            WHERE table_schema = 'public' 
-            AND table_name = ${tableName};
-          `;
-          return {
-            table: tableName,
-            exists: result.length > 0,
-            error: null
-          };
-        } catch (error) {
-          return {
-            table: tableName,
-            exists: false,
-            error: error instanceof Error ? error.message : 'Unknown error'
-          };
-        }
-      })
-    );
-
-    // Check migration status
-    let migrationStatus = 'unknown';
-    let appliedMigrations = 0;
-    try {
-      const migrations = await prisma.$queryRaw<Array<{migration_name: string}>>`
-        SELECT migration_name 
-        FROM _prisma_migrations 
-        ORDER BY finished_at DESC 
-        LIMIT 10;
-      `;
-      appliedMigrations = migrations.length;
-      migrationStatus = 'connected';
-    } catch (error) {
-      migrationStatus = 'error';
-    }
-
-    // Get all tables for reference
-    let allTables: string[] = [];
-    try {
-      const tables = await prisma.$queryRaw<Array<{table_name: string}>>`
-        SELECT table_name 
-        FROM information_schema.tables 
-        WHERE table_schema = 'public' 
-        ORDER BY table_name;
-      `;
-      allTables = tables.map(t => t.table_name);
-    } catch (error) {
-      // Ignore error
-    }
+    const schemaCheck = await adminSystemOpsService.getDatabaseSchemaCheck();
 
     await logger.info('Admin checked database schema', {
       operation: 'admin_database_schema_check',
-      adminId: adminUser.id
+      adminId: adminUser.id,
     });
 
     res.json({
       success: true,
-      timestamp: new Date().toISOString(),
-      environment: process.env.NODE_ENV || 'unknown',
-      databaseUrl: process.env.DATABASE_URL ? 'SET' : 'NOT SET',
-      criticalTables: tableChecks,
-      migrationStatus,
-      appliedMigrations,
-      allTables: allTables.slice(0, 50), // Limit to first 50 for readability
-      totalTables: allTables.length,
-      missingTables: tableChecks.filter(t => !t.exists).map(t => t.table)
+      ...schemaCheck,
     });
   } catch (error) {
     await logger.error('Failed to check database schema', {
@@ -1156,86 +1090,13 @@ router.post('/database/run-migrations', authenticateJWT, requireAdmin, async (re
       return res.status(401).json({ error: 'User not authenticated' });
     }
 
-    const { execSync } = require('child_process');
-    const path = require('path');
-    const fs = require('fs');
-
-    const projectRoot = path.join(__dirname, '../..');
-    const schemaPath = path.join(projectRoot, 'prisma/schema.prisma');
-    const migrationsDir = path.join(projectRoot, 'prisma/migrations');
-
-    // Verify paths exist
-    if (!fs.existsSync(schemaPath)) {
-      return res.status(500).json({ 
-        success: false,
-        error: 'Prisma schema not found',
-        path: schemaPath
-      });
-    }
-
-    if (!fs.existsSync(migrationsDir)) {
-      return res.status(500).json({ 
-        success: false,
-        error: 'Migrations directory not found',
-        path: migrationsDir
-      });
-    }
-
-    // Build schema first
-    const buildScriptPath = path.join(projectRoot, 'scripts/build-prisma-schema.js');
-    try {
-      execSync(`node ${buildScriptPath}`, {
-        stdio: 'pipe',
-        env: process.env,
-        cwd: projectRoot,
-        timeout: 30000
-      });
-    } catch (buildError) {
-      await logger.warn('Schema build failed, continuing anyway', {
-        operation: 'admin_run_migrations',
-        error: {
-          message: buildError instanceof Error ? buildError.message : 'Unknown error',
-          stack: buildError instanceof Error ? buildError.stack : undefined,
-        }
-      });
-    }
-
-    // Run migrations
-    const migrationUrl = process.env.DATABASE_MIGRATE_URL || process.env.DATABASE_URL;
-    const migrationEnv = {
-      ...process.env,
-      DATABASE_URL: migrationUrl
-    };
-
-    let migrationOutput = '';
-    let migrationSuccess = false;
-    try {
-      const output = execSync(`npx prisma migrate deploy --schema ${schemaPath}`, {
-        stdio: 'pipe',
-        env: migrationEnv,
-        cwd: projectRoot,
-        timeout: 120000,
-        encoding: 'utf-8'
-      });
-      migrationOutput = output.toString();
-      migrationSuccess = true;
-    } catch (migrationError: unknown) {
-      const errorMessage = migrationError instanceof Error ? migrationError.message : String(migrationError);
-      migrationOutput = errorMessage;
-      migrationSuccess = false;
-    }
-
-    await logger.info('Admin triggered manual migration', {
-      operation: 'admin_run_migrations',
-      adminId: adminUser.id,
-      success: migrationSuccess
-    });
+    const result = await adminSystemOpsService.runMigrationsManually(adminUser.id);
 
     res.json({
-      success: migrationSuccess,
-      message: migrationSuccess ? 'Migrations applied successfully' : 'Migration failed',
-      output: migrationOutput,
-      timestamp: new Date().toISOString()
+      success: result.success,
+      message: result.message,
+      output: result.output,
+      timestamp: new Date().toISOString(),
     });
   } catch (error) {
     await logger.error('Failed to run migrations', {
@@ -1261,53 +1122,18 @@ router.get('/database/migrations', authenticateJWT, requireAdmin, async (req: Re
       return res.status(401).json({ error: 'User not authenticated' });
     }
 
-    // Query the _prisma_migrations table
-    const migrations = await prisma.$queryRaw<Array<{
-      id: string;
-      migration_name: string;
-      started_at: Date;
-      finished_at: Date | null;
-      checksum: string;
-      applied_steps_count: number;
-      rolled_back_at: Date | null;
-      logs: string | null;
-    }>>`
-      SELECT id, migration_name, started_at, finished_at, checksum, applied_steps_count, rolled_back_at, logs
-      FROM "_prisma_migrations"
-      ORDER BY started_at DESC;
-    `;
-
-    // Determine status for each migration
-    const migrationsWithStatus = migrations.map(m => ({
-      ...m,
-      status: m.rolled_back_at 
-        ? 'rolled_back' 
-        : m.finished_at 
-          ? 'applied' 
-          : 'failed',
-      startedAt: m.started_at,
-      finishedAt: m.finished_at,
-      rolledBackAt: m.rolled_back_at
-    }));
-
-    const failedMigrations = migrationsWithStatus.filter(m => m.status === 'failed');
-    const appliedMigrations = migrationsWithStatus.filter(m => m.status === 'applied');
+    const migrationSummary = await adminSystemOpsService.listMigrations();
 
     await logger.info('Admin viewed migration status', {
       operation: 'admin_view_migrations',
       adminId: adminUser.id,
-      totalMigrations: migrations.length,
-      failedCount: failedMigrations.length
+      totalMigrations: migrationSummary.totalMigrations,
+      failedCount: migrationSummary.failedCount,
     });
 
     res.json({
       success: true,
-      totalMigrations: migrations.length,
-      appliedCount: appliedMigrations.length,
-      failedCount: failedMigrations.length,
-      migrations: migrationsWithStatus,
-      failedMigrations: failedMigrations.map(m => m.migration_name),
-      timestamp: new Date().toISOString()
+      ...migrationSummary,
     });
   } catch (error) {
     await logger.error('Failed to view migrations', {
@@ -1335,60 +1161,20 @@ router.post('/database/migrations/fix-failed', authenticateJWT, requireAdmin, as
 
     const { migrationName } = req.body;
 
-    // Find failed migrations
-    const failedMigrations = await prisma.$queryRaw<Array<{
-      id: string;
-      migration_name: string;
-      started_at: Date;
-    }>>`
-      SELECT id, migration_name, started_at
-      FROM "_prisma_migrations"
-      WHERE finished_at IS NULL AND rolled_back_at IS NULL;
-    `;
+    const result = await adminSystemOpsService.fixFailedMigrations(adminUser.id, migrationName);
 
-    if (failedMigrations.length === 0) {
-      return res.json({
-        success: true,
-        message: 'No failed migrations found',
-        fixed: []
-      });
-    }
-
-    // If a specific migration name is provided, only fix that one
-    const migrationsToFix = migrationName 
-      ? failedMigrations.filter(m => m.migration_name === migrationName)
-      : failedMigrations;
-
-    if (migrationsToFix.length === 0) {
+    if (!result.success) {
       return res.status(404).json({
         success: false,
-        error: `Migration ${migrationName} not found or not in failed state`,
-        failedMigrations: failedMigrations.map(m => m.migration_name)
+        error: result.error,
+        failedMigrations: result.failedMigrations,
       });
     }
-
-    // Mark each failed migration as applied by setting finished_at
-    const fixed: string[] = [];
-    for (const migration of migrationsToFix) {
-      await prisma.$executeRaw`
-        UPDATE "_prisma_migrations"
-        SET finished_at = NOW(),
-            logs = COALESCE(logs, '') || E'\n[ADMIN FIX] Marked as applied by admin at ' || NOW()::text
-        WHERE id = ${migration.id};
-      `;
-      fixed.push(migration.migration_name);
-    }
-
-    await logger.info('Admin fixed failed migrations', {
-      operation: 'admin_fix_migrations',
-      adminId: adminUser.id,
-      fixedMigrations: fixed
-    });
 
     res.json({
       success: true,
-      message: `Fixed ${fixed.length} failed migration(s)`,
-      fixed,
+      message: result.message,
+      fixed: result.fixed,
       timestamp: new Date().toISOString()
     });
   } catch (error) {
@@ -1410,62 +1196,37 @@ router.post('/database/migrations/fix-failed', authenticateJWT, requireAdmin, as
 // Delete orphaned or problematic migration records
 router.post('/database/migrations/delete', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
   try {
-    const adminUser = req.user;
-    if (!adminUser) {
-      return res.status(401).json({ error: 'User not authenticated' });
+    const gate = await enforceDangerousMigrationOpGate(req, res, {
+      dangerousOperation: 'delete_migration',
+      expectedConfirm: DANGEROUS_MIGRATION_OP_CONFIRM.DELETE,
+      auditActionDenied: ADMIN_AUDIT_ACTIONS.DANGEROUS_MIGRATION_DELETE_DENIED,
+    });
+    if (!gate.allowed) {
+      return;
     }
+    const adminUser = gate.adminUser;
 
     const { migrationName, deleteAll } = req.body;
 
-    if (!migrationName && !deleteAll) {
-      return res.status(400).json({
+    const deleteResult = await adminSystemOpsService.deleteMigrationRecords(adminUser.id, {
+      migrationName,
+      deleteAll,
+    });
+
+    if (!deleteResult.success) {
+      return res.status(deleteResult.error.includes('not found') ? 404 : 400).json({
         success: false,
-        error: 'Either migrationName or deleteAll must be provided'
+        error: deleteResult.error,
       });
     }
 
-    let deleted: string[] = [];
+    const deleted = deleteResult.deleted;
 
-    if (deleteAll) {
-      // Nuclear option: delete all migration records (use with caution!)
-      const allMigrations = await prisma.$queryRaw<Array<{ migration_name: string }>>`
-        SELECT migration_name FROM "_prisma_migrations";
-      `;
-      
-      await prisma.$executeRaw`DELETE FROM "_prisma_migrations";`;
-      deleted = allMigrations.map(m => m.migration_name);
-
-      await logger.warn('Admin deleted ALL migration records', {
-        operation: 'admin_delete_all_migrations',
-        adminId: adminUser.id,
-        deletedCount: deleted.length
-      });
-    } else {
-      // Delete specific migration record
-      const migration = await prisma.$queryRaw<Array<{ id: string; migration_name: string }>>`
-        SELECT id, migration_name FROM "_prisma_migrations"
-        WHERE migration_name = ${migrationName};
-      `;
-
-      if (migration.length === 0) {
-        return res.status(404).json({
-          success: false,
-          error: `Migration ${migrationName} not found`
-        });
-      }
-
-      await prisma.$executeRaw`
-        DELETE FROM "_prisma_migrations"
-        WHERE migration_name = ${migrationName};
-      `;
-      deleted = [migrationName];
-
-      await logger.info('Admin deleted migration record', {
-        operation: 'admin_delete_migration',
-        adminId: adminUser.id,
-        migrationName
-      });
-    }
+    await logDangerousMigrationOpExecuted(req, adminUser, 'delete_migration', ADMIN_AUDIT_ACTIONS.DANGEROUS_MIGRATION_DELETE_EXECUTED, {
+      deleteAll: Boolean(deleteAll),
+      migrationName: migrationName ?? null,
+      deletedCount: deleted.length,
+    });
 
     res.json({
       success: true,
@@ -1487,7 +1248,6 @@ router.post('/database/migrations/delete', authenticateJWT, requireAdmin, async 
     res.status(500).json({ 
       success: false,
       error: 'Failed to delete migration',
-      details: error instanceof Error ? error.message : 'Unknown error'
     });
   }
 });
@@ -1495,55 +1255,20 @@ router.post('/database/migrations/delete', authenticateJWT, requireAdmin, async 
 // Reset migrations and mark baseline as applied (for fresh database starts)
 router.post('/database/migrations/reset-baseline', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
   try {
-    const adminUser = req.user;
-    if (!adminUser) {
-      return res.status(401).json({ error: 'User not authenticated' });
+    const gate = await enforceDangerousMigrationOpGate(req, res, {
+      dangerousOperation: 'reset_migration_baseline',
+      expectedConfirm: DANGEROUS_MIGRATION_OP_CONFIRM.RESET_BASELINE,
+      auditActionDenied: ADMIN_AUDIT_ACTIONS.DANGEROUS_MIGRATION_RESET_DENIED,
+    });
+    if (!gate.allowed) {
+      return;
     }
+    const adminUser = gate.adminUser;
 
-    const fs = require('fs');
-    const path = require('path');
-    const projectRoot = path.join(__dirname, '../..');
-    const migrationsDir = path.join(projectRoot, 'prisma/migrations');
+    const { applied } = await adminSystemOpsService.resetMigrationBaseline(adminUser.id);
 
-    // Get all migration directories
-    const migrationDirs = fs.readdirSync(migrationsDir)
-      .filter((f: string) => fs.statSync(path.join(migrationsDir, f)).isDirectory())
-      .sort();
-
-    // Clear existing migration records
-    await prisma.$executeRaw`DELETE FROM "_prisma_migrations";`;
-
-    // Insert fresh records for each migration, marking them as applied
-    const applied: string[] = [];
-    for (const migrationName of migrationDirs) {
-      const migrationPath = path.join(migrationsDir, migrationName, 'migration.sql');
-      
-      if (fs.existsSync(migrationPath)) {
-        // Read the migration file to get its checksum
-        const content = fs.readFileSync(migrationPath, 'utf-8');
-        const crypto = require('crypto');
-        const checksum = crypto.createHash('sha256').update(content).digest('hex');
-
-        // Insert the migration record as applied
-        await prisma.$executeRaw`
-          INSERT INTO "_prisma_migrations" (id, checksum, migration_name, started_at, finished_at, applied_steps_count)
-          VALUES (
-            ${crypto.randomUUID()},
-            ${checksum},
-            ${migrationName},
-            NOW(),
-            NOW(),
-            1
-          );
-        `;
-        applied.push(migrationName);
-      }
-    }
-
-    await logger.info('Admin reset migrations to baseline', {
-      operation: 'admin_reset_baseline',
-      adminId: adminUser.id,
-      appliedMigrations: applied
+    await logDangerousMigrationOpExecuted(req, adminUser, 'reset_migration_baseline', ADMIN_AUDIT_ACTIONS.DANGEROUS_MIGRATION_RESET_EXECUTED, {
+      appliedCount: applied.length,
     });
 
     res.json({
@@ -1563,7 +1288,6 @@ router.post('/database/migrations/reset-baseline', authenticateJWT, requireAdmin
     res.status(500).json({ 
       success: false,
       error: 'Failed to reset migrations',
-      details: error instanceof Error ? error.message : 'Unknown error'
     });
   }
 });
@@ -1577,7 +1301,7 @@ router.get('/performance/export', authenticateJWT, requireAdmin, async (req: Req
       return res.status(401).json({ error: 'User not authenticated' });
     }
 
-    const exportData = await AdminService.exportPerformanceData({
+    const exportData = await adminPerformanceService.exportPerformanceData({
       timeRange: timeRange as string,
       metricType: metricType as string,
       format: format as string
@@ -1738,7 +1462,7 @@ router.get('/integrations/status', authenticateJWT, requireAdmin, async (req: Re
       
       // 4. Database check
       (async () => {
-        await withTimeout(prisma.$queryRaw`SELECT 1`, TIMEOUT_MS, 'Database connection timeout');
+        await adminSystemOpsService.probeDatabaseConnection(TIMEOUT_MS);
         integrations.database.status = 'healthy';
       })(),
       

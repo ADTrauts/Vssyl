@@ -151,11 +151,11 @@ export default function ProviderExpensesView({ period = 'month', dateRange }: Pr
         <Card className="p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs text-gray-700 dark:text-gray-300 mb-1">Total Provider Expenses</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+              <p className="text-xs text-v-text-secondary mb-1">Total Provider Expenses</p>
+              <p className="text-2xl font-bold text-v-text-primary">
                 ${totalCost.toFixed(2)}
               </p>
-              <p className="text-xs text-gray-700 dark:text-gray-300 mt-1">{period}</p>
+              <p className="text-xs text-v-text-secondary mt-1">{period}</p>
             </div>
             <DollarSign className="w-8 h-8 text-red-600 opacity-50" />
           </div>
@@ -164,11 +164,11 @@ export default function ProviderExpensesView({ period = 'month', dateRange }: Pr
         <Card className="p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs text-gray-700 dark:text-gray-300 mb-1">OpenAI Costs</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+              <p className="text-xs text-v-text-secondary mb-1">OpenAI Costs</p>
+              <p className="text-2xl font-bold text-v-text-primary">
                 ${openaiCost.toFixed(2)}
               </p>
-              <p className="text-xs text-gray-700 dark:text-gray-300 mt-1">
+              <p className="text-xs text-v-text-secondary mt-1">
                 {totalCost > 0 ? ((openaiCost / totalCost) * 100).toFixed(1) : 0}% of total
               </p>
             </div>
@@ -179,11 +179,11 @@ export default function ProviderExpensesView({ period = 'month', dateRange }: Pr
         <Card className="p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-xs text-gray-700 dark:text-gray-300 mb-1">Anthropic Costs</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+              <p className="text-xs text-v-text-secondary mb-1">Anthropic Costs</p>
+              <p className="text-2xl font-bold text-v-text-primary">
                 ${anthropicCost.toFixed(2)}
               </p>
-              <p className="text-xs text-gray-700 dark:text-gray-300 mt-1">
+              <p className="text-xs text-v-text-secondary mt-1">
                 {totalCost > 0 ? ((anthropicCost / totalCost) * 100).toFixed(1) : 0}% of total
               </p>
             </div>
@@ -194,14 +194,14 @@ export default function ProviderExpensesView({ period = 'month', dateRange }: Pr
 
       {/* Provider Breakdown */}
       <Card className="p-6">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Expenses by Provider</h3>
+        <h3 className="text-lg font-semibold text-v-text-primary mb-4">Expenses by Provider</h3>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
           <div>
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-gray-700 dark:text-gray-300">OpenAI</span>
-              <span className="font-semibold text-gray-900 dark:text-gray-100">${openaiCost.toFixed(2)}</span>
+              <span className="text-sm text-v-text-secondary">OpenAI</span>
+              <span className="font-semibold text-v-text-primary">${openaiCost.toFixed(2)}</span>
             </div>
-            <div className="w-full bg-gray-200 rounded-full h-2">
+            <div className="w-full bg-v-surface-muted rounded-full h-2">
               <div
                 className="bg-blue-600 h-2 rounded-full"
                 style={{ width: `${totalCost > 0 ? (openaiCost / totalCost) * 100 : 0}%` }}
@@ -210,10 +210,10 @@ export default function ProviderExpensesView({ period = 'month', dateRange }: Pr
           </div>
           <div>
             <div className="flex items-center justify-between mb-2">
-              <span className="text-sm text-gray-700 dark:text-gray-300">Anthropic</span>
-              <span className="font-semibold text-gray-900 dark:text-gray-100">${anthropicCost.toFixed(2)}</span>
+              <span className="text-sm text-v-text-secondary">Anthropic</span>
+              <span className="font-semibold text-v-text-primary">${anthropicCost.toFixed(2)}</span>
             </div>
-            <div className="w-full bg-gray-200 rounded-full h-2">
+            <div className="w-full bg-v-surface-muted rounded-full h-2">
               <div
                 className="bg-purple-600 h-2 rounded-full"
                 style={{ width: `${totalCost > 0 ? (anthropicCost / totalCost) * 100 : 0}%` }}
@@ -226,7 +226,7 @@ export default function ProviderExpensesView({ period = 'month', dateRange }: Pr
       {/* Cost Trends (historical snapshots) */}
       {historicalExpenses.length > 0 && (
         <Card className="p-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Cost Trends</h3>
+          <h3 className="text-lg font-semibold text-v-text-primary mb-4">Cost Trends</h3>
           <div className="h-64">
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart data={historicalExpenses}>

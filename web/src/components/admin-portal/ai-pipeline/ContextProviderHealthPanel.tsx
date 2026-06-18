@@ -48,12 +48,12 @@ export default function ContextProviderHealthPanel() {
 
   return (
     <div className="space-y-4">
-      <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg p-4 space-y-4">
+      <div className="bg-v-surface border border-v-border rounded-lg p-4 space-y-4">
         <div>
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+          <h3 className="text-lg font-semibold text-v-text-primary">
             Module context provider health
           </h3>
-          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+          <p className="text-sm text-v-text-muted mt-1">
             Dry-run probe of registered context provider endpoints (no cache write). Use for
             certification and pipeline debugging.
           </p>
@@ -61,38 +61,38 @@ export default function ContextProviderHealthPanel() {
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label className="block text-sm font-medium text-v-text-secondary mb-1">
               Target user ID
             </label>
             <input
               type="text"
               value={userId}
               onChange={(e) => setUserId(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-3 py-2 text-gray-900 dark:text-gray-100"
+              className="w-full rounded-lg border border-v-border bg-v-surface px-3 py-2 text-v-text-primary"
               placeholder="Defaults to admin user"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label className="block text-sm font-medium text-v-text-secondary mb-1">
               Module ID (optional)
             </label>
             <input
               type="text"
               value={moduleId}
               onChange={(e) => setModuleId(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-3 py-2 text-gray-900 dark:text-gray-100"
+              className="w-full rounded-lg border border-v-border bg-v-surface px-3 py-2 text-v-text-primary"
               placeholder="e.g. drive"
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+            <label className="block text-sm font-medium text-v-text-secondary mb-1">
               Business ID (HR / scheduling)
             </label>
             <input
               type="text"
               value={businessId}
               onChange={(e) => setBusinessId(e.target.value)}
-              className="w-full rounded-lg border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-3 py-2 text-gray-900 dark:text-gray-100"
+              className="w-full rounded-lg border border-v-border bg-v-surface px-3 py-2 text-v-text-primary"
               placeholder="Required for business-scoped modules"
             />
           </div>
@@ -106,14 +106,14 @@ export default function ContextProviderHealthPanel() {
       {error && <Alert>{error}</Alert>}
 
       {loading && (
-        <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+        <div className="flex items-center gap-2 text-sm text-v-text-muted">
           <Spinner size={16} />
           Probing endpoints…
         </div>
       )}
 
       {report && (
-        <div className="bg-white dark:bg-slate-900 border border-gray-200 dark:border-slate-700 rounded-lg p-4 space-y-4">
+        <div className="bg-v-surface border border-v-border rounded-lg p-4 space-y-4">
           <div className="flex flex-wrap gap-4 text-sm">
             <span>
               <strong>{report.summary.healthy}</strong> healthy
@@ -124,7 +124,7 @@ export default function ContextProviderHealthPanel() {
             <span>
               <strong>{report.summary.skipped}</strong> skipped
             </span>
-            <span className="text-gray-500 dark:text-gray-400">
+            <span className="text-v-text-muted dark:text-v-text-muted">
               checked {new Date(report.checkedAt).toLocaleString()}
             </span>
           </div>
@@ -132,7 +132,7 @@ export default function ContextProviderHealthPanel() {
           <div className="overflow-x-auto">
             <table className="min-w-full text-sm">
               <thead>
-                <tr className="text-left text-gray-600 dark:text-gray-400 border-b border-gray-200 dark:border-slate-700">
+                <tr className="text-left text-v-text-muted border-b border-v-border">
                   <th className="py-2 pr-4">Module</th>
                   <th className="py-2 pr-4">Provider</th>
                   <th className="py-2 pr-4">Status</th>
@@ -162,7 +162,7 @@ export default function ContextProviderHealthPanel() {
                         ? `${row.payloadBytesEstimate} B${row.payloadOverLimit ? ' ⚠' : ''}`
                         : '—'}
                     </td>
-                    <td className="py-2 text-gray-600 dark:text-gray-400">
+                    <td className="py-2 text-v-text-muted">
                       {row.skipReason ??
                         row.failureMessage ??
                         (row.certificationIssues.length > 0

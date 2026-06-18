@@ -11,7 +11,7 @@ export default function PipelineEnforcementBadge({
 }) {
   if (!enforcement) {
     return (
-      <Badge className="bg-gray-100 text-gray-700 dark:bg-slate-800 dark:text-gray-300">
+      <Badge className="bg-v-surface-muted text-gray-700 bg-v-surface dark:text-v-text-muted">
         Enforcement: unknown
       </Badge>
     );
@@ -23,7 +23,7 @@ export default function PipelineEnforcementBadge({
 
   const color =
     !enforcement.enforcementEnabled
-      ? 'bg-gray-100 text-gray-800 dark:bg-slate-800 dark:text-gray-200'
+      ? 'bg-v-surface-muted text-gray-800 bg-v-surface dark:text-gray-200'
       : enforcement.enforcementMode === 'block' || enforcement.enforcementMode === 'regenerate'
         ? 'bg-red-100 text-red-800 dark:bg-red-950/50 dark:text-red-200'
         : enforcement.enforcementMode === 'disclose'

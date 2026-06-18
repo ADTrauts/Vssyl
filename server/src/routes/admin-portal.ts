@@ -1,7 +1,7 @@
 import express from 'express';
 import { authenticateJWT } from '../middleware/auth';
 import adminSecurityRoutes from './adminSecurityRoutes';
-import { requireAdmin } from './admin-portal/adminPortalShared';
+import { requireAdmin } from './admin-portal/adminPortalAuth';
 import { registerAdminPortalCoreRoutes } from './admin-portal/adminPortalRoutes.core';
 import { registerAdminPortalAnalyticsOpsRoutes } from './admin-portal/adminPortalRoutes.analyticsOps';
 import { registerAdminPortalPlatformRoutes } from './admin-portal/adminPortalRoutes.platform';

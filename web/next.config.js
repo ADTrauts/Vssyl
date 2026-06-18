@@ -110,6 +110,7 @@ const nextConfig = {
     NEXT_PUBLIC_API_BASE_URL: process.env.NEXT_PUBLIC_API_BASE_URL,
     NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL,
     NEXT_PUBLIC_WS_URL: process.env.NEXT_PUBLIC_WS_URL,
+    ADMIN_PORTAL_DEBUG_ENABLED: process.env.ADMIN_PORTAL_DEBUG_ENABLED,
   },
   // Ensure proper error page handling
   async redirects() {

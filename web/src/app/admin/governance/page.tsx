@@ -1,10 +1,5 @@
-import React from 'react';
-import GovernanceManagementDashboard from '../../../components/GovernanceManagementDashboard';
+import { redirect } from 'next/navigation';
 
-export default function GovernanceManagementPage() {
-  return (
-    <div>
-      <GovernanceManagementDashboard />
-    </div>
-  );
-} 
+export default function LegacyGovernanceRedirect() {
+  redirect('/admin-portal/governance');
+}

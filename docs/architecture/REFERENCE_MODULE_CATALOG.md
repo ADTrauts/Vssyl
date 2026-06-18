@@ -69,6 +69,38 @@ UX reference slots live under `docs/ux/audits/` per [`REFERENCE_MODULE_PROGRAM.m
 
 ---
 
+## Admin Portal / Control Plane — Reference With Findings (2026-06-18)
+
+**Not** a Reference Module #N integer. Control-plane reference designation is tracked separately from product module catalog slots.
+
+| Field | Value |
+|-------|-------|
+| **Designation** | **Control Plane Reference With Findings** |
+| **Certification** | **LEVEL 3 CERTIFIED** (ratified & promoted 2026-06-18) |
+| **Prior designation** | Reference Candidate (partial) — superseded at promotion |
+| **Gates** | G1–G9 PASS (27/27) |
+| **Open findings** | **0** |
+
+### Qualifying reference areas
+
+| Area | What to copy | Key artifacts |
+|------|--------------|---------------|
+| AI Pipeline admin | Policy CRUD, diagnostics, retention/compliance; HTTP test coverage | `adminPortalAiPipeline*` routes; 45/45 handler tests |
+| Admin audit taxonomy | Privileged-mutation audit where module activity N/A | `ADMIN_*` actions; single write path |
+| Route / service governance | Thin controllers; 0 route Prisma; facade deprecation | `adminPortalRoutes.*`; static enforcement tests |
+| Dangerous-op safety | Env gate + confirmation + audit deny | High-privilege operator checklist |
+| Analytics ownership (0C) | Canonical analytics surface; ownership registry | `adminAnalyticsOwnership.ts`; `/admin-portal/analytics` |
+
+### What this designation is NOT
+
+- Not Level 4 Reference Implementation (File Hub only)
+- Not a Reference Module #N integer (requires separate catalog vote)
+- Not a UX Reference #N row (Admin Portal uses adapted G9, not UX-L3 11-gate)
+
+**Governance records:** [ADMIN_PORTAL_REFERENCE_STATUS_RECORD.md](./audits/ADMIN_PORTAL_REFERENCE_STATUS_RECORD.md), [ADMIN_PORTAL_REFERENCE_DESIGNATION_DECISION.md](./audits/ADMIN_PORTAL_REFERENCE_DESIGNATION_DECISION.md), [ADMIN_PORTAL_CERTIFICATION_COUNCIL_RATIFICATION.md](./audits/ADMIN_PORTAL_CERTIFICATION_COUNCIL_RATIFICATION.md)
+
+---
+
 ## File Hub — Reference Module #1 (Level 4)
 
 **Copy for:** Any module with user data, deletes, sharing, search, or cross-module links.

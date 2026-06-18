@@ -4,6 +4,7 @@ import { createTestApp } from '../../__tests__/helpers/app';
 import { createTestAdminUser, createTestUser, createAuthHeader, cleanupTestUsers } from '../../__tests__/helpers/auth';
 import type { User } from '@prisma/client';
 import { prisma } from '../../lib/prisma';
+import { ADMIN_AUDIT_ACTIONS } from '../../services/admin/adminAuditTaxonomy';
 
 /**
  * Integration tests for complete user management flows
@@ -190,8 +191,13 @@ describe('Admin Portal - User Management Integration', () => {
       const initialLogCount = await prisma.auditLog.count({
         where: {
           userId: adminUser.id,
-          action: { in: ['USER_IMPERSONATION_START', 'USER_IMPERSONATION_END'] }
-        }
+          action: {
+            in: [
+              ADMIN_AUDIT_ACTIONS.IMPERSONATION_START,
+              ADMIN_AUDIT_ACTIONS.IMPERSONATION_END,
+            ],
+          },
+        },
       });
 
       // Start impersonation
@@ -207,17 +213,17 @@ describe('Admin Portal - User Management Integration', () => {
       const startLogs = await prisma.auditLog.findMany({
         where: {
           userId: adminUser.id,
-          action: 'USER_IMPERSONATION_START',
-          resourceId: targetUser.id
+          action: ADMIN_AUDIT_ACTIONS.IMPERSONATION_START,
+          resourceId: impersonationId,
         },
         orderBy: { timestamp: 'desc' },
-        take: 1
+        take: 1,
       });
 
       expect(startLogs.length).toBe(1);
       const startLog = startLogs[0];
-      expect(startLog.resourceType).toBe('user');
-      expect(startLog.resourceId).toBe(targetUser.id);
+      expect(startLog.resourceType).toBe('impersonation_session');
+      expect(startLog.resourceId).toBe(impersonationId);
 
       const startDetails = JSON.parse(startLog.details || '{}');
       expect(startDetails).toHaveProperty('adminEmail', adminUser.email);
@@ -234,17 +240,17 @@ describe('Admin Portal - User Management Integration', () => {
       const endLogs = await prisma.auditLog.findMany({
         where: {
           userId: adminUser.id,
-          action: 'USER_IMPERSONATION_END',
-          resourceId: targetUser.id
+          action: ADMIN_AUDIT_ACTIONS.IMPERSONATION_END,
+          resourceId: impersonationId,
         },
         orderBy: { timestamp: 'desc' },
-        take: 1
+        take: 1,
       });
 
       expect(endLogs.length).toBe(1);
       const endLog = endLogs[0];
-      expect(endLog.resourceType).toBe('user');
-      expect(endLog.resourceId).toBe(targetUser.id);
+      expect(endLog.resourceType).toBe('impersonation_session');
+      expect(endLog.resourceId).toBe(impersonationId);
 
       const endDetails = JSON.parse(endLog.details || '{}');
       expect(endDetails).toHaveProperty('adminEmail', adminUser.email);

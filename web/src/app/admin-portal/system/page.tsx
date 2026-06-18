@@ -167,8 +167,8 @@ export default function SystemPage() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">System Administration</h1>
-            <p className="text-gray-700 dark:text-gray-300 mt-2">Monitor and manage system health and configuration</p>
+            <h1 className="text-3xl font-bold text-v-text-primary">System Administration</h1>
+            <p className="text-v-text-secondary mt-2">Monitor and manage system health and configuration</p>
           </div>
         </div>
         <div className="flex items-center justify-center h-64">
@@ -183,8 +183,8 @@ export default function SystemPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">System Administration</h1>
-          <p className="text-gray-700 dark:text-gray-300 mt-2">Monitor and manage system health and configuration</p>
+          <h1 className="text-3xl font-bold text-v-text-primary">System Administration</h1>
+          <p className="text-v-text-secondary mt-2">Monitor and manage system health and configuration</p>
         </div>
         <div className="flex items-center space-x-3">
           <button
@@ -192,7 +192,7 @@ export default function SystemPage() {
             className={`flex items-center space-x-2 px-3 py-2 rounded-lg transition-colors ${
               autoRefresh 
                 ? 'bg-green-100 text-green-700 border border-green-300' 
-                : 'bg-gray-100 dark:bg-slate-700 text-gray-700 border border-gray-300 dark:border-slate-600'
+                : 'bg-v-surface-muted bg-v-surface-muted text-gray-700 border border-v-border'
             }`}
           >
             <RefreshCw className={`w-4 h-4 ${autoRefresh ? 'animate-spin' : ''}`} />
@@ -223,7 +223,7 @@ export default function SystemPage() {
           <Card className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">CPU Usage</p>
+                <p className="text-sm font-medium text-v-text-secondary">CPU Usage</p>
                 <p className={`text-2xl font-bold ${getHealthColor(systemMetrics.cpu)}`}>
                   {systemMetrics.cpu}%
                 </p>
@@ -233,7 +233,7 @@ export default function SystemPage() {
               </div>
             </div>
             <div className="mt-3">
-              <div className="w-full bg-gray-200 rounded-full h-2">
+              <div className="w-full bg-v-surface-muted rounded-full h-2">
                 <div 
                   className={`h-2 rounded-full ${getHealthColor(systemMetrics.cpu).replace('text-', 'bg-')}`}
                   style={{ width: `${systemMetrics.cpu}%` }}
@@ -245,7 +245,7 @@ export default function SystemPage() {
           <Card className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Memory Usage</p>
+                <p className="text-sm font-medium text-v-text-secondary">Memory Usage</p>
                 <p className={`text-2xl font-bold ${getHealthColor(systemMetrics.memory)}`}>
                   {systemMetrics.memory}%
                 </p>
@@ -255,7 +255,7 @@ export default function SystemPage() {
               </div>
             </div>
             <div className="mt-3">
-              <div className="w-full bg-gray-200 rounded-full h-2">
+              <div className="w-full bg-v-surface-muted rounded-full h-2">
                 <div 
                   className={`h-2 rounded-full ${getHealthColor(systemMetrics.memory).replace('text-', 'bg-')}`}
                   style={{ width: `${systemMetrics.memory}%` }}
@@ -267,7 +267,7 @@ export default function SystemPage() {
           <Card className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Disk Usage</p>
+                <p className="text-sm font-medium text-v-text-secondary">Disk Usage</p>
                 <p className={`text-2xl font-bold ${getHealthColor(systemMetrics.disk)}`}>
                   {systemMetrics.disk}%
                 </p>
@@ -277,7 +277,7 @@ export default function SystemPage() {
               </div>
             </div>
             <div className="mt-3">
-              <div className="w-full bg-gray-200 rounded-full h-2">
+              <div className="w-full bg-v-surface-muted rounded-full h-2">
                 <div 
                   className={`h-2 rounded-full ${getHealthColor(systemMetrics.disk).replace('text-', 'bg-')}`}
                   style={{ width: `${systemMetrics.disk}%` }}
@@ -289,7 +289,7 @@ export default function SystemPage() {
           <Card className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Network</p>
+                <p className="text-sm font-medium text-v-text-secondary">Network</p>
                 <p className="text-2xl font-bold text-blue-600">
                   {systemMetrics.network} Mbps
                 </p>
@@ -308,7 +308,7 @@ export default function SystemPage() {
           <Card className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Uptime</p>
+                <p className="text-sm font-medium text-v-text-secondary">Uptime</p>
                 <p className="text-2xl font-bold text-green-600">{systemMetrics.uptime}</p>
               </div>
               <div className="p-2 bg-green-100 rounded-lg">
@@ -320,7 +320,7 @@ export default function SystemPage() {
           <Card className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Response Time</p>
+                <p className="text-sm font-medium text-v-text-secondary">Response Time</p>
                 <p className="text-2xl font-bold text-blue-600">{systemMetrics.responseTime}ms</p>
               </div>
               <div className="p-2 bg-blue-100 rounded-lg">
@@ -332,7 +332,7 @@ export default function SystemPage() {
           <Card className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Active Connections</p>
+                <p className="text-sm font-medium text-v-text-secondary">Active Connections</p>
                 <p className="text-2xl font-bold text-purple-600">{systemMetrics.activeConnections}</p>
               </div>
               <div className="p-2 bg-purple-100 rounded-lg">
@@ -344,7 +344,7 @@ export default function SystemPage() {
           <Card className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Error Rate</p>
+                <p className="text-sm font-medium text-v-text-secondary">Error Rate</p>
                 <p className={`text-2xl font-bold ${systemMetrics.errorRate < 1 ? 'text-green-600' : 'text-red-600'}`}>
                   {systemMetrics.errorRate}%
                 </p>
@@ -361,7 +361,7 @@ export default function SystemPage() {
       {maintenanceMode && (
         <Card className="p-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Maintenance Mode</h3>
+            <h3 className="text-lg font-semibold text-v-text-primary">Maintenance Mode</h3>
             <div className="flex items-center space-x-2">
               {maintenanceMode.enabled ? (
                 <span className="px-2 py-1 bg-red-100 text-red-700 rounded-full text-xs font-medium">
@@ -414,7 +414,7 @@ export default function SystemPage() {
       {backupStatus && (
         <Card className="p-6">
           <div className="flex items-center justify-between mb-4">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Backup Status</h3>
+            <h3 className="text-lg font-semibold text-v-text-primary">Backup Status</h3>
             <button
               onClick={createBackup}
               className="flex items-center space-x-2 px-3 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
@@ -427,22 +427,22 @@ export default function SystemPage() {
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-700 dark:text-gray-300">Last Backup:</span>
+                <span className="text-sm text-v-text-secondary">Last Backup:</span>
                 <span className="text-sm font-medium">{new Date(backupStatus.lastBackup).toLocaleString()}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-700 dark:text-gray-300">Next Backup:</span>
+                <span className="text-sm text-v-text-secondary">Next Backup:</span>
                 <span className="text-sm font-medium">{new Date(backupStatus.nextBackup).toLocaleString()}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-700 dark:text-gray-300">Backup Size:</span>
+                <span className="text-sm text-v-text-secondary">Backup Size:</span>
                 <span className="text-sm font-medium">{backupStatus.backupSize}</span>
               </div>
             </div>
 
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-700 dark:text-gray-300">Status:</span>
+                <span className="text-sm text-v-text-secondary">Status:</span>
                 <span className={`px-2 py-1 rounded-full text-xs font-medium ${
                   backupStatus.status === 'success' ? 'bg-green-100 text-green-700' :
                   backupStatus.status === 'failed' ? 'bg-red-100 text-red-700' :
@@ -452,7 +452,7 @@ export default function SystemPage() {
                 </span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-700 dark:text-gray-300">Retention:</span>
+                <span className="text-sm text-v-text-secondary">Retention:</span>
                 <span className="text-sm font-medium">{backupStatus.retentionDays} days</span>
               </div>
             </div>
@@ -463,7 +463,7 @@ export default function SystemPage() {
       {/* System Configuration */}
       <Card className="p-6">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">System Configuration</h3>
+          <h3 className="text-lg font-semibold text-v-text-primary">System Configuration</h3>
           <button className="flex items-center space-x-2 px-3 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors">
             <Upload className="w-4 h-4" />
             <span className="text-sm font-medium">Import Config</span>
@@ -472,11 +472,11 @@ export default function SystemPage() {
 
         <div className="space-y-4">
           {systemConfigs.map((config) => (
-            <div key={config.id} className="border border-gray-200 dark:border-slate-700 rounded-lg p-4">
+            <div key={config.id} className="border border-v-border rounded-lg p-4">
               <div className="flex items-center justify-between">
                 <div className="flex-1">
                   <div className="flex items-center space-x-3 mb-2">
-                    <h4 className="font-medium text-gray-900 dark:text-gray-100">{config.configKey}</h4>
+                    <h4 className="font-medium text-v-text-primary">{config.configKey}</h4>
                     <span className="px-2 py-1 bg-blue-100 text-blue-700 rounded-full text-xs">
                       {config.description || 'No description'}
                     </span>
@@ -488,7 +488,7 @@ export default function SystemPage() {
                         type="text"
                         value={configValue}
                         onChange={(e) => setConfigValue(e.target.value)}
-                        className="flex-1 px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg text-sm"
+                        className="flex-1 px-3 py-2 border border-v-border rounded-lg text-sm"
                         placeholder="Enter new value"
                       />
                       <button
@@ -507,10 +507,10 @@ export default function SystemPage() {
                   ) : (
                     <div className="flex items-center justify-between">
                       <div className="flex-1">
-                        <p className="text-sm text-gray-700 dark:text-gray-300">
+                        <p className="text-sm text-v-text-secondary">
                           Current Value: <span className="font-medium">{JSON.stringify(config.configValue)}</span>
                         </p>
-                        <p className="text-xs text-gray-700 dark:text-gray-300 dark:text-gray-400 mt-1">
+                        <p className="text-xs text-v-text-secondary dark:text-v-text-muted mt-1">
                           Updated by {config.updatedBy} on {new Date(config.updatedAt).toLocaleString()}
                         </p>
                       </div>

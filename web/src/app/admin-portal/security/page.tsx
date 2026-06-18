@@ -197,8 +197,8 @@ export default function SecurityPage() {
       <div className="space-y-6">
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Security & Compliance</h1>
-            <p className="text-gray-700 dark:text-gray-300 mt-2">Monitor security events and compliance status</p>
+            <h1 className="text-3xl font-bold text-v-text-primary">Security & Compliance</h1>
+            <p className="text-v-text-secondary mt-2">Monitor security events and compliance status</p>
           </div>
         </div>
         <div className="flex items-center justify-center h-64">
@@ -213,8 +213,8 @@ export default function SecurityPage() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">Security & Compliance</h1>
-          <p className="text-gray-700 dark:text-gray-300 mt-2">Monitor security events and compliance status</p>
+          <h1 className="text-3xl font-bold text-v-text-primary">Security & Compliance</h1>
+          <p className="text-v-text-secondary mt-2">Monitor security events and compliance status</p>
         </div>
         <div className="flex items-center space-x-3">
           <button
@@ -222,7 +222,7 @@ export default function SecurityPage() {
             className={`flex items-center space-x-2 px-3 py-2 rounded-lg transition-colors ${
               autoRefresh 
                 ? 'bg-green-100 text-green-700 border border-green-300' 
-                : 'bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-300 border border-gray-300 dark:border-slate-600'
+                : 'bg-v-surface-muted bg-v-surface-muted text-v-text-secondary border border-v-border'
             }`}
           >
             <RefreshCw className={`w-4 h-4 ${autoRefresh ? 'animate-spin' : ''}`} />
@@ -241,14 +241,14 @@ export default function SecurityPage() {
       </div>
 
       {/* Tab Navigation */}
-      <div className="border-b border-gray-200 dark:border-slate-700">
+      <div className="border-b border-v-border">
         <nav className="-mb-px flex space-x-8">
           <button
             onClick={() => setActiveTab('security')}
             className={`py-2 px-1 border-b-2 font-medium text-sm ${
               activeTab === 'security'
                 ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:border-gray-300 dark:hover:border-slate-600'
+                : 'border-transparent text-v-text-muted hover:text-v-text-secondary dark:hover:text-gray-200 hover:border-v-border dark:hover:border-slate-600'
             }`}
           >
             <Shield className="w-5 h-5 inline-block mr-2" />
@@ -259,7 +259,7 @@ export default function SecurityPage() {
             className={`py-2 px-1 border-b-2 font-medium text-sm ${
               activeTab === 'logs'
                 ? 'border-blue-500 text-blue-600'
-                : 'border-transparent text-gray-600 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200 hover:border-gray-300 dark:hover:border-slate-600'
+                : 'border-transparent text-v-text-muted hover:text-v-text-secondary dark:hover:text-gray-200 hover:border-v-border dark:hover:border-slate-600'
             }`}
           >
             <FileText className="w-5 h-5 inline-block mr-2" />
@@ -291,8 +291,8 @@ export default function SecurityPage() {
               <Card className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Security Score</p>
-                    <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{securityMetrics.securityScore}%</p>
+                    <p className="text-sm font-medium text-v-text-secondary">Security Score</p>
+                    <p className="text-2xl font-bold text-v-text-primary">{securityMetrics.securityScore}%</p>
                   </div>
                   <div className="p-2 bg-green-100 rounded-lg">
                     <Shield className="w-6 h-6 text-green-600" />
@@ -303,7 +303,7 @@ export default function SecurityPage() {
               <Card className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Critical Events</p>
+                    <p className="text-sm font-medium text-v-text-secondary">Critical Events</p>
                     <p className="text-2xl font-bold text-red-600">{securityMetrics.criticalEvents}</p>
                   </div>
                   <div className="p-2 bg-red-100 rounded-lg">
@@ -315,7 +315,7 @@ export default function SecurityPage() {
               <Card className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Active Threats</p>
+                    <p className="text-sm font-medium text-v-text-secondary">Active Threats</p>
                     <p className="text-2xl font-bold text-orange-600">{securityMetrics.activeThreats}</p>
                   </div>
                   <div className="p-2 bg-orange-100 rounded-lg">
@@ -327,7 +327,7 @@ export default function SecurityPage() {
               <Card className="p-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="text-sm font-medium text-gray-700 dark:text-gray-300">System Uptime</p>
+                    <p className="text-sm font-medium text-v-text-secondary">System Uptime</p>
                     <p className="text-2xl font-bold text-green-600">{securityMetrics.uptime}%</p>
                   </div>
                   <div className="p-2 bg-green-100 rounded-lg">
@@ -342,15 +342,15 @@ export default function SecurityPage() {
           {complianceStatus && (
             <Card className="p-6">
               <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Compliance Status</h3>
+                <h3 className="text-lg font-semibold text-v-text-primary">Compliance Status</h3>
                 <div className="flex items-center space-x-2">
-                  <Clock className="w-4 h-4 text-gray-600 dark:text-gray-400" />
-                  <span className="text-sm text-gray-700 dark:text-gray-300">Last updated: {new Date().toLocaleString()}</span>
+                  <Clock className="w-4 h-4 text-v-text-muted" />
+                  <span className="text-sm text-v-text-secondary">Last updated: {new Date().toLocaleString()}</span>
                 </div>
               </div>
               
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-slate-800 rounded-lg">
+                <div className="flex items-center justify-between p-3 bg-v-surface-muted rounded-lg">
                   <span className="text-sm font-medium">GDPR</span>
                   <div className={`flex items-center space-x-2 px-2 py-1 rounded-full text-xs ${
                     complianceStatus.gdpr 
@@ -362,7 +362,7 @@ export default function SecurityPage() {
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-slate-800 rounded-lg">
+                <div className="flex items-center justify-between p-3 bg-v-surface-muted rounded-lg">
                   <span className="text-sm font-medium">HIPAA</span>
                   <div className={`flex items-center space-x-2 px-2 py-1 rounded-full text-xs ${
                     complianceStatus.hipaa 
@@ -374,7 +374,7 @@ export default function SecurityPage() {
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-slate-800 rounded-lg">
+                <div className="flex items-center justify-between p-3 bg-v-surface-muted rounded-lg">
                   <span className="text-sm font-medium">SOC2</span>
                   <div className={`flex items-center space-x-2 px-2 py-1 rounded-full text-xs ${
                     complianceStatus.soc2 
@@ -386,7 +386,7 @@ export default function SecurityPage() {
                   </div>
                 </div>
 
-                <div className="flex items-center justify-between p-3 bg-gray-50 dark:bg-slate-800 rounded-lg">
+                <div className="flex items-center justify-between p-3 bg-v-surface-muted rounded-lg">
                   <span className="text-sm font-medium">PCI DSS</span>
                   <div className={`flex items-center space-x-2 px-2 py-1 rounded-full text-xs ${
                     complianceStatus.pci 
@@ -399,7 +399,7 @@ export default function SecurityPage() {
                 </div>
               </div>
 
-              <div className="mt-4 flex items-center justify-between text-sm text-gray-700 dark:text-gray-300">
+              <div className="mt-4 flex items-center justify-between text-sm text-v-text-secondary">
                 <span>Last audit: {complianceStatus.lastAudit}</span>
                 <span>Next audit: {complianceStatus.nextAudit}</span>
               </div>
@@ -409,12 +409,12 @@ export default function SecurityPage() {
           {/* Filters */}
           <Card className="p-6">
             <div className="flex items-center space-x-4">
-              <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Filters:</span>
+              <span className="text-sm font-medium text-v-text-secondary">Filters:</span>
               
               <select
                 value={filters.severity}
                 onChange={(e) => setFilters({ ...filters, severity: e.target.value })}
-                className="px-3 py-2 border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 dark:bg-slate-800 text-sm text-gray-900 dark:text-gray-100 rounded-lg"
+                className="px-3 py-2 border border-v-border bg-v-surface bg-v-surface text-sm text-v-text-primary rounded-lg"
               >
                 <option value="all">All severities</option>
                 <option value="critical">Critical</option>
@@ -426,7 +426,7 @@ export default function SecurityPage() {
               <select
                 value={filters.status}
                 onChange={(e) => setFilters({ ...filters, status: e.target.value })}
-                className="px-3 py-2 border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 dark:bg-slate-800 text-sm text-gray-900 dark:text-gray-100 rounded-lg"
+                className="px-3 py-2 border border-v-border bg-v-surface bg-v-surface text-sm text-v-text-primary rounded-lg"
               >
                 <option value="all">All statuses</option>
                 <option value="resolved">Resolved</option>
@@ -436,7 +436,7 @@ export default function SecurityPage() {
               <select
                 value={filters.timeRange}
                 onChange={(e) => setFilters({ ...filters, timeRange: e.target.value })}
-                className="px-3 py-2 border border-gray-300 dark:border-slate-600 bg-white dark:bg-slate-900 dark:bg-slate-800 text-sm text-gray-900 dark:text-gray-100 rounded-lg"
+                className="px-3 py-2 border border-v-border bg-v-surface bg-v-surface text-sm text-v-text-primary rounded-lg"
               >
                 <option value="1h">Last hour</option>
                 <option value="24h">Last 24 hours</option>
@@ -449,7 +449,7 @@ export default function SecurityPage() {
           {/* Security Events */}
           <Card className="p-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Security Events</h3>
+              <h3 className="text-lg font-semibold text-v-text-primary">Security Events</h3>
               <div className="flex items-center space-x-2">
                 <button
                   onClick={exportSecurityData}
@@ -464,19 +464,19 @@ export default function SecurityPage() {
             <div className="space-y-3">
               {securityEvents.length === 0 ? (
                 <div className="text-center py-8">
-                  <Shield className="w-12 h-12 text-gray-500 dark:text-gray-400 mx-auto mb-4" />
-                  <p className="text-gray-600 dark:text-gray-400">No security events found</p>
+                  <Shield className="w-12 h-12 text-v-text-muted dark:text-v-text-muted mx-auto mb-4" />
+                  <p className="text-v-text-muted">No security events found</p>
                 </div>
               ) : (
                 securityEvents.map((event) => (
-                  <div key={event.id} className="flex items-center justify-between p-4 border border-gray-200 dark:border-slate-700 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800">
+                  <div key={event.id} className="flex items-center justify-between p-4 border border-v-border rounded-lg hover:bg-v-surface-muted bg-v-surface">
                     <div className="flex items-center space-x-3">
                       <div className={`p-2 rounded-lg ${getSeverityColor(event.severity)}`}>
                         {getSeverityIcon(event.severity)}
                       </div>
                       <div>
-                        <p className="font-medium text-gray-900 dark:text-gray-100">{event.eventType}</p>
-                        <p className="text-sm text-gray-700 dark:text-gray-300">
+                        <p className="font-medium text-v-text-primary">{event.eventType}</p>
+                        <p className="text-sm text-v-text-secondary">
                           {event.userEmail || event.adminEmail} • {event.ipAddress} • {new Date(event.timestamp).toLocaleString()}
                         </p>
                       </div>
@@ -507,10 +507,10 @@ export default function SecurityPage() {
           {/* Real-time Threat Monitoring */}
           <Card className="p-6">
             <div className="flex items-center justify-between mb-4">
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Real-time Threat Monitoring</h3>
+              <h3 className="text-lg font-semibold text-v-text-primary">Real-time Threat Monitoring</h3>
               <div className="flex items-center space-x-2">
                 <div className="w-2 h-2 bg-green-400 rounded-full animate-pulse"></div>
-                <span className="text-sm text-gray-700 dark:text-gray-300">Live</span>
+                <span className="text-sm text-v-text-secondary">Live</span>
               </div>
             </div>
             

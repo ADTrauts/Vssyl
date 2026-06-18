@@ -32,14 +32,14 @@ export default function PipelineTraceDetail({ trace, evidenceBundle }: PipelineT
       <div className="flex flex-wrap gap-2 items-center">
         <RiskBadge risk={trace.genericResponseRisk} />
         <PipelineReasoningDepthBadge depth={depth} />
-        <Badge className="bg-gray-100 text-gray-800">Confidence: {trace.confidenceLevel}</Badge>
+        <Badge className="bg-v-surface-muted text-gray-800">Confidence: {trace.confidenceLevel}</Badge>
         {trace.groundingRequired && (
           <Badge className="bg-amber-100 text-amber-900">Grounding required</Badge>
         )}
         {trace.retrievalPerformed ? (
           <Badge className="bg-green-100 text-green-800">Retrieval performed</Badge>
         ) : (
-          <Badge className="bg-gray-100 text-gray-700">No retrieval</Badge>
+          <Badge className="bg-v-surface-muted text-gray-700">No retrieval</Badge>
         )}
         {trace.enforcementApplied && trace.enforcementAction && trace.enforcementAction !== 'none' && (
           <Badge className="bg-purple-100 text-purple-900">
@@ -53,7 +53,7 @@ export default function PipelineTraceDetail({ trace, evidenceBundle }: PipelineT
 
       {failureCategories.length > 0 && (
         <section>
-          <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-1">Failure categories</h3>
+          <h3 className="font-semibold text-v-text-primary mb-1">Failure categories</h3>
           <PipelineFailureCategoryBadges categories={failureCategories} />
         </section>
       )}
@@ -63,17 +63,17 @@ export default function PipelineTraceDetail({ trace, evidenceBundle }: PipelineT
       <PipelineContextUsedPanel trace={trace} />
 
       <section>
-        <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-1">User message</h3>
-        <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{trace.userMessage}</p>
+        <h3 className="font-semibold text-v-text-primary mb-1">User message</h3>
+        <p className="text-v-text-secondary whitespace-pre-wrap">{trace.userMessage}</p>
       </section>
 
       <section>
-        <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-1">Response preview</h3>
-        <p className="text-gray-700 dark:text-gray-300 whitespace-pre-wrap">{trace.finalResponsePreview}</p>
+        <h3 className="font-semibold text-v-text-primary mb-1">Response preview</h3>
+        <p className="text-v-text-secondary whitespace-pre-wrap">{trace.finalResponsePreview}</p>
       </section>
 
       <section>
-        <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-1">Intents</h3>
+        <h3 className="font-semibold text-v-text-primary mb-1">Intents</h3>
         <div className="flex flex-wrap gap-1">
           {trace.intentDetected.map((id) => (
             <Badge key={id} className="bg-indigo-100 text-indigo-800">
@@ -107,14 +107,14 @@ export default function PipelineTraceDetail({ trace, evidenceBundle }: PipelineT
 
       <section className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-1">Tools considered</h3>
-          <p className="text-gray-700 dark:text-gray-300">
+          <h3 className="font-semibold text-v-text-primary mb-1">Tools considered</h3>
+          <p className="text-v-text-secondary">
             {trace.toolsConsidered.length > 0 ? trace.toolsConsidered.join(', ') : '—'}
           </p>
         </div>
         <div>
-          <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-1">Tools used</h3>
-          <p className="text-gray-700 dark:text-gray-300">
+          <h3 className="font-semibold text-v-text-primary mb-1">Tools used</h3>
+          <p className="text-v-text-secondary">
             {trace.toolsUsed.length > 0
               ? trace.toolsUsed.map((t) => `${t.name} (r${t.round}${t.success ? '' : ', failed'})`).join(', ')
               : '—'}
@@ -129,8 +129,8 @@ export default function PipelineTraceDetail({ trace, evidenceBundle }: PipelineT
       )}
 
       <section>
-        <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-1">Memory</h3>
-        <p className="text-gray-700 dark:text-gray-300">
+        <h3 className="font-semibold text-v-text-primary mb-1">Memory</h3>
+        <p className="text-v-text-secondary">
           Facts: {trace.memoryRetrieved.facts} · Recalled messages:{' '}
           {trace.memoryRetrieved.recalledMessages} · Thread memory:{' '}
           {trace.memoryRetrieved.threadMemory ? 'yes' : 'no'}
@@ -139,8 +139,8 @@ export default function PipelineTraceDetail({ trace, evidenceBundle }: PipelineT
 
       {trace.legacySignals && (
         <section>
-          <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-1">Legacy signals</h3>
-          <pre className="text-xs bg-gray-50 dark:bg-slate-900 p-3 rounded overflow-auto text-gray-800 dark:text-gray-200">
+          <h3 className="font-semibold text-v-text-primary mb-1">Legacy signals</h3>
+          <pre className="text-xs bg-v-surface-muted p-3 rounded overflow-auto text-gray-800 dark:text-gray-200">
             {JSON.stringify(trace.legacySignals, null, 2)}
           </pre>
         </section>
@@ -153,8 +153,8 @@ export default function PipelineTraceDetail({ trace, evidenceBundle }: PipelineT
       )}
 
       <section>
-        <h3 className="font-semibold text-gray-900 dark:text-gray-100 mb-1">Trace metadata</h3>
-        <p className="text-gray-600 dark:text-gray-400 text-xs">
+        <h3 className="font-semibold text-v-text-primary mb-1">Trace metadata</h3>
+        <p className="text-v-text-muted text-xs">
           ID: {trace.traceId} · User: {trace.userId}
           {trace.conversationHistoryId
             ? ` · History: ${trace.conversationHistoryId}`

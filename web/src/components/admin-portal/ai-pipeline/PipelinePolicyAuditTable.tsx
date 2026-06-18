@@ -2,7 +2,9 @@
 
 import React, { useEffect, useState } from 'react';
 import { Spinner, Alert } from 'shared/components';
+import { FileText } from 'lucide-react';
 import { adminApiService } from '../../../lib/adminApiService';
+import { AdminPortalEmptyState } from '../AdminPortalEmptyState';
 import type { PipelinePolicyAuditEntry } from '../../../types/adminAiPipeline';
 
 export default function PipelinePolicyAuditTable() {
@@ -43,13 +45,19 @@ export default function PipelinePolicyAuditTable() {
   }
 
   if (entries.length === 0) {
-    return <p className="text-gray-600 dark:text-gray-400">No policy changes recorded yet.</p>;
+    return (
+      <AdminPortalEmptyState
+        icon={<FileText className="w-12 h-12" />}
+        title="No policy changes recorded yet"
+        description=""
+      />
+    );
   }
 
   return (
-    <div className="overflow-x-auto border border-gray-200 dark:border-slate-600 rounded-lg">
-      <table className="min-w-full text-sm divide-y divide-gray-200 dark:divide-slate-600">
-        <thead className="bg-gray-50 dark:bg-slate-900">
+    <div className="overflow-x-auto border border-v-border rounded-lg">
+      <table className="min-w-full text-sm divide-y divide-v-border">
+        <thead className="bg-v-surface-muted">
           <tr>
             <th className="px-4 py-2 text-left">When</th>
             <th className="px-4 py-2 text-left">Admin</th>
@@ -57,19 +65,19 @@ export default function PipelinePolicyAuditTable() {
             <th className="px-4 py-2 text-left">Action</th>
           </tr>
         </thead>
-        <tbody className="bg-white dark:bg-slate-800 divide-y divide-gray-200 dark:divide-slate-600">
+        <tbody className="bg-v-surface divide-y divide-v-border">
           {entries.map((entry) => (
             <tr key={entry.id}>
-              <td className="px-4 py-2 text-gray-700 dark:text-gray-300 whitespace-nowrap">
+              <td className="px-4 py-2 text-v-text-secondary whitespace-nowrap">
                 {new Date(entry.createdAt).toLocaleString()}
               </td>
-              <td className="px-4 py-2 text-gray-700 dark:text-gray-300">
+              <td className="px-4 py-2 text-v-text-secondary">
                 {entry.adminEmail ?? entry.adminUserId}
               </td>
               <td className="px-4 py-2 font-mono text-indigo-700 dark:text-indigo-300">
                 {entry.entityType}/{entry.entityId}
               </td>
-              <td className="px-4 py-2 text-gray-700 dark:text-gray-300">{entry.action}</td>
+              <td className="px-4 py-2 text-v-text-secondary">{entry.action}</td>
             </tr>
           ))}
         </tbody>

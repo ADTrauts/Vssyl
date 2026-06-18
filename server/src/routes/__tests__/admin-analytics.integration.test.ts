@@ -1,9 +1,25 @@
-import { describe, it, expect, beforeAll, afterAll } from 'vitest';
+import { describe, it, expect, beforeAll, afterAll, vi } from 'vitest';
 import request from 'supertest';
 import { createTestApp } from '../../__tests__/helpers/app';
 import { createTestAdminUser, createTestUser, createAuthHeader, cleanupTestUsers } from '../../__tests__/helpers/auth';
 import type { User } from '@prisma/client';
 import { prisma } from '../../lib/prisma';
+
+vi.mock('../../services/systemMonitoringService', () => ({
+  SystemMonitoringService: {
+    getSystemHealth: vi.fn(async () => ({
+      cpu: 20,
+      memory: 30,
+      disk: 40,
+      network: 5,
+      uptime: '1d 0h 0m',
+      responseTime: 10,
+      activeConnections: 2,
+      errorRate: 0,
+      timestamp: new Date(),
+    })),
+  },
+}));
 
 /**
  * Integration tests for analytics data aggregation and trend calculations

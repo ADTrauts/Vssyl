@@ -9,6 +9,7 @@ import PipelineHealthMetrics from './PipelineHealthMetrics';
 import PipelineLiveActivityFeed from './PipelineLiveActivityFeed';
 import PipelineAtRiskTrends from './PipelineAtRiskTrends';
 import PipelineHubToolSections from './PipelineHubToolSections';
+import ProviderGovernancePanel from './ProviderGovernancePanel';
 import { usePipelineHubData } from './usePipelineHubData';
 
 export default function PipelineOperationsHub() {
@@ -22,8 +23,8 @@ export default function PipelineOperationsHub() {
             <Layers className="w-8 h-8 text-indigo-600 dark:text-indigo-400" />
           </div>
           <div>
-            <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">AI Pipeline</h1>
-            <p className="text-gray-700 dark:text-gray-300 mt-1 max-w-2xl">
+            <h1 className="text-3xl font-bold text-v-text-primary">AI Pipeline</h1>
+            <p className="text-v-text-secondary mt-1 max-w-2xl">
               Operations console for grounding, retrieval, tools, and response quality across the
               Digital Life Twin.
             </p>
@@ -50,7 +51,7 @@ export default function PipelineOperationsHub() {
       )}
 
       <section>
-        <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-300 uppercase tracking-wide mb-3">
+        <h2 className="text-sm font-semibold text-v-text-secondary uppercase tracking-wide mb-3">
           Pipeline health
         </h2>
         <PipelineHealthMetrics stats={data.stats} catalog={data.catalog} loading={loading} />
@@ -67,10 +68,18 @@ export default function PipelineOperationsHub() {
 
       <PipelineHubToolSections />
 
-      <p className="text-sm text-gray-600 dark:text-gray-400">
+      <section id="provider-governance" className="scroll-mt-8">
+        <h2 className="text-lg font-semibold text-v-text-primary">Provider governance</h2>
+        <p className="text-sm text-v-text-muted mb-4">
+          External LLM provider usage and official API health — canonical control-plane satellite.
+        </p>
+        <ProviderGovernancePanel />
+      </section>
+
+      <p className="text-sm text-v-text-muted">
         Related:{' '}
-        <Link href="/admin-portal/ai-context" className="text-indigo-600 hover:underline">
-          Context Debug
+        <Link href="/admin-portal/ai-pipeline/diagnostics" className="text-indigo-600 hover:underline">
+          Response Diagnostics
         </Link>{' '}
         ·{' '}
         <Link href="/admin-portal/ai-system" className="text-indigo-600 hover:underline">

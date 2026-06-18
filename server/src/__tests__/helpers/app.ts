@@ -1,6 +1,6 @@
 import express from 'express';
 import adminPortalRouter from '../../routes/admin-portal';
-import { authenticateJWT } from '../../middleware/auth';
+import adminPortalTestingRouter from '../../routes/admin-portal-testing';
 
 /**
  * Create a test Express app with admin portal routes
@@ -19,6 +19,13 @@ export function createTestApp(): express.Application {
   // The routes already have authenticateJWT middleware applied
   app.use('/api/admin-portal', adminPortalRouter);
   
+  return app;
+}
+
+export function createAdminPortalTestingApp(): express.Application {
+  const app = express();
+  app.use(express.json());
+  app.use('/api/admin-portal/testing', adminPortalTestingRouter);
   return app;
 }
 
