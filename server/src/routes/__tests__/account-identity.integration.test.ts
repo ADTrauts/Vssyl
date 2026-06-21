@@ -2,10 +2,11 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import express from 'express';
 import request from 'supertest';
 import profileRouter from '../../routes/profile';
+import type { AuthenticatedRequest } from '../../middleware/auth';
 
 vi.mock('../../middleware/auth', () => ({
   authenticateJWT: (req: express.Request, _res: express.Response, next: express.NextFunction) => {
-    (req as express.Request & { user?: { id: string; email: string; role: string; name: string } }).user = {
+    (req as AuthenticatedRequest).user = {
       id: 'user-test-1',
       email: 'test@example.com',
       role: 'USER',

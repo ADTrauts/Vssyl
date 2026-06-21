@@ -344,7 +344,11 @@ export class StripeService {
   private static async handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) {
     try {
       if (session.mode === 'subscription' && typeof session.subscription === 'string') {
-        const subscription = await stripe!.subscriptions.retrieve(session.subscription);
+        const subscription = (await stripe!.subscriptions.retrieve(session.subscription)) as unknown as Stripe.Subscription & {
+          current_period_start: number;
+          current_period_end: number;
+          cancel_at_period_end?: boolean;
+        };
         const userId = session.metadata?.userId;
         const tier = session.metadata?.tier;
         const businessId = session.metadata?.businessId;
@@ -359,11 +363,11 @@ export class StripeService {
               subscription.status === 'active' || subscription.status === 'trialing'
                 ? 'active'
                 : 'cancelled',
-            currentPeriodStart: new Date((subscription as { current_period_start: number }).current_period_start * 1000),
-            currentPeriodEnd: new Date((subscription as { current_period_end: number }).current_period_end * 1000),
+            currentPeriodStart: new Date(subscription.current_period_start * 1000),
+            currentPeriodEnd: new Date(subscription.current_period_end * 1000),
             stripeSubscriptionId: subscription.id,
             stripeCustomerId: subscription.customer as string,
-            cancelAtPeriodEnd: Boolean((subscription as { cancel_at_period_end?: boolean }).cancel_at_period_end),
+            cancelAtPeriodEnd: Boolean(subscription.cancel_at_period_end),
           });
         }
       }

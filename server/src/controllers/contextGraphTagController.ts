@@ -19,13 +19,18 @@ function parseLimit(value: unknown, fallback = 25): number {
   return Math.min(Math.floor(n), 50);
 }
 
+function parseNullableScopeId(value: unknown): string | null | undefined {
+  if (typeof value === 'string') {
+    return value === 'null' ? null : value;
+  }
+  return undefined;
+}
+
 function parseScope(req: Request) {
   const q = req.query;
   const dashboardId = typeof q.dashboardId === 'string' ? q.dashboardId : undefined;
-  const businessId =
-    typeof q.businessId === 'string' ? q.businessId : q.businessId === 'null' ? null : undefined;
-  const householdId =
-    typeof q.householdId === 'string' ? q.householdId : q.householdId === 'null' ? null : undefined;
+  const businessId = parseNullableScopeId(q.businessId);
+  const householdId = parseNullableScopeId(q.householdId);
   return { dashboardId, businessId, householdId };
 }
 

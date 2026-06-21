@@ -2,10 +2,12 @@ import { describe, it, expect, vi, beforeEach } from 'vitest';
 import express from 'express';
 import request from 'supertest';
 import settingsRouter from '../../routes/settings';
+import type { AuthenticatedRequest } from '../../middleware/auth';
+import { SETTINGS_CANONICAL_SECTIONS } from '../../services/account/settingsNavigationContract';
 
 vi.mock('../../middleware/auth', () => ({
   authenticateJWT: (req: express.Request, _res: express.Response, next: express.NextFunction) => {
-    (req as express.Request & { user?: { id: string } }).user = { id: 'user-settings-1' };
+    (req as AuthenticatedRequest).user = { id: 'user-settings-1', email: 'settings@test.com', role: 'USER' };
     next();
   },
 }));
@@ -78,7 +80,7 @@ describe('/api/settings', () => {
     vi.mocked(resolveSettingsSections).mockResolvedValue({
       sections: [{ id: 'appearance', label: 'Appearance', owner: 'settings', keys: [], readOnly: false }],
       navigation: [{ id: 'appearance', label: 'Appearance', href: '/profile/settings?tab=appearance', owner: 'settings', section: 'appearance', description: 'Theme', disposition: 'in_hub', order: 40 }],
-      canonicalSections: [{ id: 'appearance', label: 'Appearance' }],
+      canonicalSections: SETTINGS_CANONICAL_SECTIONS,
       hubInventory: [{ id: 'personal-settings-hub', label: 'Personal Settings Hub', path: '/profile/settings', disposition: 'canonical', owner: 'settings', scope: 'personal' }],
       hubSummary: { total: 16, canonical: 4, duplicate: 3, deprecated: 1, reference: 8, personalBefore: 6, personalAfter: 2 },
     });

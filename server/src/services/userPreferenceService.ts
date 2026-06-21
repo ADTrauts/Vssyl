@@ -56,6 +56,13 @@ export async function setUserPreference(userId: string, key: string, value: stri
   });
 }
 
+export async function deleteUserPreference(userId: string, key: string): Promise<void> {
+  validatePreferenceKey(key);
+  await prisma.userPreference.deleteMany({
+    where: { userId, key },
+  });
+}
+
 export async function setUserPreferenceWithPolicy(
   userId: string,
   key: string,
