@@ -1,10 +1,14 @@
 import { Request, Response } from 'express';
 import { StripeService } from '../services/stripeService';
-import { PrismaClient } from '@prisma/client';
 import { isStripeConfigured, getStripeClient } from '../config/stripe';
 import { prisma } from '../lib/prisma';
 import { logger } from '../lib/logger';
 import { getUserFromRequest } from '../middleware/auth';
+import {
+  BillingServiceError,
+  cancelSubscription as billingCancelSubscription,
+  resumeSubscription as billingResumeSubscription,
+} from '../services/account/billingService';
 
 function logPaymentError(message: string, operation: string, err: unknown): void {
   const e = err instanceof Error ? err : new Error(String(err));
@@ -196,25 +200,25 @@ export const cancelSubscription = async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'Subscription not found' });
     }
 
-    if (!subscription.stripeSubscriptionId) {
-      return res.status(400).json({ error: 'No Stripe subscription ID' });
+    if (subscription.stripeSubscriptionId && isStripeConfigured()) {
+      await StripeService.cancelSubscription(subscription.stripeSubscriptionId);
     }
 
-    const updatedSubscription = await StripeService.cancelSubscription(
-      subscription.stripeSubscriptionId
-    );
-
-    // Update local record
-    await prisma.subscription.update({
-      where: { id: subscriptionId },
-      data: {
-        status: updatedSubscription.status,
-        cancelAtPeriodEnd: updatedSubscription.cancel_at_period_end,
-      },
+    await billingCancelSubscription({
+      actorUserId: userId,
+      userId,
+      subscriptionId,
     });
 
-    res.json({ message: 'Subscription cancelled successfully' });
+    res.json({
+      message: 'Subscription cancelled successfully',
+      deprecated: true,
+      successor: '/api/billing/subscriptions/:id',
+    });
   } catch (error) {
+    if (error instanceof BillingServiceError) {
+      return res.status(error.statusCode).json({ error: error.message });
+    }
     logPaymentError('Error cancelling subscription', 'payment_subscription_cancel', error);
     res.status(500).json({ error: 'Failed to cancel subscription' });
   }
@@ -237,25 +241,26 @@ export const reactivateSubscription = async (req: Request, res: Response) => {
       return res.status(404).json({ error: 'Subscription not found' });
     }
 
-    if (!subscription.stripeSubscriptionId) {
-      return res.status(400).json({ error: 'No Stripe subscription ID' });
+    if (subscription.stripeSubscriptionId && isStripeConfigured()) {
+      await StripeService.reactivateSubscription(subscription.stripeSubscriptionId);
     }
 
-    const updatedSubscription = await StripeService.reactivateSubscription(
-      subscription.stripeSubscriptionId
-    );
-
-    // Update local record
-    await prisma.subscription.update({
-      where: { id: subscriptionId },
-      data: {
-        status: updatedSubscription.status,
-        cancelAtPeriodEnd: updatedSubscription.cancel_at_period_end,
-      },
+    const updated = await billingResumeSubscription({
+      actorUserId: userId,
+      userId,
+      subscriptionId,
     });
 
-    res.json({ message: 'Subscription reactivated successfully' });
+    res.json({
+      message: 'Subscription reactivated successfully',
+      subscription: updated,
+      deprecated: true,
+      successor: '/api/billing/subscriptions/:id/reactivate',
+    });
   } catch (error) {
+    if (error instanceof BillingServiceError) {
+      return res.status(error.statusCode).json({ error: error.message });
+    }
     logPaymentError('Error reactivating subscription', 'payment_subscription_reactivate', error);
     res.status(500).json({ error: 'Failed to reactivate subscription' });
   }

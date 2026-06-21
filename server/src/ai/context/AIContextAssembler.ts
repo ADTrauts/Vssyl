@@ -33,6 +33,7 @@ import {
 } from '../enterprise/businessWorkspaceBoundaries';
 import { prepareMemoryFactsForAssembly } from '../memory/memoryContextInjection';
 import type { VLinkPipelineContextResult } from './vlinkPipelineContextService';
+import type { GraphBundlePipelineContextResult } from './graphBundlePipelineContextService';
 
 /** Mirrors fields used from `LifeTwinQuery` without importing core (avoids circular deps). */
 export interface AIContextAssemblyQuery {
@@ -62,6 +63,7 @@ export type AIAssembledEvidenceSourceType =
   | 'business'
   | 'personal'
   | 'vlink'
+  | 'graph_bundle'
   | 'system'
   | 'unknown';
 
@@ -178,6 +180,8 @@ export interface AIContextAssemblyInput {
   businessWorkspaceBoundaries?: BusinessWorkspaceBoundaryBlock;
   /** Confirmed V_Link pipeline context (first-class source; excludes unapproved suggestions). */
   vlinkPipelineContext?: VLinkPipelineContextResult;
+  /** Formal Context Graph bundles via Tier 0 provider (ContextBundleDescriptor). */
+  graphBundlePipelineContext?: GraphBundlePipelineContextResult;
 }
 
 export interface ModuleContextAssemblyEntry {
@@ -534,6 +538,7 @@ export function assembleAIContext(input: AIContextAssemblyInput): AIAssembledCon
     effectivePreferencesContextBlock,
     businessWorkspaceBoundaries,
     vlinkPipelineContext,
+    graphBundlePipelineContext,
   } = input;
 
   const dashboardCtx =
@@ -1025,6 +1030,43 @@ export function assembleAIContext(input: AIContextAssemblyInput): AIAssembledCon
     });
   } else if (vlinkPipelineContext?.skippedReason === 'source_disabled') {
     missingContext.push('V_Link context source disabled in pipeline catalog');
+  }
+
+  if (graphBundlePipelineContext && graphBundlePipelineContext.bundlesUsed > 0) {
+    contextBlocks.push({
+      title: 'Context Graph Bundles (formal)',
+      sourceType: 'graph_bundle',
+      content: {
+        contractVersion: '1.0',
+        bundles: graphBundlePipelineContext.groundingPayloads.map((payload) => ({
+          bundleId: payload.bundleId,
+          kind: payload.kind,
+          root: payload.root,
+          summaries: payload.summaries,
+          permissionOutcome: payload.permissionOutcome,
+          provenance: payload.provenance,
+          nodes: payload.nodes.slice(0, 12),
+          edges: payload.edges.slice(0, 12),
+          estimatedTokens: payload.estimatedTokens,
+        })),
+        totalNodes: graphBundlePipelineContext.totalNodes,
+        totalRestrictedNodes: graphBundlePipelineContext.totalRestrictedNodes,
+        totalOmittedNodes: graphBundlePipelineContext.totalOmittedNodes,
+      },
+      priority: 'high',
+      tier: 'tier4_cross_module',
+      inclusionReason:
+        'formal ContextBundleDescriptor from Tier 0 Context Graph provider (read-only; PE at every hop)',
+    });
+    evidence.push({
+      label: 'Context Graph Bundles',
+      sourceType: 'graph_bundle',
+      sourceId: 'graph_bundle',
+      detail: `${graphBundlePipelineContext.bundlesUsed} bundle(s); ${graphBundlePipelineContext.totalNodes} node(s); ${graphBundlePipelineContext.estimatedTokens} est. tokens`,
+      confidence: 'high',
+    });
+  } else if (graphBundlePipelineContext?.skippedReason === 'source_disabled') {
+    missingContext.push('Context Graph bundle source disabled in pipeline catalog');
   }
 
   if (

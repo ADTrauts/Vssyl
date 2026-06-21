@@ -1,4 +1,8 @@
 import { authenticatedApiCall } from '../lib/apiUtils';
+import {
+  subscribeModule as billingSubscribeModule,
+  type ModuleSubscription,
+} from './billing';
 
 // Module manifest and configuration interfaces
 export interface ModuleManifest {
@@ -54,19 +58,7 @@ export interface ModuleSubmission {
   };
 }
 
-export interface ModuleSubscription {
-  id: string;
-  moduleId: string;
-  userId: string;
-  businessId?: string;
-  tier: 'premium' | 'enterprise';
-  status: 'active' | 'cancelled' | 'past_due' | 'unpaid';
-  amount: number;
-  currency: string;
-  startDate: string;
-  endDate?: string;
-  autoRenew: boolean;
-}
+export type { ModuleSubscription } from './billing';
 
 export interface Module {
   id: string;
@@ -455,22 +447,20 @@ export const getBusinessModules = async (businessId: string): Promise<Module[]> 
   return response.data;
 }; 
 
-// Create module subscription for paid modules
-export const createModuleSubscription = async (moduleId: string, tier: 'premium' | 'enterprise'): Promise<{ message: string; subscription: ModuleSubscription }> => {
-  const response = await authenticatedApiCall<{ message: string; subscription: ModuleSubscription }>('/api/billing/modules/subscribe', {
-    method: 'POST',
-    body: JSON.stringify({
-      moduleId,
-      tier,
-    }),
-  });
-  return response;
+// Create module subscription for paid modules (canonical billing API)
+export const createModuleSubscription = async (
+  moduleId: string,
+  tier: 'premium' | 'enterprise'
+): Promise<{ message: string; subscription: ModuleSubscription }> => {
+  const { subscription } = await billingSubscribeModule(moduleId, tier);
+  return { message: 'Subscription created', subscription };
 };
 
-// Get module subscription status
-export const getModuleSubscription = async (moduleId: string): Promise<ModuleSubscription | null> => {
-  const response = await authenticatedApiCall<{ subscription: ModuleSubscription }>(`/api/billing/modules/subscriptions/${moduleId}`, {
-    method: 'GET',
-  });
+// Get module subscription by subscription record id
+export const getModuleSubscription = async (subscriptionId: string): Promise<ModuleSubscription | null> => {
+  const response = await authenticatedApiCall<{ subscription: ModuleSubscription }>(
+    `/api/billing/modules/subscriptions/${subscriptionId}`,
+    { method: 'GET' }
+  );
   return response.subscription;
 }; 

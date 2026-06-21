@@ -18,11 +18,11 @@
 | Severity | Scheduling | HR | Workforce Comms | Domain (new) | Total open |
 |----------|------------|-----|-----------------|--------------|------------|
 | **Blocking** | 0 | 0 | 0 | 0 | **0** |
-| **Major** | 4 | 3 | 0 | 3 | **10** |
-| **Advisory** | 5 | 6 | 4 | 4 | **19** |
-| **Closed (module remediation)** | 3 | 0 | 5 | — | **8** |
+| **Major** | 0 | 0 | 0 | 0 | **0** |
+| **Advisory** | 5 | 6 | 3 | 3 | **17** |
+| **Closed (module remediation + BO-1A + BO-1B)** | 7 | 3 | 1 | 4 | **15** |
 
-**Domain certification posture:** Zero blocking findings at domain gate. **NOT READY** for domain reference designation until domain majors (BO-F-D01..D03) and module majors on critical paths are closed or formally waived.
+**Domain certification posture:** **LEVEL 3 CERTIFIED WITH FINDINGS** — executed BO-4 (2026-06-19). G1–G9 24/27 (~89%). 17 advisories on 90-day plan. Program **ARCHIVED**.
 
 ---
 
@@ -41,11 +41,11 @@
 
 | ID | Severity | Finding | Evidence | Gate | Remediation |
 |----|----------|---------|----------|------|-------------|
-| **BO-F-D01** | Major | **No domain-level operation matrix in `docs/architecture/audits/`** — module matrices exist under `docs/business-operations/` only | `SCHEDULING_OPERATION_MATRIX.md`, `HR_OPERATION_MATRIX.md`, `WORKFORCE_COMMUNICATIONS_OPERATION_MATRIX.md` not in audits path | G7 | Publish domain annex matrix or symlink trio to audits per File Hub / Chat pattern |
-| **BO-F-D02** | Major | **HR↔WC broadcast bridge unwired** — `workforceBridgeService` exports HR policy/announcement handlers; HR does not call them | `workforceBridgeService.ts`; WC post-G register deferred item | G4, G5 | Wire `onHrPolicyBroadcastRequested` / `onHrAnnouncementBroadcastRequested` from HR publish paths or document explicit deferral with integration contract |
-| **BO-F-D03** | Major | **Scheduling AI write surface truthfulness gap** — manifest declares 8 actions; `ActionExecutor` implements 2; 6 return placeholders | `ActionExecutor.ts` L2232+; `registerBuiltInModules.ts` scheduling actions | G8 | Implement executors or mark actions `planned: true` in manifest until wired |
+| **BO-F-D01** | Major | **No domain-level operation matrix in `docs/architecture/audits/`** | Published trio + annex (BO-1A) | G7 | **Closed BO-1A** |
+| **BO-F-D02** | Major | **HR↔WC broadcast bridge unwired** | `hrWorkforceBridgeIntegrationService` + admin routes | G4, G5 | **Closed BO-1A** |
+| **BO-F-D03** | Major | **Scheduling AI write surface truthfulness gap** | 8/8 manifest actions in `ActionExecutor` | G8 | **Closed BO-1A** |
 | **BO-F-D04** | Advisory | **`hrScheduleService` ownership ambiguity** — service lives in HR package but serves scheduling+calendar bridge | `hrScheduleService.ts`; boundary doc Shared row | G5 | Document bridge as Shared Platform Integration Service with dual-module consumers |
-| **BO-F-D05** | Advisory | **No domain-level UX shell standard** — three modules use different layout naming (`SchedulingLayout`, `HRLayout`, `WorkforceCommsWorkspaceLanding`) | Component inventory | G9 | Adopt shared workspace landing naming + ConfirmModal/EmptyState bar across BO modules |
+| **BO-F-D05** | Advisory | **No domain-level UX shell standard** | `BusinessOperationsEmptyState`, ConfirmModal/useConfirm bar, token migration (BO-1B) | G9 | **Closed BO-1B** |
 | **BO-F-D06** | Advisory | **Workforce identity scattered across docs** — `WORKFORCE_IDENTITY_ARCHITECTURE.md` + boundary doc + HR org analysis | Multiple ownership docs | G7 | Single domain ownership model doc (this program's ownership model) as executive authority |
 | **BO-F-D07** | Advisory | **Analytics domain unowned** — scheduling 501 trio; HR analytics separate; no BO analytics module | `schedulingAdminController` L751–759 | G8 | Stage 4 Analytics gate — explicit OUT OF SCOPE for BO-1A |
 
@@ -55,17 +55,17 @@
 
 | ID | Severity | Finding | Status | Blocks domain ref? |
 |----|----------|---------|--------|---------------------|
-| F-SCH-004 | Major | AI context controller direct Prisma (16 reads) | Open | Yes |
-| F-SCH-005 | Major | Partial PE on auxiliary routes (job-locations, AI generate/suggest, recommendations, schedule-template delete) | Open (stations improved) | Yes |
-| F-SCH-006 | Major | Operation matrix not in `docs/architecture/audits/` | Open | Yes (→ BO-F-D01) |
-| F-SCH-007 | Major | Open-shift claim missing activity + domain events | Open | Yes |
+| F-SCH-004 | Major | AI context controller direct Prisma (16 reads) | **Closed BO-1A** | — |
+| F-SCH-005 | Major | Partial PE on auxiliary routes | **Closed BO-1A** | — |
+| F-SCH-006 | Major | Operation matrix not in `docs/architecture/audits/` | **Closed BO-1A** | — |
+| F-SCH-007 | Major | Open-shift claim missing activity + domain events | **Closed BO-1A** | — |
 | F-SCH-008 | Advisory | Dashboard controller 3 Prisma reads | Open | No |
 | F-SCH-009 | Advisory | Analytics 501 trio | Open | No |
 | F-SCH-010 | Advisory | Search not enabled | Open | No |
 | F-SCH-011 | Advisory | No module audit trail | Open | No |
 | F-SCH-012 | Advisory | CO-08 doc filename drift | Open | No |
 
-**Closed:** F-SCH-001 (AdminTools extraction), F-SCH-002 (manifest realtime), F-SCH-003 (domain events).
+**Closed:** F-SCH-001 (AdminTools extraction), F-SCH-002 (manifest realtime), F-SCH-003 (domain events), F-SCH-004..007 (BO-1A).
 
 ---
 
@@ -73,9 +73,9 @@
 
 | ID | Severity | Finding | Status | Blocks domain ref? |
 |----|----------|---------|--------|---------------------|
-| F-HR-001 | Major | ~58% HR routes lack `checkHRPolicy` | Open | Yes |
-| F-HR-002 | Major | Operation matrix not in audits path | Open | Yes (→ BO-F-D01) |
-| F-HR-003 | Major | AI context controller direct Prisma (15 reads) | Open | Yes |
+| F-HR-001 | Major | ~58% HR routes lack `checkHRPolicy` | **Closed BO-1A** (~98%) | — |
+| F-HR-002 | Major | Operation matrix not in audits path | **Closed BO-1A** | — |
+| F-HR-003 | Major | AI context controller direct Prisma (15 reads) | **Closed BO-1A** | — |
 | F-HR-004 | Advisory | No consolidated `web/src/api/hr.ts` | Open | No |
 | F-HR-005 | Advisory | Main controller 2,242 LOC | Open | No |
 | F-HR-006 | Advisory | `hrControllerUtils` unused | Open | No |
@@ -92,7 +92,7 @@
 | F-WC-006 | Advisory | Server `notificationGroupingService` lacks `workforce_*` mapping | Open | No |
 | F-WC-007 | Advisory | `workforce_attachment_added` taxonomy not emitted | Open | No |
 | F-WC-008 | Advisory | `workforce_ack_reminder` planned but no job | Open | No |
-| F-WC-009 | Advisory | Operation matrix path not in audits/ | Open | No (→ BO-F-D01) |
+| F-WC-009 | Advisory | Operation matrix path not in audits/ | **Closed BO-1A** | — |
 
 **Closed (Phase G):** F-WC-001..005.
 

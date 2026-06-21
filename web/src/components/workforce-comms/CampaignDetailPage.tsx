@@ -67,7 +67,7 @@ export default function CampaignDetailPage({ businessId, campaignId }: CampaignD
       </Button>
       <Card className="p-6">
         <h1 className="text-2xl font-bold">{name}</h1>
-        {description && <p className="text-gray-600 mt-2">{description}</p>}
+        {description && <p className="text-v-text-secondary mt-2">{description}</p>}
       </Card>
       <Card className="p-4">
         <h3 className="font-medium mb-3">V-Links</h3>
@@ -78,7 +78,7 @@ export default function CampaignDetailPage({ businessId, campaignId }: CampaignD
             ))}
           </ul>
         ) : (
-          <p className="text-sm text-gray-500 mb-4">No V-Links yet.</p>
+          <p className="text-sm text-v-text-muted mb-4">No V-Links yet.</p>
         )}
         <Button
           variant="secondary"

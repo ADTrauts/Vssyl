@@ -103,6 +103,17 @@ export function recordSchedulingShiftAssignedDomainEvent(params: {
   emitSchedulingShiftAssignedEvent(params);
 }
 
+/** Open-shift claim emits shift-assigned domain fact with employee-initiated semantics. */
+export function recordSchedulingOpenShiftClaimedDomainEvent(params: {
+  actorUserId: string;
+  shiftId: string;
+  businessId: string;
+  scheduleId: string;
+  employeePositionId: string;
+}): void {
+  emitSchedulingShiftAssignedEvent(params);
+}
+
 export function recordSchedulingShiftUnassignedDomainEvent(params: {
   actorUserId: string;
   shiftId: string;

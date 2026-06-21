@@ -4,6 +4,7 @@ import React from 'react';
 import { format, parseISO } from 'date-fns';
 import { ScheduleShift } from '@/api/scheduling';
 import { Edit, Trash2, Clock, User, AlertCircle } from 'lucide-react';
+import { useConfirm } from 'shared/hooks/useConfirm';
 
 interface ShiftBlockProps {
   shift: ScheduleShift;
@@ -35,6 +36,8 @@ export default function ShiftBlock({
   onContextMenu,
   color = '#3b82f6',
 }: ShiftBlockProps) {
+  const { confirm: confirmAction, ConfirmDialog } = useConfirm();
+
   const shiftStart = parseISO(shift.startTime);
   const shiftEnd = parseISO(shift.endTime);
   const duration = (shiftEnd.getTime() - shiftStart.getTime()) / (1000 * 60); // minutes
@@ -152,7 +155,7 @@ export default function ShiftBlock({
                 e.stopPropagation();
                 onEdit(shift);
               }}
-              className="p-1 bg-white dark:bg-slate-900 bg-opacity-20 rounded hover:bg-opacity-30"
+              className="p-1 bg-v-surface bg-opacity-20 rounded hover:bg-opacity-30"
               title="Edit shift"
             >
               <Edit className="w-3 h-3" />
@@ -160,13 +163,19 @@ export default function ShiftBlock({
           )}
           {onDelete && (
             <button
-              onClick={(e) => {
+              onClick={async (e) => {
                 e.stopPropagation();
-                if (confirm('Are you sure you want to delete this shift?')) {
+                const ok = await confirmAction({
+                  title: 'Delete shift?',
+                  description: 'This shift will be removed from the schedule.',
+                  variant: 'destructive',
+                  confirmLabel: 'Delete',
+                });
+                if (ok) {
                   onDelete(shift.id);
                 }
               }}
-              className="p-1 bg-white dark:bg-slate-900 bg-opacity-20 rounded hover:bg-opacity-30"
+              className="p-1 bg-v-surface bg-opacity-20 rounded hover:bg-opacity-30"
               title="Delete shift"
             >
               <Trash2 className="w-3 h-3" />
@@ -174,6 +183,7 @@ export default function ShiftBlock({
           )}
         </div>
       </div>
+      <ConfirmDialog />
     </div>
   );
 }

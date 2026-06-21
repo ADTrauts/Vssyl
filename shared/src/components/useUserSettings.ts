@@ -5,12 +5,11 @@ export function useUserSettings(token: string) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch settings on mount
   useEffect(() => {
     setLoading(true);
-    fetch('/settings', { headers: { Authorization: `Bearer ${token}` } })
-      .then(res => res.json())
-      .then(data => {
+    fetch('/api/settings', { headers: { Authorization: `Bearer ${token}` } })
+      .then((res) => res.json())
+      .then((data) => {
         setSettings(data.settings || {});
         setLoading(false);
       })
@@ -20,32 +19,41 @@ export function useUserSettings(token: string) {
       });
   }, [token]);
 
-  // Update a setting
-  const updateSetting = useCallback((key: string, value: string) => {
-    return fetch('/settings', {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${token}`,
-      },
-      body: JSON.stringify({ key, value }),
-    })
-      .then(res => res.json())
-      .then(() => setSettings(s => ({ ...s, [key]: value })));
-  }, [token]);
+  const updateSetting = useCallback(
+    (key: string, value: string) => {
+      return fetch('/api/settings', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`,
+        },
+        body: JSON.stringify({ key, value }),
+      })
+        .then((res) => res.json())
+        .then((data) => {
+          const next = data.settings ?? { ...settings, [key]: value };
+          setSettings(next);
+          return next;
+        });
+    },
+    [token, settings]
+  );
 
-  // Delete a setting
-  const deleteSetting = useCallback((key: string) => {
-    return fetch(`/settings/${key}`, {
-      method: 'DELETE',
-      headers: { Authorization: `Bearer ${token}` },
-    })
-      .then(() => setSettings(s => {
-        const copy = { ...s };
-        delete copy[key];
-        return copy;
-      }));
-  }, [token]);
+  const deleteSetting = useCallback(
+    (key: string) => {
+      return fetch(`/api/settings/preferences/${encodeURIComponent(key)}`, {
+        method: 'DELETE',
+        headers: { Authorization: `Bearer ${token}` },
+      }).then(() =>
+        setSettings((s) => {
+          const copy = { ...s };
+          delete copy[key];
+          return copy;
+        })
+      );
+    },
+    [token]
+  );
 
   return { settings, loading, error, updateSetting, deleteSetting };
-} 
+}

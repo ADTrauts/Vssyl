@@ -3,11 +3,13 @@ import { prisma } from '../lib/prisma';
 import { logger } from '../lib/logger';
 import { syncSingleShiftToCalendar } from './hrScheduleService';
 import {
+  recordOpenShiftClaimed,
   recordShiftAssigned,
   recordShiftCreated,
   recordShiftMutationActivities,
 } from './schedulingActivityService';
 import {
+  recordSchedulingOpenShiftClaimedDomainEvent,
   recordSchedulingShiftAssignedDomainEvent,
   recordSchedulingShiftCreatedDomainEvent,
   recordSchedulingShiftMutationDomainEvents,
@@ -693,6 +695,31 @@ export async function claimOpenShiftForEmployee(params: {
     params.businessId,
     updatedShift.schedule?.status
   );
+
+  await recordOpenShiftClaimed({
+    actorUserId: params.userId,
+    businessId: params.businessId,
+    shiftId: params.shiftId,
+    scheduleId: shift.scheduleId,
+    employeePositionId: finalEmployeePositionId,
+  });
+
+  recordSchedulingOpenShiftClaimedDomainEvent({
+    actorUserId: params.userId,
+    businessId: params.businessId,
+    shiftId: params.shiftId,
+    scheduleId: shift.scheduleId,
+    employeePositionId: finalEmployeePositionId,
+  });
+
+  await notifyShiftAssigned({
+    actorUserId: params.userId,
+    businessId: params.businessId,
+    scheduleId: shift.scheduleId,
+    shiftId: params.shiftId,
+    shiftTitle: updatedShift.title ?? 'Shift',
+    employeePositionId: finalEmployeePositionId,
+  });
 
   return updatedShift;
 }

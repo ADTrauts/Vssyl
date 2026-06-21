@@ -36,11 +36,11 @@ export default function WorkforceCommsWorkspaceLanding({
     <div className="p-6 space-y-6">
       <div className="flex items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 flex items-center gap-2">
+          <h1 className="text-2xl font-bold text-v-text-primary flex items-center gap-2">
             <Megaphone className="w-7 h-7" />
             Workforce Communications
           </h1>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">
+          <p className="text-v-text-secondary mt-1">
             Company broadcasts, acknowledgements, and front-page announcements.
           </p>
         </div>
@@ -70,7 +70,7 @@ export default function WorkforceCommsWorkspaceLanding({
         <Card className="p-4">
           <h2 className="font-semibold mb-3">Recent communications</h2>
           {recentFeed.length === 0 ? (
-            <p className="text-sm text-gray-500">No published communications yet.</p>
+            <p className="text-sm text-v-text-muted">No published communications yet.</p>
           ) : (
             <ul className="space-y-2">
               {recentFeed.slice(0, 5).map((comm) => (
@@ -99,14 +99,14 @@ export default function WorkforceCommsWorkspaceLanding({
           <Card className="p-4">
             <h2 className="font-semibold mb-3">Active campaigns</h2>
             {campaigns.filter((c) => c.status === 'ACTIVE').length === 0 ? (
-              <p className="text-sm text-gray-500">No active campaigns.</p>
+              <p className="text-sm text-v-text-muted">No active campaigns.</p>
             ) : (
               <ul className="space-y-2">
                 {campaigns
                   .filter((c) => c.status === 'ACTIVE')
                   .slice(0, 5)
                   .map((campaign) => (
-                    <li key={campaign.id} className="text-sm text-gray-700 dark:text-gray-300">
+                    <li key={campaign.id} className="text-sm text-v-text-secondary">
                       {campaign.name}
                     </li>
                   ))}

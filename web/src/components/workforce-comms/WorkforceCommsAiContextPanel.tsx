@@ -54,7 +54,7 @@ export default function WorkforceCommsAiContextPanel({
         <div>Your pending acks: <strong>{overview.pendingAckCount}</strong></div>
       </div>
       {overview.recentPublished.length > 0 && (
-        <ul className="mt-4 space-y-1 text-sm text-gray-600 dark:text-gray-400">
+        <ul className="mt-4 space-y-1 text-sm text-v-text-secondary">
           {overview.recentPublished.map((item) => (
             <li key={item.id}>{item.title}</li>
           ))}

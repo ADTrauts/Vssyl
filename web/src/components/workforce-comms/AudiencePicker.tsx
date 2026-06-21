@@ -108,7 +108,7 @@ export default function AudiencePicker({
   return (
     <div className="space-y-4">
       <div>
-        <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+        <label className="block text-sm font-medium text-v-text-secondary mb-2">
           Audience type
         </label>
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
@@ -120,11 +120,11 @@ export default function AudiencePicker({
               className={`text-left p-3 rounded-lg border text-sm ${
                 audienceType === option.value
                   ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/20'
-                  : 'border-gray-200 dark:border-slate-700 hover:border-gray-300'
+                  : 'border-v-border hover:border-v-border'
               }`}
             >
               <div className="font-medium">{option.label}</div>
-              <div className="text-xs text-gray-500 dark:text-gray-400">{option.description}</div>
+              <div className="text-xs text-v-text-muted">{option.description}</div>
             </button>
           ))}
         </div>
@@ -229,10 +229,10 @@ export default function AudiencePicker({
       )}
 
       {communicationId && (
-        <div className="rounded-lg border border-gray-200 dark:border-slate-700 p-3 bg-gray-50 dark:bg-slate-800/50">
-          <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Audience preview</p>
+        <div className="rounded-lg border border-v-border p-3 bg-v-surface-muted">
+          <p className="text-sm font-medium text-v-text-secondary">Audience preview</p>
           {estimating ? (
-            <div className="flex items-center gap-2 mt-2 text-sm text-gray-500">
+            <div className="flex items-center gap-2 mt-2 text-sm text-v-text-muted">
               <Spinner size={16} /> Estimating reach…
             </div>
           ) : estimateError ? (
@@ -242,7 +242,7 @@ export default function AudiencePicker({
               Estimated reach: <strong>{estimatedCount}</strong> members
             </p>
           ) : (
-            <p className="text-sm text-gray-500 mt-1">Save draft to preview reach</p>
+            <p className="text-sm text-v-text-muted mt-1">Save draft to preview reach</p>
           )}
         </div>
       )}

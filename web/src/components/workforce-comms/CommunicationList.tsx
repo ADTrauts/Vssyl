@@ -2,12 +2,13 @@
 
 import React, { useState } from 'react';
 import { Button, Card, ConfirmModal, Spinner } from 'shared/components';
-import { Plus, Pencil, Trash2 } from 'lucide-react';
+import { Plus, Pencil, Trash2, Megaphone } from 'lucide-react';
 import type { WorkforceCommunicationListItem, WorkforceCommunicationStatus } from '@/api/workforceComms';
 import { cancelCommunication, trashCommunication } from '@/api/workforceComms';
 import { useGlobalTrash } from '@/contexts/GlobalTrashContext';
 import { formatWorkforceDate, priorityBadgeClass, priorityLabel } from './workforceCommsUtils';
 import CommunicationComposer from './CommunicationComposer';
+import { BusinessOperationsEmptyState } from '@/components/business-operations/BusinessOperationsEmptyState';
 
 interface CommunicationListProps {
   businessId: string;
@@ -74,7 +75,7 @@ export default function CommunicationList({
   return (
     <div className="p-6">
       <div className="flex items-center justify-between mb-4">
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">{title}</h2>
+        <h2 className="text-xl font-semibold text-v-text-primary">{title}</h2>
         <Button onClick={() => { setEditingId(null); setComposerOpen(true); }}>
           <Plus className="w-4 h-4 mr-2" />
           Compose
@@ -86,7 +87,11 @@ export default function CommunicationList({
       ) : error ? (
         <Card className="p-4 text-red-700">{error}</Card>
       ) : filtered.length === 0 ? (
-        <p className="text-gray-500">No communications found.</p>
+        <BusinessOperationsEmptyState
+          icon={<Megaphone className="h-12 w-12" />}
+          title="No communications found"
+          description="Create a draft communication to reach your workforce audience."
+        />
       ) : (
         <div className="space-y-3">
           {filtered.map((comm) => (
@@ -98,12 +103,12 @@ export default function CommunicationList({
                     <span className={`text-xs px-2 py-0.5 rounded ${priorityBadgeClass(comm.priority)}`}>
                       {priorityLabel(comm.priority)}
                     </span>
-                    <span className="text-xs text-gray-500">{comm.status}</span>
+                    <span className="text-xs text-v-text-muted">{comm.status}</span>
                   </div>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                  <p className="text-sm text-v-text-secondary mt-1">
                     {comm.summary || 'No summary'}
                   </p>
-                  <p className="text-xs text-gray-500 mt-2">
+                  <p className="text-xs text-v-text-muted mt-2">
                     Updated {formatWorkforceDate(comm.updatedAt)}
                     {comm._count?.audienceResolutions
                       ? ` · ${comm._count.audienceResolutions} recipients`

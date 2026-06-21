@@ -289,7 +289,7 @@ router.put(
   putAdminUpdateScheduleTemplate,
   schedulingController.updateScheduleTemplate
 );
-router.delete('/admin/schedule-templates/:id', checkSchedulingAdmin, idParam, schedulingController.deleteScheduleTemplate);
+router.delete('/admin/schedule-templates/:id', checkSchedulingAdmin, idParam, checkSchedulingPolicy(POLICY_ACTIONS.SCHEDULING_TEMPLATE_WRITE, { resourceIdParam: 'id' }), schedulingController.deleteScheduleTemplate);
 
 // Employee Availability (Admin view all)
 router.get('/admin/availability', checkSchedulingAdmin, schedulingController.getAllEmployeeAvailability);
@@ -341,10 +341,11 @@ router.delete(
 );
 
 // Job Locations
-router.get('/admin/job-locations', checkSchedulingAdmin, schedulingController.getBusinessJobLocations);
+router.get('/admin/job-locations', checkSchedulingAdmin, checkSchedulingPolicy(POLICY_ACTIONS.SCHEDULING_STATION_WRITE), schedulingController.getBusinessJobLocations);
 router.post(
   '/admin/job-locations',
   checkSchedulingAdmin,
+  checkSchedulingPolicy(POLICY_ACTIONS.SCHEDULING_STATION_WRITE),
   postAdminCreateJobLocation,
   schedulingController.createBusinessJobLocation
 );
@@ -352,13 +353,14 @@ router.put(
   '/admin/job-locations/:id',
   checkSchedulingAdmin,
   idParam,
+  checkSchedulingPolicy(POLICY_ACTIONS.SCHEDULING_STATION_WRITE, { resourceIdParam: 'id' }),
   putAdminUpdateJobLocation,
   schedulingController.updateBusinessJobLocation
 );
-router.delete('/admin/job-locations/:id', checkSchedulingAdmin, idParam, schedulingController.deleteBusinessJobLocation);
+router.delete('/admin/job-locations/:id', checkSchedulingAdmin, idParam, checkSchedulingPolicy(POLICY_ACTIONS.SCHEDULING_STATION_WRITE, { resourceIdParam: 'id' }), schedulingController.deleteBusinessJobLocation);
 
 // Recommendations
-router.get('/recommendations', checkSchedulingAdmin, schedulingController.getSchedulingRecommendations);
+router.get('/recommendations', checkSchedulingAdmin, checkSchedulingPolicy(POLICY_ACTIONS.SCHEDULING_SCHEDULE_READ), schedulingController.getSchedulingRecommendations);
 
 // ============================================================================
 // AI-POWERED SCHEDULING
@@ -367,12 +369,14 @@ router.get('/recommendations', checkSchedulingAdmin, schedulingController.getSch
 router.post(
   '/ai/generate-schedule',
   checkSchedulingAdmin,
+  checkSchedulingPolicy(POLICY_ACTIONS.SCHEDULING_SCHEDULE_WRITE),
   postAiGenerateSchedule,
   schedulingController.generateAISchedule
 );
 router.post(
   '/ai/suggest-assignments',
   checkSchedulingAdmin,
+  checkSchedulingPolicy(POLICY_ACTIONS.SCHEDULING_SCHEDULE_WRITE),
   postAiSuggestAssignments,
   schedulingController.suggestShiftAssignments
 );
@@ -460,7 +464,7 @@ router.get('/me/swaps', checkSchedulingEmployeeAccess, checkSchedulingSelfAccess
 router.post('/me/swap-requests/:id/cancel', checkSchedulingEmployeeAccess, checkSchedulingSelfAccess, idParam, schedulingController.cancelSwapRequest);
 
 router.get('/me/open-shifts', checkSchedulingEmployeeAccess, checkSchedulingSelfAccess, schedulingController.getOwnOpenShifts);
-router.post('/me/shifts/:id/claim', checkSchedulingEmployeeAccess, checkSchedulingSelfAccess, idParam, schedulingController.claimOpenShift);
+router.post('/me/shifts/:id/claim', checkSchedulingEmployeeAccess, checkSchedulingSelfAccess, idParam, checkSchedulingPolicy(POLICY_ACTIONS.SCHEDULING_SHIFT_CLAIM, { resourceIdParam: 'id', resourceType: 'shift' }), schedulingController.claimOpenShift);
 
 // ============================================================================
 // AI CONTEXT ROUTES

@@ -10,6 +10,7 @@ import {
   uninstallModule,
   type Module as ApiModule 
 } from '../../api/modules';
+import { subscribeModule } from '../../api/billing';
 import { useWorkAuth } from '../../contexts/WorkAuthContext';
 import { businessAPI } from '../../api/business';
 import { 
@@ -322,21 +323,9 @@ export default function ModulesPage() {
         }
         
         // Create subscription for premium modules
-        const response = await fetch('/api/billing/modules/subscribe', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('token')}`,
-          },
-          body: JSON.stringify({
-            moduleId,
-            tier: module.pricingTier,
-          }),
-        });
-        
-        if (!response.ok) {
-          throw new Error('Failed to create subscription');
-        }
+        const tier =
+          module.pricingTier === 'enterprise' ? 'enterprise' : 'premium';
+        await subscribeModule(moduleId, tier);
       }
       
       // Install the module

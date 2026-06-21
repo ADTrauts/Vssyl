@@ -507,12 +507,12 @@ export default function ScheduleCalendarGrid({
   if (viewMode === 'day') {
     // Day view: Time slots at top (horizontal), users on left, shifts as horizontal bars
     return (
-      <div className="flex flex-col h-full bg-white dark:bg-slate-900 overflow-hidden">
+      <div className="flex flex-col h-full bg-v-surface overflow-hidden">
         <div className="flex-1 overflow-auto" ref={gridRef}>
           <div className="min-w-[960px]" style={{ minWidth: `${dayViewMinWidth}px` }}>
             {/* Header: Time slots at top */}
-            <div className="flex border-b border-gray-200 dark:border-slate-700 sticky top-0 bg-white dark:bg-slate-900 z-10">
-              <div className="w-48 border-r border-gray-200 dark:border-slate-700 p-2 font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-slate-900">
+            <div className="flex border-b border-v-border sticky top-0 bg-v-surface z-10">
+              <div className="w-48 border-r border-v-border p-2 font-medium text-v-text-secondary bg-v-surface">
                 {layoutMode === 'employee' ? 'Employee' : layoutMode === 'position' ? 'Position' : 'Station'}
               </div>
               <div
@@ -525,10 +525,10 @@ export default function ScheduleCalendarGrid({
                     return (
                       <div
                         key={slotIdx}
-                        className="absolute border-l border-gray-200 dark:border-slate-700"
+                        className="absolute border-l border-v-border"
                         style={{ left: `${position}%`, height: '100%' }}
                       >
-                        <span className="text-xs text-gray-600 dark:text-gray-400 absolute top-1 left-1 bg-white dark:bg-slate-900 px-1 rounded">
+                        <span className="text-xs text-v-text-secondary absolute top-1 left-1 bg-v-surface px-1 rounded">
                           {format(slot, 'h:mm a')}
                         </span>
                       </div>
@@ -537,7 +537,7 @@ export default function ScheduleCalendarGrid({
                   return null;
                 })}
                 {/* Day label */}
-                <div className="absolute top-8 left-0 right-0 text-center text-sm font-medium text-gray-900 dark:text-gray-100 pointer-events-none">
+                <div className="absolute top-8 left-0 right-0 text-center text-sm font-medium text-v-text-primary pointer-events-none">
                   {format(days[0], 'EEEE, MMMM d, yyyy')}
                 </div>
               </div>
@@ -546,11 +546,11 @@ export default function ScheduleCalendarGrid({
             {/* Scrollable grid */}
             <div className="flex">
               {/* Sidebar: Row labels */}
-              <div className="w-48 border-r border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 sticky left-0 z-10">
+              <div className="w-48 border-r border-v-border bg-v-surface-muted sticky left-0 z-10">
                 {rows.map((row) => (
                   <div
                     key={row.id}
-                    className={`h-20 border-b border-gray-200 p-2 flex items-center ${
+                    className={`h-20 border-b border-v-border p-2 flex items-center ${
                       row.type === 'open-shifts' 
                         ? 'bg-orange-50 border-orange-200' 
                         : 'bg-gray-50'
@@ -559,7 +559,7 @@ export default function ScheduleCalendarGrid({
                     <div className={`text-sm font-medium truncate flex items-center gap-2 ${
                       row.type === 'open-shifts' 
                         ? 'text-orange-900' 
-                        : 'text-gray-900'
+                        : 'text-v-text-primary'
                     }`} title={row.name}>
                       {row.type === 'open-shifts' && (
                         <HelpCircle className="w-4 h-4 text-orange-600 flex-shrink-0" />
@@ -580,7 +580,7 @@ export default function ScheduleCalendarGrid({
                   return (
                     <div
                       key={row.id}
-                      className="absolute w-full border-b border-gray-200 dark:border-slate-700"
+                      className="absolute w-full border-b border-v-border"
                       style={{
                         top: `${rowIdx * 80}px`,
                         height: '80px',
@@ -624,7 +624,7 @@ export default function ScheduleCalendarGrid({
                             {getTimeOffForDay(row.id, days[0]).map((to, idx) => (
                               <div
                                 key={`timeoff-${idx}`}
-                                className="absolute inset-0 bg-gray-200 bg-opacity-60 border-2 border-red-300 border-dashed pointer-events-none z-0"
+                                className="absolute inset-0 bg-v-border bg-opacity-60 border-2 border-red-300 border-dashed pointer-events-none z-0"
                                 style={{ zIndex: 0 }}
                                 title={`Time-off: ${to.type}`}
                               />
@@ -738,20 +738,20 @@ export default function ScheduleCalendarGrid({
 
   // Week view: Days at top, users on left, shift blocks in grid
   return (
-    <div className="flex flex-col h-full bg-white dark:bg-slate-900">
+    <div className="flex flex-col h-full bg-v-surface">
       {/* Header: Days of week */}
-      <div className="flex border-b border-gray-200 dark:border-slate-700 sticky top-0 bg-white dark:bg-slate-900 z-10">
-        <div className="w-48 border-r border-gray-200 dark:border-slate-700 p-2 font-medium text-gray-700 dark:text-gray-300">
+      <div className="flex border-b border-v-border sticky top-0 bg-v-surface z-10">
+        <div className="w-48 border-r border-v-border p-2 font-medium text-v-text-secondary">
           {layoutMode === 'employee' ? 'Employee' : layoutMode === 'position' ? 'Position' : 'Station'}
         </div>
-        <div className={`flex-1 grid gap-px bg-gray-200`} style={{ gridTemplateColumns: `repeat(${days.length}, 1fr)` }}>
+        <div className={`flex-1 grid gap-px bg-v-border`} style={{ gridTemplateColumns: `repeat(${days.length}, 1fr)` }}>
           {days.map((day, idx) => (
             <div
               key={idx}
-              className="bg-white dark:bg-slate-900 p-2 text-center text-sm font-medium text-gray-900 dark:text-gray-100"
+              className="bg-v-surface p-2 text-center text-sm font-medium text-v-text-primary"
             >
               <div>{format(day, 'EEE')}</div>
-              <div className="text-xs text-gray-500 dark:text-gray-400">{format(day, 'MMM d')}</div>
+              <div className="text-xs text-v-text-muted">{format(day, 'MMM d')}</div>
             </div>
           ))}
         </div>
@@ -761,7 +761,7 @@ export default function ScheduleCalendarGrid({
       <div className="flex-1 overflow-auto" ref={gridRef}>
         <div className="flex">
           {/* Sidebar: Row labels */}
-          <div className="w-48 border-r border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800 sticky left-0 z-10">
+          <div className="w-48 border-r border-v-border bg-v-surface-muted sticky left-0 z-10">
             {rows.map((row) => {
               const employeeTotal = employeeTotals[row.id] || 0;
               const hasWarning = employeeWarnings[row.id] || false;
@@ -769,7 +769,7 @@ export default function ScheduleCalendarGrid({
               return (
                 <div
                   key={row.id}
-                  className={`h-20 border-b border-gray-200 p-2 flex items-center justify-between ${
+                  className={`h-20 border-b border-v-border p-2 flex items-center justify-between ${
                     row.type === 'open-shifts' 
                       ? 'bg-green-50 border-green-200' 
                       : ''
@@ -780,7 +780,7 @@ export default function ScheduleCalendarGrid({
                       <>
                         {/* Green circle icon for Open Shifts */}
                         <div className="w-6 h-6 rounded-full bg-green-500 border-2 border-white flex items-center justify-center flex-shrink-0">
-                          <div className="w-2 h-2 rounded-full bg-white dark:bg-slate-900" />
+                          <div className="w-2 h-2 rounded-full bg-v-surface" />
                         </div>
                         <HelpCircle className="w-4 h-4 text-green-700 flex-shrink-0" />
                       </>
@@ -788,7 +788,7 @@ export default function ScheduleCalendarGrid({
                       <>
                         {/* Profile icon */}
                         <div className="w-6 h-6 rounded-full bg-gray-300 flex items-center justify-center flex-shrink-0">
-                          <User className="w-4 h-4 text-gray-600 dark:text-gray-400" />
+                          <User className="w-4 h-4 text-v-text-secondary" />
                         </div>
                         {hasWarning && (
                           <AlertCircle className="w-4 h-4 text-yellow-500 flex-shrink-0" />
@@ -799,12 +799,12 @@ export default function ScheduleCalendarGrid({
                       <div className={`text-sm font-medium truncate ${
                         row.type === 'open-shifts' 
                           ? 'text-green-900' 
-                          : 'text-gray-900'
+                          : 'text-v-text-primary'
                       }`} title={row.name}>
                         {row.name}
                       </div>
                       {row.type === 'employee' && employeeTotal > 0 && (
-                        <div className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">
+                        <div className="text-xs text-v-text-muted mt-0.5">
                           {employeeTotal.toFixed(1)}h
                         </div>
                       )}
@@ -826,10 +826,10 @@ export default function ScheduleCalendarGrid({
                           });
                         }
                       }}
-                      className="p-1 hover:bg-gray-200 rounded transition-colors"
+                      className="p-1 hover:bg-v-surface-muted rounded transition-colors"
                       title="Employee options"
                     >
-                      <ChevronDown className="w-4 h-4 text-gray-400 flex-shrink-0" />
+                      <ChevronDown className="w-4 h-4 text-v-text-muted flex-shrink-0" />
                     </button>
                   )}
                 </div>
@@ -840,7 +840,7 @@ export default function ScheduleCalendarGrid({
           {/* Grid: Days with shift blocks (no time slots column) */}
           <div className="flex-1 relative">
             {rows.map((row, rowIdx) => (
-              <div key={row.id} className="relative h-20 border-b border-gray-200 dark:border-slate-700">
+              <div key={row.id} className="relative h-20 border-b border-v-border">
                 {/* Day columns */}
                 <div className="absolute inset-0 flex">
                   {days.map((day, dayIdx) => {
@@ -872,7 +872,7 @@ export default function ScheduleCalendarGrid({
                             handleCellClick(row.id, day, hour, minutes);
                           }
                         }}
-                        className="bg-white dark:bg-slate-900 relative flex-1 border-r border-gray-200 dark:border-slate-700 h-full droppable-cell"
+                        className="bg-v-surface relative flex-1 border-r border-v-border h-full droppable-cell"
                         style={{ 
                           minWidth: 0,
                           ...(dayIdx === days.length - 1 ? { borderRight: 'none' } : {})
@@ -897,7 +897,7 @@ export default function ScheduleCalendarGrid({
                             {getTimeOffForDay(row.id, day).map((to, idx) => (
                               <div
                                 key={`timeoff-${idx}`}
-                                className="absolute inset-0 bg-gray-200 bg-opacity-60 border-2 border-red-300 border-dashed pointer-events-none z-0"
+                                className="absolute inset-0 bg-v-border bg-opacity-60 border-2 border-red-300 border-dashed pointer-events-none z-0"
                                 style={{ zIndex: 0 }}
                                 title={`Time-off: ${to.type}`}
                               />
@@ -1004,8 +1004,8 @@ export default function ScheduleCalendarGrid({
             ))}
           </div>
         </div>
-        <div className="flex border-t border-gray-200 dark:border-slate-700 bg-gray-50 dark:bg-slate-800">
-          <div className="w-48 border-r border-gray-200 dark:border-slate-700 p-2 text-sm font-semibold text-gray-800 flex items-center gap-2">
+        <div className="flex border-t border-v-border bg-v-surface-muted">
+          <div className="w-48 border-r border-v-border p-2 text-sm font-semibold text-v-text-primary flex items-center gap-2">
             Assigned Total
             {(() => {
               const totalHours = Object.values(dayTotals).reduce((sum, hours) => sum + hours, 0);
@@ -1023,7 +1023,7 @@ export default function ScheduleCalendarGrid({
               const totalHoursText = totalHours > 0 ? `${totalHours.toFixed(1)}h` : '0h';
               
               return (
-                <div key={idx} className="bg-white dark:bg-slate-900 p-3 text-center text-sm font-semibold text-gray-900 dark:text-gray-100 flex items-center justify-center gap-1">
+                <div key={idx} className="bg-v-surface p-3 text-center text-sm font-semibold text-v-text-primary flex items-center justify-center gap-1">
                   {hasWarning && (
                     <AlertCircle className="w-4 h-4 text-red-500 flex-shrink-0" />
                   )}

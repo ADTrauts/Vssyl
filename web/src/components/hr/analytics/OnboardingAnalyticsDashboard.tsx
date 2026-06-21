@@ -85,7 +85,7 @@ export default function OnboardingAnalyticsDashboard({
           className={`px-3 py-1 rounded text-sm ${
             dateRange === '30d'
               ? 'bg-blue-600 text-white'
-              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              : 'bg-v-surface-muted text-v-text-secondary hover:bg-v-surface-muted'
           }`}
         >
           30 Days
@@ -95,7 +95,7 @@ export default function OnboardingAnalyticsDashboard({
           className={`px-3 py-1 rounded text-sm ${
             dateRange === '90d'
               ? 'bg-blue-600 text-white'
-              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              : 'bg-v-surface-muted text-v-text-secondary hover:bg-v-surface-muted'
           }`}
         >
           90 Days
@@ -105,7 +105,7 @@ export default function OnboardingAnalyticsDashboard({
           className={`px-3 py-1 rounded text-sm ${
             dateRange === '1y'
               ? 'bg-blue-600 text-white'
-              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              : 'bg-v-surface-muted text-v-text-secondary hover:bg-v-surface-muted'
           }`}
         >
           1 Year
@@ -117,8 +117,8 @@ export default function OnboardingAnalyticsDashboard({
         <Card className="p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Total Journeys</p>
-              <p className="text-2xl font-semibold text-gray-900 dark:text-gray-100">{analytics.overview.totalJourneys}</p>
+              <p className="text-sm text-v-text-secondary mb-1">Total Journeys</p>
+              <p className="text-2xl font-semibold text-v-text-primary">{analytics.overview.totalJourneys}</p>
             </div>
             <Users className="w-8 h-8 text-blue-500" />
           </div>
@@ -127,8 +127,8 @@ export default function OnboardingAnalyticsDashboard({
         <Card className="p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Active Journeys</p>
-              <p className="text-2xl font-semibold text-gray-900 dark:text-gray-100">{analytics.overview.activeJourneys}</p>
+              <p className="text-sm text-v-text-secondary mb-1">Active Journeys</p>
+              <p className="text-2xl font-semibold text-v-text-primary">{analytics.overview.activeJourneys}</p>
             </div>
             <Clock className="w-8 h-8 text-yellow-500" />
           </div>
@@ -137,8 +137,8 @@ export default function OnboardingAnalyticsDashboard({
         <Card className="p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Completed</p>
-              <p className="text-2xl font-semibold text-gray-900 dark:text-gray-100">{analytics.overview.completedJourneys}</p>
+              <p className="text-sm text-v-text-secondary mb-1">Completed</p>
+              <p className="text-2xl font-semibold text-v-text-primary">{analytics.overview.completedJourneys}</p>
             </div>
             <CheckCircle2 className="w-8 h-8 text-green-500" />
           </div>
@@ -147,8 +147,8 @@ export default function OnboardingAnalyticsDashboard({
         <Card className="p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Avg. Completion</p>
-              <p className="text-2xl font-semibold text-gray-900 dark:text-gray-100">
+              <p className="text-sm text-v-text-secondary mb-1">Avg. Completion</p>
+              <p className="text-2xl font-semibold text-v-text-primary">
                 {analytics.overview.averageCompletionDays !== null
                   ? `${analytics.overview.averageCompletionDays} days`
                   : 'N/A'}
@@ -162,28 +162,28 @@ export default function OnboardingAnalyticsDashboard({
       {/* Completion Rates */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
         <Card className="p-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Overall Completion Rate</h3>
+          <h3 className="text-lg font-semibold text-v-text-primary mb-4">Overall Completion Rate</h3>
           <div className="flex items-center gap-4">
             <div className="flex-1">
-              <div className="w-full bg-gray-200 rounded-full h-4">
+              <div className="w-full bg-v-border rounded-full h-4">
                 <div
                   className="bg-blue-600 h-4 rounded-full transition-all"
                   style={{ width: `${analytics.completionRates.overall}%` }}
                 />
               </div>
             </div>
-            <span className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+            <span className="text-2xl font-bold text-v-text-primary">
               {analytics.completionRates.overall.toFixed(1)}%
             </span>
           </div>
         </Card>
 
         <Card className="p-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Task Breakdown by Status</h3>
+          <h3 className="text-lg font-semibold text-v-text-primary mb-4">Task Breakdown by Status</h3>
           <div className="space-y-2">
             {analytics.taskBreakdown.byStatus.map((item) => (
               <div key={item.status} className="flex items-center justify-between">
-                <span className="text-sm text-gray-700 dark:text-gray-300 capitalize">{item.status.toLowerCase().replace('_', ' ')}</span>
+                <span className="text-sm text-v-text-secondary capitalize">{item.status.toLowerCase().replace('_', ' ')}</span>
                 <Badge color="blue" size="sm">{item.count}</Badge>
               </div>
             ))}
@@ -194,15 +194,15 @@ export default function OnboardingAnalyticsDashboard({
       {/* Department & Position Breakdown */}
       {analytics.completionRates.byDepartment.length > 0 && (
         <Card className="p-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Completion by Department</h3>
+          <h3 className="text-lg font-semibold text-v-text-primary mb-4">Completion by Department</h3>
           <div className="space-y-3">
             {analytics.completionRates.byDepartment.map((item) => (
               <div key={item.department}>
                 <div className="flex items-center justify-between mb-1">
-                  <span className="text-sm font-medium text-gray-700 dark:text-gray-300">{item.department}</span>
-                  <span className="text-sm text-gray-600 dark:text-gray-400">{item.rate.toFixed(1)}% ({item.count} journeys)</span>
+                  <span className="text-sm font-medium text-v-text-secondary">{item.department}</span>
+                  <span className="text-sm text-v-text-secondary">{item.rate.toFixed(1)}% ({item.count} journeys)</span>
                 </div>
-                <div className="w-full bg-gray-200 rounded-full h-2">
+                <div className="w-full bg-v-border rounded-full h-2">
                   <div
                     className="bg-blue-600 h-2 rounded-full"
                     style={{ width: `${item.rate}%` }}
@@ -217,10 +217,10 @@ export default function OnboardingAnalyticsDashboard({
       {/* Trends */}
       {analytics.trends.journeysStarted.length > 0 && (
         <Card className="p-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Journey Trends</h3>
+          <h3 className="text-lg font-semibold text-v-text-primary mb-4">Journey Trends</h3>
           <div className="space-y-4">
             <div>
-              <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Journeys Started</p>
+              <p className="text-sm font-medium text-v-text-secondary mb-2">Journeys Started</p>
               <div className="flex items-end gap-1 h-32">
                 {analytics.trends.journeysStarted.slice(-14).map((item, index) => {
                   const maxCount = Math.max(
@@ -235,7 +235,7 @@ export default function OnboardingAnalyticsDashboard({
                         style={{ height: `${height}%`, minHeight: item.count > 0 ? '4px' : '0' }}
                         title={`${item.date}: ${item.count}`}
                       />
-                      <span className="text-xs text-gray-500 dark:text-gray-400 mt-1 transform -rotate-45 origin-top-left">
+                      <span className="text-xs text-v-text-muted mt-1 transform -rotate-45 origin-top-left">
                         {new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                       </span>
                     </div>

@@ -8,6 +8,14 @@ import { logger } from '../lib/logger';
 import { evaluateBusinessMemberPolicyDual } from '../auth/businessMemberPolicyDual';
 import { POLICY_ACTIONS } from '../auth/policyActions';
 import { emitBusinessMemberRemovedEvent } from '../events/domainEventEmitters';
+import {
+  ConnectionServiceError,
+  sendConnectionRequest as sendConnectionRequestService,
+  updateConnectionRequest as updateConnectionRequestService,
+  removeConnection as removeConnectionService,
+  bulkRemoveConnections as bulkRemoveConnectionsService,
+  bulkUpdateConnectionRequests as bulkUpdateConnectionRequestsService,
+} from '../services/account/connectionService';
 
 // Helper function to get organization info from memberships
 interface UserWithBusiness {
@@ -297,90 +305,23 @@ export const sendConnectionRequest = async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    if (currentUserId === receiverId) {
-      return res.status(400).json({ error: 'Cannot send connection request to yourself' });
-    }
-
-    // Check if relationship already exists
-    const existingRelationship = await prisma.relationship.findFirst({
-      where: {
-        OR: [
-          { senderId: currentUserId, receiverId },
-          { senderId: receiverId, receiverId: currentUserId },
-        ],
-      },
+    const relationship = await sendConnectionRequestService({
+      senderId: currentUserId,
+      receiverId,
+      message,
     });
-
-    if (existingRelationship) {
-      return res.status(400).json({ error: 'Connection request already exists' });
-    }
-
-    // Check if users are in the same organization (for colleague connections)
-    const currentUserOrgs = await prisma.businessMember.findMany({
-      where: { userId: currentUserId },
-      select: { businessId: true },
-    });
-
-    const receiverOrgs = await prisma.businessMember.findMany({
-      where: { userId: receiverId },
-      select: { businessId: true },
-    });
-
-    const sharedOrg = currentUserOrgs.find(org => 
-      receiverOrgs.some(receiverOrg => receiverOrg.businessId === org.businessId)
-    );
-
-    const relationship = await prisma.relationship.create({
-      data: {
-        senderId: currentUserId,
-        receiverId,
-        message,
-        type: sharedOrg ? 'COLLEAGUE' : 'REGULAR',
-        organizationId: sharedOrg?.businessId || null,
-      },
-      include: {
-        sender: { select: { name: true, email: true, userNumber: true } },
-        receiver: { select: { name: true, email: true } },
-      },
-    });
-
-    // Create notification for the receiver with Block ID
-    try {
-      await NotificationService.handleNotification({
-        type: 'member_request',
-        title: 'New Connection Request',
-        body: `${relationship.sender.name} wants to connect with you`,
-        data: {
-          relationshipId: relationship.id,
-          senderId: currentUserId,
-          senderName: relationship.sender.name,
-          senderBlockId: relationship.sender.userNumber,
-          message: message || null,
-          type: relationship.type,
-          organizationId: sharedOrg?.businessId || null
-        },
-        recipients: [receiverId],
-        senderId: currentUserId
-      });
-    } catch (notificationError) {
-      await logger.error('Failed to create connection request notification', {
-        operation: 'member_create_connection_notification',
-        error: {
-          message: notificationError instanceof Error ? notificationError.message : 'Unknown error',
-          stack: notificationError instanceof Error ? notificationError.stack : undefined
-        }
-      });
-      // Don't fail the connection request if notification fails
-    }
 
     res.json({ relationship });
   } catch (error) {
+    if (error instanceof ConnectionServiceError) {
+      return res.status(error.statusCode).json({ error: error.message });
+    }
     await logger.error('Failed to send connection request', {
       operation: 'member_send_connection_request',
       error: {
         message: error instanceof Error ? error.message : 'Unknown error',
-        stack: error instanceof Error ? error.stack : undefined
-      }
+        stack: error instanceof Error ? error.stack : undefined,
+      },
     });
     res.status(500).json({ error: 'Internal server error' });
   }
@@ -395,55 +336,23 @@ export const updateConnectionRequest = async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    const relationship = await prisma.relationship.findUnique({
-      where: { id: relationshipId },
-      include: {
-        sender: { select: { name: true, email: true } },
-        receiver: { select: { name: true, email: true } },
-      },
-    });
-
-    if (!relationship) {
-      return res.status(404).json({ error: 'Relationship not found' });
-    }
-
-    // Ensure current user is the receiver of the request
-    if (relationship.receiverId !== currentUserId) {
-      return res.status(403).json({ error: 'Not authorized to update this request' });
-    }
-
-    let status: 'ACCEPTED' | 'DECLINED' | 'BLOCKED';
-    switch (action) {
-      case 'accept':
-        status = 'ACCEPTED';
-        break;
-      case 'decline':
-        status = 'DECLINED';
-        break;
-      case 'block':
-        status = 'BLOCKED';
-        break;
-      default:
-        return res.status(400).json({ error: 'Invalid action' });
-    }
-
-    const updatedRelationship = await prisma.relationship.update({
-      where: { id: relationshipId },
-      data: { status },
-      include: {
-        sender: { select: { name: true, email: true } },
-        receiver: { select: { name: true, email: true } },
-      },
+    const updatedRelationship = await updateConnectionRequestService({
+      userId: currentUserId,
+      relationshipId,
+      action,
     });
 
     res.json({ relationship: updatedRelationship });
   } catch (error) {
+    if (error instanceof ConnectionServiceError) {
+      return res.status(error.statusCode).json({ error: error.message });
+    }
     await logger.error('Failed to update connection request', {
       operation: 'member_update_connection_request',
       error: {
         message: error instanceof Error ? error.message : 'Unknown error',
-        stack: error instanceof Error ? error.stack : undefined
-      }
+        stack: error instanceof Error ? error.stack : undefined,
+      },
     });
     res.status(500).json({ error: 'Internal server error' });
   }
@@ -1323,28 +1232,18 @@ export const removeConnection = async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    // Find the relationship and ensure the user is a participant
-    const relationship = await prisma.relationship.findUnique({
-      where: { id: relationshipId },
-    });
-
-    if (!relationship) {
-      return res.status(404).json({ error: 'Relationship not found' });
-    }
-
-    if (relationship.senderId !== currentUserId && relationship.receiverId !== currentUserId) {
-      return res.status(403).json({ error: 'Not authorized to remove this connection' });
-    }
-
-    await prisma.relationship.delete({ where: { id: relationshipId } });
+    await removeConnectionService(currentUserId, relationshipId);
     res.json({ message: 'Connection removed successfully' });
   } catch (error) {
+    if (error instanceof ConnectionServiceError) {
+      return res.status(error.statusCode).json({ error: error.message });
+    }
     await logger.error('Failed to remove connection', {
       operation: 'member_remove_connection',
       error: {
         message: error instanceof Error ? error.message : 'Unknown error',
-        stack: error instanceof Error ? error.stack : undefined
-      }
+        stack: error instanceof Error ? error.stack : undefined,
+      },
     });
     res.status(500).json({ error: 'Internal server error' });
   }
@@ -1361,48 +1260,10 @@ export const bulkRemoveConnections = async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    const results = [];
+    const results = await bulkRemoveConnectionsService(currentUserId, relationshipIds);
 
-    for (const relationshipId of relationshipIds) {
-      try {
-        // Find the relationship and verify ownership
-        const relationship = await prisma.relationship.findFirst({
-          where: {
-            id: relationshipId,
-            OR: [
-              { senderId: currentUserId },
-              { receiverId: currentUserId },
-            ],
-            status: 'ACCEPTED',
-          },
-        });
-
-        if (!relationship) {
-          results.push({ id: relationshipId, success: false, error: 'Connection not found' });
-          continue;
-        }
-
-        // Delete the relationship
-        await prisma.relationship.delete({
-          where: { id: relationshipId },
-        });
-
-        results.push({ id: relationshipId, success: true });
-      } catch (error) {
-        await logger.error('Failed to remove connection in bulk', {
-          operation: 'member_bulk_remove_connection',
-          relationshipId,
-          error: {
-            message: error instanceof Error ? error.message : 'Unknown error',
-            stack: error instanceof Error ? error.stack : undefined
-          }
-        });
-        results.push({ id: relationshipId, success: false, error: 'Internal error' });
-      }
-    }
-
-    const successCount = results.filter(r => r.success).length;
-    const failureCount = results.filter(r => !r.success).length;
+    const successCount = results.filter((r) => r.success).length;
+    const failureCount = results.filter((r) => !r.success).length;
 
     res.json({
       message: `Successfully removed ${successCount} connection${successCount !== 1 ? 's' : ''}${failureCount > 0 ? `, ${failureCount} failed` : ''}`,
@@ -1413,8 +1274,8 @@ export const bulkRemoveConnections = async (req: Request, res: Response) => {
       operation: 'member_bulk_remove_connections',
       error: {
         message: error instanceof Error ? error.message : 'Unknown error',
-        stack: error instanceof Error ? error.stack : undefined
-      }
+        stack: error instanceof Error ? error.stack : undefined,
+      },
     });
     res.status(500).json({ error: 'Internal server error' });
   }
@@ -1429,48 +1290,10 @@ export const bulkUpdateConnectionRequests = async (req: Request, res: Response) 
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    const results = [];
+    const results = await bulkUpdateConnectionRequestsService(currentUserId, requestIds, action);
 
-    for (const requestId of requestIds) {
-      try {
-        // Find the relationship and verify ownership
-        const relationship = await prisma.relationship.findFirst({
-          where: {
-            id: requestId,
-            receiverId: currentUserId,
-            status: 'PENDING',
-          },
-        });
-
-        if (!relationship) {
-          results.push({ id: requestId, success: false, error: 'Request not found' });
-          continue;
-        }
-
-        // Update the relationship status
-        await prisma.relationship.update({
-          where: { id: requestId },
-          data: {
-            status: action === 'accept' ? 'ACCEPTED' : action === 'decline' ? 'DECLINED' : 'BLOCKED',
-          },
-        });
-
-        results.push({ id: requestId, success: true });
-      } catch (error) {
-        await logger.error('Failed to update request in bulk', {
-          operation: 'member_bulk_update_request',
-          requestId,
-          error: {
-            message: error instanceof Error ? error.message : 'Unknown error',
-            stack: error instanceof Error ? error.stack : undefined
-          }
-        });
-        results.push({ id: requestId, success: false, error: 'Internal error' });
-      }
-    }
-
-    const successCount = results.filter(r => r.success).length;
-    const failureCount = results.filter(r => !r.success).length;
+    const successCount = results.filter((r) => r.success).length;
+    const failureCount = results.filter((r) => !r.success).length;
     const actionText = action === 'accept' ? 'accepted' : action === 'decline' ? 'declined' : 'blocked';
 
     res.json({
@@ -1482,12 +1305,12 @@ export const bulkUpdateConnectionRequests = async (req: Request, res: Response) 
       operation: 'member_bulk_update_connection_requests',
       error: {
         message: error instanceof Error ? error.message : 'Unknown error',
-        stack: error instanceof Error ? error.stack : undefined
-      }
+        stack: error instanceof Error ? error.stack : undefined,
+      },
     });
     res.status(500).json({ error: 'Internal server error' });
   }
-}; 
+};
 
 // Business Member Bulk Operations
 

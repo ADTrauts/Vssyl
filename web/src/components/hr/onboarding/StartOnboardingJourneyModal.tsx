@@ -118,13 +118,13 @@ export default function StartOnboardingJourneyModal({
         )}
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          <label className="block text-sm font-medium text-v-text-secondary mb-2">
             Select Employee *
           </label>
           <select
             value={selectedEmployeeId}
             onChange={(e) => setSelectedEmployeeId(e.target.value)}
-            className="w-full rounded-md border border-gray-300 dark:border-slate-600 px-3 py-2 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full rounded-md border border-v-border px-3 py-2 text-v-text-primary focus:outline-none focus:ring-2 focus:ring-blue-500"
             disabled={submitting}
           >
             <option value="">Choose an employee...</option>
@@ -136,7 +136,7 @@ export default function StartOnboardingJourneyModal({
             ))}
           </select>
           {selectedEmployee && (
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+            <p className="text-xs text-v-text-muted mt-1">
               {selectedEmployee.hrProfile?.id 
                 ? 'HR profile found. Journey can be started.'
                 : 'HR profile will be created automatically if needed.'}
@@ -145,7 +145,7 @@ export default function StartOnboardingJourneyModal({
         </div>
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          <label className="block text-sm font-medium text-v-text-secondary mb-2">
             Select Template *
           </label>
           {loadingTemplates ? (
@@ -156,7 +156,7 @@ export default function StartOnboardingJourneyModal({
             <select
               value={selectedTemplateId}
               onChange={(e) => setSelectedTemplateId(e.target.value)}
-              className="w-full rounded-md border border-gray-300 dark:border-slate-600 px-3 py-2 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="w-full rounded-md border border-v-border px-3 py-2 text-v-text-primary focus:outline-none focus:ring-2 focus:ring-blue-500"
               disabled={submitting}
             >
               <option value="">Choose a template...</option>
@@ -170,7 +170,7 @@ export default function StartOnboardingJourneyModal({
             </select>
           )}
           {templates.length === 0 && !loadingTemplates && (
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+            <p className="text-xs text-v-text-muted mt-1">
               No active templates found. Create a template first.
             </p>
           )}

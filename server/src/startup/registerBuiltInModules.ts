@@ -540,11 +540,6 @@ const BUILT_IN_MODULES: Array<{ moduleId: string; moduleName: string; aiContext:
       ],
       actions: [
         { 
-          name: 'view_schedules', 
-          description: 'View work schedules', 
-          permissions: ['scheduling:admin'] 
-        },
-        { 
           name: 'create_schedule', 
           description: 'Create a new work schedule', 
           permissions: ['scheduling:schedules:write'] 

@@ -1,131 +1,125 @@
-# Business Operations Certification Executive Summary
+# Business Operations Certification Executive Summary (BO-2)
 
-**Program:** Business Operations Certification Evaluation  
-**Status:** Stakeholder entry point — 5-minute read  
-**Decision date:** 2026-06-16  
-**Audience:** Leadership, platform governance, engineering leads  
-**Master evaluation:** [BUSINESS_OPERATIONS_CERTIFICATION_EVALUATION.md](./BUSINESS_OPERATIONS_CERTIFICATION_EVALUATION.md)
+**Date:** 2026-06-19  
+**Program:** Business Operations Domain — Formal Certification Evaluation  
+**Audience:** Product, engineering leadership, architecture council
 
 ---
 
 ## Bottom line
 
-The certification evaluation applied the **same Level 3 framework** used for File Hub, Chat, and Calendar to Scheduling and HR.
+The evaluator recommends **LEVEL 3 CERTIFIED WITH FINDINGS** for the **Business Operations Platform Domain** (Scheduling · HR · Workforce Communications).
 
-| Module | Certified? | Outcome |
-|--------|------------|---------|
-| **Scheduling** | **No** | **NOT CERTIFIED** — FAIL |
-| **HR** | **Yes, with conditions** | **LEVEL 3 CERTIFIED WITH FINDINGS** |
+- **Final score:** 24/27 (~89%)  
+- **Open blockers:** 0 · **Open majors:** 0 · **Open advisories:** 17  
+- **Plain L3:** Not recommended at domain scope  
+- **No certification awarded in this package** — council ratification (BO-3) and ledger execution (BO-4) are separate
 
-HR is designated **REFERENCE CANDIDATE** for workforce-lifecycle patterns. Scheduling is **not qualified** as a reference module until critical remediation is complete.
-
----
-
-## Final questions answered
-
-### 1. Is Scheduling certified?
-
-**No.** Evaluation outcome: **FAIL**. Recommendation: **NOT CERTIFIED**.
-
-Three **blocking findings** prevent certification:
-- Direct Prisma **mutations** in `schedulingAdminToolsController` (32 calls)
-- Manifest claims **`realtime: true`** but no realtime service exists
-- No **domain event** taxonomy (activity-only)
-
-### 2. Is HR certified?
-
-**Yes — with findings.** Evaluation outcome: **PASS WITH FINDINGS**. Recommendation: **LEVEL 3 CERTIFIED WITH FINDINGS**.
-
-HR matches Chat/Calendar on core constitutional adoption: zero Prisma in the main controller, service-owned mutations, activity, notifications, trash, V-Link, and org-chart lifecycle symmetry.
-
-### 3. Which findings block certification?
-
-**Scheduling only:**
-
-| ID | Finding |
-|----|---------|
-| F-SCH-001 | AdminTools controller Prisma mutations |
-| F-SCH-002 | False `realtime` manifest capability |
-| F-SCH-003 | Missing domain events (or waiver) |
-
-**HR:** No blocking findings.
-
-### 4. Which findings are advisory only?
-
-**Scheduling advisory:** G18 analytics 501s, search deferral, dashboard Prisma (3), missing controller G09 HTTP tests, audit trail absence, CO-08 filename drift.
-
-**HR advisory:** 6B web client (`api/hr.ts`), controller size, unused `hrControllerUtils`, partial employee audit, settings stubs, domain events (platform partial).
-
-**HR major (tracked, not blocking):** Partial PE on reads, missing operation matrix, AI context Prisma.
-
-### 5. Is either module a reference candidate?
-
-| Module | Reference status |
-|--------|-----------------|
-| **Scheduling** | **No** — fails certification bar |
-| **HR** | **Yes — REFERENCE CANDIDATE** (workforce lifecycle), conditional on closing F-HR-001..003 within 90 days |
-
-Neither module is **Reference Implementation** (Level 4). File Hub remains the sole L4 authority.
-
-### 6. What is the next Business Operations initiative?
-
-## **Scheduling Certification Remediation** (immediate)
-
-Scheduling must close F-SCH-001..003 before BO program advances Workforce Communications.
-
-**Recommended sequence:**
-
-```
-1. Scheduling P0 remediation (AdminTools + manifest + domain events)
-2. Scheduling re-certification evaluation
-3. HR findings closure (F-HR-001..003) — parallel track
-4. Workforce Communications Establishment (Stage 3) — after BOTH modules certified
-5. Analytics Modernization (Stage 4)
-```
-
-Workforce Communications and Analytics remain **sequenced after certification** per Stage 1 modernization order. Starting Stage 3 while Scheduling is NOT CERTIFIED would propagate AdminTools anti-patterns into WC integration surfaces.
+**BO-4 update:** Certification **executed** 2026-06-19 — see [BUSINESS_OPERATIONS_CERTIFICATION_RECORD.md](./BUSINESS_OPERATIONS_CERTIFICATION_RECORD.md).
 
 ---
 
-## Findings at a glance
+## Certification recommendation
 
-| Module | Blocking | Major | Advisory | Total |
-|--------|----------|-------|----------|-------|
-| Scheduling | 3 | 4 | 5 | **12** |
-| HR | 0 | 3 | 6 | **9** |
-
----
-
-## Platform adoption (certification lens)
-
-| Capability | Scheduling | HR |
-|------------|------------|-----|
-| Activity | ✅ | ✅ |
-| Notifications | ✅ | ✅ |
-| Policy Engine | ⚠️ | ⚠️ |
-| Global Trash | ✅ | ✅ |
-| V-Link | ✅ | ✅ |
-| AI | ❌ (context Prisma) | ⚠️ |
-| Manifest truth | ❌ (realtime) | ✅ |
-| Domain events | ❌ | ⚠️ |
+| Scope | Recommendation |
+|-------|------------------|
+| **Business Operations Domain** | **LEVEL 3 CERTIFIED WITH FINDINGS** |
+| **Scheduling** | L3 WITH FINDINGS · Reference Candidate #6 |
+| **HR** | L3 WITH FINDINGS · Reference Candidate #1 |
+| **Workforce Communications** | L3 WITH FINDINGS (domain bundle); strongest module (~92%) · Reference Candidate #7 |
 
 ---
 
-## Comparison to certified references
+## G1–G9 at a glance
 
-Scheduling **does not meet** the bar Chat and Calendar met at certification (zero controller Prisma, truthful manifest, domain events).
-
-HR **meets** the bar with findings analogous to Calendar's accepted partials (AI context extraction deferred, operation matrix maintenance deferred).
+| PASS (3) | PARTIAL (2) | FAIL |
+|----------|-------------|------|
+| G2 Auditability | G1 Authorization | — |
+| G3 Service boundaries | G6 Test evidence | |
+| G4 API coherence | G8 Production safety | |
+| G5 Ownership | | |
+| G7 Documentation | | |
+| G9 UX consistency | | |
 
 ---
 
-## Governance actions
+## Why WITH FINDINGS (not plain L3)
 
-1. **Ratify** HR Level 3 WITH FINDINGS — [BUSINESS_OPERATIONS_CERTIFICATION_DECISIONS.md](./BUSINESS_OPERATIONS_CERTIFICATION_DECISIONS.md)
-2. **Update** `CERTIFICATION_LEDGER.md` HR row upon ratification
-3. **Open** Scheduling remediation epic (F-SCH-001..003)
-4. **Track** HR findings F-HR-001..003 to 90-day closure
-5. **Schedule** Scheduling re-evaluation after P0 remediation
+1. **17 advisory findings** on certificate (hygiene, analytics deferral, client consolidation)  
+2. **G1, G6, G8 partial** — scheduling PE gaps, thin cross-module HTTP tests, analytics 501 stubs  
+3. Framework threshold for plain L3 requires minimal open debt; domain intentionally deferred analytics (Stage 4)
+
+Advisories are **non-blocking** and suitable for a 90-day remediation plan on the certificate.
+
+---
+
+## Why certifiable (not deferred)
+
+1. Zero blocking and zero major findings after BO-1A/BO-1B  
+2. Domain integration architecture implemented (HR↔WC bridge, claim lifecycle, AI ownership)  
+3. G9 UX PASS — native dialogs eliminated, EmptyState/token bar  
+4. Operation matrices in audit path  
+5. Constitutional services, activity, domain events, PE on critical paths
+
+---
+
+## Module highlights
+
+| Module | Readiness | Standout strength |
+|--------|-----------|-------------------|
+| **Workforce Comms** | ~92% | Full broadcast lifecycle; 32/32 PE |
+| **HR** | ~88% | Service architecture; org-chart symmetry; PE ~98% |
+| **Scheduling** | ~82% | Domain events; AI manifest; UX shell closed |
+
+---
+
+## Reference candidates (ratified BO-3; executed BO-4)
+
+All three modules are **Reference Module Candidates** with catalog registration complete:
+
+- **#1 HR** — Workforce Lifecycle  
+- **#6 Scheduling** — Planning  
+- **#7 Workforce Comms** — Workforce Broadcast  
+
+---
+
+## Remaining risks (tracked on certificate)
+
+| Risk | Severity |
+|------|----------|
+| Analytics 501 endpoints (scheduling) | Advisory — tier/deferral |
+| Cross-module integration test gap | G6 partial |
+| Scheduling team/employee PE expansion | G1 partial |
+| HR controller size / API client fragmentation | Advisory |
+| WC notification grouping parity | Advisory |
+
+---
+
+## Required questions (quick reference)
+
+1. **G1–G9:** 24/27 (~89%)  
+2. **Blocking:** 0  
+3. **Major:** 0  
+4. **Advisory:** 17  
+5. **Recommendation:** **L3 WITH FINDINGS**  
+6. **Plain L3:** No (domain); WC module borderline alone  
+7. **WC:** L3 WITH FINDINGS; strongest module  
+8. **HR:** L3 WITH FINDINGS; Reference #1  
+9. **Scheduling:** L3 WITH FINDINGS; Reference #6  
+10. **Reference candidates:** All three — vote deferred  
+11. **Risks:** Analytics deferral, test gap, PE expansion, hygiene advisories  
+12. **Readiness:** Ready for award pending council + ledger  
+13. **Next initiative:** **BO-3 Governance Closeout** (ratification, ledger, 90-day plan)
+
+---
+
+## Stop condition confirmation
+
+- Evaluation complete  
+- No certification award  
+- No ledger update  
+- No council ratification  
+- No runtime changes  
 
 ---
 
@@ -133,23 +127,8 @@ HR **meets** the bar with findings analogous to Calendar's accepted partials (AI
 
 | Document | Purpose |
 |----------|---------|
-| [BUSINESS_OPERATIONS_CERTIFICATION_EVALUATION.md](./BUSINESS_OPERATIONS_CERTIFICATION_EVALUATION.md) | Master evaluation |
-| [SCHEDULING_CERTIFICATION_AUDIT.md](./SCHEDULING_CERTIFICATION_AUDIT.md) | Scheduling full review |
-| [HR_CERTIFICATION_AUDIT.md](./HR_CERTIFICATION_AUDIT.md) | HR full review |
-| [SCHEDULING_FINDINGS_REGISTER.md](./SCHEDULING_FINDINGS_REGISTER.md) | Scheduling findings |
-| [HR_FINDINGS_REGISTER.md](./HR_FINDINGS_REGISTER.md) | HR findings |
-| [BUSINESS_OPERATIONS_REFERENCE_CANDIDATE_ANALYSIS.md](./BUSINESS_OPERATIONS_REFERENCE_CANDIDATE_ANALYSIS.md) | Reference comparison |
-| [BUSINESS_OPERATIONS_CERTIFICATION_DECISIONS.md](./BUSINESS_OPERATIONS_CERTIFICATION_DECISIONS.md) | Formal decisions |
-
-**Prior closeout:** [STAGE_2_EXECUTIVE_SUMMARY.md](./STAGE_2_EXECUTIVE_SUMMARY.md)
-
----
-
-## Constraints honored
-
-- Repository assessment only
-- No code, schema, migrations, or implementation
-- No architecture decisions re-opened
-- No certifications awarded without governance ratification
-
-**Certification evaluation complete.**
+| [BUSINESS_OPERATIONS_CERTIFICATION_EVALUATION.md](./BUSINESS_OPERATIONS_CERTIFICATION_EVALUATION.md) | Full evaluation |
+| [BUSINESS_OPERATIONS_CERTIFICATION_SCORECARD.md](./BUSINESS_OPERATIONS_CERTIFICATION_SCORECARD.md) | G1–G9 detail |
+| [BUSINESS_OPERATIONS_FINDINGS_REVIEW.md](./BUSINESS_OPERATIONS_FINDINGS_REVIEW.md) | Findings classification |
+| [BUSINESS_OPERATIONS_REFERENCE_REVIEW.md](./BUSINESS_OPERATIONS_REFERENCE_REVIEW.md) | Reference candidacy |
+| This summary | Executive brief |

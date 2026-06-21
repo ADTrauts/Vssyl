@@ -26,8 +26,20 @@ import {
   setDefaultPaymentMethod,
   createCustomerPortalSession,
 } from '../controllers/billingController';
+import { createPaymentIntent } from '../controllers/paymentController';
 
 const router: express.Router = express.Router();
+
+// Payment intent (canonical — migrated from /api/payment/intent)
+router.post(
+  '/intent',
+  validate([
+    body('amount').isFloat({ min: 0.01 }),
+    body('currency').optional().isString(),
+    body('metadata').optional().isObject(),
+  ]),
+  createPaymentIntent
+);
 
 const subscriptionIdParam = validate([param('id').isUUID()]);
 const moduleSubscriptionIdParam = validate([param('id').isUUID()]);

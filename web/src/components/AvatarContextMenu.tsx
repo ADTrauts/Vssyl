@@ -31,6 +31,7 @@ import DeveloperPortal from './DeveloperPortal';
 import { usePathname, useRouter } from 'next/navigation';
 import { toast } from 'react-hot-toast';
 import { useTheme } from '../hooks/useTheme';
+import { changeTheme, type ThemePreference } from '../lib/settingsTheme';
 import { getProfilePhotos } from '../api/profilePhotos';
 import { ProfilePhotos, UserProfile } from '../api/profilePhotos';
 import { useWorkAuth } from '../contexts/WorkAuthContext';
@@ -199,31 +200,11 @@ export default function AvatarContextMenu({ className }: AvatarContextMenuProps)
   const userEmail = session.user.email || '';
   const userNumber = (session.user as any).userNumber || 'Not assigned';
 
-  const handleThemeChange = (newTheme: 'light' | 'dark' | 'system') => {
-    localStorage.setItem('theme', newTheme);
-    
-    // Apply theme immediately to root element
-    const root = document.documentElement;
-    let isDark = false;
-    
-    if (newTheme === 'system') {
-      isDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-      root.classList.toggle('dark', isDark);
-    } else {
-      isDark = newTheme === 'dark';
-      root.classList.toggle('dark', isDark);
-    }
-    
-    // Trigger a custom event to notify all components that need to update
-    window.dispatchEvent(new CustomEvent('themeChange', { 
-      detail: { theme: newTheme, isDark }
-    }));
-    
-    // Force CSS re-evaluation by updating a timestamp
-    root.style.setProperty('--theme-update', Date.now().toString());
-    
-    // Show feedback
-    toast.success(`Theme changed to ${newTheme}`);
+  const handleThemeChange = (newTheme: ThemePreference) => {
+    const token = (session as { accessToken?: string } | null)?.accessToken;
+    void changeTheme(token, newTheme).then(() => {
+      toast.success(`Theme changed to ${newTheme}`);
+    });
   };
 
   const handleSignOut = async () => {
@@ -294,8 +275,8 @@ export default function AvatarContextMenu({ className }: AvatarContextMenuProps)
     
     // Profile and settings
     {
-      icon: <User className="w-4 h-4" />,
-      label: 'Profile Settings',
+      icon: <Settings className="w-4 h-4" />,
+      label: 'Settings',
       onClick: () => {
         router.push('/profile/settings');
         handleClose();
@@ -306,14 +287,6 @@ export default function AvatarContextMenu({ className }: AvatarContextMenuProps)
       label: 'AI Identity',
       onClick: () => {
         router.push('/ai');
-        handleClose();
-      },
-    },
-    {
-      icon: <Settings className="w-4 h-4" />,
-      label: 'Settings',
-      onClick: () => {
-        router.push('/profile/settings');
         handleClose();
       },
     },

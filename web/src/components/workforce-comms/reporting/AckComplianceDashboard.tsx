@@ -7,6 +7,8 @@ import {
   type WorkforceAcknowledgementsReport,
 } from '@/api/workforceComms';
 import { toast } from 'react-hot-toast';
+import { BusinessOperationsEmptyState } from '@/components/business-operations/BusinessOperationsEmptyState';
+import { CheckCircle2 } from 'lucide-react';
 
 interface AckComplianceDashboardProps {
   businessId: string;
@@ -54,17 +56,17 @@ export default function AckComplianceDashboard({ businessId }: AckComplianceDash
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card className="p-4">
-          <p className="text-sm text-gray-500">Communications requiring ack</p>
+          <p className="text-sm text-v-text-muted">Communications requiring ack</p>
           <p className="text-2xl font-semibold">{report.overview.communicationCount}</p>
         </Card>
         <Card className="p-4">
-          <p className="text-sm text-gray-500">Overall ack rate</p>
+          <p className="text-sm text-v-text-muted">Overall ack rate</p>
           <p className="text-2xl font-semibold">
             {(report.overview.overallAckRate * 100).toFixed(1)}%
           </p>
         </Card>
         <Card className="p-4">
-          <p className="text-sm text-gray-500">Completion</p>
+          <p className="text-sm text-v-text-muted">Completion</p>
           <p className="text-2xl font-semibold">
             {report.overview.overallCompletionPercentage.toFixed(1)}%
           </p>
@@ -72,7 +74,11 @@ export default function AckComplianceDashboard({ businessId }: AckComplianceDash
       </div>
 
       {report.items.length === 0 ? (
-        <p className="text-gray-500">No acknowledgement-required communications published yet.</p>
+        <BusinessOperationsEmptyState
+          icon={<CheckCircle2 className="h-12 w-12" />}
+          title="No acknowledgement data"
+          description="Publish communications that require acknowledgement to track compliance here."
+        />
       ) : (
         <div className="space-y-3">
           {report.items.map((item) => (
@@ -80,7 +86,7 @@ export default function AckComplianceDashboard({ businessId }: AckComplianceDash
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
                   <p className="font-medium">{item.title}</p>
-                  <p className="text-xs text-gray-500">
+                  <p className="text-xs text-v-text-muted">
                     {item.publishedAt ? new Date(item.publishedAt).toLocaleDateString() : '—'}
                   </p>
                 </div>
@@ -89,13 +95,13 @@ export default function AckComplianceDashboard({ businessId }: AckComplianceDash
                 </Badge>
               </div>
               <div className="mt-3">
-                <div className="w-full bg-gray-200 rounded-full h-3">
+                <div className="w-full bg-v-border rounded-full h-3">
                   <div
                     className="bg-green-600 h-3 rounded-full"
                     style={{ width: `${Math.min(item.completionPercentage, 100)}%` }}
                   />
                 </div>
-                <p className="text-sm text-gray-600 mt-1">
+                <p className="text-sm text-v-text-secondary mt-1">
                   {item.ackCount} / {item.resolutionCount} acknowledged (
                   {item.completionPercentage.toFixed(1)}%)
                 </p>

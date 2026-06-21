@@ -1,8 +1,9 @@
 # Business Operations Modernization Master Plan
 
 **Program:** Business Operations Modernization Planning Program  
-**Status:** Planning documentation — no implementation, no certification  
-**Last updated:** 2026-06-14  
+**Status:** **ARCHIVED** — superseded by certification program closeout (BO-4, 2026-06-19). Retained as historical planning authority.  
+**Certification outcome:** [BUSINESS_OPERATIONS_PROGRAM_ARCHIVE.md](./BUSINESS_OPERATIONS_PROGRAM_ARCHIVE.md)  
+**Last updated:** 2026-06-19  
 **Constitution:** [BUSINESS_OPERATIONS_STRATEGIC_ARCHITECTURE.md](./BUSINESS_OPERATIONS_STRATEGIC_ARCHITECTURE.md)  
 **Alignment input:** [BUSINESS_OPERATIONS_CONSTITUTIONAL_ALIGNMENT.md](./BUSINESS_OPERATIONS_CONSTITUTIONAL_ALIGNMENT.md)  
 **Sequence:** [BUSINESS_OPERATIONS_MODERNIZATION_SEQUENCE.md](./BUSINESS_OPERATIONS_MODERNIZATION_SEQUENCE.md)

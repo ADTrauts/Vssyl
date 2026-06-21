@@ -1,20 +1,31 @@
-# Business Operations Architecture Council Ratification
+# Business Operations — Certification Council Ratification (BO-3)
 
-**Program:** Business Operations Architecture Council Ratification  
-**Ratification date:** 2026-06-14  
+**Program:** BO-3 — Council Ratification & Certification Decision  
+**Ratification date:** 2026-06-19  
 **Authority:** Platform Architecture Governance  
-**Status:** **RATIFIED** — governance record; ledger PR authorized separately  
-**Scope:** HR, Scheduling, Workforce Communications certification and reference designations
+**Status:** **RATIFIED** — certification **executed BO-4** (2026-06-19); program **ARCHIVED**
 
-**Supersedes (partial):**
+**Scope:** Business Operations Platform Domain (`scheduling`, `hr`, `workforce_comms`), advisory treatment, reference designations, promotion path
 
-- [BUSINESS_OPERATIONS_GOVERNANCE_DECISIONS.md](./BUSINESS_OPERATIONS_GOVERNANCE_DECISIONS.md) — recommendations → **ratified** below
-- [BUSINESS_OPERATIONS_CERTIFICATION_FINALIZATION.md](./BUSINESS_OPERATIONS_CERTIFICATION_FINALIZATION.md) — extended with WC
-- Pre-Phase-G WC evaluation (chat-only, not persisted)
+**Authoritative inputs:**
 
-**Authoritative inputs:** HR/Scheduling certification audits; WC post-Phase-G re-evaluation; [CERTIFICATION_LEDGER.md](../architecture/CERTIFICATION_LEDGER.md)
+- [BUSINESS_OPERATIONS_CERTIFICATION_EVALUATION.md](./BUSINESS_OPERATIONS_CERTIFICATION_EVALUATION.md)
+- [BUSINESS_OPERATIONS_CERTIFICATION_SCORECARD.md](./BUSINESS_OPERATIONS_CERTIFICATION_SCORECARD.md)
+- [BUSINESS_OPERATIONS_FINDINGS_REVIEW.md](./BUSINESS_OPERATIONS_FINDINGS_REVIEW.md)
+- [BUSINESS_OPERATIONS_REFERENCE_REVIEW.md](./BUSINESS_OPERATIONS_REFERENCE_REVIEW.md)
+- [BUSINESS_OPERATIONS_CERTIFICATION_EXECUTIVE_SUMMARY.md](./BUSINESS_OPERATIONS_CERTIFICATION_EXECUTIVE_SUMMARY.md)
+- BO-1A / BO-1B implementation and BO-1A council checkpoint records
 
-**Note:** `REFERENCE_PROGRAM.md` and `ARCHITECTURE_REFERENCE_PROGRAM.md` are not present in the repository. Reference hierarchy follows [CERTIFICATION_LEDGER.md](../architecture/CERTIFICATION_LEDGER.md) §Certification levels and [ux/REFERENCE_MODULE_PROGRAM.md](../ux/REFERENCE_MODULE_PROGRAM.md) for UX reference numbering. Business Operations reference candidates use architecture ledger conventions.
+**Supersedes (certification state):**
+
+- [BUSINESS_OPERATIONS_COUNCIL_RATIFICATION.md](./BUSINESS_OPERATIONS_COUNCIL_RATIFICATION.md) (2026-06-14) — RD-BO-001..003 open-major posture **superseded** by BO-1A closures; RD-BO-003 WC plain L3 **aligned** to domain WITH FINDINGS bundle
+
+**Precedent:**
+
+- [BUSINESS_ADMINISTRATION_COUNCIL_RATIFICATION.md](../business-administration/BUSINESS_ADMINISTRATION_COUNCIL_RATIFICATION.md)
+- [ADMIN_PORTAL_CERTIFICATION_COUNCIL_RATIFICATION.md](../architecture/audits/ADMIN_PORTAL_CERTIFICATION_COUNCIL_RATIFICATION.md)
+
+**Constraint:** No runtime changes. Certification **executed BO-4** — see [BUSINESS_OPERATIONS_FINAL_GOVERNANCE_EXECUTION.md](./BUSINESS_OPERATIONS_FINAL_GOVERNANCE_EXECUTION.md). Program **ARCHIVED**.
 
 ---
 
@@ -22,127 +33,136 @@
 
 | Field | Value |
 |-------|-------|
-| Session | Business Operations Architecture Council — Ratification |
-| Modules under vote | `hr`, `scheduling`, `workforce_comms` |
-| Constitutional freeze | [GD-BO-008](./BUSINESS_OPERATIONS_GOVERNANCE_DECISIONS.md) — **affirmed** |
-| Level 4 denial | HR, Scheduling, WC — **affirmed** (File Hub remains sole L4) |
+| Session | Business Operations Certification Council — BO-3 Ratification |
+| Surface under vote | **Business Operations Platform Domain** (3 modules) |
+| Framework | Adapted G1–G9 domain gates |
+| Validated score at vote | **24/27 (~89%)** |
+| Blocking findings | **0** |
+| Open major findings | **0** |
+| Open advisory findings | **17** |
+| Level 4 denial | **Affirmed** — File Hub remains sole Reference Implementation (L4) |
 
 ---
 
 ## Ratification decisions
 
-### RD-BO-001 — HR certification
+### RD-BO3-001 — Business Operations domain certification
 
 | Field | Decision |
 |-------|----------|
 | **Ratified?** | **YES** |
 | **Certification level** | **LEVEL 3 CERTIFIED WITH FINDINGS** |
-| **Evaluation basis** | [HR_CERTIFICATION_AUDIT.md](./HR_CERTIFICATION_AUDIT.md), [HR_FINDINGS_REGISTER.md](./HR_FINDINGS_REGISTER.md) |
+| **Evaluation basis** | BO-2 certification evaluation (2026-06-19) |
 | **Blockers** | **0** |
-| **Open major findings** | F-HR-001, F-HR-002, F-HR-003 |
+| **Open majors** | **0** (10 closed BO-1A) |
+| **Open advisories** | **17** — tracked on certificate |
 
-**Council rationale:** HR meets Level 3 constitutional gates on primary mutation surfaces. Zero certification blockers. Major findings are tracked remediation consistent with Chat/Calendar Level 3 WITH FINDINGS precedent. Unconditional Level 3 deferred until major findings close.
+**Council rationale:** Domain exceeds READY FOR REVIEW threshold (≥85%, G9≥2). Constitutional integration complete after BO-1A/BO-1B: HR↔WC bridge, claim lifecycle, AI ownership, operation matrices, UX shell (G9 PASS). Zero blocking and zero major findings. Seventeen advisories are hygiene, deferred analytics, and parity — consistent with Chat/Calendar/HR historical L3 WITH FINDINGS precedent.
+
+**Not ratified:** NOT CERTIFIED; plain **LEVEL 3 CERTIFIED** at domain scope (17 advisories + partial G1/G6/G8); Reference Implementation (L4).
 
 ---
 
-### RD-BO-002 — Scheduling certification
+### RD-BO3-002 — Advisory findings treatment
+
+| Field | Decision |
+|-------|----------|
+| **Blocks certification?** | **No** |
+| **Disposition** | **Accepted on certificate** — 90-day remediation plan |
+| **Individual waivers required?** | **No** — advisories are track-only per framework |
+| **Formal deferrals** | BO-F-D07, F-SCH-009 — **Stage 4 Analytics** (documented, not waived) |
+
+**Council rationale:** All 17 advisories classified non-blocking in BO-2. Group into five remediation themes (see [BUSINESS_OPERATIONS_POST_RATIFICATION_ROADMAP.md](./BUSINESS_OPERATIONS_POST_RATIFICATION_ROADMAP.md)). F-WC-008 remains `planned: true` in manifest — acceptable. No advisory escalated to major without new evidence.
+
+**Promotion blockers (plain L3):** All 17 advisories + G1/G6/G8 partial gates must be addressed or formally closed before domain plain L3 vote.
+
+---
+
+### RD-BO3-003 — HR module certification (affirmed)
 
 | Field | Decision |
 |-------|----------|
 | **Ratified?** | **YES** |
 | **Certification level** | **LEVEL 3 CERTIFIED WITH FINDINGS** |
-| **Evaluation basis** | [SCHEDULING_CERTIFICATION_REEVALUATION.md](./SCHEDULING_CERTIFICATION_REEVALUATION.md), [SCHEDULING_POST_REMEDIATION_FINDINGS.md](./SCHEDULING_POST_REMEDIATION_FINDINGS.md) |
-| **Blockers** | **0** (F-SCH-001..003 closed) |
-| **Open major findings** | F-SCH-004, F-SCH-005, F-SCH-006, F-SCH-007 |
-
-**Council rationale:** Post-remediation re-evaluation confirms blocker closure. Scheduling achieves constitutional parity with HR on service boundaries, domain events, trash, V-Link, and manifest truthfulness. WITH FINDINGS attachment required for AI context, PE gaps, operation matrix, and claim-shift lifecycle.
-
-**Supersedes:** Scheduling FAIL / NOT CERTIFIED ([BUSINESS_OPERATIONS_CERTIFICATION_DECISIONS.md](./BUSINESS_OPERATIONS_CERTIFICATION_DECISIONS.md)).
+| **Supersedes** | RD-BO-001 (2026-06-14) — majors F-HR-001..003 **closed BO-1A** |
+| **Open advisories** | F-HR-004..009 (6) |
 
 ---
 
-### RD-BO-003 — Workforce Communications certification
+### RD-BO3-004 — Scheduling module certification (affirmed)
 
 | Field | Decision |
 |-------|----------|
 | **Ratified?** | **YES** |
-| **Certification level** | **LEVEL 3 CERTIFIED** |
-| **Evaluation basis** | [WORKFORCE_COMMUNICATIONS_POST_G_CERTIFICATION_REEVALUATION.md](./WORKFORCE_COMMUNICATIONS_POST_G_CERTIFICATION_REEVALUATION.md) |
-| **Blockers** | **0** |
-| **Prior major findings** | F-WC-001..005 — **closed** (Phase G) |
-| **Open findings** | F-WC-006..009 — **advisory only** |
-
-**Council rationale:** Phases A–G complete. All pre-certification major findings verified closed. Full Policy Engine route coverage, thin controllers, operation matrix, reporting, and platform integrations meet Level 3 bar. Advisory findings accepted without WITH FINDINGS certificate notation (council may revisit if F-WC-006..009 regress).
+| **Certification level** | **LEVEL 3 CERTIFIED WITH FINDINGS** |
+| **Supersedes** | RD-BO-002 (2026-06-14) — majors F-SCH-004..007 **closed BO-1A** |
+| **Open advisories** | F-SCH-008..012 (5) + team/employee PE expansion (advisory) |
 
 ---
 
-## Reference candidate ratification
+### RD-BO3-005 — Workforce Communications module certification (aligned)
 
-### RD-BO-004 — Reference candidates approved
+| Field | Decision |
+|-------|----------|
+| **Ratified?** | **YES** |
+| **Certification level** | **LEVEL 3 CERTIFIED WITH FINDINGS** (domain-aligned) |
+| **Supersedes** | RD-BO-003 (2026-06-14) plain L3 — **aligned to domain bundle** |
+| **Open advisories** | F-WC-006..008 (3) |
+| **Fast-track note** | **Nearest plain L3** — promotion eligible when 3 advisories close |
+
+**Council rationale:** WC retains strongest module posture (~92%). Prior unconditional L3 ratification predated domain G1/G6 partial gates and advisory bundle policy. Council aligns WC to domain certificate while authorizing **expedited plain L3 module promotion** upon advisory closure (separate vote).
+
+---
+
+## Reference designations (ratified)
+
+### RD-BO3-006 — Reference module candidates
 
 | Module | Designation | Ratified? | Condition |
 |--------|-------------|-----------|-----------|
-| **HR** | **Reference Candidate #1 — Workforce Lifecycle** | **YES** | 90-day major findings plan (F-HR-001..003) |
-| **Scheduling** | **Reference Candidate #6 — Planning** | **YES** | 90-day major findings plan (F-SCH-004..007) |
-| **Workforce Communications** | **Reference Candidate #7 — Broadcast & Acknowledgement** | **YES** | Advisory findings tracked; no major open |
+| **HR** | **Reference Candidate #1 — Workforce Lifecycle** | **YES** | 6 advisories on 90-day plan |
+| **Scheduling** | **Reference Candidate WITH FINDINGS #6 — Planning** | **YES** | 5 advisories + G1 partial; 90-day plan |
+| **Workforce Communications** | **Reference Candidate #7 — Workforce Broadcast** | **YES** | 3 advisories; fast-track plain L3 path |
 
-**Not approved:** Reference Implementation (Level 4) for any BO module.
+**Not approved:** Reference Implementation (L4); Reference Domain promotion (separate program); plain Reference Module promotion without L3 WITH FINDINGS ledger row first.
 
-**Promotion path:** Reference Candidate → Certified Reference Module requires major findings closure + council promotion vote (per [BUSINESS_OPERATIONS_REFERENCE_READINESS.md](./BUSINESS_OPERATIONS_REFERENCE_READINESS.md)).
-
----
-
-## Governance actions ratified
-
-| # | Action | Owner | Deadline |
-|---|--------|-------|----------|
-| G-1 | Apply ledger update per [BUSINESS_OPERATIONS_LEDGER_FINAL_UPDATE.md](./BUSINESS_OPERATIONS_LEDGER_FINAL_UPDATE.md) | Platform Engineering | Next ledger PR |
-| G-2 | Execute findings tracking per [BUSINESS_OPERATIONS_FINDINGS_TRACKING_PLAN.md](./BUSINESS_OPERATIONS_FINDINGS_TRACKING_PLAN.md) | Module owners | 90 days from ratification |
-| G-3 | Publish council minutes link in ledger PR | BO Program Steward | With G-1 |
-| G-4 | **Do not** reopen constitutional decisions (GD-BO-008) | All teams | Permanent |
-| G-5 | **Do not** start Analytics program | Architecture Council | Until explicit charter |
-| G-6 | Archive BO modernization planning status → closed per [BUSINESS_OPERATIONS_PROGRAM_CLOSEOUT.md](./BUSINESS_OPERATIONS_PROGRAM_CLOSEOUT.md) | BO Program Steward | Immediate |
+**Supersedes:** RD-BO-004 (2026-06-14) — conditions updated (majors closed; advisories only).
 
 ---
 
-## Answers to primary questions
+## Governance actions authorized (not executed)
+
+| # | Action | Owner | Package | Status |
+|---|--------|-------|---------|--------|
+| G-BO3-1 | Ledger PR per [LEDGER_RECOMMENDATION](./BUSINESS_OPERATIONS_LEDGER_RECOMMENDATION.md) | Platform Engineering | BO-4 | **Executed** |
+| G-BO3-2 | 90-day advisory remediation tracking | Module owners | BO-4 | **Active backlog** |
+| G-BO3-3 | Reference catalog annex (#1, #6, #7) | Architecture Governance | BO-4 | **Executed** |
+| G-BO3-4 | Plain L3 promotion criteria review | Council | After advisory closure | **Deferred** |
+
+**BO-4 executed:** [BUSINESS_OPERATIONS_FINAL_GOVERNANCE_EXECUTION.md](./BUSINESS_OPERATIONS_FINAL_GOVERNANCE_EXECUTION.md), [BUSINESS_OPERATIONS_PROGRAM_ARCHIVE.md](./BUSINESS_OPERATIONS_PROGRAM_ARCHIVE.md).
+
+---
+
+## Required council questions (answers)
 
 | # | Question | Council answer |
 |---|----------|----------------|
-| 1 | Should HR be formally ratified as Level 3 Certified? | **YES** — WITH FINDINGS |
-| 2 | Should Scheduling be formally ratified as Level 3 Certified? | **YES** — WITH FINDINGS |
-| 3 | Should Workforce Communications be formally ratified as Level 3 Certified? | **YES** — unconditional L3 |
-| 4 | Which modules qualify as Reference Candidates? | **HR #1, Scheduling #6, WC #7** — all approved |
-| 5 | Which findings require 90-day closure tracking? | **HR majors F-HR-001..003; Scheduling majors F-SCH-004..007; WC advisories F-WC-006..009 (track, non-blocking)** |
-| 6 | What governance actions are required? | Ledger PR, findings tickets, closeout archive — see G-1..G-6 |
-| 7 | What ledger entries should be added? | Three rows — see ledger final update doc |
-| 8 | Is BO modernization initiative officially complete? | **YES** — trilogy certified; Analytics deferred |
+| 1 | Certification outcome? | **CERTIFIED** — LEVEL 3 WITH FINDINGS |
+| 2 | Certification level? | **LEVEL 3 CERTIFIED WITH FINDINGS** (domain + modules aligned) |
+| 3 | Advisory findings treatment? | **Accepted on certificate** — 90-day grouped plan |
+| 4 | Waiver status? | **No major waivers**; analytics **deferral** (Stage 4) documented |
+| 5 | Scheduling designation? | **Reference Candidate WITH FINDINGS #6** |
+| 6 | HR designation? | **Reference Candidate #1** |
+| 7 | Workforce Communications designation? | **Reference Candidate #7** (fast-track plain L3) |
+| 8 | Plain L3 path? | See [POST_RATIFICATION_ROADMAP](./BUSINESS_OPERATIONS_POST_RATIFICATION_ROADMAP.md) |
+| 9 | Ledger recommendation? | **YES** — domain row + module row updates (BO-4 execution) |
+| 10 | Recommended next initiative? | **BO-4 Governance Execution** — ledger PR, advisory tracking, reference annex |
 
 ---
 
-## Final decision table
+## Stop condition confirmation
 
-| Question | Decision |
-|----------|----------|
-| HR ratified? | **YES** |
-| Scheduling ratified? | **YES** |
-| Workforce Communications ratified? | **YES** |
-| Reference Candidates approved? | **HR #1 (Workforce Lifecycle), Scheduling #6 (Planning), WC #7 (Broadcast & Acknowledgement)** |
-| Ledger update approved? | **YES** |
-| 90-day findings plan approved? | **YES** |
-| Business Operations modernization complete? | **YES** (trilogy scope; Analytics not started) |
-| Next major initiative? | **Business Operations Analytics (Stage 4)** — charter separate; not authorized by this ratification |
-
----
-
-## Related deliverables
-
-1. [BUSINESS_OPERATIONS_LEDGER_FINAL_UPDATE.md](./BUSINESS_OPERATIONS_LEDGER_FINAL_UPDATE.md)
-2. [BUSINESS_OPERATIONS_REFERENCE_CANDIDATES.md](./BUSINESS_OPERATIONS_REFERENCE_CANDIDATES.md)
-3. [BUSINESS_OPERATIONS_FINDINGS_TRACKING_PLAN.md](./BUSINESS_OPERATIONS_FINDINGS_TRACKING_PLAN.md)
-4. [BUSINESS_OPERATIONS_PROGRAM_CLOSEOUT.md](./BUSINESS_OPERATIONS_PROGRAM_CLOSEOUT.md)
-5. [BUSINESS_OPERATIONS_EXECUTIVE_SUMMARY.md](./BUSINESS_OPERATIONS_EXECUTIVE_SUMMARY.md)
-
----
-
-**Stop condition met.** Ratification complete. No implementation. No ledger file edit in this session.
+- Council ratification **complete**
+- No certification execution
+- No ledger update
+- No program archive

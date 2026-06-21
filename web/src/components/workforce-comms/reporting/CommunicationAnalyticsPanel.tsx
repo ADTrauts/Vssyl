@@ -7,6 +7,8 @@ import {
   type WorkforceCommunicationReportItem,
 } from '@/api/workforceComms';
 import { toast } from 'react-hot-toast';
+import { BusinessOperationsEmptyState } from '@/components/business-operations/BusinessOperationsEmptyState';
+import { BarChart3 } from 'lucide-react';
 
 interface CommunicationAnalyticsPanelProps {
   businessId: string;
@@ -54,15 +56,19 @@ export default function CommunicationAnalyticsPanel({
     <div className="p-6 space-y-4">
       <h2 className="text-xl font-semibold">Communication analytics</h2>
       {items.length === 0 ? (
-        <p className="text-gray-500">No published communications to report on yet.</p>
+        <BusinessOperationsEmptyState
+          icon={<BarChart3 className="h-12 w-12" />}
+          title="No published communications"
+          description="Publish communications to see reach and read-rate analytics."
+        />
       ) : (
         <div className="space-y-3">
           {items.map((item) => (
             <Card key={item.id} className="p-4">
               <div className="flex flex-wrap items-start justify-between gap-3">
                 <div>
-                  <p className="font-medium text-gray-900 dark:text-gray-100">{item.title}</p>
-                  <p className="text-xs text-gray-500">
+                  <p className="font-medium text-v-text-primary">{item.title}</p>
+                  <p className="text-xs text-v-text-muted">
                     {item.communicationType} ·{' '}
                     {item.publishedAt ? new Date(item.publishedAt).toLocaleDateString() : '—'}
                   </p>
@@ -73,19 +79,19 @@ export default function CommunicationAnalyticsPanel({
               </div>
               <div className="mt-3 grid grid-cols-2 md:grid-cols-4 gap-3 text-sm">
                 <div>
-                  <p className="text-gray-500">Reach</p>
+                  <p className="text-v-text-muted">Reach</p>
                   <p className="font-semibold">{item.reach}</p>
                 </div>
                 <div>
-                  <p className="text-gray-500">Read rate</p>
+                  <p className="text-v-text-muted">Read rate</p>
                   <p className="font-semibold">{(item.readRate * 100).toFixed(1)}%</p>
                 </div>
                 <div>
-                  <p className="text-gray-500">Ack rate</p>
+                  <p className="text-v-text-muted">Ack rate</p>
                   <p className="font-semibold">{(item.ackRate * 100).toFixed(1)}%</p>
                 </div>
                 <div>
-                  <p className="text-gray-500">Completion</p>
+                  <p className="text-v-text-muted">Completion</p>
                   <p className="font-semibold">{item.completionPercentage.toFixed(1)}%</p>
                 </div>
               </div>

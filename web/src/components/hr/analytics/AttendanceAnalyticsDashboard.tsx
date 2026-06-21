@@ -85,7 +85,7 @@ export default function AttendanceAnalyticsDashboard({
           className={`px-3 py-1 rounded text-sm ${
             dateRange === '7d'
               ? 'bg-blue-600 text-white'
-              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              : 'bg-v-surface-muted text-v-text-secondary hover:bg-v-surface-muted'
           }`}
         >
           7 Days
@@ -95,7 +95,7 @@ export default function AttendanceAnalyticsDashboard({
           className={`px-3 py-1 rounded text-sm ${
             dateRange === '30d'
               ? 'bg-blue-600 text-white'
-              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              : 'bg-v-surface-muted text-v-text-secondary hover:bg-v-surface-muted'
           }`}
         >
           30 Days
@@ -105,7 +105,7 @@ export default function AttendanceAnalyticsDashboard({
           className={`px-3 py-1 rounded text-sm ${
             dateRange === '90d'
               ? 'bg-blue-600 text-white'
-              : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+              : 'bg-v-surface-muted text-v-text-secondary hover:bg-v-surface-muted'
           }`}
         >
           90 Days
@@ -117,8 +117,8 @@ export default function AttendanceAnalyticsDashboard({
         <Card className="p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Total Employees</p>
-              <p className="text-2xl font-semibold text-gray-900 dark:text-gray-100">{analytics.overview.totalEmployees}</p>
+              <p className="text-sm text-v-text-secondary mb-1">Total Employees</p>
+              <p className="text-2xl font-semibold text-v-text-primary">{analytics.overview.totalEmployees}</p>
             </div>
             <Users className="w-8 h-8 text-blue-500" />
           </div>
@@ -127,8 +127,8 @@ export default function AttendanceAnalyticsDashboard({
         <Card className="p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Active Today</p>
-              <p className="text-2xl font-semibold text-gray-900 dark:text-gray-100">{analytics.overview.activeToday}</p>
+              <p className="text-sm text-v-text-secondary mb-1">Active Today</p>
+              <p className="text-2xl font-semibold text-v-text-primary">{analytics.overview.activeToday}</p>
             </div>
             <Clock className="w-8 h-8 text-green-500" />
           </div>
@@ -137,8 +137,8 @@ export default function AttendanceAnalyticsDashboard({
         <Card className="p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Clocked In Now</p>
-              <p className="text-2xl font-semibold text-gray-900 dark:text-gray-100">{analytics.overview.clockedInNow}</p>
+              <p className="text-sm text-v-text-secondary mb-1">Clocked In Now</p>
+              <p className="text-2xl font-semibold text-v-text-primary">{analytics.overview.clockedInNow}</p>
             </div>
             <TrendingUp className="w-8 h-8 text-purple-500" />
           </div>
@@ -147,8 +147,8 @@ export default function AttendanceAnalyticsDashboard({
         <Card className="p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Open Exceptions</p>
-              <p className="text-2xl font-semibold text-gray-900 dark:text-gray-100">{analytics.overview.openExceptions}</p>
+              <p className="text-sm text-v-text-secondary mb-1">Open Exceptions</p>
+              <p className="text-2xl font-semibold text-v-text-primary">{analytics.overview.openExceptions}</p>
             </div>
             <AlertCircle className="w-8 h-8 text-red-500" />
           </div>
@@ -157,17 +157,17 @@ export default function AttendanceAnalyticsDashboard({
 
       {/* Compliance */}
       <Card className="p-6">
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Policy Compliance</h3>
+        <h3 className="text-lg font-semibold text-v-text-primary mb-4">Policy Compliance</h3>
         <div className="flex items-center gap-4">
           <div className="flex-1">
-            <div className="w-full bg-gray-200 rounded-full h-4">
+            <div className="w-full bg-v-border rounded-full h-4">
               <div
                 className="bg-green-600 h-4 rounded-full transition-all"
                 style={{ width: `${analytics.compliance.policyComplianceRate}%` }}
               />
             </div>
           </div>
-          <span className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+          <span className="text-2xl font-bold text-v-text-primary">
             {analytics.compliance.policyComplianceRate.toFixed(1)}%
           </span>
         </div>
@@ -177,11 +177,11 @@ export default function AttendanceAnalyticsDashboard({
       {analytics.exceptions.byType.length > 0 && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card className="p-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Exceptions by Type</h3>
+            <h3 className="text-lg font-semibold text-v-text-primary mb-4">Exceptions by Type</h3>
             <div className="space-y-2">
               {analytics.exceptions.byType.map((item) => (
                 <div key={item.type} className="flex items-center justify-between">
-                  <span className="text-sm text-gray-700 dark:text-gray-300 capitalize">{item.type.toLowerCase().replace('_', ' ')}</span>
+                  <span className="text-sm text-v-text-secondary capitalize">{item.type.toLowerCase().replace('_', ' ')}</span>
                   <Badge color="red" size="sm">{item.count}</Badge>
                 </div>
               ))}
@@ -189,11 +189,11 @@ export default function AttendanceAnalyticsDashboard({
           </Card>
 
           <Card className="p-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Exceptions by Status</h3>
+            <h3 className="text-lg font-semibold text-v-text-primary mb-4">Exceptions by Status</h3>
             <div className="space-y-2">
               {analytics.exceptions.byStatus.map((item) => (
                 <div key={item.status} className="flex items-center justify-between">
-                  <span className="text-sm text-gray-700 dark:text-gray-300 capitalize">{item.status.toLowerCase().replace('_', ' ')}</span>
+                  <span className="text-sm text-v-text-secondary capitalize">{item.status.toLowerCase().replace('_', ' ')}</span>
                   <Badge color="yellow" size="sm">{item.count}</Badge>
                 </div>
               ))}
@@ -205,7 +205,7 @@ export default function AttendanceAnalyticsDashboard({
       {/* Daily Trends */}
       {analytics.trends.daily.length > 0 && (
         <Card className="p-6">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Daily Attendance Trends</h3>
+          <h3 className="text-lg font-semibold text-v-text-primary mb-4">Daily Attendance Trends</h3>
           <div className="flex items-end gap-1 h-48">
             {analytics.trends.daily.slice(-14).map((item, index) => {
               const maxCount = Math.max(
@@ -228,7 +228,7 @@ export default function AttendanceAnalyticsDashboard({
                       title={`Clocked Out: ${item.clockedOut}`}
                     />
                   </div>
-                  <span className="text-xs text-gray-500 dark:text-gray-400 mt-1 transform -rotate-45 origin-top-left whitespace-nowrap">
+                  <span className="text-xs text-v-text-muted mt-1 transform -rotate-45 origin-top-left whitespace-nowrap">
                     {new Date(item.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric' })}
                   </span>
                 </div>
@@ -238,11 +238,11 @@ export default function AttendanceAnalyticsDashboard({
           <div className="flex items-center gap-4 mt-4 justify-center">
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 bg-blue-500 rounded"></div>
-              <span className="text-xs text-gray-600 dark:text-gray-400">Clocked In</span>
+              <span className="text-xs text-v-text-secondary">Clocked In</span>
             </div>
             <div className="flex items-center gap-2">
               <div className="w-3 h-3 bg-green-500 rounded"></div>
-              <span className="text-xs text-gray-600 dark:text-gray-400">Clocked Out</span>
+              <span className="text-xs text-v-text-secondary">Clocked Out</span>
             </div>
           </div>
         </Card>

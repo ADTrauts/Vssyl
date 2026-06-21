@@ -179,9 +179,9 @@ export default function HRSidebar({
   const sectionOrder: Array<'top' | 'admin' | 'manager' | 'personal'> = ['top', 'admin', 'manager', 'personal'];
 
   return (
-    <aside className="w-64 bg-white dark:bg-slate-900 border-r border-gray-200 dark:border-slate-700 flex flex-col h-full">
-      <div className="p-4 border-b border-gray-200 dark:border-slate-700">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Human Resources</h2>
+    <aside className="w-64 bg-v-surface border-r border-v-border flex flex-col h-full">
+      <div className="p-4 border-b border-v-border">
+        <h2 className="text-lg font-semibold text-v-text-primary">Human Resources</h2>
       </div>
 
       <nav className="flex-1 overflow-y-auto p-2">
@@ -203,7 +203,7 @@ export default function HRSidebar({
                         className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors ${
                           isActive
                             ? 'bg-blue-50 text-blue-700 border-l-4 border-blue-600'
-                            : 'text-gray-700 hover:bg-gray-50'
+                            : 'text-v-text-secondary hover:bg-gray-50'
                         }`}
                       >
                         <Icon className="w-5 h-5 flex-shrink-0" />
@@ -223,7 +223,7 @@ export default function HRSidebar({
                 {/* Add divider after section (except for last section) */}
                 {section !== 'personal' && sectionItems.length > 0 && (
                   <li className="my-2">
-                    <div className="border-t border-gray-200 dark:border-slate-700" />
+                    <div className="border-t border-v-border" />
                   </li>
                 )}
               </React.Fragment>

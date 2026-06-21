@@ -343,7 +343,6 @@ export class StripeService {
 
   private static async handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) {
     try {
-      // Get subscription from session
       if (session.mode === 'subscription' && typeof session.subscription === 'string') {
         const subscription = await stripe!.subscriptions.retrieve(session.subscription);
         const userId = session.metadata?.userId;
@@ -351,37 +350,21 @@ export class StripeService {
         const businessId = session.metadata?.businessId;
 
         if (userId && tier) {
-          // Update or create subscription in database
-          const subscriptionData = {
+          const { upsertSubscriptionFromCheckout } = await import('./account/billingService');
+          await upsertSubscriptionFromCheckout(userId, {
             userId,
             businessId: businessId || null,
             tier,
-            status: subscription.status === 'active' || subscription.status === 'trialing' ? 'active' : 'cancelled',
-            currentPeriodStart: new Date((subscription as any).current_period_start * 1000),
-            currentPeriodEnd: new Date((subscription as any).current_period_end * 1000),
+            status:
+              subscription.status === 'active' || subscription.status === 'trialing'
+                ? 'active'
+                : 'cancelled',
+            currentPeriodStart: new Date((subscription as { current_period_start: number }).current_period_start * 1000),
+            currentPeriodEnd: new Date((subscription as { current_period_end: number }).current_period_end * 1000),
             stripeSubscriptionId: subscription.id,
             stripeCustomerId: subscription.customer as string,
-            cancelAtPeriodEnd: (subscription as any).cancel_at_period_end || false,
-          };
-
-          // Check if subscription already exists
-          const existing = await prisma.subscription.findFirst({
-            where: {
-              userId,
-              businessId: businessId || null,
-            },
+            cancelAtPeriodEnd: Boolean((subscription as { cancel_at_period_end?: boolean }).cancel_at_period_end),
           });
-
-          if (existing) {
-            await prisma.subscription.update({
-              where: { id: existing.id },
-              data: subscriptionData,
-            });
-          } else {
-            await prisma.subscription.create({
-              data: subscriptionData,
-            });
-          }
         }
       }
     } catch (error) {

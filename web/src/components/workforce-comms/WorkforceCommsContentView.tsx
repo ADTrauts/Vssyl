@@ -125,7 +125,7 @@ export default function WorkforceCommsContentView({
 
   if (!isAdmin) {
     return (
-      <div className="p-6 text-gray-500">
+      <div className="p-6 text-v-text-muted">
         You do not have permission to access admin sections.
       </div>
     );
@@ -208,7 +208,7 @@ export default function WorkforceCommsContentView({
     return (
       <div className="p-6">
         <h2 className="text-xl font-semibold mb-2">Archived / Trash</h2>
-        <p className="text-gray-600 dark:text-gray-400 mb-4">
+        <p className="text-v-text-secondary mb-4">
           Trashed communications and campaigns appear in the platform Global Trash bin.
           Restore or permanently delete them from there.
         </p>
@@ -224,7 +224,7 @@ export default function WorkforceCommsContentView({
   }
 
   return (
-    <div className="p-6 text-gray-500">
+    <div className="p-6 text-v-text-muted">
       Unknown view: {currentView}
     </div>
   );

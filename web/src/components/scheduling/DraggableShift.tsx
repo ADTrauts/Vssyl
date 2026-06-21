@@ -110,7 +110,7 @@ export function DraggableShift({ shift, style, onClick, children, title, hasConf
     const g = parseInt(hex.substring(2, 4), 16);
     const b = parseInt(hex.substring(4, 6), 16);
     const brightness = (r * 299 + g * 587 + b * 114) / 1000;
-    textColor = brightness > 128 ? 'text-gray-900' : 'text-white';
+    textColor = brightness > 128 ? 'text-v-text-primary' : 'text-white';
   } else {
     // Fall back to status-based colors if no custom color
     if (!hasConflict && !isOpenShift) {

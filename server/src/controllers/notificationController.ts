@@ -5,6 +5,13 @@ import { logger } from '../lib/logger';
 import { getChatSocketService } from '../services/chatSocketService';
 import { NotificationGroupingService } from '../services/notificationGroupingService';
 import type { ModuleNotificationMetadata } from '../../../shared/src/types/module-notifications';
+import {
+  getNotificationCategoryPreferences,
+  saveNotificationCategoryPreferences,
+  getNotificationJsonPreference,
+  saveNotificationJsonPreference,
+} from '../services/account/notificationSettingsAdapter';
+import { updatePreference } from '../services/account/settingsService';
 
 function logNotifyErr(message: string, operation: string, err: unknown): void {
   const e = err instanceof Error ? err : new Error(String(err));
@@ -595,33 +602,7 @@ export const getNotificationPreferences = async (req: Request, res: Response) =>
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    // Get all notification preferences for this user
-    const preferences = await prisma.userPreference.findMany({
-      where: {
-        userId,
-        key: {
-          startsWith: 'notification_'
-        }
-      }
-    });
-
-    // Convert to object format
-    const prefs: Record<string, { inApp: boolean; email: boolean; push: boolean }> = {};
-    
-    for (const pref of preferences) {
-      const keyParts = pref.key.split('_');
-      if (keyParts.length >= 3) {
-        const category = keyParts.slice(1, -1).join('_'); // Everything between 'notification' and channel
-        const channel = keyParts[keyParts.length - 1]; // Last part is channel (inApp, email, push)
-        
-        if (!prefs[category]) {
-          prefs[category] = { inApp: true, email: false, push: false };
-        }
-        
-        prefs[category][channel as 'inApp' | 'email' | 'push'] = pref.value === 'true';
-      }
-    }
-
+    const prefs = await getNotificationCategoryPreferences(userId);
     res.json({ preferences: prefs });
   } catch (error: unknown) {
     logNotifyErr('Error fetching notification preferences', 'notifications_prefs_get', error);
@@ -638,31 +619,7 @@ export const saveNotificationPreferences = async (req: Request, res: Response) =
     }
 
     const { preferences } = req.body;
-    if (!preferences || typeof preferences !== 'object') {
-      return res.status(400).json({ error: 'Invalid preferences data' });
-    }
-
-    // Save each preference
-    const updates = [];
-    for (const [category, channels] of Object.entries(preferences)) {
-      const channelsObj = channels as { inApp?: boolean; email?: boolean; push?: boolean };
-      
-      for (const [channel, enabled] of Object.entries(channelsObj)) {
-        if (channel === 'inApp' || channel === 'email' || channel === 'push') {
-          const key = `notification_${category}_${channel}`;
-          updates.push(
-            prisma.userPreference.upsert({
-              where: { userId_key: { userId, key } },
-              update: { value: String(enabled) },
-              create: { userId, key, value: String(enabled) }
-            })
-          );
-        }
-      }
-    }
-
-    await Promise.all(updates);
-
+    await saveNotificationCategoryPreferences(userId, preferences);
     res.json({ success: true, message: 'Notification preferences saved successfully' });
   } catch (error: unknown) {
     logNotifyErr('Error saving notification preferences', 'notifications_prefs_save', error);
@@ -678,19 +635,11 @@ export const getQuietHours = async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    // Get quiet hours preference
-    const preference = await prisma.userPreference.findUnique({
-      where: {
-        userId_key: {
-          userId,
-          key: 'quiet_hours'
-        }
-      }
-    });
+    const preference = await getNotificationJsonPreference(userId, 'quiet_hours');
 
-    if (preference && preference.value) {
+    if (preference) {
       try {
-        const settings = JSON.parse(preference.value);
+        const settings = JSON.parse(preference);
         return res.json({ settings });
       } catch (parseError: unknown) {
         logNotifyErr('Error parsing quiet hours settings', 'notifications_quiet_hours_parse', parseError);
@@ -740,23 +689,7 @@ export const saveQuietHours = async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Invalid settings: days must be an object' });
     }
 
-    // Save quiet hours preference
-    await prisma.userPreference.upsert({
-      where: {
-        userId_key: {
-          userId,
-          key: 'quiet_hours'
-        }
-      },
-      update: {
-        value: JSON.stringify(settings)
-      },
-      create: {
-        userId,
-        key: 'quiet_hours',
-        value: JSON.stringify(settings)
-      }
-    });
+    await saveNotificationJsonPreference(userId, 'quiet_hours', JSON.stringify(settings));
 
     res.json({ success: true, message: 'Quiet hours settings saved successfully' });
   } catch (error: unknown) {
@@ -773,16 +706,9 @@ export const getDoNotDisturb = async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    const preference = await prisma.userPreference.findUnique({
-      where: {
-        userId_key: {
-          userId,
-          key: 'do_not_disturb'
-        }
-      }
-    });
+    const preference = await getNotificationJsonPreference(userId, 'do_not_disturb');
 
-    const enabled = preference?.value === 'true';
+    const enabled = preference === 'true';
     res.json({ enabled });
   } catch (error: unknown) {
     logNotifyErr('Error fetching do not disturb status', 'notifications_dnd_get', error);
@@ -803,22 +729,7 @@ export const saveDoNotDisturb = async (req: Request, res: Response) => {
       return res.status(400).json({ error: 'Invalid enabled value' });
     }
 
-    await prisma.userPreference.upsert({
-      where: {
-        userId_key: {
-          userId,
-          key: 'do_not_disturb'
-        }
-      },
-      update: {
-        value: String(enabled)
-      },
-      create: {
-        userId,
-        key: 'do_not_disturb',
-        value: String(enabled)
-      }
-    });
+    await updatePreference(userId, 'do_not_disturb', String(enabled));
 
     res.json({ success: true, message: 'Do not disturb status updated successfully' });
   } catch (error: unknown) {

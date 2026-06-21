@@ -4,6 +4,7 @@ import React from 'react';
 import { useRouter } from 'next/navigation';
 import { Button, Card, Spinner } from 'shared/components';
 import { CheckCircle2, Megaphone } from 'lucide-react';
+import { BusinessOperationsEmptyState } from '@/components/business-operations/BusinessOperationsEmptyState';
 import type { WorkforceCommunicationListItem } from '@/api/workforceComms';
 import { formatWorkforceDate, priorityBadgeClass, priorityLabel } from './workforceCommsUtils';
 
@@ -61,9 +62,12 @@ export default function WorkforceCommsFeed({
 
   if (filtered.length === 0) {
     return (
-      <div className="p-6 text-center text-gray-500 dark:text-gray-400">
-        <Megaphone className="w-10 h-10 mx-auto mb-3 opacity-50" />
-        <p>No communications to show.</p>
+      <div className="p-6">
+        <BusinessOperationsEmptyState
+          icon={<Megaphone className="h-12 w-12" />}
+          title="No communications to show"
+          description="Published workforce communications will appear here."
+        />
       </div>
     );
   }
@@ -93,7 +97,7 @@ export default function WorkforceCommsFeed({
           <div className="flex items-start justify-between gap-4">
             <div className="flex-1 min-w-0">
               <div className="flex items-center gap-2 flex-wrap">
-                <h3 className="font-semibold text-gray-900 dark:text-gray-100">{comm.title}</h3>
+                <h3 className="font-semibold text-v-text-primary">{comm.title}</h3>
                 <span className={`px-2 py-0.5 text-xs rounded ${priorityBadgeClass(comm.priority)}`}>
                   {priorityLabel(comm.priority)}
                 </span>
@@ -105,11 +109,11 @@ export default function WorkforceCommsFeed({
                 )}
               </div>
               {comm.summary && (
-                <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 line-clamp-2">
+                <p className="text-sm text-v-text-secondary mt-1 line-clamp-2">
                   {comm.summary}
                 </p>
               )}
-              <p className="text-xs text-gray-500 mt-2">
+              <p className="text-xs text-v-text-muted mt-2">
                 Published {formatWorkforceDate(comm.publishedAt)}
               </p>
             </div>

@@ -28,6 +28,10 @@ import {
   mapVLinkPipelineContextToRetrieved,
   type VLinkPipelineContextResult,
 } from '../context/vlinkPipelineContextService';
+import {
+  mapGraphBundlePipelineContextToRetrieved,
+  type GraphBundlePipelineContextResult,
+} from '../context/graphBundlePipelineContextService';
 
 export function numericConfidenceToLevel(confidence: number): PipelineConfidenceLevel {
   if (confidence >= 0.85) return 'high';
@@ -156,10 +160,15 @@ export function mapOrchestrationToPipelineTraceInput(
 
   const vlinkPipelineContext = ctx.vlinkPipelineContext as VLinkPipelineContextResult | undefined;
   const vlinkRetrieved = mapVLinkPipelineContextToRetrieved(vlinkPipelineContext);
+  const graphBundlePipelineContext = ctx.graphBundlePipelineContext as
+    | GraphBundlePipelineContextResult
+    | undefined;
+  const graphBundleRetrieved = mapGraphBundlePipelineContextToRetrieved(graphBundlePipelineContext);
 
   const contextRetrieved = [
     ...(params.supplementalContextRetrieved ?? []),
     ...vlinkRetrieved,
+    ...graphBundleRetrieved,
     ...mapAssembledContextToRetrieved(params.assembledContext),
   ];
   const toolsUsed = [...(params.supplementalToolsUsed ?? []), ...(params.toolsUsed ?? [])];
@@ -167,7 +176,10 @@ export function mapOrchestrationToPipelineTraceInput(
     ...new Set([
       ...(params.supplementalSourcesUsed ?? []),
       ...(vlinkPipelineContext?.vlinksUsed ? ['vlink'] : []),
-      ...mapSourcesUsedFromAssembled(params.assembledContext).filter((s) => s !== 'vlink'),
+      ...(graphBundlePipelineContext?.bundlesUsed ? ['graph_bundle'] : []),
+      ...mapSourcesUsedFromAssembled(params.assembledContext).filter(
+        (s) => s !== 'vlink' && s !== 'graph_bundle'
+      ),
     ]),
   ];
 

@@ -1,8 +1,8 @@
 # Business Operations Reference Candidates
 
 **Program:** Business Operations Architecture Council Ratification  
-**Ratification date:** 2026-06-14  
-**Status:** **APPROVED** — conditional reference candidates (not Reference Implementation)
+**Ratification date:** 2026-06-14 (initial) · **BO-3 reaffirmed 2026-06-19** · **BO-4 executed 2026-06-19**  
+**Status:** **EXECUTED** — reference candidates registered in catalog
 
 **Authority:** [CERTIFICATION_LEDGER.md](../architecture/CERTIFICATION_LEDGER.md) §Certification levels; [MODULE_REFERENCE_PATTERNS_FROM_FILE_HUB.md](../guides/MODULE_REFERENCE_PATTERNS_FROM_FILE_HUB.md)
 
@@ -30,8 +30,8 @@ Reference Candidates are **copy sources** for patterns within their domain. They
 |-------|-------|
 | Module id | `hr` |
 | Designation | **Reference Candidate #1 — Workforce Lifecycle** |
-| Certification | LEVEL 3 CERTIFIED WITH FINDINGS |
-| Ratified | 2026-06-14 |
+| Certification | LEVEL 3 CERTIFIED WITH FINDINGS (executed BO-4) |
+| Ratified | BO-3 2026-06-19; catalog BO-4 2026-06-19 |
 
 **Copy-worthy patterns:**
 
@@ -60,9 +60,9 @@ Reference Candidates are **copy sources** for patterns within their domain. They
 | Field | Value |
 |-------|-------|
 | Module id | `scheduling` |
-| Designation | **Reference Candidate #6 — Planning** |
-| Certification | LEVEL 3 CERTIFIED WITH FINDINGS |
-| Ratified | 2026-06-14 |
+| Designation | **Reference Candidate WITH FINDINGS #6 — Planning** |
+| Certification | LEVEL 3 CERTIFIED WITH FINDINGS (executed BO-4) |
+| Ratified | BO-3 2026-06-19; catalog BO-4 2026-06-19 |
 
 **Copy-worthy patterns:**
 
@@ -92,9 +92,9 @@ Reference Candidates are **copy sources** for patterns within their domain. They
 | Field | Value |
 |-------|-------|
 | Module id | `workforce_comms` |
-| Designation | **Reference Candidate #7 — Broadcast & Acknowledgement** |
-| Certification | LEVEL 3 CERTIFIED |
-| Ratified | 2026-06-14 |
+| Designation | **Reference Candidate #7 — Workforce Broadcast** |
+| Certification | LEVEL 3 CERTIFIED WITH FINDINGS (domain-aligned; executed BO-4) |
+| Ratified | BO-3 2026-06-19; catalog BO-4 2026-06-19 |
 
 **Copy-worthy patterns:**
 

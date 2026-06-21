@@ -82,12 +82,12 @@ export default function WorkforceCommsSidebar({
   ];
 
   return (
-    <aside className="w-64 border-r border-gray-200 dark:border-slate-700 bg-white dark:bg-slate-900 flex flex-col h-full">
-      <div className="p-4 border-b border-gray-200 dark:border-slate-700">
-        <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
+    <aside className="w-64 border-r border-v-border bg-v-surface flex flex-col h-full">
+      <div className="p-4 border-b border-v-border">
+        <h2 className="text-lg font-semibold text-v-text-primary">
           Workforce Communications
         </h2>
-        <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+        <p className="text-xs text-v-text-muted mt-1">
           Broadcasts & acknowledgements
         </p>
       </div>
@@ -103,7 +103,7 @@ export default function WorkforceCommsSidebar({
               className={`w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm transition-colors ${
                 active
                   ? 'bg-blue-50 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300'
-                  : 'text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800'
+                  : 'text-v-text-secondary hover:bg-v-surface-muted'
               }`}
             >
               <Icon className="w-4 h-4 shrink-0" />

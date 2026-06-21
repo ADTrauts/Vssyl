@@ -15,7 +15,7 @@ export default function OnboardingTimeline({ tasks, className = '' }: Onboarding
   const sortedTasks = [...tasks].sort((a, b) => a.orderIndex - b.orderIndex);
 
   const getDateStatus = (dueDate: string | null) => {
-    if (!dueDate) return { status: 'no-date', label: 'No due date', color: 'text-gray-500' };
+    if (!dueDate) return { status: 'no-date', label: 'No due date', color: 'text-v-text-muted' };
     
     const date = new Date(dueDate);
     if (isPast(date) && !isToday(date)) {
@@ -25,9 +25,9 @@ export default function OnboardingTimeline({ tasks, className = '' }: Onboarding
       return { status: 'today', label: `Due today: ${format(date, 'MMM d, yyyy')}`, color: 'text-orange-600' };
     }
     if (isFuture(date)) {
-      return { status: 'upcoming', label: `Due: ${format(date, 'MMM d, yyyy')}`, color: 'text-gray-600' };
+      return { status: 'upcoming', label: `Due: ${format(date, 'MMM d, yyyy')}`, color: 'text-v-text-secondary' };
     }
-    return { status: 'no-date', label: 'No due date', color: 'text-gray-500' };
+    return { status: 'no-date', label: 'No due date', color: 'text-v-text-muted' };
   };
 
   return (
@@ -40,7 +40,7 @@ export default function OnboardingTimeline({ tasks, className = '' }: Onboarding
           <div key={task.id} className="relative flex gap-4">
             {/* Timeline line */}
             {!isLast && (
-              <div className="absolute left-3 top-8 bottom-0 w-0.5 bg-gray-200" />
+              <div className="absolute left-3 top-8 bottom-0 w-0.5 bg-v-border" />
             )}
 
             {/* Icon */}
@@ -53,7 +53,7 @@ export default function OnboardingTimeline({ tasks, className = '' }: Onboarding
                     ? 'bg-blue-100 border-blue-500'
                     : task.status === 'BLOCKED'
                     ? 'bg-red-100 border-red-500'
-                    : 'bg-gray-100 border-gray-300'
+                    : 'bg-v-surface-muted border-v-border'
                 }`}
               >
                 <OnboardingTaskTypeIcon
@@ -66,7 +66,7 @@ export default function OnboardingTimeline({ tasks, className = '' }: Onboarding
                       ? 'text-blue-600'
                       : task.status === 'BLOCKED'
                       ? 'text-red-600'
-                      : 'text-gray-500'
+                      : 'text-v-text-muted'
                   }
                 />
               </div>
@@ -77,13 +77,13 @@ export default function OnboardingTimeline({ tasks, className = '' }: Onboarding
               <div className="flex items-start justify-between gap-4">
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-1">
-                    <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{task.title}</h4>
+                    <h4 className="text-sm font-semibold text-v-text-primary">{task.title}</h4>
                     <OnboardingTaskStatusBadge status={task.status} />
                   </div>
                   {task.description && (
-                    <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">{task.description}</p>
+                    <p className="text-sm text-v-text-secondary mb-2">{task.description}</p>
                   )}
-                  <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
+                  <div className="flex items-center gap-4 text-xs text-v-text-muted">
                     <span className="capitalize">{task.taskType.toLowerCase()}</span>
                     {task.ownerType && (
                       <span className="capitalize">Owner: {task.ownerType.toLowerCase()}</span>
@@ -100,7 +100,7 @@ export default function OnboardingTimeline({ tasks, className = '' }: Onboarding
                 )}
               </div>
               {task.completedAt && (
-                <div className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+                <div className="mt-2 text-xs text-v-text-muted">
                   Completed: {format(new Date(task.completedAt), 'MMM d, yyyy')}
                 </div>
               )}

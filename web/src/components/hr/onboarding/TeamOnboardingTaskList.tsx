@@ -9,6 +9,7 @@ import OnboardingTaskTypeIcon from './OnboardingTaskTypeIcon';
 import OnboardingTaskApprovalModal from './OnboardingTaskApprovalModal';
 import OnboardingChatIntegration from './integrations/OnboardingChatIntegration';
 import type { TeamOnboardingTask } from '@/api/hrOnboarding';
+import { BusinessOperationsEmptyState } from '@/components/business-operations/BusinessOperationsEmptyState';
 
 interface TeamOnboardingTaskListProps {
   tasks: TeamOnboardingTask[];
@@ -113,8 +114,8 @@ export default function TeamOnboardingTaskList({
       {/* Filters */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
         <div className="flex items-center gap-2 flex-wrap">
-          <Filter className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Filter:</span>
+          <Filter className="w-4 h-4 text-v-text-muted" />
+          <span className="text-sm font-medium text-v-text-secondary">Filter:</span>
           <button
             onClick={() => {
               setTaskFilter('all');
@@ -123,7 +124,7 @@ export default function TeamOnboardingTaskList({
             className={`px-3 py-1 rounded text-sm ${
               taskFilter === 'all' && !selectedEmployee
                 ? 'bg-blue-100 text-blue-700 font-medium'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                : 'bg-v-surface-muted text-v-text-secondary hover:bg-v-surface-muted'
             }`}
           >
             All ({tasks.length})
@@ -133,7 +134,7 @@ export default function TeamOnboardingTaskList({
             className={`px-3 py-1 rounded text-sm ${
               taskFilter === 'pending_approval'
                 ? 'bg-yellow-100 text-yellow-700 font-medium'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                : 'bg-v-surface-muted text-v-text-secondary hover:bg-v-surface-muted'
             }`}
           >
             Pending Approval (
@@ -144,7 +145,7 @@ export default function TeamOnboardingTaskList({
             className={`px-3 py-1 rounded text-sm ${
               taskFilter === 'overdue'
                 ? 'bg-red-100 text-red-700 font-medium'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                : 'bg-v-surface-muted text-v-text-secondary hover:bg-v-surface-muted'
             }`}
           >
             Overdue ({tasks.filter(isOverdue).length})
@@ -153,14 +154,14 @@ export default function TeamOnboardingTaskList({
 
         {employees.length > 0 && (
           <div className="flex items-center gap-2">
-            <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Employee:</span>
+            <span className="text-sm font-medium text-v-text-secondary">Employee:</span>
             <select
               value={selectedEmployee || ''}
               onChange={(e) => {
                 setSelectedEmployee(e.target.value || null);
                 setTaskFilter('all');
               }}
-              className="rounded-md border border-gray-300 dark:border-slate-600 px-3 py-1 text-sm text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+              className="rounded-md border border-v-border px-3 py-1 text-sm text-v-text-primary focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
               <option value="">All Employees</option>
               {employees.map(([id, employee]) => (
@@ -175,9 +176,11 @@ export default function TeamOnboardingTaskList({
 
       {/* Task List */}
       {filteredTasks.length === 0 ? (
-        <Card className="p-8 text-center">
-          <p className="text-sm text-gray-500 dark:text-gray-400">No tasks match the selected filters.</p>
-        </Card>
+        <BusinessOperationsEmptyState
+          icon={<Filter className="h-12 w-12" />}
+          title="No tasks match these filters"
+          description="Adjust employee or status filters to see team onboarding tasks."
+        />
       ) : (
         <div className="space-y-3">
           {filteredTasks.map((task) => {
@@ -202,7 +205,7 @@ export default function TeamOnboardingTaskList({
                           ? 'bg-blue-100'
                           : task.status === 'BLOCKED'
                           ? 'bg-red-100'
-                          : 'bg-gray-100'
+                          : 'bg-v-surface-muted'
                       }`}
                     >
                       <OnboardingTaskTypeIcon
@@ -215,7 +218,7 @@ export default function TeamOnboardingTaskList({
                             ? 'text-blue-600'
                             : task.status === 'BLOCKED'
                             ? 'text-red-600'
-                            : 'text-gray-500'
+                            : 'text-v-text-muted'
                         }
                       />
                     </div>
@@ -226,7 +229,7 @@ export default function TeamOnboardingTaskList({
                     <div className="flex items-start justify-between gap-4 mb-2">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-1">
-                          <h4 className="text-sm font-semibold text-gray-900 dark:text-gray-100">{task.title}</h4>
+                          <h4 className="text-sm font-semibold text-v-text-primary">{task.title}</h4>
                           <OnboardingTaskStatusBadge status={task.status} />
                           {overdue && (
                             <Badge color="red" size="sm">Overdue</Badge>
@@ -236,9 +239,9 @@ export default function TeamOnboardingTaskList({
                           )}
                         </div>
                         {task.description && (
-                          <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">{task.description}</p>
+                          <p className="text-sm text-v-text-secondary mb-2">{task.description}</p>
                         )}
-                        <div className="flex items-center gap-4 text-xs text-gray-500 dark:text-gray-400">
+                        <div className="flex items-center gap-4 text-xs text-v-text-muted">
                           <div className="flex items-center gap-1">
                             <User className="w-3 h-3" />
                             <span>{employeeName}</span>
@@ -253,7 +256,7 @@ export default function TeamOnboardingTaskList({
                               <span>No due date</span>
                             )}
                           </div>
-                          <span className="text-gray-400">•</span>
+                          <span className="text-v-text-muted">•</span>
                           <span>{templateName}</span>
                         </div>
                       </div>
@@ -291,8 +294,8 @@ export default function TeamOnboardingTaskList({
 
                     {/* Completed Info */}
                     {task.status === 'COMPLETED' && task.completedAt && (
-                      <div className="mt-3 pt-3 border-t border-gray-200 dark:border-slate-700">
-                        <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
+                      <div className="mt-3 pt-3 border-t border-v-border">
+                        <div className="flex items-center gap-2 text-sm text-v-text-secondary">
                           <CheckCircle2 className="w-4 h-4 text-green-600" />
                           <span>
                             Completed {format(new Date(task.completedAt), 'MMM d, yyyy')}
@@ -300,7 +303,7 @@ export default function TeamOnboardingTaskList({
                           </span>
                         </div>
                         {task.notes && (
-                          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 ml-6">{task.notes}</p>
+                          <p className="text-sm text-v-text-secondary mt-1 ml-6">{task.notes}</p>
                         )}
                       </div>
                     )}

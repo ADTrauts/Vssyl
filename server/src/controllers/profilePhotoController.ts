@@ -6,6 +6,19 @@ import fs from 'fs';
 import { storageService } from '../services/storageService';
 import sharp from 'sharp';
 import { logger } from '../lib/logger';
+import {
+  ProfilePhotoServiceError,
+  assertPhotoWrite,
+  createProfilePhotoRecord,
+  assignPhotoToSlot,
+  findOwnedPhoto,
+  findOwnedPhotoWithOriginal,
+  updatePhotoAvatarRecord,
+  clearPhotoSlot,
+  getProfilePhotosBundle,
+  getPhotoForServe,
+  syncUserAfterPhotoUpload,
+} from '../services/account/profilePhotoService';
 
 interface RequestWithFile extends Request {
   file?: Express.Multer.File;
@@ -186,6 +199,8 @@ export async function uploadProfilePhoto(req: RequestWithFile, res: Response) {
       return res.status(400).json({ error: 'Failed to process uploaded file' });
     }
 
+    await assertPhotoWrite(userId);
+
     // Upload original file using storage service
     const uploadOriginalResult = await storageService.uploadFile(req.file, uniqueOriginalFilename, {
       makePublic: true,
@@ -223,53 +238,15 @@ export async function uploadProfilePhoto(req: RequestWithFile, res: Response) {
 
     const avatarUrl = uploadAvatarResult.url;
 
-    // Create library record
-    const created = await prisma.userProfilePhoto.create({
-      data: {
-        userId,
-        originalUrl,
-        avatarUrl,
-        crop: cropParams ? (cropParams as unknown as object) : undefined,
-        rotation: typeof cropParams?.rotation === 'number' ? Math.round(cropParams.rotation) : undefined,
-      },
+    const created = await createProfilePhotoRecord({
+      userId,
+      originalUrl,
+      avatarUrl,
+      crop: cropParams ? (cropParams as object) : undefined,
+      rotation: typeof cropParams?.rotation === 'number' ? Math.round(cropParams.rotation) : undefined,
     });
 
-    // Optional: assign immediately if photoType provided (backward compatibility with existing UI)
-    if (photoType === 'personal') {
-      await prisma.user.update({
-        where: { id: userId },
-        data: {
-          personalPhotoId: created.id,
-          personalPhoto: avatarUrl,
-        },
-      });
-    } else if (photoType === 'business') {
-      await prisma.user.update({
-        where: { id: userId },
-        data: {
-          businessPhotoId: created.id,
-          businessPhoto: avatarUrl,
-        },
-      });
-    }
-
-    const updatedUser = await prisma.user.update({
-      where: { id: userId },
-      data: {},
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        personalPhoto: true,
-        businessPhoto: true,
-        personalPhotoId: true,
-        businessPhotoId: true,
-        image: true,
-      }
-    });
-
-    // Note: Activity creation removed to avoid Prisma schema issues
-    // TODO: Add proper activity tracking when schema is updated
+    const updatedUser = await syncUserAfterPhotoUpload(userId, created.id, avatarUrl, photoType);
 
     res.json({
       success: true,
@@ -277,9 +254,9 @@ export async function uploadProfilePhoto(req: RequestWithFile, res: Response) {
       photo: created,
       user: updatedUser,
       photos: {
-        personal: updatedUser.personalPhoto,
-        business: updatedUser.businessPhoto,
-        default: updatedUser.image,
+        personal: updatedUser?.personalPhoto,
+        business: updatedUser?.businessPhoto,
+        default: updatedUser?.image,
       }
     });
 
@@ -309,50 +286,16 @@ export async function assignProfilePhoto(req: Request, res: Response) {
       return res.status(400).json({ error: 'photoId and target ("personal" | "business") are required' });
     }
 
-    const photo = await prisma.userProfilePhoto.findFirst({
-      where: { id: photoId, userId, trashedAt: null },
-    });
+    const photo = await findOwnedPhoto(userId, photoId);
     if (!photo) {
       return res.status(404).json({ error: 'Photo not found' });
     }
 
-    const currentUser = await prisma.user.findUnique({
-      where: { id: userId },
-      select: {
-        personalPhotoId: true,
-        businessPhotoId: true,
-      },
-    });
-    if (!currentUser) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-
-    // Enforce distinct personal/business slots.
-    if (target === 'personal' && currentUser.businessPhotoId === photoId) {
-      return res.status(400).json({ error: 'This photo is already assigned as business photo' });
-    }
-    if (target === 'business' && currentUser.personalPhotoId === photoId) {
-      return res.status(400).json({ error: 'This photo is already assigned as personal photo' });
-    }
-
-    const updateData: Record<string, unknown> =
-      target === 'personal'
-        ? { personalPhotoId: photoId, personalPhoto: photo.avatarUrl }
-        : { businessPhotoId: photoId, businessPhoto: photo.avatarUrl };
-
-    const user = await prisma.user.update({
-      where: { id: userId },
-      data: updateData,
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        personalPhoto: true,
-        businessPhoto: true,
-        personalPhotoId: true,
-        businessPhotoId: true,
-        image: true,
-      },
+    const user = await assignPhotoToSlot({
+      userId,
+      photoId,
+      target,
+      avatarUrl: photo.avatarUrl,
     });
 
     res.json({
@@ -388,10 +331,7 @@ export async function updateProfilePhotoAvatar(req: Request, res: Response) {
       return res.status(400).json({ error: 'Valid crop params are required' });
     }
 
-    const photo = await prisma.userProfilePhoto.findFirst({
-      where: { id, userId, trashedAt: null },
-      select: { id: true, originalUrl: true },
-    });
+    const photo = await findOwnedPhotoWithOriginal(userId, id);
     if (!photo) {
       return res.status(404).json({ error: 'Photo not found' });
     }
@@ -429,32 +369,13 @@ export async function updateProfilePhotoAvatar(req: Request, res: Response) {
       },
     });
 
-    const updatedPhoto = await prisma.userProfilePhoto.update({
-      where: { id },
-      data: {
-        avatarUrl: uploadAvatarResult.url,
-        crop: cropParams as unknown as object,
-        rotation: typeof cropParams.rotation === 'number' ? Math.round(cropParams.rotation) : undefined,
-      },
+    const updatedPhoto = await updatePhotoAvatarRecord({
+      userId,
+      photoId: id,
+      avatarUrl: uploadAvatarResult.url,
+      crop: cropParams as object,
+      rotation: typeof cropParams.rotation === 'number' ? Math.round(cropParams.rotation) : undefined,
     });
-
-    // If assigned, update backward-compat URL fields too
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: { personalPhotoId: true, businessPhotoId: true },
-    });
-    if (user?.personalPhotoId === id) {
-      await prisma.user.update({
-        where: { id: userId },
-        data: { personalPhoto: updatedPhoto.avatarUrl },
-      });
-    }
-    if (user?.businessPhotoId === id) {
-      await prisma.user.update({
-        where: { id: userId },
-        data: { businessPhoto: updatedPhoto.avatarUrl },
-      });
-    }
 
     res.json({ success: true, photo: updatedPhoto });
   } catch (error: unknown) {
@@ -524,29 +445,7 @@ export async function removeProfilePhoto(req: Request, res: Response) {
       // Continue with database update even if file deletion fails
     }
 
-    // Update user record to remove the photo URL
-    const updateData: Record<string, unknown> = {};
-    if (photoType === 'personal') {
-      updateData.personalPhoto = null;
-    } else {
-      updateData.businessPhoto = null;
-    }
-
-    const updatedUser = await prisma.user.update({
-      where: { id: userId },
-      data: updateData,
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        personalPhoto: true,
-        businessPhoto: true,
-        image: true,
-      }
-    });
-
-    // Note: Activity creation removed to avoid Prisma schema issues
-    // TODO: Add proper activity tracking when schema is updated
+    const updatedUser = await clearPhotoSlot({ userId, photoType: photoType as 'personal' | 'business' });
 
     res.json({
       success: true,
@@ -574,83 +473,11 @@ export async function getProfilePhotos(req: Request, res: Response) {
 
     const userId = (req.user as any).id || (req.user as any).sub;
 
-    const user = await prisma.user.findUnique({
-      where: { id: userId },
-      select: {
-        id: true,
-        name: true,
-        email: true,
-        personalPhoto: true,
-        businessPhoto: true,
-        personalPhotoId: true,
-        businessPhotoId: true,
-        image: true,
-      }
-    });
-
-    if (!user) {
-      return res.status(404).json({ error: 'User not found' });
-    }
-
-    const library = await prisma.userProfilePhoto.findMany({
-      where: { userId, trashedAt: null },
-      orderBy: { createdAt: 'desc' },
-      select: {
-        id: true,
-        originalUrl: true,
-        avatarUrl: true,
-        createdAt: true,
-        updatedAt: true,
-        rotation: true,
-        crop: true,
-      },
-    });
-
-    const convertToBackendUrl = (url: string | null, photoId: string | null, type: 'avatar' | 'original'): string | null => {
-      if (!url || !photoId) return url;
-      
-      // Always return a proxy-relative URL so the Next.js API proxy can inject auth.
-      // This avoids broken images in environments where direct backend URLs don't carry auth headers.
-      return `/api/profile-photos/serve/${photoId}?type=${type}`;
-    };
-
-    // Convert library URLs
-    const libraryWithBackendUrls = library.map(photo => ({
-      ...photo,
-      avatarUrl: convertToBackendUrl(photo.avatarUrl, photo.id, 'avatar'),
-      originalUrl: convertToBackendUrl(photo.originalUrl, photo.id, 'original'),
-    }));
-
-    // Convert user photo URLs.
-    // Legacy fallback: if *_photo_id is missing but URL still exists, resolve ID from library.
-    const resolvePhotoIdFromUrl = (url: string | null): string | null => {
-      if (!url) return null;
-      const match = library.find((item) => item.avatarUrl === url || item.originalUrl === url);
-      return match?.id ?? null;
-    };
-
-    const personalPhotoId = user.personalPhotoId ?? resolvePhotoIdFromUrl(user.personalPhoto);
-    const businessPhotoId = user.businessPhotoId ?? resolvePhotoIdFromUrl(user.businessPhoto);
-    const personalPhotoUrl = personalPhotoId 
-      ? convertToBackendUrl(user.personalPhoto, personalPhotoId, 'avatar')
-      : user.personalPhoto;
-    const businessPhotoUrl = businessPhotoId
-      ? convertToBackendUrl(user.businessPhoto, businessPhotoId, 'avatar')
-      : user.businessPhoto;
+    const bundle = await getProfilePhotosBundle(userId);
 
     res.json({
       success: true,
-      photos: {
-        personal: personalPhotoUrl,
-        business: businessPhotoUrl,
-        default: user.image,
-      },
-      user: {
-        ...user,
-        personalPhoto: personalPhotoUrl,
-        businessPhoto: businessPhotoUrl,
-      },
-      library: libraryWithBackendUrls
+      ...bundle,
     });
 
   } catch (error: unknown) {
@@ -691,14 +518,7 @@ export async function serveProfilePhoto(req: Request, res: Response) {
       return res.status(400).json({ error: 'Photo ID is required' });
     }
 
-    // Find the photo (must belong to the user)
-    const photo = await prisma.userProfilePhoto.findFirst({
-      where: { 
-        id: photoId,
-        userId,
-        trashedAt: null 
-      },
-    });
+    const photo = await getPhotoForServe(userId, photoId);
 
     if (!photo) {
       return res.status(404).json({ error: 'Photo not found' });

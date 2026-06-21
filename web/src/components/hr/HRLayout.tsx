@@ -143,7 +143,7 @@ export default function HRLayout({ businessId }: HRLayoutProps) {
       />
 
       {/* Main Content Area */}
-      <div className="flex-1 overflow-y-auto bg-gray-50 dark:bg-slate-800">
+      <div className="flex-1 overflow-y-auto bg-v-surface-muted">
         <HRContentView
           view={currentView}
           businessId={businessId}

@@ -21,6 +21,11 @@ import {
   mapVLinkPipelineContextToRetrieved,
   shouldPrioritizeVLinkContext,
 } from '../context/vlinkPipelineContextService';
+import {
+  detectGraphBundleQuerySignals,
+  fetchGraphBundlePipelineContext,
+  mapGraphBundlePipelineContextToRetrieved,
+} from '../context/graphBundlePipelineContextService';
 import { inferPipelineIntents } from './inferPipelineIntents';
 import { optionalSourcesForInferredIntents } from './pipelineGroundingRuleReconcile';
 import { orchestratePipelineModuleSources } from '../context/ContextProviderOrchestrator';
@@ -37,6 +42,7 @@ export interface PipelineGroundingRetrievalInput {
   householdId?: string;
   existingModuleContexts?: Record<string, unknown>;
   existingVLinkPipelineContext?: import('../context/vlinkPipelineContextService').VLinkPipelineContextResult;
+  existingGraphBundlePipelineContext?: import('../context/graphBundlePipelineContextService').GraphBundlePipelineContextResult;
   requestId?: string;
   conversationId?: string;
   /** Phase B.5 — force orchestration snapshot (admin paths). */
@@ -50,6 +56,7 @@ export interface PipelineGroundingRetrievalResult {
   toolsUsed: PipelineToolUsageRecord[];
   locationSummary?: string;
   vlinkPipelineContext?: import('../context/vlinkPipelineContextService').VLinkPipelineContextResult;
+  graphBundlePipelineContext?: import('../context/graphBundlePipelineContextService').GraphBundlePipelineContextResult;
   requiredSourceFailures?: string[];
   contextOrchestration?: {
     contextGenerationId: string;
@@ -419,6 +426,53 @@ export async function runPipelineGroundingRetrieval(
     );
     if (input.existingVLinkPipelineContext.vlinksUsed > 0) {
       result.sourcesUsed.push('vlink');
+    }
+  }
+
+  const graphBundleSignals = detectGraphBundleQuerySignals(input.userMessage, {
+    intentBoost: inferredIntents.some((id) =>
+      ['planning', 'workflow_action', 'business_operations', 'technical_help'].includes(id)
+    ),
+  });
+  const shouldFetchGraphBundle =
+    optionalSourcesForInferred.has('graph_bundle') ||
+    graphBundleSignals.graphBundleEligible ||
+    graphBundleSignals.vlCodeReferenced;
+
+  if (
+    shouldFetchGraphBundle &&
+    isSourceEnabled(input.catalog, 'graph_bundle') &&
+    !input.existingGraphBundlePipelineContext
+  ) {
+    try {
+      const graphBundleContext = await fetchGraphBundlePipelineContext({
+        userId: input.userId,
+        query: input.userMessage,
+        businessId: input.businessId,
+        dashboardId: input.dashboardId,
+        householdId: input.householdId,
+        catalogEnabled: true,
+        intentBoost: graphBundleSignals.intentBoost,
+      });
+      result.graphBundlePipelineContext = graphBundleContext;
+      result.contextRetrieved.push(...mapGraphBundlePipelineContextToRetrieved(graphBundleContext));
+      if (graphBundleContext.bundlesUsed > 0) {
+        result.sourcesUsed.push('graph_bundle');
+      }
+    } catch (error: unknown) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      void logger.warn('Pipeline graph_bundle retrieval failed', {
+        operation: 'pipeline_grounding_graph_bundle',
+        error: { message: err.message },
+      });
+    }
+  } else if (input.existingGraphBundlePipelineContext) {
+    result.graphBundlePipelineContext = input.existingGraphBundlePipelineContext;
+    result.contextRetrieved.push(
+      ...mapGraphBundlePipelineContextToRetrieved(input.existingGraphBundlePipelineContext)
+    );
+    if (input.existingGraphBundlePipelineContext.bundlesUsed > 0) {
+      result.sourcesUsed.push('graph_bundle');
     }
   }
 

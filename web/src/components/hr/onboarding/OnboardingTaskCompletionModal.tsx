@@ -65,15 +65,15 @@ export default function OnboardingTaskCompletionModal({
     <Modal open={true} onClose={onClose} title="Complete Task">
       <div className="space-y-4">
         <div>
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">{task.title}</h3>
+          <h3 className="text-lg font-semibold text-v-text-primary mb-2">{task.title}</h3>
           {task.description && (
-            <p className="text-sm text-gray-600 dark:text-gray-400">{task.description}</p>
+            <p className="text-sm text-v-text-secondary">{task.description}</p>
           )}
         </div>
 
         {requiresDocument && (
           <div className="space-y-2">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+            <label className="block text-sm font-medium text-v-text-secondary">
               Required Document {hasRequiredDocument && <span className="text-green-600">✓</span>}
             </label>
             {!hasRequiredDocument && (
@@ -94,13 +94,13 @@ export default function OnboardingTaskCompletionModal({
         )}
 
         <div>
-          <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+          <label className="block text-sm font-medium text-v-text-secondary mb-2">
             Notes (optional)
           </label>
           <textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            className="w-full rounded-md border border-gray-300 dark:border-slate-600 px-3 py-2 text-gray-900 dark:text-gray-100 focus:outline-none focus:ring-2 focus:ring-blue-500"
+            className="w-full rounded-md border border-v-border px-3 py-2 text-v-text-primary focus:outline-none focus:ring-2 focus:ring-blue-500"
             rows={4}
             placeholder="Add any notes or comments about completing this task..."
           />

@@ -21,13 +21,13 @@ export default function OnboardingProgressBar({
     <div className={`space-y-2 ${className}`}>
       {showCount && (
         <div className="flex items-center justify-between text-sm">
-          <span className="text-gray-700 dark:text-gray-300 font-medium">
+          <span className="text-v-text-secondary font-medium">
             {completed} of {total} tasks completed
           </span>
-          <span className="text-gray-600 dark:text-gray-400 font-semibold">{percentage}%</span>
+          <span className="text-v-text-secondary font-semibold">{percentage}%</span>
         </div>
       )}
-      <div className="w-full bg-gray-200 rounded-full h-2.5 overflow-hidden">
+      <div className="w-full bg-v-border rounded-full h-2.5 overflow-hidden">
         <div
           className="bg-blue-600 h-2.5 rounded-full transition-all duration-300 ease-out"
           style={{ width: `${percentage}%` }}

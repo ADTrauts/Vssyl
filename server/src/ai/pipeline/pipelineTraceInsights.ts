@@ -67,6 +67,7 @@ const CONTEXT_CHECKLIST_ORDER: Array<{
   { id: 'business_context', label: 'Business context' },
   { id: 'vssyl_place', label: 'Vssyl Place' },
   { id: 'vlink', label: 'V_Link Relationships' },
+  { id: 'graph_bundle', label: 'Context Graph Bundles' },
   { id: 'web_search', label: 'Web search' },
   { id: 'module_context', label: 'Module context' },
   { id: 'tool_outputs', label: 'Tool outputs' },
@@ -138,6 +139,10 @@ function countForSource(
     case 'vlink':
       return trace.contextRetrieved
         .filter((c) => matchesSource(normalizeToken(c.source + (c.provider ?? '')), 'vlink'))
+        .reduce((sum, c) => sum + Math.max(c.itemCount, 0), 0);
+    case 'graph_bundle':
+      return trace.contextRetrieved
+        .filter((c) => matchesSource(normalizeToken(c.source + (c.provider ?? '')), 'graph_bundle'))
         .reduce((sum, c) => sum + Math.max(c.itemCount, 0), 0);
     case 'web_search':
       return trace.toolsUsed.some((t) => t.name === 'web_search') ? 1 : 0;

@@ -29,6 +29,7 @@ import {
   checkHRModuleInstalled
 } from '../middleware/hrFeatureGating';
 import * as hrController from '../controllers/hrController';
+import * as hrWorkforceBridgeController from '../controllers/hrWorkforceBridgeController';
 
 // Configure multer for CSV uploads
 const csvUpload = multer({
@@ -72,7 +73,7 @@ router.post('/admin/employees/:id/terminate', checkHRAdmin, checkHRPolicy(POLICY
 router.get('/admin/time-off/calendar', checkHRAdmin, checkHRPolicy(POLICY_ACTIONS.HR_TIME_OFF_READ), hrController.getTimeOffCalendar);
 
 // Time-off reports (admin view)
-router.get('/admin/time-off/reports', checkHRAdmin, hrController.getTimeOffReports);
+router.get('/admin/time-off/reports', checkHRAdmin, checkHRPolicy(POLICY_ACTIONS.HR_TIME_OFF_READ), hrController.getTimeOffReports);
 
 // Employee Import/Export (Available on Business Advanced+)
 router.post('/admin/employees/import', 
@@ -81,23 +82,38 @@ router.post('/admin/employees/import',
   csvUpload.single('file'),
   hrController.importEmployeesCSV
 );
-router.get('/admin/employees/export', checkHRAdmin, hrController.exportEmployeesCSV);
+router.get('/admin/employees/export', checkHRAdmin, checkHRPolicy(POLICY_ACTIONS.HR_EMPLOYEE_READ), hrController.exportEmployeesCSV);
 
 // HR Settings (Available on Business Advanced+)
 router.get('/admin/settings', checkHRAdmin, checkHRPolicy(POLICY_ACTIONS.HR_SETTINGS_WRITE), hrController.getHRSettings);
 router.put('/admin/settings', checkHRAdmin, checkHRPolicy(POLICY_ACTIONS.HR_SETTINGS_WRITE), hrController.updateHRSettings);
-router.get('/admin/features', checkHRAdmin, hrController.getHRFeatureAvailability);
+router.get('/admin/features', checkHRAdmin, checkHRPolicy(POLICY_ACTIONS.HR_SETTINGS_WRITE), hrController.getHRFeatureAvailability);
+
+// Workforce Communications bridge (domain integration — BO-1A)
+router.post(
+  '/admin/workforce-bridge/policy-broadcast',
+  checkHRAdmin,
+  checkHRPolicy(POLICY_ACTIONS.HR_SETTINGS_WRITE),
+  hrWorkforceBridgeController.postHrPolicyWorkforceBroadcast
+);
+router.post(
+  '/admin/workforce-bridge/announcement-broadcast',
+  checkHRAdmin,
+  checkHRPolicy(POLICY_ACTIONS.HR_SETTINGS_WRITE),
+  hrWorkforceBridgeController.postHrAnnouncementWorkforceBroadcast
+);
 
 // HR Analytics (Available on Business Advanced+)
-router.get('/admin/analytics/onboarding', checkHRAdmin, hrController.getOnboardingAnalyticsController);
-router.get('/admin/analytics/attendance', checkHRAdmin, hrController.getAttendanceAnalyticsController);
-router.get('/admin/analytics/time-off', checkHRAdmin, hrController.getTimeOffAnalyticsController);
+router.get('/admin/analytics/onboarding', checkHRAdmin, checkHRPolicy(POLICY_ACTIONS.HR_EMPLOYEE_READ), hrController.getOnboardingAnalyticsController);
+router.get('/admin/analytics/attendance', checkHRAdmin, checkHRPolicy(POLICY_ACTIONS.HR_ATTENDANCE_MANAGE), hrController.getAttendanceAnalyticsController);
+router.get('/admin/analytics/time-off', checkHRAdmin, checkHRPolicy(POLICY_ACTIONS.HR_TIME_OFF_READ), hrController.getTimeOffAnalyticsController);
 
 // Onboarding (Business Advanced+ pilot)
 router.get(
   '/admin/onboarding/templates',
   checkHRFeature('onboarding'),
   checkHRAdmin,
+  checkHRPolicy(POLICY_ACTIONS.HR_ONBOARDING_MANAGE),
   hrController.getOnboardingTemplates
 );
 router.post(
@@ -125,12 +141,14 @@ router.get(
   '/admin/onboarding/documents/library',
   checkHRFeature('onboarding'),
   checkHRAdmin,
+  checkHRPolicy(POLICY_ACTIONS.HR_ONBOARDING_MANAGE),
   hrController.getOnboardingDocumentLibrary
 );
 router.get(
   '/admin/onboarding/journeys',
   checkHRFeature('onboarding'),
   checkHRAdmin,
+  checkHRPolicy(POLICY_ACTIONS.HR_ONBOARDING_MANAGE),
   hrController.getOnboardingJourneys
 );
 router.post(
@@ -153,12 +171,14 @@ router.get(
   '/admin/attendance/overview',
   checkHRFeature('attendance'),
   checkHRAdmin,
+  checkHRPolicy(POLICY_ACTIONS.HR_ATTENDANCE_MANAGE),
   hrController.getAttendanceOverview
 );
 router.get(
   '/admin/attendance/policies',
   checkHRFeature('attendance'),
   checkHRAdmin,
+  checkHRPolicy(POLICY_ACTIONS.HR_ATTENDANCE_MANAGE),
   hrController.getAttendancePolicies
 );
 router.post(
@@ -185,7 +205,8 @@ router.put(
 // Payroll (Enterprise only)
 router.get('/admin/payroll', 
   checkHRFeature('payroll'),
-  checkHRAdmin, 
+  checkHRAdmin,
+  checkHRPolicy(POLICY_ACTIONS.HR_SETTINGS_WRITE),
   (req, res) => {
     res.json({ 
       message: 'Payroll dashboard - framework stub',
@@ -199,6 +220,7 @@ router.get('/admin/payroll',
 router.get('/admin/recruitment',
   checkHRFeature('recruitment'),
   checkHRAdmin,
+  checkHRPolicy(POLICY_ACTIONS.HR_SETTINGS_WRITE),
   (req, res) => {
     res.json({ 
       message: 'Recruitment dashboard - framework stub',
@@ -212,6 +234,7 @@ router.get('/admin/recruitment',
 router.get('/admin/performance',
   checkHRFeature('performance'),
   checkHRAdmin,
+  checkHRPolicy(POLICY_ACTIONS.HR_SETTINGS_WRITE),
   (req, res) => {
     res.json({ 
       message: 'Performance management - framework stub',
@@ -225,6 +248,7 @@ router.get('/admin/performance',
 router.get('/admin/benefits',
   checkHRFeature('benefits'),
   checkHRAdmin,
+  checkHRPolicy(POLICY_ACTIONS.HR_SETTINGS_WRITE),
   (req, res) => {
     res.json({ 
       message: 'Benefits administration - framework stub',
@@ -241,11 +265,12 @@ router.get('/admin/benefits',
 // ============================================================================
 
 // View team members
-router.get('/team/employees', checkManagerAccess, hrController.getTeamEmployees);
+router.get('/team/employees', checkManagerAccess, checkHRPolicy(POLICY_ACTIONS.HR_EMPLOYEE_READ), hrController.getTeamEmployees);
 
 // Approve team time-off (framework stub)
 router.get('/team/time-off/pending',
   checkManagerAccess,
+  checkHRPolicy(POLICY_ACTIONS.HR_TIME_OFF_READ),
   hrController.getPendingTeamTimeOff
 );
 
@@ -259,6 +284,7 @@ router.get(
   '/team/onboarding/tasks',
   checkHRFeature('onboarding'),
   checkManagerAccess,
+  checkHRPolicy(POLICY_ACTIONS.HR_ONBOARDING_MANAGE),
   hrController.getTeamOnboardingTasks
 );
 router.post(
@@ -273,6 +299,7 @@ router.get(
   '/team/attendance/exceptions',
   checkHRFeature('attendance'),
   checkManagerAccess,
+  checkHRPolicy(POLICY_ACTIONS.HR_ATTENDANCE_MANAGE),
   hrController.getTeamAttendanceExceptions
 );
 
@@ -287,13 +314,14 @@ router.post(
 // Time-off calendar (admins and managers)
 router.get('/team/time-off/calendar',
   checkManagerAccess,
+  checkHRPolicy(POLICY_ACTIONS.HR_TIME_OFF_READ),
   hrController.getTimeOffCalendar
 );
 
 // ============================================================================
 // DASHBOARD WIDGET (any employee with HR access)
 // ============================================================================
-router.get('/dashboard-summary', checkEmployeeAccess, hrController.getDashboardSummary);
+router.get('/dashboard-summary', checkEmployeeAccess, checkHRPolicy(POLICY_ACTIONS.HR_EMPLOYEE_READ), hrController.getDashboardSummary);
 
 // ============================================================================
 // EMPLOYEE ROUTES (Self-Service)
@@ -302,28 +330,31 @@ router.get('/dashboard-summary', checkEmployeeAccess, hrController.getDashboardS
 // ============================================================================
 
 // View own HR data
-router.get('/me', checkEmployeeAccess, hrController.getOwnHRData);
+router.get('/me', checkEmployeeAccess, checkHRPolicy(POLICY_ACTIONS.HR_EMPLOYEE_READ), hrController.getOwnHRData);
 
 // Update own HR data (limited fields)
-router.put('/me', checkEmployeeAccess, hrController.updateOwnHRData);
+router.put('/me', checkEmployeeAccess, checkHRPolicy(POLICY_ACTIONS.HR_EMPLOYEE_WRITE), hrController.updateOwnHRData);
 
 // Attendance (self-service)
 router.get(
   '/me/attendance/records',
   checkHRFeature('attendance'),
   checkEmployeeAccess,
+  checkHRPolicy(POLICY_ACTIONS.HR_EMPLOYEE_READ),
   hrController.getMyAttendanceRecords
 );
 router.post(
   '/me/attendance/punch-in',
   checkHRFeature('attendance.clockInOut'),
   checkEmployeeAccess,
+  checkHRPolicy(POLICY_ACTIONS.HR_EMPLOYEE_READ),
   hrController.recordSelfAttendancePunchIn
 );
 router.post(
   '/me/attendance/punch-out',
   checkHRFeature('attendance.clockInOut'),
   checkEmployeeAccess,
+  checkHRPolicy(POLICY_ACTIONS.HR_EMPLOYEE_READ),
   hrController.recordSelfAttendancePunchOut
 );
 
@@ -337,17 +368,20 @@ router.post('/me/time-off/request',
 // View own time-off balance (framework stub)
 router.get('/me/time-off/balance',
   checkEmployeeAccess,
+  checkHRPolicy(POLICY_ACTIONS.HR_TIME_OFF_READ),
   hrController.getTimeOffBalance
 );
 
 // List own time-off requests
 router.get('/me/time-off/requests',
   checkEmployeeAccess,
+  checkHRPolicy(POLICY_ACTIONS.HR_TIME_OFF_READ),
   hrController.getMyTimeOffRequests
 );
 
 router.post('/me/time-off/:id/cancel',
   checkEmployeeAccess,
+  checkHRPolicy(POLICY_ACTIONS.HR_TIME_OFF_REQUEST),
   hrController.cancelTimeOffRequest
 );
 
@@ -355,6 +389,7 @@ router.get(
   '/me/onboarding/journeys',
   checkHRFeature('onboarding'),
   checkEmployeeAccess,
+  checkHRPolicy(POLICY_ACTIONS.HR_EMPLOYEE_READ),
   hrController.getMyOnboardingJourneys
 );
 router.post(
@@ -368,6 +403,7 @@ router.post(
 // View own pay stubs (framework stub)
 router.get('/me/pay-stubs',
   checkEmployeeAccess,
+  checkHRPolicy(POLICY_ACTIONS.HR_EMPLOYEE_READ),
   (req, res) => {
     res.json({ 
       message: 'Pay stubs - framework stub',
@@ -383,9 +419,9 @@ router.get('/me/pay-stubs',
 // Access: Authenticated users with HR access
 // ============================================================================
 
-router.get('/ai/context/overview', hrController.getHROverviewContext);
-router.get('/ai/context/headcount', hrController.getHeadcountContext);
-router.get('/ai/context/time-off', hrController.getTimeOffContext);
+router.get('/ai/context/overview', checkHRPolicy(POLICY_ACTIONS.HR_EMPLOYEE_READ), hrController.getHROverviewContext);
+router.get('/ai/context/headcount', checkHRPolicy(POLICY_ACTIONS.HR_EMPLOYEE_READ), hrController.getHeadcountContext);
+router.get('/ai/context/time-off', checkHRPolicy(POLICY_ACTIONS.HR_TIME_OFF_READ), hrController.getTimeOffContext);
 
 // ============================================================================
 // HEALTH CHECK

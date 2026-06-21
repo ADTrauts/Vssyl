@@ -15,12 +15,7 @@ if (fs.existsSync(rootEnvPath)) {
 }
 
 import express, { Request, Response, NextFunction, RequestHandler } from 'express';
-import passport, { issueJWT, registerUser } from './auth';
-import jwt from 'jsonwebtoken';
-// Import User type - matches pattern from auth.ts
-// eslint-disable-next-line @typescript-eslint/ban-ts-comment
-// @ts-ignore - User type is available from Prisma client when generated
-import type { User } from '@prisma/client';
+import passport from './auth';
 import { prisma } from './lib/prisma';
 import dashboardRouter from './routes/dashboard';
 import widgetRouter from './routes/widget';
@@ -31,6 +26,7 @@ import todoRouter from './routes/todo';
 import notesRouter from './routes/notes';
 import notebookRouter from './routes/notebook';
 import vlinksRouter from './routes/vlinks';
+import contextGraphRouter from './routes/context-graph';
 import chatRouter from './routes/chat';
 import businessRouter from './routes/business';
 import webhookSubscriptionsRouter from './routes/webhookSubscriptions';
@@ -41,24 +37,6 @@ import ssoRouter from './routes/sso';
 import googleOAuthRouter from './routes/googleOAuth';
 import healthRouter from './routes/health';
 import cors from 'cors';
-import bcrypt from 'bcrypt';
-import { 
-  createRefreshToken, 
-  validateRefreshToken, 
-  deleteRefreshToken,
-  createPasswordResetToken,
-  validatePasswordResetToken,
-  deletePasswordResetToken,
-  createEmailVerificationToken,
-  validateEmailVerificationToken,
-  deleteEmailVerificationToken,
-  deleteAllUserRefreshTokens
-} from './utils/tokenUtils';
-import { 
-  sendVerificationEmail, 
-  sendPasswordResetEmail, 
-  sendWelcomeEmail 
-} from './services/emailService';
 import { startCleanupJob } from './services/cleanupService';
 import { initializeChatSocketService, getChatSocketService } from './services/chatSocketService';
 import { registerDomainEventSubscribers } from './events/registerDomainEventSubscribers';
@@ -74,6 +52,10 @@ import { seedWorkforceCommsModuleOnStartup } from './startup/seedWorkforceCommsM
 import { registerPlatformCronJobs } from './jobs/platformCronJobs';
 import type { JwtPayload } from 'jsonwebtoken';
 import userRouter from './routes/user';
+import authRouter from './routes/auth';
+import profileRouter from './routes/profile';
+import settingsRouter from './routes/settings';
+import accountEntitlementsRouter from './routes/accountEntitlements';
 import memberRouter from './routes/member';
 import searchRouter from './routes/search';
 import trashRouter from './routes/trash';
@@ -145,10 +127,12 @@ import adminCreateHRTablesRouter from './routes/admin-create-hr-tables';
 import adminFixSubscriptionsRouter from './routes/admin-fix-subscriptions';
 import aiProviderUsageRouter from './routes/ai-provider-usage';
 import placeRouter from './routes/place';
-import { authenticateJWT, type AuthenticatedRequest, getUserFromRequest } from './middleware/auth';
+import { authenticateJWT, getUserFromRequest } from './middleware/auth';
 import { logger } from './lib/logger';
-import { logWhenLoggerFails } from './lib/safeLoggerFallback';
 import { buildExpressErrorResponse } from './lib/expressErrorHandlerResponse';
+import { asyncHandler } from './utils/asyncHandler';
+
+export { asyncHandler };
 
 
 
@@ -160,23 +144,6 @@ const port = process.env.PORT || 5000;
 const isDevRuntime = process.env.NODE_ENV !== 'production';
 
 
-
-// Helper function to create user response
-function createUserResponse(user: User) {
-  const { password, ...userWithoutPassword } = user;
-  return {
-    ...userWithoutPassword,
-    emailVerified: !!user.emailVerified,
-  };
-}
-
-// Helper to wrap async route handlers for Express
-// eslint-disable-next-line @typescript-eslint/no-explicit-any
-export function asyncHandler(fn: (...args: any[]) => Promise<any>): RequestHandler {
-  return function (req, res, next) {
-    Promise.resolve(fn(req, res, next)).catch(next);
-  };
-}
 
 void logger.info('Starting server', { operation: 'server_boot' });
 
@@ -327,532 +294,10 @@ app.use((req: Request, res: Response, next: NextFunction) => {
   next();
 });
 
-app.post('/api/auth/register', asyncHandler(async (req: Request, res: Response) => {
-  const { email, password, name } = req.body;
-  if (!email || !password) {
-    res.status(400).json({ message: 'Email and password are required' });
-    return;
-  }
-  try {
-    // Get client IP for location detection
-    const clientIP = req.headers['x-forwarded-for'] || 
-                    req.connection.remoteAddress || 
-                    req.socket.remoteAddress;
-    
-    let user: User;
-    try {
-      // Test database connection before attempting registration
-      try {
-        await prisma.$queryRaw`SELECT 1`;
-      } catch (dbTestError) {
-        const dbErrorMsg = dbTestError instanceof Error ? dbTestError.message : 'Unknown error';
-        void logger
-          .error('Registration database connection test failed', {
-            operation: 'user_registration',
-            error: { message: dbErrorMsg },
-          })
-          .catch(() => undefined);
-        return res.status(503).json({ 
-          message: 'Database connection failed. Please try again later.',
-          ...(process.env.NODE_ENV === 'development' && { error: dbErrorMsg })
-        });
-      }
-      
-      user = await registerUser(email, password, name, clientIP as string);
-    } catch (registerError) {
-      // Log registration error with details
-      const errorMessage = registerError instanceof Error ? registerError.message : 'Unknown error';
-      const errorStack = registerError instanceof Error ? registerError.stack : undefined;
-      
-      // Check for specific Prisma error types
-      if (typeof registerError === 'object' && registerError && 'code' in registerError) {
-        const errorCode = (registerError as Record<string, unknown>).code;
-        if (errorCode === 'P2002') {
-          // Unique constraint violation (email already exists)
-          return res.status(409).json({ message: 'Email already in use' });
-        }
-        if (errorCode === 'P1001' || errorCode === 'P1002') {
-          // Database connection errors
-          return res.status(503).json({ 
-            message: 'Database connection failed. Please try again later.',
-            ...(process.env.NODE_ENV === 'development' && { error: errorMessage, code: errorCode })
-          });
-        }
-      }
-      
-      // Check for database connection error messages
-      if (errorMessage.includes('Can\'t reach database') || 
-          errorMessage.includes('connection pool') ||
-          errorMessage.includes('timeout') ||
-          errorMessage.includes('PrismaClientInitializationError') ||
-          errorMessage.includes('P1001') ||
-          errorMessage.includes('P1002')) {
-        return res.status(503).json({ 
-          message: 'Database temporarily unavailable. Please try again.',
-          ...(process.env.NODE_ENV === 'development' && { error: errorMessage })
-        });
-      }
-      
-      // Log the error (but don't fail if logging fails)
-      try {
-        await logger.error('User registration failed in registerUser function', {
-          operation: 'user_registration',
-          email: email,
-          ipAddress: clientIP as string,
-          userAgent: req.get('user-agent'),
-          error: {
-            message: errorMessage,
-            stack: errorStack
-          }
-        });
-      } catch (logError) {
-        // If logging fails, at least log to console
-        console.error('Failed to log registration error:', logError);
-        console.error('Original registration error:', registerError);
-      }
-      
-      // Re-throw to be caught by outer catch block
-      throw registerError;
-    }
-    
-    // Log successful registration (non-blocking)
-    try {
-      await logger.logUserAction(user.id, 'user_registered', {
-        email: user.email,
-        ipAddress: clientIP as string,
-        userAgent: req.get('user-agent')
-      });
-    } catch (logError) {
-      // Don't fail registration if logging fails
-      console.error('Failed to log user action during registration:', logError);
-    }
-    
-    // Send verification email if SMTP is configured, otherwise auto-verify
-    try {
-      if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
-        // Create and send verification email
-        try {
-          const verificationToken = await createEmailVerificationToken(user.id);
-          await sendVerificationEmail(user.email, verificationToken);
-        } catch (emailError) {
-          await logger.warn('Failed to send verification email during registration', {
-            operation: 'user_registration',
-            userId: user.id,
-            email: user.email,
-            error: {
-              message: emailError instanceof Error ? emailError.message : 'Unknown error',
-              stack: emailError instanceof Error ? emailError.stack : undefined
-            }
-          });
-          // Continue - email verification can be resent later
-        }
-        
-        // Send welcome email (non-critical, don't fail registration if this fails)
-        try {
-          await sendWelcomeEmail(user.email, user.name || 'there');
-        } catch (welcomeEmailError) {
-          await logger.warn('Failed to send welcome email during registration', {
-            operation: 'user_registration',
-            userId: user.id,
-            email: user.email,
-            error: {
-              message: welcomeEmailError instanceof Error ? welcomeEmailError.message : 'Unknown error'
-            }
-          });
-          // Continue - welcome email is not critical
-        }
-      } else {
-        // Auto-verify email if SMTP is not configured
-        await prisma.user.update({
-          where: { id: user.id },
-          data: { emailVerified: new Date() }
-        });
-      }
-    } catch (emailConfigError) {
-      // If email configuration fails, auto-verify and continue
-      await logger.warn('Email configuration error during registration, auto-verifying email', {
-        operation: 'user_registration',
-        userId: user.id,
-        email: user.email,
-        error: {
-          message: emailConfigError instanceof Error ? emailConfigError.message : 'Unknown error'
-        }
-      });
-      try {
-        await prisma.user.update({
-          where: { id: user.id },
-          data: { emailVerified: new Date() }
-        });
-      } catch (updateError) {
-        // Log but don't fail - email verification is not critical for registration
-        await logger.error('Failed to auto-verify email during registration', {
-          operation: 'user_registration',
-          userId: user.id,
-          error: {
-            message: updateError instanceof Error ? updateError.message : 'Unknown error'
-          }
-        });
-      }
-    }
-    
-    const token = issueJWT(user);
-    let refreshToken: string;
-    try {
-      refreshToken = await createRefreshToken(user.id);
-    } catch (refreshTokenError) {
-      // If refresh token creation fails, log but continue - user can still login
-      await logger.error('Failed to create refresh token during registration', {
-        operation: 'user_registration',
-        userId: user.id,
-        error: {
-          message: refreshTokenError instanceof Error ? refreshTokenError.message : 'Unknown error',
-          stack: refreshTokenError instanceof Error ? refreshTokenError.stack : undefined
-        }
-      });
-      // Set empty string as fallback - user will need to login again to get refresh token
-      refreshToken = '';
-    }
-
-    // Ensure a personal main calendar exists named after the first tab (use "My Dashboard" as fallback)
-    try {
-      // Find or create the user's first personal dashboard name
-      const personalDash = await prisma.dashboard.findFirst({
-        where: { userId: user.id, businessId: null, institutionId: null, householdId: null },
-        orderBy: { createdAt: 'asc' }
-      });
-      const mainName = personalDash?.name || 'My Dashboard';
-      const existingCal = await prisma.calendar.findFirst({ where: { contextType: 'PERSONAL', contextId: user.id, isPrimary: true } });
-      if (!existingCal) {
-        await prisma.calendar.create({
-          data: {
-            name: mainName,
-            contextType: 'PERSONAL',
-            contextId: user.id,
-            isPrimary: true,
-            isSystem: true,
-            isDeletable: false,
-            defaultReminderMinutes: 10,
-            members: { create: { userId: user.id, role: 'OWNER' } }
-          }
-        });
-        await logger.info('Created personal primary calendar during registration', {
-          operation: 'register_user',
-          context: { userId: user.id, email: user.email, calendarName: mainName },
-        });
-      }
-    } catch (e: unknown) {
-      const err = e as Error;
-      await logger.error('Failed to ensure personal main calendar on register', {
-        operation: 'register_user',
-        error: { message: err.message, stack: err.stack },
-        context: { userId: user.id, email: user.email },
-      });
-      // Don't fail registration if calendar creation fails - it will be created when dashboard is created
-    }
-
-    res.status(201).json({ 
-      token,
-      refreshToken: refreshToken || '', // Return empty string if refresh token creation failed
-      user: createUserResponse(user)
-    });
-  } catch (err: unknown) {
-    // Log registration error (but don't fail if logging fails)
-    try {
-      await logger.error('User registration failed', {
-        operation: 'user_registration',
-        email: email,
-        ipAddress: req.ip,
-        userAgent: req.get('user-agent'),
-        error: {
-          message: err instanceof Error ? err.message : 'Unknown error',
-          stack: err instanceof Error ? err.stack : undefined
-        }
-      });
-    } catch (logError: unknown) {
-      logWhenLoggerFails('user_registration_logger', logError, err);
-    }
-    
-    // Handle Prisma unique constraint violations (email already exists)
-    if (typeof err === 'object' && err && 'code' in err && (err as Record<string, unknown>).code === 'P2002') {
-      return res.status(409).json({ message: 'Email already in use' });
-    }
-    
-    // Handle database connection errors
-    if (typeof err === 'object' && err && 'message' in err) {
-      const errorMessage = (err as Record<string, unknown>).message as string;
-      if (errorMessage.includes('connection pool') || 
-          errorMessage.includes('timeout') ||
-          errorMessage.includes('Can\'t reach database') ||
-          errorMessage.includes('PrismaClientInitializationError')) {
-        return res.status(503).json({ message: 'Database temporarily unavailable. Please try again.' });
-      }
-    }
-    
-    // Generic error response
-    const errorMessage = err instanceof Error ? err.message : 'Unknown error';
-    return res.status(500).json({ 
-      message: 'Registration failed. Please try again.',
-      ...(process.env.NODE_ENV === 'development' && { error: errorMessage })
-    });
-  }
-}));
-
-app.post('/api/auth/login', (req: Request, res: Response, next: NextFunction) => {
-  passport.authenticate('local', { session: false }, async (err: unknown, user: User | false, info: { message?: string } | undefined) => {
-    if (err || !user) {
-      // Check if it's a database connection error
-      const errorMessage = err instanceof Error ? err.message : '';
-      if (errorMessage.includes('Database connection failed') || 
-          errorMessage.includes('Database temporarily unavailable')) {
-        // Log database connection error
-        try {
-          await logger.logSecurityEvent('login_database_error', 'high', {
-            operation: 'user_login',
-            email: req.body.email,
-            ipAddress: req.ip,
-            userAgent: req.get('user-agent'),
-            reason: 'Database connection failed'
-          });
-        } catch (logError: unknown) {
-          logWhenLoggerFails('login_database_error_logger', logError);
-        }
-        return res.status(503).json({ message: 'Database temporarily unavailable. Please try again.' });
-      }
-      
-      // Log failed login attempt
-      try {
-        await logger.logSecurityEvent('login_failed', 'medium', {
-          operation: 'user_login',
-          email: req.body.email,
-          ipAddress: req.ip,
-          userAgent: req.get('user-agent'),
-          reason: info?.message || 'Invalid credentials'
-        });
-      } catch (logError: unknown) {
-        logWhenLoggerFails('login_failed_logger', logError);
-      }
-      
-      return res.status(401).json({ message: info?.message || 'Unauthorized' });
-    }
-    
-    // Log successful login
-    await logger.logUserAction(user.id, 'user_login', {
-      email: user.email,
-      ipAddress: req.ip,
-      userAgent: req.get('user-agent')
-    });
-    
-    const token = issueJWT(user);
-    const refreshToken = await createRefreshToken(user.id);
-    
-    return res.json({ 
-      token,
-      refreshToken,
-      user: createUserResponse(user)
-    });
-  })(req, res, next);
-});
-
-app.post('/api/auth/refresh', asyncHandler(async (req: Request, res: Response) => {
-  const { refreshToken } = req.body;
-  if (!refreshToken) {
-    return res.status(400).json({ message: 'Refresh token is required' });
-  }
-
-  const user = await validateRefreshToken(refreshToken);
-  if (!user) {
-    return res.status(401).json({ message: 'Invalid refresh token' });
-  }
-
-  // Delete the used refresh token
-  await deleteRefreshToken(refreshToken);
-
-  // Create new tokens
-  const newToken = issueJWT(user);
-  const newRefreshToken = await createRefreshToken(user.id);
-
-  res.json({
-    token: newToken,
-    refreshToken: newRefreshToken,
-    user: createUserResponse(user)
-  });
-}));
-
-app.post('/api/auth/forgot-password', asyncHandler(async (req: Request, res: Response) => {
-  const { email } = req.body;
-  if (!email) {
-    return res.status(400).json({ message: 'Email is required' });
-  }
-
-  const user = await prisma.user.findUnique({ 
-    where: { email },
-    select: {
-      id: true,
-      email: true,
-      name: true,
-      role: true,
-      createdAt: true,
-      updatedAt: true
-    }
-  });
-  if (!user) {
-    // Don't reveal that the email doesn't exist
-    return res.json({ message: 'If an account exists, a password reset email will be sent' });
-  }
-
-  const resetToken = await createPasswordResetToken(user.id);
-  await sendPasswordResetEmail(user.email, resetToken);
-
-  res.json({ message: 'If an account exists, a password reset email will be sent' });
-}));
-
-app.post('/api/auth/reset-password', asyncHandler(async (req: Request, res: Response) => {
-  const { token, password } = req.body;
-  if (!token || !password) {
-    return res.status(400).json({ message: 'Token and password are required' });
-  }
-
-  const user = await validatePasswordResetToken(token);
-  if (!user) {
-    return res.status(400).json({ message: 'Invalid or expired reset token' });
-  }
-
-  const hashedPassword = await bcrypt.hash(password, 10);
-  await prisma.user.update({
-    where: { id: user.id },
-    data: { password: hashedPassword }
-  });
-
-  await deletePasswordResetToken(token);
-  await deleteAllUserRefreshTokens(user.id);
-
-  res.json({ message: 'Password has been reset successfully' });
-}));
-
-app.post('/api/auth/verify-email', asyncHandler(async (req: Request, res: Response) => {
-  const { token } = req.body;
-  if (!token) {
-    return res.status(400).json({ message: 'Token is required' });
-  }
-
-  const user = await validateEmailVerificationToken(token);
-  if (!user) {
-    return res.status(400).json({ message: 'Invalid or expired verification token' });
-  }
-
-  await prisma.user.update({
-    where: { id: user.id },
-    data: { emailVerified: new Date() }
-  });
-
-  await deleteEmailVerificationToken(token);
-
-  res.json({ message: 'Email verified successfully' });
-}));
-
-app.post('/api/auth/resend-verification', asyncHandler(async (req: Request, res: Response) => {
-  const { email } = req.body;
-  const raw = typeof email === 'string' ? email.trim() : '';
-  if (!raw || !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(raw)) {
-    return res.status(400).json({ message: 'A valid email address is required' });
-  }
-
-  const user = await prisma.user.findUnique({
-    where: { email: raw },
-    select: {
-      id: true,
-      email: true,
-      emailVerified: true,
-    },
-  });
-
-  if (user && !user.emailVerified) {
-    const verificationToken = await createEmailVerificationToken(user.id);
-    await sendVerificationEmail(user.email, verificationToken);
-  }
-
-  // Uniform response — do not reveal whether the account exists or is already verified
-  res.json({
-    message:
-      'If an account exists for this email and requires verification, instructions have been sent.',
-  });
-}));
-
-// NextAuth.js internal logging endpoint
-app.post('/api/auth/_log', (req: Request, res: Response) => {
-  // Just return success for NextAuth.js internal logging
-  res.status(200).json({ success: true });
-});
-
-// JWT authentication middleware - using imported function from middleware/auth
-
-// Temporarily disabled due to type conflicts
-// function requireRole(role: string) {
-//   return (req: Request, res: Response, next: NextFunction) => {
-//     if (req.user && req.user.role === role) {
-//       next();
-//     } else {
-//       res.status(403).json({ message: 'Forbidden' });
-//     }
-//   };
-// }
-
-// Example of a protected route
-app.get('/api/profile', authenticateJWT, (req, res) => {
-  res.json({ user: req.user });
-});
-
-app.put('/api/profile', authenticateJWT, async (req, res) => {
-  try {
-    const auth = req as AuthenticatedRequest;
-    const userId = auth.user?.id;
-    if (!userId) {
-      return res.status(401).json({ message: 'User not authenticated' });
-    }
-    const rawName = (req.body as { name?: unknown })?.name;
-    if (typeof rawName !== 'string' || !rawName.trim()) {
-      return res.status(400).json({ message: 'Name is required' });
-    }
-    const updated = await prisma.user.update({
-      where: { id: userId },
-      data: { name: rawName.trim() },
-      select: {
-        id: true,
-        email: true,
-        role: true,
-        name: true,
-        emailVerified: true,
-        image: true,
-        stripeCustomerId: true,
-        createdAt: true,
-        updatedAt: true,
-        userNumber: true,
-        countryId: true,
-        regionId: true,
-        townId: true,
-        locationDetectedAt: true,
-        locationUpdatedAt: true,
-        lastActiveAt: true,
-      },
-    });
-    res.json({ user: updated });
-  } catch (error: unknown) {
-    const err = error as Error;
-    void logger
-      .error('PUT /api/profile failed', {
-        operation: 'put_profile',
-        error: { message: err.message, stack: err.stack },
-      })
-      .catch(() => undefined);
-    res.status(500).json({ message: 'Failed to update profile' });
-  }
-});
-
-// Example of an admin-only route
-// Temporarily disabled due to type conflicts
-// app.get('/api/admin', authenticateJWT, requireRole('ADMIN'), (req, res) => {
-//   res.json({ message: 'Welcome, admin!' });
-// });
+app.use('/api/auth', authRouter);
+app.use('/api/profile', authenticateJWT, profileRouter);
+app.use('/api/settings', authenticateJWT, settingsRouter);
+app.use('/api/account', authenticateJWT, accountEntitlementsRouter);
 
 // Health check routes (no authentication required)
 app.use('/api', healthRouter);
@@ -868,6 +313,7 @@ app.use('/api/todo', todoRouter);
 app.use('/api/notes', notesRouter);
 app.use('/api/notebook', notebookRouter);
 app.use('/api/vlinks', vlinksRouter);
+app.use('/api/context-graph', contextGraphRouter);
 app.use('/api/folder', folderRouter);
 app.use('/api/chat', authenticateJWT, chatRouter);
 app.use('/api/business', authenticateJWT, businessRouter);

@@ -1,4 +1,15 @@
-import { authenticatedApiCall } from '../lib/apiUtils';
+/**
+ * @deprecated Use `web/src/api/billing.ts` — legacy payment API client (PP-3 Phase 3 retirement).
+ * Re-exports canonical billing paths for backward compatibility only.
+ */
+import {
+  createPaymentIntent as billingCreatePaymentIntent,
+  subscribeModule,
+  cancelPlatformSubscription,
+  reactivatePlatformSubscription,
+  type ModuleSubscription,
+  type ModuleSubscriptionTier,
+} from './billing';
 
 export interface PaymentIntent {
   id: string;
@@ -10,59 +21,59 @@ export interface PaymentIntent {
 
 export interface SubscriptionData {
   moduleId: string;
-  tier: 'premium' | 'enterprise';
+  tier: ModuleSubscriptionTier;
   interval?: 'month' | 'year';
 }
 
-export interface ModuleSubscription {
-  id: string;
-  moduleId: string;
-  userId: string;
-  businessId?: string;
-  tier: 'premium' | 'enterprise';
-  status: 'active' | 'cancelled' | 'past_due' | 'unpaid';
-  amount: number;
-  currency: string;
-  interval: 'month' | 'year';
-  startDate: string;
-  endDate?: string;
-  nextBillingDate: string;
-  autoRenew: boolean;
-  stripeSubscriptionId?: string;
-  createdAt: string;
-  updatedAt: string;
+export type { ModuleSubscription };
+
+function warnDeprecated(fn: string): void {
+  if (process.env.NODE_ENV === 'development') {
+    console.warn(`[deprecated] web/src/api/payment.ts:${fn} — use web/src/api/billing.ts`);
+  }
 }
 
-// Create payment intent for module subscription
 export const createModulePaymentIntent = async (data: SubscriptionData): Promise<PaymentIntent> => {
-  const response = await authenticatedApiCall<{ paymentIntent: PaymentIntent }>('/api/payment/intent', {
-    method: 'POST',
-    body: JSON.stringify(data),
+  warnDeprecated('createModulePaymentIntent');
+  const result = await billingCreatePaymentIntent({
+    amount: 0,
+    metadata: { moduleId: data.moduleId, tier: data.tier },
   });
-  return response.paymentIntent;
+  return {
+    id: result.paymentIntentId,
+    amount: 0,
+    currency: 'usd',
+    status: 'requires_payment_method',
+    client_secret: result.clientSecret,
+  };
 };
 
-// Create module subscription
-export const createModuleSubscription = async (data: SubscriptionData): Promise<{ message: string; subscription: ModuleSubscription }> => {
-  const response = await authenticatedApiCall<{ message: string; subscription: ModuleSubscription }>('/api/payment/subscription', {
-    method: 'POST',
-    body: JSON.stringify(data),
-  });
-  return response;
+export const createModuleSubscription = async (
+  data: SubscriptionData
+): Promise<{ message: string; subscription: ModuleSubscription }> => {
+  warnDeprecated('createModuleSubscription');
+  const { subscription } = await subscribeModule(data.moduleId, data.tier);
+  return { message: 'Subscription created', subscription };
 };
 
-// Cancel module subscription
-export const cancelModuleSubscription = async (subscriptionId: string): Promise<{ message: string; subscription: ModuleSubscription }> => {
-  const response = await authenticatedApiCall<{ message: string; subscription: ModuleSubscription }>(`/api/payment/subscription/${subscriptionId}`, {
-    method: 'DELETE',
-  });
-  return response;
+export const cancelModuleSubscription = async (
+  subscriptionId: string
+): Promise<{ message: string; subscription: ModuleSubscription }> => {
+  warnDeprecated('cancelModuleSubscription');
+  await cancelPlatformSubscription(subscriptionId);
+  return {
+    message: 'Subscription cancelled',
+    subscription: { id: subscriptionId } as ModuleSubscription,
+  };
 };
 
-// Reactivate module subscription
-export const reactivateModuleSubscription = async (subscriptionId: string): Promise<{ message: string; subscription: ModuleSubscription }> => {
-  const response = await authenticatedApiCall<{ message: string; subscription: ModuleSubscription }>(`/api/payment/subscription/${subscriptionId}/reactivate`, {
-    method: 'POST',
-  });
-  return response;
-}; 
+export const reactivateModuleSubscription = async (
+  subscriptionId: string
+): Promise<{ message: string; subscription: ModuleSubscription }> => {
+  warnDeprecated('reactivateModuleSubscription');
+  const { subscription } = await reactivatePlatformSubscription(subscriptionId);
+  return {
+    message: 'Subscription reactivated',
+    subscription: subscription as unknown as ModuleSubscription,
+  };
+};

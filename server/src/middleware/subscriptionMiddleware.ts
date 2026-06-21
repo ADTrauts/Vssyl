@@ -2,6 +2,8 @@ import { Request, Response, NextFunction } from 'express';
 import { prisma } from '../lib/prisma';
 import { logger } from '../lib/logger';
 import { AuthenticatedRequest, getUserFromRequest } from './auth';
+import { resolveTier } from '../services/account/entitlementService';
+import { normalizeTier } from '../services/account/entitlementTypes';
 
 export interface SubscriptionTier {
   tier: 'free' | 'standard' | 'enterprise';
@@ -43,18 +45,8 @@ export class SubscriptionMiddleware {
         return res.status(401).json({ error: 'Unauthorized' });
       }
 
-      const subscription = await prisma.subscription.findFirst({
-        where: {
-          userId,
-          status: 'active',
-        },
-        orderBy: {
-          createdAt: 'desc',
-        },
-      });
-
-      // Default to free tier if no subscription found
-      const userTier = subscription?.tier || 'free';
+      const resolution = await resolveTier({ userId });
+      const userTier = resolution.tier;
       const hasAccess = this.compareTiers(userTier, requiredTier);
 
       if (!hasAccess) {
@@ -67,7 +59,6 @@ export class SubscriptionMiddleware {
       }
 
       // Add subscription info to request for downstream use
-      (req as SubscriptionRequest).subscription = subscription;
       (req as SubscriptionRequest).userTier = userTier;
       
       next();
@@ -213,11 +204,16 @@ export class SubscriptionMiddleware {
     const tierHierarchy = {
       free: 0,
       standard: 1,
-      enterprise: 2,
+      pro: 1,
+      business_basic: 2,
+      business_advanced: 3,
+      enterprise: 4,
     };
 
-    const userLevel = tierHierarchy[userTier as keyof typeof tierHierarchy] || 0;
-    const requiredLevel = tierHierarchy[requiredTier as keyof typeof tierHierarchy] || 0;
+    const normalizedUser = normalizeTier(userTier, false);
+    const normalizedRequired = normalizeTier(requiredTier, false);
+    const userLevel = tierHierarchy[normalizedUser as keyof typeof tierHierarchy] ?? tierHierarchy[userTier as keyof typeof tierHierarchy] ?? 0;
+    const requiredLevel = tierHierarchy[normalizedRequired as keyof typeof tierHierarchy] ?? tierHierarchy[requiredTier as keyof typeof tierHierarchy] ?? 0;
 
     return userLevel >= requiredLevel;
   }
@@ -226,20 +222,14 @@ export class SubscriptionMiddleware {
    * Get user's subscription info
    */
   static async getUserSubscription(userId: string): Promise<SubscriptionTier | null> {
-    const subscription = await prisma.subscription.findFirst({
-      where: {
-        userId,
-        status: 'active',
-      },
-      orderBy: {
-        createdAt: 'desc',
-      },
-    });
-
-    return subscription ? {
-      tier: subscription.tier as 'free' | 'standard' | 'enterprise',
-      status: subscription.status as 'active' | 'cancelled' | 'past_due' | 'unpaid',
-    } : null;
+    const resolution = await resolveTier({ userId });
+    if (resolution.source === 'default') {
+      return null;
+    }
+    return {
+      tier: resolution.tier as SubscriptionTier['tier'],
+      status: 'active',
+    };
   }
 
   /**

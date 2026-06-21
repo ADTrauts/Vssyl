@@ -23,6 +23,11 @@ Centralized authorization lives under **`server/src/auth/`**. Discoverability re
 - **`business:member.cancelInvite`** — same authority as invite/resend (`ADMIN` | `MANAGER` | `canInvite`)
 - **`business:update`** with **`resourceType: 'business'`** — active membership + `ADMIN` | `MANAGER` | `canManage` (profile, logo upload/remove)
 
+- **`connection:request`** / **`connection:update`** / **`connection:remove`** with **`resourceType: 'relationship'`** or **`user`** — authenticated participant rules for social connections
+- **`entitlement:read`** with **`resourceType: 'user'`** (personal) or **`business`** (scoped) — self read or active business membership
+- **`entitlement:write`** — platform **`ADMIN`** role only (admin tier override / authority writes)
+- **`billing:read`** / **`billing:write`** with **`resourceType: 'subscription'`** — subscription owner only (`subscription.userId === actor`)
+
 Other actions **fail closed** (`POLICY_NOT_IMPLEMENTED`). Denies are logged with `operation: 'policy_deny'`.
 
 ### `module:install` deny reasons

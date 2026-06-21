@@ -24,6 +24,14 @@ export const VLINK_GROUNDING_INTENT_IDS: PipelineIntentId[] = [
   'technical_help',
 ];
 
+/** System intents whose default grounding rules include graph_bundle as an optional source. */
+export const GRAPH_BUNDLE_GROUNDING_INTENT_IDS: PipelineIntentId[] = [
+  'planning',
+  'workflow_action',
+  'business_operations',
+  'technical_help',
+];
+
 export function defaultGroundingRuleForIntent(
   intentId: PipelineIntentId
 ): Omit<PipelineGroundingRule, keyof import('../types/pipelineDiagnostics').PipelineRegistryMeta | 'enabled'> | undefined {

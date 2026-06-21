@@ -25,7 +25,7 @@ export function priorityBadgeClass(priority: WorkforcePriority): string {
       return 'bg-blue-100 text-blue-800';
     case 'LOW':
     default:
-      return 'bg-gray-100 text-gray-800';
+      return 'bg-v-surface-muted text-v-text-primary';
   }
 }
 
@@ -39,7 +39,7 @@ export function priorityBorderClass(priority: WorkforcePriority): string {
       return 'border-blue-500 bg-blue-50';
     case 'LOW':
     default:
-      return 'border-gray-300 bg-gray-50';
+      return 'border-v-border bg-gray-50';
   }
 }
 

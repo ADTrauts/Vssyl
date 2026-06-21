@@ -1521,6 +1521,9 @@ export class DigitalLifeTwinCore {
       if (boost.vlinkPipelineContext) {
         ctxRecord.vlinkPipelineContext = boost.vlinkPipelineContext;
       }
+      if (boost.graphBundlePipelineContext) {
+        ctxRecord.graphBundlePipelineContext = boost.graphBundlePipelineContext;
+      }
       mergedModuleContexts = { ...mergedModuleContexts, ...boost.moduleContextsPatch };
       if (boost.locationSummary) {
         mergedModuleContexts._pipeline_grounding = {
@@ -1609,6 +1612,9 @@ export class DigitalLifeTwinCore {
     const vlinkPipelineContextForAssembly = ctxRecord.vlinkPipelineContext as
       | VLinkPipelineContextResult
       | undefined;
+    const graphBundlePipelineContextForAssembly = ctxRecord.graphBundlePipelineContext as
+      | import('../context/graphBundlePipelineContextService').GraphBundlePipelineContextResult
+      | undefined;
 
     const assembledContext = assembleAIContext({
       query,
@@ -1632,6 +1638,7 @@ export class DigitalLifeTwinCore {
       effectivePreferencesContextBlock: effectivePreferences?.contextBlock,
       businessWorkspaceBoundaries,
       vlinkPipelineContext: vlinkPipelineContextForAssembly,
+      graphBundlePipelineContext: graphBundlePipelineContextForAssembly,
     });
     options.assembledContext = assembledContext;
 

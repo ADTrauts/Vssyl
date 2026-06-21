@@ -11,6 +11,7 @@
 import { Request, Response, NextFunction } from 'express';
 import { prisma } from '../lib/prisma';
 import { logger } from '../lib/logger';
+import { resolveBusinessTier } from '../services/account/entitlementService';
 
 /**
  * HR Features by Tier
@@ -273,9 +274,9 @@ export function checkHRFeature(featureName: string) {
         return res.status(404).json({ error: 'Business not found' });
       }
       
-      // Get active subscription or use business tier
-      const activeSub = business.subscriptions[0];
-      const tier = activeSub?.tier || business.tier || 'free';
+      // Resolve tier via entitlement service (Subscription.tier authoritative)
+      const resolution = await resolveBusinessTier(businessId, req.user?.id ?? 'system');
+      const tier = resolution.tier;
       
       // Check if HR module is even available on this tier
       if (tier !== 'business_advanced' && tier !== 'enterprise') {
@@ -351,9 +352,9 @@ export async function checkBusinessAdvancedOrHigher(
       return res.status(404).json({ error: 'Business not found' });
     }
     
-    const activeSub = business.subscriptions[0];
-    const tier = activeSub?.tier || business.tier || 'free';
-    
+    const resolution = await resolveBusinessTier(businessId, req.user?.id ?? 'system');
+    const tier = resolution.tier;
+
     const hasAccess = tier === 'business_advanced' || tier === 'enterprise';
     
     if (!hasAccess) {
@@ -448,8 +449,8 @@ export async function getBusinessHRFeatures(businessId: string): Promise<{
     throw new Error('Business not found');
   }
   
-  const activeSub = business.subscriptions[0];
-  const tier = activeSub?.tier || business.tier || 'free';
+  const resolution = await resolveBusinessTier(businessId);
+  const tier = resolution.tier;
 
   const overrides = await getHRFeatureOverrides(businessId);
   const features = applyFeatureOverrides(getHRFeaturesForTier(tier), overrides);

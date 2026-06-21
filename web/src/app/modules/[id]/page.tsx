@@ -7,7 +7,6 @@ import {
   getModuleDetails, 
   installModule, 
   uninstallModule,
-  createModuleSubscription,
   type ModuleDetails 
 } from '../../../api/modules';
 import PaymentModal from '../../../components/PaymentModal';

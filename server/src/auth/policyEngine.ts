@@ -1054,6 +1054,207 @@ export async function authorize(input: PolicyInput): Promise<PolicyDecision> {
     return authorizeWorkforceCommsPolicy(input, action);
   }
 
+  if (isIdentitySelfPolicyAction(action)) {
+    return authorizeIdentitySelf(input, action);
+  }
+
+  if (isConnectionPolicyAction(action)) {
+    return authorizeConnectionPolicy(input, action);
+  }
+
+  if (isEntitlementPolicyAction(action)) {
+    return authorizeEntitlementPolicy(input, action);
+  }
+
+  if (isBillingPolicyAction(action)) {
+    return authorizeBillingPolicy(input, action);
+  }
+
+  return deny(input, 'POLICY_NOT_IMPLEMENTED');
+}
+
+const IDENTITY_SELF_ACTIONS = new Set<string>([
+  POLICY_ACTIONS.USER_PROFILE_READ,
+  POLICY_ACTIONS.USER_PROFILE_UPDATE,
+  POLICY_ACTIONS.USER_PHOTO_WRITE,
+  POLICY_ACTIONS.USER_PRIVACY_READ,
+  POLICY_ACTIONS.USER_PRIVACY_UPDATE,
+  POLICY_ACTIONS.USER_PREFERENCE_WRITE,
+  POLICY_ACTIONS.SETTINGS_READ,
+  POLICY_ACTIONS.SETTINGS_UPDATE,
+]);
+
+const CONNECTION_POLICY_ACTIONS = new Set<string>([
+  POLICY_ACTIONS.CONNECTION_REQUEST,
+  POLICY_ACTIONS.CONNECTION_UPDATE,
+  POLICY_ACTIONS.CONNECTION_REMOVE,
+]);
+
+const ENTITLEMENT_POLICY_ACTIONS = new Set<string>([
+  POLICY_ACTIONS.ENTITLEMENT_READ,
+  POLICY_ACTIONS.ENTITLEMENT_WRITE,
+]);
+
+const BILLING_POLICY_ACTIONS = new Set<string>([
+  POLICY_ACTIONS.BILLING_READ,
+  POLICY_ACTIONS.BILLING_WRITE,
+]);
+
+function isIdentitySelfPolicyAction(action: string): boolean {
+  return IDENTITY_SELF_ACTIONS.has(action);
+}
+
+function isConnectionPolicyAction(action: string): boolean {
+  return CONNECTION_POLICY_ACTIONS.has(action);
+}
+
+function isEntitlementPolicyAction(action: string): boolean {
+  return ENTITLEMENT_POLICY_ACTIONS.has(action);
+}
+
+function isBillingPolicyAction(action: string): boolean {
+  return BILLING_POLICY_ACTIONS.has(action);
+}
+
+async function authorizeIdentitySelf(input: PolicyInput, action: string): Promise<PolicyDecision> {
+  const userId = resolveUserId(input);
+  if (!userId) {
+    return deny(input, 'INSUFFICIENT_ROLE');
+  }
+  if (input.resourceType !== 'user') {
+    return deny(input, 'POLICY_NOT_IMPLEMENTED');
+  }
+  const resourceId = input.resourceId;
+  if (resourceId && resourceId !== userId) {
+    return deny(input, 'INSUFFICIENT_ROLE');
+  }
+  return { allow: true, matchedPolicy: `identity_self:${action}` };
+}
+
+async function authorizeConnectionPolicy(input: PolicyInput, action: string): Promise<PolicyDecision> {
+  const userId = resolveUserId(input);
+  if (!userId) {
+    return deny(input, 'INSUFFICIENT_ROLE');
+  }
+
+  if (action === POLICY_ACTIONS.CONNECTION_REQUEST) {
+    if (input.resourceType !== 'user') {
+      return deny(input, 'POLICY_NOT_IMPLEMENTED');
+    }
+    const targetId = input.resourceId;
+    if (!targetId || typeof targetId !== 'string') {
+      return deny(input, 'POLICY_NOT_IMPLEMENTED');
+    }
+    if (targetId === userId) {
+      return deny(input, 'INSUFFICIENT_ROLE');
+    }
+    return { allow: true, matchedPolicy: 'connection_request_authenticated' };
+  }
+
+  if (input.resourceType !== 'relationship') {
+    return deny(input, 'POLICY_NOT_IMPLEMENTED');
+  }
+  const relationshipId = input.resourceId;
+  if (!relationshipId || typeof relationshipId !== 'string') {
+    return deny(input, 'POLICY_NOT_IMPLEMENTED');
+  }
+
+  const relationship = await prisma.relationship.findUnique({
+    where: { id: relationshipId },
+    select: { senderId: true, receiverId: true, status: true },
+  });
+  if (!relationship) {
+    return deny(input, 'INSUFFICIENT_ROLE');
+  }
+
+  if (action === POLICY_ACTIONS.CONNECTION_UPDATE) {
+    if (relationship.receiverId !== userId) {
+      return deny(input, 'INSUFFICIENT_ROLE');
+    }
+    if (relationship.status !== 'PENDING') {
+      return deny(input, 'INSUFFICIENT_ROLE');
+    }
+    return { allow: true, matchedPolicy: 'connection_update_receiver' };
+  }
+
+  if (action === POLICY_ACTIONS.CONNECTION_REMOVE) {
+    if (relationship.senderId !== userId && relationship.receiverId !== userId) {
+      return deny(input, 'INSUFFICIENT_ROLE');
+    }
+    return { allow: true, matchedPolicy: 'connection_remove_participant' };
+  }
+
+  return deny(input, 'POLICY_NOT_IMPLEMENTED');
+}
+
+async function authorizeEntitlementPolicy(input: PolicyInput, action: string): Promise<PolicyDecision> {
+  const userId = resolveUserId(input);
+  if (!userId) {
+    return deny(input, 'INSUFFICIENT_ROLE');
+  }
+
+  if (action === POLICY_ACTIONS.ENTITLEMENT_WRITE) {
+    const role = input.user?.role;
+    if (role !== 'ADMIN') {
+      return deny(input, 'INSUFFICIENT_ROLE', 'entitlement_write_admin_only');
+    }
+    return { allow: true, matchedPolicy: 'entitlement_write_platform_admin' };
+  }
+
+  if (action !== POLICY_ACTIONS.ENTITLEMENT_READ) {
+    return deny(input, 'POLICY_NOT_IMPLEMENTED');
+  }
+
+  const businessId = input.scope?.businessId;
+  if (!businessId) {
+    if (input.resourceType !== 'user') {
+      return deny(input, 'POLICY_NOT_IMPLEMENTED');
+    }
+    const resourceId = input.resourceId;
+    if (resourceId && resourceId !== userId) {
+      return deny(input, 'INSUFFICIENT_ROLE');
+    }
+    return { allow: true, matchedPolicy: 'entitlement_read_self' };
+  }
+
+  if (input.resourceType !== 'business') {
+    return deny(input, 'POLICY_NOT_IMPLEMENTED');
+  }
+
+  const membership = await prisma.businessMember.findFirst({
+    where: { businessId, userId, isActive: true },
+    select: { id: true, businessId: true },
+  });
+  if (!membership) {
+    return deny(input, 'NOT_MEMBER', 'entitlement_read_business_member');
+  }
+  if (input.resourceId && input.resourceId !== businessId) {
+    return deny(input, 'TENANT_MISMATCH', 'entitlement_read_business_member');
+  }
+  return { allow: true, matchedPolicy: 'entitlement_read_business_member' };
+}
+
+async function authorizeBillingPolicy(input: PolicyInput, action: string): Promise<PolicyDecision> {
+  const userId = resolveUserId(input);
+  if (!userId) {
+    return deny(input, 'INSUFFICIENT_ROLE');
+  }
+  if (input.resourceType !== 'subscription') {
+    return deny(input, 'POLICY_NOT_IMPLEMENTED');
+  }
+  const ownerUserId = input.resourceId;
+  if (!ownerUserId || typeof ownerUserId !== 'string') {
+    return deny(input, 'POLICY_NOT_IMPLEMENTED');
+  }
+  if (ownerUserId !== userId) {
+    return deny(input, 'INSUFFICIENT_ROLE', 'billing_subscription_owner_only');
+  }
+  if (action === POLICY_ACTIONS.BILLING_READ) {
+    return { allow: true, matchedPolicy: 'billing_read_owner' };
+  }
+  if (action === POLICY_ACTIONS.BILLING_WRITE) {
+    return { allow: true, matchedPolicy: 'billing_write_owner' };
+  }
   return deny(input, 'POLICY_NOT_IMPLEMENTED');
 }
 
@@ -1643,6 +1844,7 @@ const SCHEDULING_ADMIN_ACTIONS = new Set<string>([
 const SCHEDULING_MEMBER_ACTIONS = new Set<string>([
   POLICY_ACTIONS.SCHEDULING_SCHEDULE_READ,
   POLICY_ACTIONS.SCHEDULING_SHIFT_READ,
+  POLICY_ACTIONS.SCHEDULING_SHIFT_CLAIM,
   POLICY_ACTIONS.SCHEDULING_SWAP_REQUEST,
 ]);
 

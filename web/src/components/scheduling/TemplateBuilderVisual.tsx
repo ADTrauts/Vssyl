@@ -6,6 +6,7 @@ import { DndContext, closestCenter, KeyboardSensor, PointerSensor, useSensor, us
 import { ScheduleTemplate, ScheduleShift, updateScheduleTemplate } from '@/api/scheduling';
 import ScheduleCalendarGrid from './ScheduleCalendarGrid';
 import { Button, Card, Modal, Input, Spinner } from 'shared/components';
+import { useConfirm } from 'shared/hooks/useConfirm';
 import { Calendar, Plus, Save, ArrowLeft, Users, Briefcase, MapPin, Edit, Trash2, Clock, User, ChevronDown } from 'lucide-react';
 import { getBusinessEmployees, getPositions } from '@/api/orgChart';
 import { getBusinessStations } from '@/api/scheduling';
@@ -43,6 +44,7 @@ export default function TemplateBuilderVisual({
   onCancel,
 }: TemplateBuilderVisualProps) {
   const { data: session } = useSession();
+  const { confirm, ConfirmDialog } = useConfirm();
   const [shiftPatterns, setShiftPatterns] = useState<TemplateShiftPattern[]>([]);
   const [layoutMode, setLayoutMode] = useState<'employee' | 'position' | 'station'>('employee');
   const [employees, setEmployees] = useState<Array<{ id: string; name: string; position?: string; userId?: string }>>([]);
@@ -466,7 +468,7 @@ export default function TemplateBuilderVisual({
     >
       <div className="h-full flex">
         {/* Sidebar with positions and stations - Hidden by default in template builder */}
-        <div className="w-64 bg-white dark:bg-slate-900 border-r flex-shrink-0">
+        <div className="w-64 bg-v-surface border-r flex-shrink-0">
           <ScheduleBuilderSidebar
             scheduleId="template"
             businessId={businessId}
@@ -485,19 +487,19 @@ export default function TemplateBuilderVisual({
         {/* Main builder area */}
         <div className="flex-1 flex flex-col overflow-hidden">
           {/* Header with Layout Mode Selector */}
-          <div className="flex-shrink-0 bg-white dark:bg-slate-900 border-b p-4">
+          <div className="flex-shrink-0 bg-v-surface border-b p-4">
             <div className="flex items-center justify-between">
               <div className="flex items-center space-x-4">
                 {/* Layout Mode Toggle */}
                 <div className="flex items-center space-x-2">
-                  <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Layout:</label>
-                  <div className="flex rounded-lg border border-gray-300 dark:border-slate-600 p-1">
+                  <label className="text-sm font-medium text-v-text-secondary">Layout:</label>
+                  <div className="flex rounded-lg border border-v-border p-1">
                     <button
                       onClick={() => setLayoutMode('employee')}
                       className={`px-3 py-1 text-sm rounded transition-colors ${
                         layoutMode === 'employee'
                           ? 'bg-blue-500 text-white'
-                          : 'text-gray-700 hover:bg-gray-100'
+                          : 'text-v-text-secondary hover:bg-v-surface-muted'
                       }`}
                     >
                       <Users className="w-4 h-4 inline mr-1" />
@@ -508,7 +510,7 @@ export default function TemplateBuilderVisual({
                       className={`px-3 py-1 text-sm rounded transition-colors ${
                         layoutMode === 'position' || layoutMode === 'station'
                           ? 'bg-blue-500 text-white'
-                          : 'text-gray-700 hover:bg-gray-100'
+                          : 'text-v-text-secondary hover:bg-v-surface-muted'
                       }`}
                     >
                       <Briefcase className="w-4 h-4 inline mr-1" />
@@ -591,7 +593,7 @@ export default function TemplateBuilderVisual({
             <div className="grid grid-cols-2 gap-3 mb-3">
               {/* Time (Required) */}
               <div className="col-span-2">
-                <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
+                <label className="block text-sm font-medium text-v-text-primary mb-1">
                   Time *
                 </label>
                 <div className="flex items-center gap-2">
@@ -605,12 +607,12 @@ export default function TemplateBuilderVisual({
                           : ''
                       }
                       readOnly
-                      className="pl-10 cursor-not-allowed bg-gray-50 dark:bg-slate-800 text-sm"
+                      className="pl-10 cursor-not-allowed bg-v-surface-muted text-sm"
                     />
-                    <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                    <Clock className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-v-text-muted" />
                   </div>
                   <div className="flex items-center gap-1">
-                    <label className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">Start:</label>
+                    <label className="text-xs text-v-text-muted whitespace-nowrap">Start:</label>
                     <Input
                       type="time"
                       value={selectedShift.startTime ? format(parseISO(selectedShift.startTime), 'HH:mm') : ''}
@@ -644,7 +646,7 @@ export default function TemplateBuilderVisual({
                     />
                   </div>
                   <div className="flex items-center gap-1">
-                    <label className="text-xs text-gray-500 dark:text-gray-400 whitespace-nowrap">End:</label>
+                    <label className="text-xs text-v-text-muted whitespace-nowrap">End:</label>
                     <Input
                       type="time"
                       value={selectedShift.endTime ? format(parseISO(selectedShift.endTime), 'HH:mm') : ''}
@@ -682,7 +684,7 @@ export default function TemplateBuilderVisual({
 
               {/* Position */}
               <div>
-                <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
+                <label className="block text-sm font-medium text-v-text-primary mb-1">
                   Position
                 </label>
                 <div className="relative">
@@ -705,7 +707,7 @@ export default function TemplateBuilderVisual({
                         }
                       }
                     }}
-                    className="w-full px-3 py-2 pl-10 border border-gray-300 dark:border-slate-600 rounded-lg text-gray-900 dark:text-gray-100 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 pl-10 border border-v-border rounded-lg text-v-text-primary bg-v-surface focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   >
                     <option value="">No Position</option>
                     {positionOptions.map(pos => (
@@ -714,13 +716,13 @@ export default function TemplateBuilderVisual({
                       </option>
                     ))}
                   </select>
-                  <Briefcase className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <Briefcase className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-v-text-muted" />
                 </div>
               </div>
 
               {/* Station */}
               <div>
-                <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
+                <label className="block text-sm font-medium text-v-text-primary mb-1">
                   Station
                 </label>
                 <div className="relative">
@@ -745,7 +747,7 @@ export default function TemplateBuilderVisual({
                         }
                       }
                     }}
-                    className="w-full px-3 py-2 pl-10 border border-gray-300 dark:border-slate-600 rounded-lg text-gray-900 dark:text-gray-100 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                    className="w-full px-3 py-2 pl-10 border border-v-border rounded-lg text-v-text-primary bg-v-surface focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   >
                     <option value="">No Station</option>
                     {stations.map(station => (
@@ -754,33 +756,33 @@ export default function TemplateBuilderVisual({
                       </option>
                     ))}
                   </select>
-                  <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400" />
+                  <MapPin className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-v-text-muted" />
                 </div>
               </div>
 
               {/* Shift Color */}
               <div className="col-span-2">
-                <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
+                <label className="block text-sm font-medium text-v-text-primary mb-1">
                   Shift Color
                 </label>
                 <div className="relative" data-color-picker>
                   <button
                     type="button"
                     onClick={() => setShowColorPicker(!showColorPicker)}
-                    className="w-full px-3 py-2 pl-10 pr-10 border border-gray-300 dark:border-slate-600 rounded-lg text-gray-900 dark:text-gray-100 bg-white dark:bg-slate-900 focus:ring-2 focus:ring-blue-500 focus:border-transparent flex items-center justify-between"
+                    className="w-full px-3 py-2 pl-10 pr-10 border border-v-border rounded-lg text-v-text-primary bg-v-surface focus:ring-2 focus:ring-blue-500 focus:border-transparent flex items-center justify-between"
                   >
                     <div className="flex items-center space-x-2">
                       <div
-                        className="w-4 h-4 rounded-full border border-gray-300 dark:border-slate-600"
+                        className="w-4 h-4 rounded-full border border-v-border"
                         style={{ backgroundColor: shiftColor || selectedShift.color || '#d1d5db' }}
                       />
                       <span>{shiftColor || selectedShift.color ? 'Custom' : 'Default'}</span>
                     </div>
-                    <ChevronDown className={`w-4 h-4 text-gray-400 transition-transform ${showColorPicker ? 'transform rotate-180' : ''}`} />
+                    <ChevronDown className={`w-4 h-4 text-v-text-muted transition-transform ${showColorPicker ? 'transform rotate-180' : ''}`} />
                   </button>
                   
                   {showColorPicker && (
-                    <div className="absolute z-50 mt-2 w-full bg-white dark:bg-slate-900 border border-gray-300 dark:border-slate-600 rounded-lg shadow-lg p-4" data-color-picker>
+                    <div className="absolute z-50 mt-2 w-full bg-v-surface border border-v-border rounded-lg shadow-lg p-4" data-color-picker>
                       <div className="grid grid-cols-10 gap-2 mb-3">
                         {[
                           '#ec4899', '#f472b6', '#f9a8d4', '#fbcfe8', '#fce7f3', '#fef3c7', '#fde68a', '#fcd34d', '#fbbf24', '#f59e0b',
@@ -810,7 +812,7 @@ export default function TemplateBuilderVisual({
                                 }
                               }
                             }}
-                            className="w-8 h-8 rounded border border-gray-200 dark:border-slate-700 hover:scale-110 hover:z-10 transition-transform cursor-pointer"
+                            className="w-8 h-8 rounded border border-v-border hover:scale-110 hover:z-10 transition-transform cursor-pointer"
                             style={{ backgroundColor: color }}
                             title={color}
                           />
@@ -834,7 +836,7 @@ export default function TemplateBuilderVisual({
                             }
                           }
                         }}
-                        className="w-full px-3 py-2 text-sm text-gray-700 dark:text-gray-300 hover:bg-gray-100 dark:hover:bg-slate-800 dark:bg-slate-700 rounded border border-gray-300 dark:border-slate-600"
+                        className="w-full px-3 py-2 text-sm text-v-text-secondary hover:bg-v-surface-muted dark:bg-slate-700 rounded border border-v-border"
                       >
                         CLEAR COLOR
                       </button>
@@ -845,7 +847,7 @@ export default function TemplateBuilderVisual({
 
               {/* Notes */}
               <div className="col-span-2">
-                <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
+                <label className="block text-sm font-medium text-v-text-primary mb-1">
                   Notes
                 </label>
                 <Input
@@ -879,14 +881,20 @@ export default function TemplateBuilderVisual({
             <div className="flex items-center justify-between pt-3 border-t mt-3">
               <Button
                 variant="secondary"
-                onClick={() => {
-                  if (selectedShift && confirm(`Are you sure you want to delete this ${SCHEDULING_SHIFT_PATTERN_LABEL.toLowerCase()}?`)) {
-                    const patternIndex = parseInt(selectedShift.id.replace('pattern-', ''));
-                    const updatedPatterns = shiftPatterns.filter((_, idx) => idx !== patternIndex);
-                    setShiftPatterns(updatedPatterns);
-                    setShowShiftModal(false);
-                    setSelectedShift(null);
-                  }
+                onClick={async () => {
+                  if (!selectedShift) return;
+                  const ok = await confirm({
+                    title: `Delete this ${SCHEDULING_SHIFT_PATTERN_LABEL.toLowerCase()}?`,
+                    description: 'This pattern will be removed from the template.',
+                    variant: 'destructive',
+                    confirmLabel: 'Delete',
+                  });
+                  if (!ok) return;
+                  const patternIndex = parseInt(selectedShift.id.replace('pattern-', ''), 10);
+                  const updatedPatterns = shiftPatterns.filter((_, idx) => idx !== patternIndex);
+                  setShiftPatterns(updatedPatterns);
+                  setShowShiftModal(false);
+                  setSelectedShift(null);
                 }}
                 className="bg-red-600 hover:bg-red-700 text-white"
               >
@@ -917,6 +925,7 @@ export default function TemplateBuilderVisual({
           </div>
         )}
       </Modal>
+      <ConfirmDialog />
     </DndContext>
   );
 }

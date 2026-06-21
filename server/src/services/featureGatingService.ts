@@ -2,6 +2,7 @@ import { prisma } from '../lib/prisma';
 import { AIQueryService } from './aiQueryService';
 import { isUnlimitedTier } from '../config/aiQueryPacks';
 import { logger } from '../lib/logger';
+import { resolveTier } from './account/entitlementService';
 
 function logSrvErr(operation: string, message: string, err: unknown, context?: Record<string, unknown>): void {
   const e = err instanceof Error ? err : new Error(String(err));
@@ -188,22 +189,14 @@ export class FeatureGatingService {
       return { hasAccess: false, reason: 'Feature not found' };
     }
 
-    // Get user's subscription
-    let subscription = null;
+    // Resolve tier via canonical entitlement service (Subscription.tier authoritative)
     let userTier = 'free';
-    
+
     try {
-      subscription = await prisma.subscription.findFirst({
-        where: businessId
-          ? { businessId, status: 'active' }
-          : { userId, status: 'active' },
-        orderBy: { createdAt: 'desc' },
-      });
-      
-      userTier = subscription?.tier || 'free';
+      const resolution = await resolveTier({ userId, businessId });
+      userTier = resolution.tier;
     } catch (dbError) {
       logSrvErr('featuregatingservice_database_error_in_feature_gating', 'Database error in feature gating:', dbError);
-      // If database query fails, default to free tier
       userTier = 'free';
     }
     const hasTierAccess = this.compareTiers(userTier, feature.requiredTier);

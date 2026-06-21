@@ -72,17 +72,17 @@ export default function WorkforceReportingDashboard({
     <div className="p-6 space-y-6">
       <div className="flex flex-wrap items-center justify-between gap-4">
         <div>
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">
+          <h2 className="text-xl font-semibold text-v-text-primary">
             Workforce Reporting
           </h2>
-          <p className="text-sm text-gray-500 dark:text-gray-400">
+          <p className="text-sm text-v-text-muted">
             Reach, read rates, acknowledgement compliance, and publish trends
           </p>
         </div>
         <select
           value={dateRange}
           onChange={(event) => setDateRange(event.target.value as '30d' | '90d' | '1y')}
-          className="border border-gray-300 dark:border-slate-600 rounded-lg px-3 py-2 text-sm bg-white dark:bg-slate-800"
+          className="border border-v-border rounded-lg px-3 py-2 text-sm bg-v-surface"
         >
           <option value="30d">Last 30 days</option>
           <option value="90d">Last 90 days</option>
@@ -94,7 +94,7 @@ export default function WorkforceReportingDashboard({
         <Card className="p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-500">Published</p>
+              <p className="text-sm text-v-text-muted">Published</p>
               <p className="text-2xl font-semibold">{report.overview.publishedCount}</p>
             </div>
             <Megaphone className="w-8 h-8 text-blue-500" />
@@ -103,7 +103,7 @@ export default function WorkforceReportingDashboard({
         <Card className="p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-500">Audience reach</p>
+              <p className="text-sm text-v-text-muted">Audience reach</p>
               <p className="text-2xl font-semibold">{report.engagement.audienceReach}</p>
             </div>
             <Users className="w-8 h-8 text-green-500" />
@@ -112,7 +112,7 @@ export default function WorkforceReportingDashboard({
         <Card className="p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-500">Avg. read rate</p>
+              <p className="text-sm text-v-text-muted">Avg. read rate</p>
               <p className="text-2xl font-semibold">
                 {(report.engagement.averageReadRate * 100).toFixed(1)}%
               </p>
@@ -123,7 +123,7 @@ export default function WorkforceReportingDashboard({
         <Card className="p-4">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm text-gray-500">Ack compliance</p>
+              <p className="text-sm text-v-text-muted">Ack compliance</p>
               <p className="text-2xl font-semibold">
                 {report.engagement.completionPercentage.toFixed(1)}%
               </p>
@@ -146,7 +146,7 @@ export default function WorkforceReportingDashboard({
             </div>
           ))}
         </div>
-        <p className="text-xs text-gray-500 mt-2">
+        <p className="text-xs text-v-text-muted mt-2">
           Activity events recorded: {report.activity.publishedEvents}
         </p>
       </Card>
@@ -156,26 +156,26 @@ export default function WorkforceReportingDashboard({
           <button
             type="button"
             onClick={() => onNavigate('communications')}
-            className="text-left p-4 border rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800"
+            className="text-left p-4 border rounded-lg hover:bg-v-surface-muted"
           >
             <p className="font-medium">Communication analytics</p>
-            <p className="text-sm text-gray-500">Per-communication reach and read rates</p>
+            <p className="text-sm text-v-text-muted">Per-communication reach and read rates</p>
           </button>
           <button
             type="button"
             onClick={() => onNavigate('campaigns')}
-            className="text-left p-4 border rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800"
+            className="text-left p-4 border rounded-lg hover:bg-v-surface-muted"
           >
             <p className="font-medium">Campaign analytics</p>
-            <p className="text-sm text-gray-500">Campaign-level engagement aggregates</p>
+            <p className="text-sm text-v-text-muted">Campaign-level engagement aggregates</p>
           </button>
           <button
             type="button"
             onClick={() => onNavigate('acknowledgements')}
-            className="text-left p-4 border rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800"
+            className="text-left p-4 border rounded-lg hover:bg-v-surface-muted"
           >
             <p className="font-medium">Ack compliance</p>
-            <p className="text-sm text-gray-500">Required acknowledgement completion</p>
+            <p className="text-sm text-v-text-muted">Required acknowledgement completion</p>
           </button>
         </div>
       )}

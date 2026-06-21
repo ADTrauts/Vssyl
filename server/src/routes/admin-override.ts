@@ -13,6 +13,13 @@ import express, { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { authenticateJWT } from '../middleware/auth';
 import { logger } from '../lib/logger';
+import {
+  EntitlementServiceError,
+  setBusinessTierAuthority,
+} from '../services/account/entitlementService';
+import { isPlatformTier } from '../services/account/entitlementTypes';
+import { assertEntitlementWritePolicy } from '../auth/entitlementPolicyDual';
+import { PolicyDeniedError } from '../auth/policyEngine';
 
 function logSrvErr(operation: string, message: string, err: unknown, context?: Record<string, unknown>): void {
   const e = err instanceof Error ? err : new Error(String(err));
@@ -238,31 +245,63 @@ router.post('/businesses/:businessId/set-tier', authenticateJWT, requireAdmin, a
       });
     }
 
-    // Simply update the business.tier field - that's all we need
-    const business = await prisma.business.update({
-      where: { id: businessId },
-      data: { tier },
-      select: {
-        id: true,
-        name: true,
-        tier: true
+    const actorUserId = req.user?.id;
+    if (!actorUserId) {
+      return res.status(401).json({ success: false, error: 'Unauthorized' });
+    }
+
+    try {
+      await assertEntitlementWritePolicy({
+        userId: actorUserId,
+        userRole: req.user?.role ?? 'USER',
+        userEmail: req.user?.email ?? '',
+        businessId,
+      });
+    } catch (error: unknown) {
+      if (error instanceof PolicyDeniedError) {
+        return res.status(403).json({ success: false, error: 'Admin entitlement write required' });
       }
+      throw error;
+    }
+
+    if (!isPlatformTier(tier)) {
+      return res.status(400).json({ success: false, error: 'Invalid tier' });
+    }
+
+    const result = await setBusinessTierAuthority({
+      actorUserId,
+      businessId,
+      tier,
     });
 
-    logSrvDebug('admin_override_tier_updated', 'Business tier updated successfully', {
+    const business = await prisma.business.findUnique({
+      where: { id: businessId },
+      select: { id: true, name: true, tier: true },
+    });
+
+    logSrvDebug('admin_override_tier_updated', 'Business tier updated via entitlement authority', {
       business: business as Record<string, unknown>,
+      subscriptionId: result.subscriptionId,
     });
 
     res.json({
       success: true,
       message: `Business tier set to ${tier}`,
       business: {
-        id: business.id,
-        name: business.name,
-        tier: business.tier
-      }
+        id: business?.id,
+        name: business?.name,
+        tier: business?.tier,
+      },
+      subscriptionId: result.subscriptionId,
+      note: 'Subscription.tier is authoritative; Business.tier synced as derived cache.',
     });
   } catch (error: unknown) {
+    if (error instanceof EntitlementServiceError) {
+      return res.status(error.statusCode).json({
+        success: false,
+        error: error.message,
+      });
+    }
     logSrvErr('admin_override_error_setting_business_tier', 'Error setting business tier', error);
     const errorMessage = error instanceof Error ? error.message : String(error);
     res.status(500).json({
@@ -290,22 +329,47 @@ router.post('/quick-fix-tier', authenticateJWT, requireAdmin, async (req: Reques
       });
     }
 
-    const business = await prisma.business.update({
+    const actorUserId = req.user?.id;
+    if (!actorUserId) {
+      return res.status(401).json({ success: false, error: 'Unauthorized' });
+    }
+
+    await assertEntitlementWritePolicy({
+      userId: actorUserId,
+      userRole: req.user?.role ?? 'USER',
+      userEmail: req.user?.email ?? '',
+      businessId,
+    });
+
+    const result = await setBusinessTierAuthority({
+      actorUserId,
+      businessId,
+      tier: 'enterprise',
+    });
+
+    const business = await prisma.business.findUnique({
       where: { id: businessId },
-      data: { tier: 'enterprise' }
+      select: { id: true, name: true, tier: true },
     });
 
     res.json({
       success: true,
-      message: `Business ${business.name} is now on Enterprise tier (complimentary)`,
+      message: `Business ${business?.name ?? businessId} is now on Enterprise tier (complimentary)`,
       business: {
-        id: business.id,
-        name: business.name,
-        tier: business.tier
+        id: business?.id,
+        name: business?.name,
+        tier: business?.tier,
       },
-      note: 'Business tier updated. HR module and other enterprise features are now available.'
+      subscriptionId: result.subscriptionId,
+      note: 'Subscription.tier is authoritative; Business.tier synced as derived cache. HR module and other enterprise features are now available.',
     });
   } catch (error) {
+    if (error instanceof EntitlementServiceError) {
+      return res.status(error.statusCode).json({ success: false, error: error.message });
+    }
+    if (error instanceof PolicyDeniedError) {
+      return res.status(403).json({ success: false, error: 'Admin entitlement write required' });
+    }
     logSrvErr('admin_override_error_setting_tier', 'Error setting tier:', error);
     res.status(500).json({
       success: false,

@@ -153,13 +153,13 @@ describe('reconcileSystemPipelineGroundingRules', () => {
     const result = await reconcileSystemPipelineGroundingRules();
 
     expect(result.updated).toBeGreaterThanOrEqual(1);
-    expect(updateMock).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: { intentId: 'business_operations' },
-        data: {
-          optionalSources: ['notifications_activity', 'calendar', 'vlink'],
-        },
-      })
+    const businessUpdate = updateMock.mock.calls.find(
+      (call: [{ where: { intentId: string }; data: { optionalSources: string[] } }]) =>
+        call[0]?.where?.intentId === 'business_operations'
+    );
+    expect(businessUpdate).toBeDefined();
+    expect(businessUpdate![0].data.optionalSources).toEqual(
+      expect.arrayContaining(['notifications_activity', 'calendar', 'vlink', 'graph_bundle'])
     );
   });
 

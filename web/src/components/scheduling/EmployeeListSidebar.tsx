@@ -70,7 +70,7 @@ function DraggableResourceCard({ id, label, subLabel, type, data }: DraggableRes
       {...listeners}
       {...attributes}
       className={`
-        p-3 rounded-lg border border-gray-200 bg-white cursor-grab active:cursor-grabbing
+        p-3 rounded-lg border border-v-border bg-white cursor-grab active:cursor-grabbing
         hover:border-blue-400 hover:shadow-md transition-all
         ${isDragging ? 'opacity-50 shadow-lg' : ''}
       `}
@@ -80,9 +80,9 @@ function DraggableResourceCard({ id, label, subLabel, type, data }: DraggableRes
           <Icon className={`w-4 h-4 ${type === 'station' ? 'text-purple-600' : type === 'position' ? 'text-amber-600' : 'text-blue-600'}`} />
         </div>
         <div className="flex-1 min-w-0">
-          <p className="text-sm font-medium text-gray-900 dark:text-gray-100 truncate">{label}</p>
+          <p className="text-sm font-medium text-v-text-primary truncate">{label}</p>
           {subLabel && (
-            <p className="text-xs text-gray-500 dark:text-gray-400 truncate">
+            <p className="text-xs text-v-text-muted truncate">
               {subLabel}
             </p>
           )}
@@ -165,10 +165,10 @@ export default function EmployeeListSidebar({
       const config = tabConfigs[0];
       if (config.items.length === 0) {
         return (
-          <div className="text-center py-10 px-4 border border-dashed border-gray-200 dark:border-slate-700 rounded-lg bg-gray-50 dark:bg-slate-800">
+          <div className="text-center py-10 px-4 border border-dashed border-v-border rounded-lg bg-v-surface-muted">
             <config.icon className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-            <p className="text-sm font-medium text-gray-700 dark:text-gray-300">{config.emptyTitle}</p>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{config.emptySubtitle}</p>
+            <p className="text-sm font-medium text-v-text-secondary">{config.emptyTitle}</p>
+            <p className="text-xs text-v-text-muted mt-1">{config.emptySubtitle}</p>
           </div>
         );
       }
@@ -183,10 +183,10 @@ export default function EmployeeListSidebar({
       const config = tabConfigs[1];
       if (config.items.length === 0) {
         return (
-          <div className="text-center py-10 px-4 border border-dashed border-gray-200 dark:border-slate-700 rounded-lg bg-gray-50 dark:bg-slate-800">
+          <div className="text-center py-10 px-4 border border-dashed border-v-border rounded-lg bg-v-surface-muted">
             <config.icon className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-            <p className="text-sm font-medium text-gray-700 dark:text-gray-300">{config.emptyTitle}</p>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{config.emptySubtitle}</p>
+            <p className="text-sm font-medium text-v-text-secondary">{config.emptyTitle}</p>
+            <p className="text-xs text-v-text-muted mt-1">{config.emptySubtitle}</p>
           </div>
         );
       }
@@ -201,10 +201,10 @@ export default function EmployeeListSidebar({
       const config = tabConfigs[2];
       if (config.items.length === 0) {
         return (
-          <div className="text-center py-10 px-4 border border-dashed border-gray-200 dark:border-slate-700 rounded-lg bg-gray-50 dark:bg-slate-800">
+          <div className="text-center py-10 px-4 border border-dashed border-v-border rounded-lg bg-v-surface-muted">
             <config.icon className="w-10 h-10 text-gray-300 mx-auto mb-3" />
-            <p className="text-sm font-medium text-gray-700 dark:text-gray-300">{config.emptyTitle}</p>
-            <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">{config.emptySubtitle}</p>
+            <p className="text-sm font-medium text-v-text-secondary">{config.emptyTitle}</p>
+            <p className="text-xs text-v-text-muted mt-1">{config.emptySubtitle}</p>
           </div>
         );
       }
@@ -219,21 +219,21 @@ export default function EmployeeListSidebar({
   };
 
   return (
-    <div className="w-72 bg-white dark:bg-slate-900 border-r border-gray-200 dark:border-slate-700 flex flex-col h-full">
-      <div className="p-4 border-b border-gray-200 dark:border-slate-700">
+    <div className="w-72 bg-v-surface border-r border-v-border flex flex-col h-full">
+      <div className="p-4 border-b border-v-border">
         <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Build tools</h3>
-            <p className="text-xs text-gray-500 dark:text-gray-400">Drag any resource to create a shift</p>
+            <h3 className="text-lg font-semibold text-v-text-primary">Build tools</h3>
+            <p className="text-xs text-v-text-muted">Drag any resource to create a shift</p>
           </div>
         </div>
-        <div className="mt-3 grid grid-cols-3 gap-1 bg-gray-100 dark:bg-slate-700 p-1 rounded-lg">
+        <div className="mt-3 grid grid-cols-3 gap-1 bg-v-surface-muted dark:bg-slate-700 p-1 rounded-lg">
           {tabConfigs.map((tab) => (
             <button
               key={tab.id}
               onClick={() => setActiveTab(tab.id)}
               className={`text-xs font-medium py-1.5 rounded-md flex items-center justify-center gap-1 transition-colors ${
-                activeTab === tab.id ? 'bg-white shadow text-gray-900' : 'text-gray-600 hover:text-gray-900'
+                activeTab === tab.id ? 'bg-white shadow text-v-text-primary' : 'text-v-text-secondary hover:text-v-text-primary'
               }`}
             >
               <tab.icon className="w-3.5 h-3.5" />

@@ -28,7 +28,7 @@ export function DroppableCell({ id, rowId, day, isOver, children, className = ''
   return (
     <div
       ref={setNodeRef}
-      className={`relative border-r border-gray-200 ${isHighlighted ? 'bg-blue-50 ring-2 ring-blue-400' : ''} ${className}`}
+      className={`relative border-r border-v-border ${isHighlighted ? 'bg-blue-50 ring-2 ring-blue-400' : ''} ${className}`}
       {...props}
     >
       {children}

@@ -1,14 +1,22 @@
 import { Request, Response } from 'express';
-import { SubscriptionService } from '../services/subscriptionService';
 import { ModuleSubscriptionService } from '../services/moduleSubscriptionService';
 import { StripeService } from '../services/stripeService';
 import { PricingService } from '../services/pricingService';
 import { UsageTrackingService } from '../services/usageTrackingService';
-import { PrismaClient } from '@prisma/client';
 import { prisma } from '../lib/prisma';
 import { logger } from '../lib/logger';
 import { isStripeConfigured } from '../config/stripe';
 import { getUserFromRequest } from '../middleware/auth';
+import {
+  BillingServiceError,
+  cancelSubscription as billingCancelSubscription,
+  createSubscription as billingCreateSubscription,
+  getUserActiveSubscription,
+  resumeSubscription as billingResumeSubscription,
+  updateSubscription as billingUpdateSubscription,
+} from '../services/account/billingService';
+import { SubscriptionService } from '../services/subscriptionService';
+
 const subscriptionService = new SubscriptionService();
 const moduleSubscriptionService = new ModuleSubscriptionService();
 
@@ -23,7 +31,8 @@ export const createSubscription = async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    const subscription = await subscriptionService.createSubscription({
+    const subscription = await billingCreateSubscription({
+      actorUserId: userId,
       userId,
       businessId,
       tier,
@@ -32,6 +41,9 @@ export const createSubscription = async (req: Request, res: Response) => {
 
     res.status(201).json({ subscription });
   } catch (error) {
+    if (error instanceof BillingServiceError) {
+      return res.status(error.statusCode).json({ error: error.message });
+    }
     await logger.error('Failed to create subscription', {
       operation: 'billing_create_subscription',
       error: {
@@ -174,7 +186,7 @@ export const getUserSubscription = async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    const subscription = await subscriptionService.getUserSubscription(userId);
+    const subscription = await getUserActiveSubscription(userId);
 
     res.json({ subscription });
   } catch (error) {
@@ -205,17 +217,9 @@ export const updateSubscription = async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    const subscription = await subscriptionService.getSubscription(id);
-
-    if (!subscription) {
-      return res.status(404).json({ error: 'Subscription not found' });
-    }
-
-    if (subscription.userId !== userId) {
-      return res.status(403).json({ error: 'Access denied' });
-    }
-
-    const updated = await subscriptionService.updateSubscription({
+    const updated = await billingUpdateSubscription({
+      actorUserId: userId,
+      userId,
       subscriptionId: id,
       tier,
       cancelAtPeriodEnd,
@@ -223,6 +227,9 @@ export const updateSubscription = async (req: Request, res: Response) => {
 
     res.json({ subscription: updated });
   } catch (error) {
+    if (error instanceof BillingServiceError) {
+      return res.status(error.statusCode).json({ error: error.message });
+    }
     await logger.error('Failed to update subscription', {
       operation: 'billing_update_subscription',
       error: {
@@ -243,20 +250,17 @@ export const cancelSubscription = async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    const subscription = await subscriptionService.getSubscription(id);
-
-    if (!subscription) {
-      return res.status(404).json({ error: 'Subscription not found' });
-    }
-
-    if (subscription.userId !== userId) {
-      return res.status(403).json({ error: 'Access denied' });
-    }
-
-    await subscriptionService.cancelSubscription(id);
+    await billingCancelSubscription({
+      actorUserId: userId,
+      userId,
+      subscriptionId: id,
+    });
 
     res.json({ message: 'Subscription cancelled' });
   } catch (error) {
+    if (error instanceof BillingServiceError) {
+      return res.status(error.statusCode).json({ error: error.message });
+    }
     await logger.error('Failed to cancel subscription', {
       operation: 'billing_cancel_subscription',
       error: {
@@ -277,20 +281,17 @@ export const reactivateSubscription = async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
-    const subscription = await subscriptionService.getSubscription(id);
+    const updated = await billingResumeSubscription({
+      actorUserId: userId,
+      userId,
+      subscriptionId: id,
+    });
 
-    if (!subscription) {
-      return res.status(404).json({ error: 'Subscription not found' });
-    }
-
-    if (subscription.userId !== userId) {
-      return res.status(403).json({ error: 'Access denied' });
-    }
-
-    await subscriptionService.reactivateSubscription(id);
-
-    res.json({ message: 'Subscription reactivated' });
+    res.json({ message: 'Subscription reactivated', subscription: updated });
   } catch (error) {
+    if (error instanceof BillingServiceError) {
+      return res.status(error.statusCode).json({ error: error.message });
+    }
     await logger.error('Failed to reactivate subscription', {
       operation: 'billing_reactivate_subscription',
       error: {

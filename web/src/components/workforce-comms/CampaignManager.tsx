@@ -10,6 +10,7 @@ import {
   type WorkforceCampaign,
 } from '@/api/workforceComms';
 import { formatWorkforceDate } from './workforceCommsUtils';
+import { BusinessOperationsEmptyState } from '@/components/business-operations/BusinessOperationsEmptyState';
 
 interface CampaignManagerProps {
   businessId: string;
@@ -90,7 +91,11 @@ export default function CampaignManager({
       ) : error ? (
         <Card className="p-4 text-red-700">{error}</Card>
       ) : campaigns.length === 0 ? (
-        <p className="text-gray-500">No campaigns yet.</p>
+        <BusinessOperationsEmptyState
+          icon={<Plus className="h-12 w-12" />}
+          title="No campaigns yet"
+          description="Group related communications into a campaign for reporting and reach tracking."
+        />
       ) : (
         <div className="space-y-3">
           {campaigns.map((campaign) => (
@@ -98,10 +103,10 @@ export default function CampaignManager({
               <div className="flex items-start justify-between gap-4">
                 <div>
                   <h3 className="font-medium">{campaign.name}</h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                  <p className="text-sm text-v-text-secondary mt-1">
                     {campaign.description || 'No description'}
                   </p>
-                  <p className="text-xs text-gray-500 mt-2">
+                  <p className="text-xs text-v-text-muted mt-2">
                     Status: {campaign.status} · {campaign._count?.communications ?? 0} communications
                     · Updated {formatWorkforceDate(campaign.updatedAt)}
                   </p>

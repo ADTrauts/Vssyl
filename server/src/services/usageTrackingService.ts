@@ -1,5 +1,7 @@
 import { prisma } from '../lib/prisma';
 import { logger } from '../lib/logger';
+import { resolveTier } from './account/entitlementService';
+import { normalizeTier } from './account/entitlementTypes';
 import { PricingService } from './pricingService';
 
 export interface UsageLimit {
@@ -79,7 +81,8 @@ export class UsageTrackingService {
    * Get usage limits for a tier
    */
   static getTierLimits(tier: string): TierUsageLimits {
-    return TIER_USAGE_LIMITS[tier] || TIER_USAGE_LIMITS.free;
+    const normalized = normalizeTier(tier, tier.startsWith('business_'));
+    return TIER_USAGE_LIMITS[normalized] || TIER_USAGE_LIMITS.free;
   }
 
   /**
@@ -95,15 +98,8 @@ export class UsageTrackingService {
       const periodStart = new Date(now.getFullYear(), now.getMonth(), 1);
       const periodEnd = new Date(now.getFullYear(), now.getMonth() + 1, 0);
 
-      // Get user's subscription to determine tier
-      const subscription = await prisma.subscription.findFirst({
-        where: businessId
-          ? { businessId, status: 'active' }
-          : { userId, status: 'active' },
-        orderBy: { createdAt: 'desc' },
-      });
-
-      const tier = subscription?.tier || 'free';
+      const resolution = await resolveTier({ userId, businessId });
+      const tier = resolution.tier;
       const tierLimits = this.getTierLimits(tier);
       const limit = tierLimits[metric];
 
@@ -171,15 +167,8 @@ export class UsageTrackingService {
    */
   static async getAllUsage(userId: string, businessId?: string): Promise<UsageLimit[]> {
     try {
-      // Get user's subscription to determine tier
-      const subscription = await prisma.subscription.findFirst({
-        where: businessId
-          ? { businessId, status: 'active' }
-          : { userId, status: 'active' },
-        orderBy: { createdAt: 'desc' },
-      });
-
-      const tier = subscription?.tier || 'free';
+      const resolution = await resolveTier({ userId, businessId });
+      const tier = resolution.tier;
       const tierLimits = this.getTierLimits(tier);
 
       // Get all usage records for current period

@@ -141,6 +141,18 @@ export default function PersonalAnalyticsPage() {
           </p>
         </div>
 
+        <Alert type="info" className="mb-6">
+          Privacy controls have moved to{' '}
+          <button
+            type="button"
+            className="underline font-medium"
+            onClick={() => router.push('/profile/settings?tab=privacy')}
+          >
+            Settings → Privacy
+          </button>
+          . Analytics and audit trail remain on this page.
+        </Alert>
+
         {/* Error Display */}
         {error && (
           <Alert type="error" title="Error" className="mb-6">

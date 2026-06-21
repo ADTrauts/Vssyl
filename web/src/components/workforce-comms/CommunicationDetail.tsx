@@ -108,14 +108,14 @@ export default function CommunicationDetail({
         <div className="flex items-start justify-between gap-4">
           <div>
             <div className="flex items-center gap-2 flex-wrap">
-              <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100">{communication.title}</h1>
+              <h1 className="text-2xl font-bold text-v-text-primary">{communication.title}</h1>
               <VLinkIndicator entityType="WORKFORCE_COMMUNICATION" entityId={communication.id} />
             </div>
             <div className="flex items-center gap-2 mt-2 flex-wrap">
               <span className={`text-xs px-2 py-0.5 rounded ${priorityBadgeClass(communication.priority)}`}>
                 {priorityLabel(communication.priority)}
               </span>
-              <span className="text-xs text-gray-500">
+              <span className="text-xs text-v-text-muted">
                 Published {formatWorkforceDate(communication.publishedAt)}
               </span>
             </div>
@@ -123,10 +123,10 @@ export default function CommunicationDetail({
         </div>
 
         {communication.summary && (
-          <p className="text-gray-600 dark:text-gray-400 mt-4">{communication.summary}</p>
+          <p className="text-v-text-secondary mt-4">{communication.summary}</p>
         )}
 
-        <div className="prose dark:prose-invert max-w-none mt-6 whitespace-pre-wrap text-gray-800 dark:text-gray-200">
+        <div className="prose dark:prose-invert max-w-none mt-6 whitespace-pre-wrap text-v-text-primary">
           {communication.body}
         </div>
 
@@ -146,13 +146,13 @@ export default function CommunicationDetail({
         {vlinks.length > 0 ? (
           <ul className="space-y-2 mb-4">
             {vlinks.map((link) => (
-              <li key={link.id} className="text-sm text-gray-700 dark:text-gray-300">
+              <li key={link.id} className="text-sm text-v-text-secondary">
                 {link.title} ({link.publicCode})
               </li>
             ))}
           </ul>
         ) : (
-          <p className="text-sm text-gray-500 mb-4">No V-Links yet.</p>
+          <p className="text-sm text-v-text-muted mb-4">No V-Links yet.</p>
         )}
         <Button
           variant="secondary"

@@ -7,6 +7,7 @@ import OnboardingProgressBar from './OnboardingProgressBar';
 import OnboardingTaskCard from './OnboardingTaskCard';
 import OnboardingTimeline from './OnboardingTimeline';
 import type { EmployeeOnboardingJourney, OnboardingTaskStatus } from '@/api/hrOnboarding';
+import { BusinessOperationsEmptyState } from '@/components/business-operations/BusinessOperationsEmptyState';
 
 interface EmployeeOnboardingJourneyViewProps {
   journey: EmployeeOnboardingJourney;
@@ -69,7 +70,7 @@ export default function EmployeeOnboardingJourneyView({
         <div className="flex items-start justify-between mb-4">
           <div className="flex-1">
             <div className="flex items-center gap-3 mb-2">
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100">{templateName}</h3>
+              <h3 className="text-xl font-semibold text-v-text-primary">{templateName}</h3>
               <Badge
                 color={
                   journeyStatus === 'COMPLETED'
@@ -86,7 +87,7 @@ export default function EmployeeOnboardingJourneyView({
                   : 'In Progress'}
               </Badge>
             </div>
-            <p className="text-sm text-gray-600 dark:text-gray-400">
+            <p className="text-sm text-v-text-secondary">
               Started {new Date(journey.startDate).toLocaleDateString()}
               {journey.completionDate && (
                 <> • Completed {new Date(journey.completionDate).toLocaleDateString()}</>
@@ -101,20 +102,20 @@ export default function EmployeeOnboardingJourneyView({
 
       {/* Task Stats */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-        <div className="bg-gray-50 dark:bg-slate-800 rounded-lg p-3">
-          <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">Total Tasks</div>
-          <div className="text-2xl font-semibold text-gray-900 dark:text-gray-100">{totalTasks}</div>
+        <div className="bg-v-surface-muted rounded-lg p-3">
+          <div className="text-xs text-v-text-secondary mb-1">Total Tasks</div>
+          <div className="text-2xl font-semibold text-v-text-primary">{totalTasks}</div>
         </div>
         <div className="bg-blue-50 rounded-lg p-3">
-          <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">In Progress</div>
+          <div className="text-xs text-v-text-secondary mb-1">In Progress</div>
           <div className="text-2xl font-semibold text-blue-600">{inProgressTasks}</div>
         </div>
         <div className="bg-yellow-50 rounded-lg p-3">
-          <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">Pending</div>
+          <div className="text-xs text-v-text-secondary mb-1">Pending</div>
           <div className="text-2xl font-semibold text-yellow-600">{pendingTasks}</div>
         </div>
         <div className="bg-green-50 rounded-lg p-3">
-          <div className="text-xs text-gray-600 dark:text-gray-400 mb-1">Completed</div>
+          <div className="text-xs text-v-text-secondary mb-1">Completed</div>
           <div className="text-2xl font-semibold text-green-600">{completedTasks}</div>
         </div>
       </div>
@@ -122,14 +123,14 @@ export default function EmployeeOnboardingJourneyView({
       {/* Filters and View Toggle */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 mb-4">
         <div className="flex items-center gap-2 flex-wrap">
-          <Filter className="w-4 h-4 text-gray-500 dark:text-gray-400" />
-          <span className="text-sm font-medium text-gray-700 dark:text-gray-300">Filter:</span>
+          <Filter className="w-4 h-4 text-v-text-muted" />
+          <span className="text-sm font-medium text-v-text-secondary">Filter:</span>
           <button
             onClick={() => setTaskFilter('all')}
             className={`px-3 py-1 rounded text-sm ${
               taskFilter === 'all'
                 ? 'bg-blue-100 text-blue-700 font-medium'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                : 'bg-v-surface-muted text-v-text-secondary hover:bg-v-surface-muted'
             }`}
           >
             All ({totalTasks})
@@ -139,7 +140,7 @@ export default function EmployeeOnboardingJourneyView({
             className={`px-3 py-1 rounded text-sm ${
               taskFilter === 'pending'
                 ? 'bg-yellow-100 text-yellow-700 font-medium'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                : 'bg-v-surface-muted text-v-text-secondary hover:bg-v-surface-muted'
             }`}
           >
             Pending ({pendingTasks})
@@ -149,7 +150,7 @@ export default function EmployeeOnboardingJourneyView({
             className={`px-3 py-1 rounded text-sm ${
               taskFilter === 'in_progress'
                 ? 'bg-blue-100 text-blue-700 font-medium'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                : 'bg-v-surface-muted text-v-text-secondary hover:bg-v-surface-muted'
             }`}
           >
             In Progress ({inProgressTasks})
@@ -159,7 +160,7 @@ export default function EmployeeOnboardingJourneyView({
             className={`px-3 py-1 rounded text-sm ${
               taskFilter === 'completed'
                 ? 'bg-green-100 text-green-700 font-medium'
-                : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                : 'bg-v-surface-muted text-v-text-secondary hover:bg-v-surface-muted'
             }`}
           >
             Completed ({completedTasks})
@@ -170,7 +171,7 @@ export default function EmployeeOnboardingJourneyView({
               className={`px-3 py-1 rounded text-sm ${
                 taskFilter === 'blocked'
                   ? 'bg-red-100 text-red-700 font-medium'
-                  : 'bg-gray-100 text-gray-700 hover:bg-gray-200'
+                  : 'bg-v-surface-muted text-v-text-secondary hover:bg-v-surface-muted'
               }`}
             >
               Blocked ({blockedTasks})
@@ -198,9 +199,11 @@ export default function EmployeeOnboardingJourneyView({
 
       {/* Tasks Display */}
       {sortedTasks.length === 0 ? (
-        <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-          <p className="text-sm">No tasks match the selected filter.</p>
-        </div>
+        <BusinessOperationsEmptyState
+          icon={<Filter className="h-12 w-12" />}
+          title="No tasks match this filter"
+          description="Try a different filter or complete onboarding tasks assigned to you."
+        />
       ) : viewMode === 'timeline' ? (
         <OnboardingTimeline tasks={sortedTasks} />
       ) : (

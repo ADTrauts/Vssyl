@@ -141,6 +141,240 @@ UX reference slots live under `docs/ux/audits/` per [`REFERENCE_MODULE_PROGRAM.m
 
 ---
 
+## Context Graph — Platform Capabilities (2026-06-19)
+
+**Not** a Reference Module #N integer. Platform capability references under Tier 0 Context Graph certification — separate **#CG** taxonomy from architecture Reference Modules #1–#5 and Business Administration **#OC** capabilities.
+
+| Field | Value |
+|-------|-------|
+| **Certification** | **LEVEL 3 CERTIFIED** (architecture ratified CG-0C 2026-06-18; certified WITH FINDINGS CG-3 2026-06-19; promoted CG-6 2026-06-19) |
+| **Prior certification** | LEVEL 3 CERTIFIED WITH FINDINGS (CG-3) — superseded at promotion |
+| **Gates** | G1–G9 **25/27 (~93%)** — G1–G3, G5–G7 PASS |
+| **Open majors** | **0** |
+| **Open advisories** | **8** — tracked; do not block certification |
+| **Program status** | **ARCHIVED** — [CONTEXT_GRAPH_PROGRAM_ARCHIVE.md](../context-graph/CONTEXT_GRAPH_PROGRAM_ARCHIVE.md) |
+
+### Platform capabilities
+
+| # | Capability | Designation | Primary audit |
+|---|------------|-------------|---------------|
+| **CG-1** | Federated Context Graph Read Model | **Reference Capability** | [CONTEXT_GRAPH_PROMOTION_REVIEW.md](../context-graph/CONTEXT_GRAPH_PROMOTION_REVIEW.md) |
+| **CG-2** | V_Link Cross-Module Association Substrate | **Reference Capability** | [CG_1A_ADAPTER_REGISTRY.md](../context-graph/CG_1A_ADAPTER_REGISTRY.md) |
+| **CG-3** | Context Bundle Descriptor / AI Grounding | **Reference Capability With Findings** | [CG_1D_AI_GROUNDING_CONTRACT.md](../context-graph/CG_1D_AI_GROUNDING_CONTRACT.md) |
+
+### Qualifying reference areas
+
+| Area | What to copy | Key artifacts |
+|------|--------------|---------------|
+| Federation read (#CG-1) | Read-only orchestrator; adapter registry; PE every hop; traversal caps | `contextGraphOrchestrator.ts`, `adapterRegistry.ts`, `bundleResolver.ts` |
+| V_Link substrate (#CG-2) | `*VlinkAccessService` PE; federation without parallel edge store | Module vlink services; `vlinkEntityResolverService` |
+| AI grounding bundle (#CG-3) | Constitutional provider → orchestrator; `graph_bundle` catalog | `contextGraphBundleProvider.ts`, `graphBundlePipelineContextService.ts` |
+| Tag metadata index | Read-only federated tag lookup; tags as node metadata | `tagIndexService.ts`, `tagProviderRegistry.ts` |
+
+### What this designation is NOT
+
+- Not Level 4 Reference Implementation (File Hub only)
+- Not a Reference Module #N integer
+- Not Reference Domain
+- Not plain Reference Capability for #CG-3 (G9 partial; advisories remain)
+- Not authorization for Phase 1B-prime / 2B (program archived)
+
+**Governance records:** [CONTEXT_GRAPH_REFERENCE_STATUS_RECORD.md](../context-graph/CONTEXT_GRAPH_REFERENCE_STATUS_RECORD.md), [CONTEXT_GRAPH_CERTIFICATION_PROMOTION_RECORD.md](../context-graph/CONTEXT_GRAPH_CERTIFICATION_PROMOTION_RECORD.md), [CONTEXT_GRAPH_COUNCIL_RATIFICATION.md](../context-graph/CONTEXT_GRAPH_COUNCIL_RATIFICATION.md)
+
+---
+
+## Business Operations — Reference Candidates (2026-06-19)
+
+**Not** Architecture Reference Module #N integers (#1–#5 remain File Hub, Chat, Calendar, Todo, Place). Business Operations reference candidates use a **separate BO taxonomy** (#1, #6, #7) ratified at domain certification.
+
+| Field | Value |
+|-------|-------|
+| **Certification** | **LEVEL 3 CERTIFIED WITH FINDINGS** (ratified BO-3 2026-06-19; executed BO-4 2026-06-19) |
+| **Prior certification** | Ratified but not executed (BO-3); WC informal plain L3 (2026-06-14) — superseded at BO-3 alignment |
+| **Gates** | G1–G9 **24/27 (~89%)** — G2/G3/G4/G5/G7/G9 PASS; G1/G6/G8 PARTIAL |
+| **Open blockers** | **0** |
+| **Open majors** | **0** |
+| **Open advisories** | **17** — tracked on certificate; 90-day remediation plan |
+| **Program status** | **ARCHIVED** — [BUSINESS_OPERATIONS_PROGRAM_ARCHIVE.md](../business-operations/BUSINESS_OPERATIONS_PROGRAM_ARCHIVE.md) |
+
+### Reference candidates (ratified language)
+
+| # | Module | Designation | Primary audit |
+|---|--------|-------------|---------------|
+| **#1** | HR (`hr`) | **Reference Candidate #1 — Workforce Lifecycle** | [HR_OPERATION_MATRIX.md](./audits/HR_OPERATION_MATRIX.md) |
+| **#6** | Scheduling (`scheduling`) | **Reference Candidate WITH FINDINGS #6 — Planning** | [SCHEDULING_OPERATION_MATRIX.md](./audits/SCHEDULING_OPERATION_MATRIX.md) |
+| **#7** | Workforce Communications (`workforce_comms`) | **Reference Candidate #7 — Workforce Broadcast** | [WORKFORCE_COMMUNICATIONS_OPERATION_MATRIX.md](./audits/WORKFORCE_COMMUNICATIONS_OPERATION_MATRIX.md) |
+
+### Qualifying reference areas
+
+| Area | What to copy | Key artifacts |
+|------|--------------|---------------|
+| Employee lifecycle (#1) | Service architecture, V-Link, trash, PE dual types, org-chart symmetry | `employeeManagementService`, `hrPolicyDual`, `hrWorkforceBridgeIntegrationService` |
+| Shift planning (#6) | Schedule/shift services, domain events, claim lifecycle, manager publish facade | `scheduling*Service`, `schedulingDomainEventService`, `schedulingTrashService` |
+| Workforce broadcast (#7) | Audience resolution, publish/ack/report pipeline, read-only AI OK | `workforceComms*Service`, broadcast lifecycle, HR bridge consumption |
+| Domain integration | HR→WC bridge contract; BO UX shell bar | `hrWorkforceBridgeIntegrationService`, `BusinessOperationsEmptyState` |
+| Operation matrices | Published trio + domain annex | [BUSINESS_OPERATIONS_OPERATION_MATRIX_ANNEX.md](./audits/BUSINESS_OPERATIONS_OPERATION_MATRIX_ANNEX.md) |
+
+### What this designation is NOT
+
+- Not Level 4 Reference Implementation (File Hub only)
+- Not Architecture Reference Module #N integer (#1–#5 slots unchanged)
+- Not Reference Domain (deferred — post plain L3 or separate charter)
+- Not plain Reference Candidate for #6 (WITH FINDINGS suffix until advisories reduce)
+- Not plain LEVEL 3 CERTIFIED at domain scope (17 advisories + partial G1/G6/G8)
+- Not authorization for new modernization waves (program archived)
+
+**Governance records:** [BUSINESS_OPERATIONS_REFERENCE_STATUS_RECORD.md](../business-operations/BUSINESS_OPERATIONS_REFERENCE_STATUS_RECORD.md), [BUSINESS_OPERATIONS_REFERENCE_DECISION.md](../business-operations/BUSINESS_OPERATIONS_REFERENCE_DECISION.md), [BUSINESS_OPERATIONS_CERTIFICATION_RECORD.md](../business-operations/BUSINESS_OPERATIONS_CERTIFICATION_RECORD.md), [BUSINESS_OPERATIONS_COUNCIL_RATIFICATION.md](../business-operations/BUSINESS_OPERATIONS_COUNCIL_RATIFICATION.md)
+
+---
+
+## Reference Workspace — With Findings (2026-06-19)
+
+**Not** Architecture Reference Module #N (#1–#5). **Not** UX Reference #6. Reference Workspace uses **program #3** taxonomy (Reference Workspace Module per [REFERENCE_MODULE_PROGRAM.md](../ux/REFERENCE_MODULE_PROGRAM.md)).
+
+| Field | Value |
+|-------|-------|
+| **Designation** | **Reference Workspace With Findings** |
+| **Certification** | **WS-L3 CERTIFIED WITH FINDINGS** (ratified WS-L3-2 2026-06-19; executed WS-L3-3 2026-06-19) |
+| **Registration** | **Approved with Findings** (2026-06-14) — affirmed at WS-L3 |
+| **Gates** | G1–G9 **23/27 (~85%)** — G3/G4/G5/G7/G8/G9 PASS; G1/G2/G6 PARTIAL |
+| **Open blockers** | **0** |
+| **Open majors** | **0** |
+| **Open advisories** | **11** — tracked on certificate; 90-day remediation plan |
+| **Co-surfaces** | Business Workspace shell · Personal Dashboard shell |
+| **Dashboard module** | **Out of scope** — `dashboard` ledger row unchanged (L1) |
+| **Program status** | **ARCHIVED** — [WORKSPACE_PROGRAM_ARCHIVE.md](../workspace/WORKSPACE_PROGRAM_ARCHIVE.md) |
+
+### Qualifying reference areas
+
+| Area | What to copy | Key artifacts |
+|------|--------------|---------------|
+| Workspace navigation SSOT | Canonical href builders + contracts | `businessWorkspaceNavigation.ts`, `personalDashboardNavigation.ts`, `businessWorkspaceContracts.ts` |
+| Module switch authority | Single switch mount | `BusinessWorkspaceContent.tsx` |
+| Hub landing mount | Per-module `*WorkspaceLanding` | `module-development.mdc` pattern |
+| Segment-switch null deferral | App Router page defers to switch | `workspace/{segment}/page.tsx` (incl. **place** — ENG-1) |
+| Cross-surface transitions | B↔P↔Place map | `crossSurfaceNavigation.ts`, [CROSS_SURFACE_TRANSITIONS.md](./CROSS_SURFACE_TRANSITIONS.md) |
+| PlatformShell consumer | Personal 3C-4E · Business 3C-4F | `PlatformShell`, `DashboardLayoutWrapper`, `DashboardLayoutInner` |
+| Drift enforcement | Registry ↔ switch ↔ contract CI | 64+ contract tests |
+| Runtime scope bridge | Tenant/dashboard binding | `WorkspaceRuntimeScopeBridge` — **B-F3 advisory** |
+
+### What this designation is NOT
+
+- Not Level 4 Reference Implementation (File Hub only)
+- Not Architecture Reference Module #N integer
+- Not UX Reference #6 slot
+- Not plain Reference Workspace (11 advisories + REG-B3 open)
+- Not Dashboard **module** L3 (`DashboardClient` widget grid — separate Wave 3)
+- Not authorization for new workspace modernization program waves (program archived)
+
+**Governance records:** [WORKSPACE_REFERENCE_STATUS_RECORD.md](../workspace/WORKSPACE_REFERENCE_STATUS_RECORD.md), [WORKSPACE_REFERENCE_DECISION.md](../workspace/WORKSPACE_REFERENCE_DECISION.md), [WORKSPACE_CERTIFICATION_RECORD.md](../workspace/WORKSPACE_CERTIFICATION_RECORD.md), [WORKSPACE_COUNCIL_RATIFICATION.md](../workspace/WORKSPACE_COUNCIL_RATIFICATION.md)
+
+---
+
+## Account Platform — Sub-program Capabilities (2026-06-20)
+
+**Not** Reference Module #N integers (#1–#5 remain File Hub, Chat, Calendar, Todo, Place). Account Platform uses a **separate AP taxonomy** for sub-program certifications and platform capabilities. **Umbrella composite certification executed; program archived.**
+
+| Field | Value |
+|-------|-------|
+| **Program status** | **ARCHIVED** — [ACCOUNT_PLATFORM_PROGRAM_ARCHIVE.md](../account-platform/ACCOUNT_PLATFORM_PROGRAM_ARCHIVE.md) |
+| **Umbrella certification** | **LEVEL 3 CERTIFIED WITH FINDINGS** (22/27) — executed 2026-06-20 |
+| **Certification model** | L3 WITH FINDINGS (all surfaces) |
+| **Reference Module #N** | **Not assigned** — sub-program capabilities, not workspace modules |
+
+### PP-1 Identity & Profile
+
+| Field | Value |
+|-------|-------|
+| **Certification** | **LEVEL 3 CERTIFIED WITH FINDINGS** (ratified & executed 2026-06-20) |
+| **Gates** | G1–G9 **24/27 (~89%)** |
+| **Open blockers** | **0** |
+| **Open majors on certificate** | PP1-F03 (MFA), PP1-F04 (photo controller partial) |
+| **Open advisories** | **9** — tracked on certificate |
+| **Pattern reference** | **Deferred** — identity substrate candidate |
+| **Certification track** | **ARCHIVED** |
+
+**Qualifying teachable areas (not reference designation):** `identityPolicyDual`, `identityActivityService`, `profileService`/`privacyService` extraction, privacy SoR vs settings projection.
+
+**Governance records:** [PP1_CERTIFICATION_RECORD.md](../account-platform/PP1_CERTIFICATION_RECORD.md), [PP1_CERTIFICATION_RATIFICATION.md](../account-platform/PP1_CERTIFICATION_RATIFICATION.md), [PP1_REFERENCE_REVIEW.md](../account-platform/PP1_REFERENCE_REVIEW.md), [PP1_OPERATION_MATRIX_REAUDIT.md](../account-platform/PP1_OPERATION_MATRIX_REAUDIT.md)
+
+### PP-2 Settings Platform
+
+| Field | Value |
+|-------|-------|
+| **Certification** | **LEVEL 3 CERTIFIED WITH FINDINGS** (ratified & executed 2026-06-20) |
+| **Gates** | G1–G9 **26/27 (~96%)** |
+| **Open blockers** | **0** |
+| **Open majors on certificate** | PP2-F05 partial (BA-owned business dedup) |
+| **Open advisories** | **6** — tracked on certificate |
+| **Pattern reference** | **Deferred** — settings orchestration candidate (strongest future promotion) |
+| **Certification track** | **ARCHIVED** |
+
+**Qualifying teachable areas (not reference designation):** `settingsService` orchestration, `preferenceRegistry`, `notificationSettingsAdapter`, settings hub IA consolidation.
+
+**Governance records:** [PP2_CERTIFICATION_RECORD.md](../account-platform/PP2_CERTIFICATION_RECORD.md), [PP2_CERTIFICATION_RATIFICATION.md](../account-platform/PP2_CERTIFICATION_RATIFICATION.md), [PP2_REFERENCE_REVIEW.md](../account-platform/PP2_REFERENCE_REVIEW.md), [PP2_OPERATION_MATRIX_REAUDIT.md](../account-platform/PP2_OPERATION_MATRIX_REAUDIT.md)
+
+### PP-3 Billing & Entitlements
+
+| Field | Value |
+|-------|-------|
+| **Certification** | **LEVEL 3 CERTIFIED WITH FINDINGS** (ratified & executed 2026-06-20) |
+| **Gates** | G1–G9 **23/27 (~85%)** |
+| **Open blockers** | **0** |
+| **Open majors on certificate** | PP3-F08 (modal UX), PP3-F05/F07 partial, PP3-EVAL-F01 |
+| **Open advisories** | **5+** — tracked on certificate |
+| **Reference capability** | **#AP-BILL-1** — Reference Capability With Findings |
+| **Certification track** | **ARCHIVED** |
+
+**Governance records:** [PP3_CERTIFICATION_RECORD.md](../account-platform/PP3_CERTIFICATION_RECORD.md), [PP3_CERTIFICATION_RATIFICATION.md](../account-platform/PP3_CERTIFICATION_RATIFICATION.md), [PP3_REFERENCE_DECISION.md](../account-platform/PP3_REFERENCE_DECISION.md), [PP3_OPERATION_MATRIX_REAUDIT.md](../account-platform/PP3_OPERATION_MATRIX_REAUDIT.md)
+
+### Account Platform — Umbrella Composite
+
+| Field | Value |
+|-------|-------|
+| **Certification** | **LEVEL 3 CERTIFIED WITH FINDINGS** (ratified & executed 2026-06-20 · RD-AP-UMB-001) |
+| **Gates** | G1–G9 **22/27 (~81%)** |
+| **Open blockers** | **0** |
+| **Open majors on certificate** | **7** — AP-UMB-M01 through M07 |
+| **Open advisories** | **19** — ADV-01 through ADV-18 + EVAL-F01 |
+| **Reference domain** | **Denied** — composite validates coherence; not a copyable teaching artifact |
+| **Program status** | **ARCHIVED** |
+
+**Governance records:** [ACCOUNT_PLATFORM_CERTIFICATION_RECORD.md](../account-platform/ACCOUNT_PLATFORM_CERTIFICATION_RECORD.md), [ACCOUNT_PLATFORM_CERTIFICATION_RATIFICATION.md](../account-platform/ACCOUNT_PLATFORM_CERTIFICATION_RATIFICATION.md), [ACCOUNT_PLATFORM_REFERENCE_DECISION.md](../account-platform/ACCOUNT_PLATFORM_REFERENCE_DECISION.md), [ACCOUNT_PLATFORM_UNIFIED_OPERATION_MATRIX.md](../account-platform/ACCOUNT_PLATFORM_UNIFIED_OPERATION_MATRIX.md)
+
+### #AP-BILL-1 — Billing Platform Pattern
+
+| Field | Value |
+|-------|-------|
+| **Designation** | **Reference Capability With Findings** |
+| **Ratification** | RD-AP3-REF-001 (PP-3); affirmed RD-AP-UMB-REF-002 (umbrella) |
+| **Catalog execution** | **2026-06-20** — Final Governance Execution |
+| **Open findings on reference** | M02 (modal UX), M05 (invoice activity), M07 (module PE), ACC-01 (tier boundary) |
+| **Plain Reference Capability** | **Not ratified** — open majors block |
+
+| Pattern | What to copy | Key artifacts |
+|---------|--------------|---------------|
+| Billing service facade | Canonical mutations; no Prisma in controllers | `billingService`, `entitlementService` |
+| Stripe checkout sync | Webhook → entitlement cache convergence | Stripe handlers, checkout sync |
+| API convergence | Single `/api/billing` surface; 410 retirement | `billingController`, `web/src/api/billing.ts` |
+| Entitlement reads | Tier normalization boundary | `normalizeTier()`, entitlement cache |
+
+**Teaching docs:** [PP3_BILLING_SERVICE_MODEL.md](../account-platform/PP3_BILLING_SERVICE_MODEL.md), [PP3_BILLING_CLIENT_ARCHITECTURE.md](../account-platform/PP3_BILLING_CLIENT_ARCHITECTURE.md)
+
+**Promotion path to plain Reference Capability:** Close M02, M05, M07; separate reference promotion vote.
+
+### What this designation is NOT
+
+- Not Level 4 Reference Implementation (File Hub only)
+- Not Reference Module #N integer
+- Not Reference Domain (Account Platform composite)
+- Not plain LEVEL 3 CERTIFIED (open findings on all certificates)
+- Not authorization for new Account Platform modernization program waves
+
+**Program records:** [ACCOUNT_PLATFORM_STATUS_RECORD.md](../account-platform/ACCOUNT_PLATFORM_STATUS_RECORD.md), [ACCOUNT_PLATFORM_GOVERNANCE_EXECUTION.md](../account-platform/ACCOUNT_PLATFORM_GOVERNANCE_EXECUTION.md), [ACCOUNT_PLATFORM_PROGRAM_ARCHIVE.md](../account-platform/ACCOUNT_PLATFORM_PROGRAM_ARCHIVE.md), [ACCOUNT_PLATFORM_POST_RATIFICATION_ROADMAP.md](../account-platform/ACCOUNT_PLATFORM_POST_RATIFICATION_ROADMAP.md)
+
+---
+
 ## File Hub — Reference Module #1 (Level 4)
 
 **Copy for:** Any module with user data, deletes, sharing, search, or cross-module links.
@@ -379,12 +613,13 @@ Use this catalog when filling **“reference module pattern to copy”** columns
 
 ### Personal Dashboard — platform shell (WS-L1 Certified with Findings, 2026-06-03)
 
-**Reference Workspace co-surface** — dashboard archetype (widget grid + module routes). **WS-L1 + WS-L2 Certified with Findings** · **Registered Approved with Findings** (2026-06-14).
+**Reference Workspace co-surface** — dashboard archetype (widget grid + module routes). **WS-L1 + WS-L2 + WS-L3 Certified with Findings** (combined program) · **Registered Approved with Findings** (2026-06-14). Dashboard **module** widget grid remains separate product scope.
 
 | Pattern | Status | Key artifacts |
 |---------|--------|----------------|
 | WS-L1 certification | ✅ **Certified with Findings** | [PERSONAL_DASHBOARD_WS_L1_CERTIFICATION_REVIEW.md](./audits/PERSONAL_DASHBOARD_WS_L1_CERTIFICATION_REVIEW.md) |
 | WS-L2 certification | ✅ **Certified with Findings** | [REFERENCE_WORKSPACE_WS_L2_CERTIFICATION_REVIEW.md](./audits/REFERENCE_WORKSPACE_WS_L2_CERTIFICATION_REVIEW.md) |
+| WS-L3 certification (program) | ✅ **Certified with Findings** | [WORKSPACE_CERTIFICATION_RECORD.md](../workspace/WORKSPACE_CERTIFICATION_RECORD.md) |
 | Registration | ✅ **Approved with Findings** (co-surface) | [REFERENCE_WORKSPACE_REGISTRATION_REVIEW.md](./audits/REFERENCE_WORKSPACE_REGISTRATION_REVIEW.md) |
 | Routing contract | ✅ | [PERSONAL_DASHBOARD_ROUTING_CONTRACT.md](./PERSONAL_DASHBOARD_ROUTING_CONTRACT.md) |
 | Widget boundary | ✅ | [PERSONAL_DASHBOARD_WIDGET_CONTRACT.md](./PERSONAL_DASHBOARD_WIDGET_CONTRACT.md) |
@@ -402,12 +637,13 @@ Use this catalog when filling **“reference module pattern to copy”** columns
 
 ### Business Workspace — platform shell (WS-L1 + WS-L2 + Registered, 2026-06-14)
 
-**Reference Workspace Program** — **not** UX slot #6, **not** architecture Reference #6. **Registered holder** (hub archetype) — **Approved with Findings**.
+**Reference Workspace Program** — **not** UX slot #6, **not** architecture Reference #6. **Registered holder** (hub archetype) — **Approved with Findings**. **WS-L3 CERTIFIED WITH FINDINGS** at program level (2026-06-19).
 
 | Pattern | Status | Key artifacts |
 |---------|--------|----------------|
 | WS-L1 certification | ✅ **Certified with Findings** | [BUSINESS_WORKSPACE_WS_L1_CERTIFICATION_REVIEW.md](./audits/BUSINESS_WORKSPACE_WS_L1_CERTIFICATION_REVIEW.md) |
 | WS-L2 certification | ✅ **Certified with Findings** | [REFERENCE_WORKSPACE_WS_L2_CERTIFICATION_REVIEW.md](./audits/REFERENCE_WORKSPACE_WS_L2_CERTIFICATION_REVIEW.md) |
+| WS-L3 certification (program) | ✅ **Certified with Findings** | [WORKSPACE_CERTIFICATION_RECORD.md](../workspace/WORKSPACE_CERTIFICATION_RECORD.md) |
 | Registration | ✅ **Approved with Findings** (co-surface) | [REFERENCE_WORKSPACE_REGISTRATION_REVIEW.md](./audits/REFERENCE_WORKSPACE_REGISTRATION_REVIEW.md) |
 | Module mount switch | ✅ | `BusinessWorkspaceContent.tsx` (authoritative) |
 | Navigation single source | ✅ | `businessWorkspaceNavigation.ts` + `businessWorkspaceContracts.ts` |
@@ -427,18 +663,20 @@ Use this catalog when filling **“reference module pattern to copy”** columns
 
 **Personal Dashboard shell:** `DashboardLayoutInner` — co-surface; **Registered Approved with Findings** (2026-06-14).
 
-### Reference Workspace Program — combined (registered 2026-06-14)
+### Reference Workspace Program — combined (registered 2026-06-14; WS-L3 2026-06-19)
 
 | Metric | Value |
 |--------|-------|
 | WS-L1 | Both co-surfaces certified |
 | WS-L2 | ✅ **Certified with Findings** |
-| Registration | ✅ **Approved with Findings** — [REFERENCE_WORKSPACE_REGISTRATION_REVIEW.md](./audits/REFERENCE_WORKSPACE_REGISTRATION_REVIEW.md) |
-| Holder model | **Hybrid** — Platform Shell + Business (hub) + Personal (dashboard) |
-| WS-L2 readiness at certification | **~89%** combined |
-| Open findings | **12** (RWS-F1 primary) |
-| Cross-surface QA | ✅ Part 2H — [REFERENCE_WORKSPACE_QA_EXECUTION_REPORT.md](./audits/REFERENCE_WORKSPACE_QA_EXECUTION_REPORT.md) |
-| Platform shell spec | [REFERENCE_WORKSPACE_PLATFORM_SHELL.md](./REFERENCE_WORKSPACE_PLATFORM_SHELL.md) |
+| **WS-L3** | ✅ **Certified with Findings** (2026-06-19) |
+| Registration | ✅ **Approved with Findings** |
+| Reference designation | ✅ **Reference Workspace With Findings** |
+| Holder model | **Hybrid** — Platform Shell + Business (hub) + Personal (dashboard shell) |
+| G1–G9 at WS-L3 | **23/27 (~85%)** |
+| Open findings | **11** advisory (RWS-F1 **closed** ENG-1) |
+| Dashboard module | **Out of scope** — ledger `dashboard` row L1 unchanged |
+| Program | **ARCHIVED** — [WORKSPACE_PROGRAM_ARCHIVE.md](../workspace/WORKSPACE_PROGRAM_ARCHIVE.md) |
 
 **Evidence:** [REFERENCE_WORKSPACE_REGISTRATION_REVIEW.md](./audits/REFERENCE_WORKSPACE_REGISTRATION_REVIEW.md) · [REFERENCE_WORKSPACE_WS_L2_CERTIFICATION_REVIEW.md](./audits/REFERENCE_WORKSPACE_WS_L2_CERTIFICATION_REVIEW.md) · [REFERENCE_WORKSPACE_OPERATION_MATRIX_REAUDIT.md](./audits/REFERENCE_WORKSPACE_OPERATION_MATRIX_REAUDIT.md)
 
@@ -456,4 +694,4 @@ Use this catalog when filling **“reference module pattern to copy”** columns
 
 ---
 
-*Last updated: 2026-06-18 (Business Administration L3 promotion; #OC-1/#OC-2/#OC-3 Reference Platform Capabilities With Findings)*
+*Last updated: 2026-06-20 (Account Platform trilogy + umbrella L3 WITH FINDINGS executed; #AP-BILL-1 catalog; program archived)*

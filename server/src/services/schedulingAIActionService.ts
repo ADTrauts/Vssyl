@@ -309,3 +309,148 @@ export async function aiSuggestShiftAssignments(params: {
     return { success: false, error: err.message || 'Failed to get suggestions' };
   }
 }
+
+function mapSchedulingServiceError(error: unknown): SchedulingAIActionOutcome {
+  if (error instanceof Error) {
+    return { success: false, error: error.message };
+  }
+  return { success: false, error: 'Scheduling action failed' };
+}
+
+export async function aiCreateSchedule(params: {
+  userId: string;
+  businessId: string;
+  name: string;
+  startDate: string;
+  endDate: string;
+  description?: string;
+  timezone?: string;
+}): Promise<SchedulingAIActionOutcome> {
+  try {
+    const { createScheduleForBusiness } = await import('./schedulingScheduleService.js');
+    const schedule = await createScheduleForBusiness({
+      businessId: params.businessId,
+      actorUserId: params.userId,
+      name: params.name,
+      startDate: params.startDate,
+      endDate: params.endDate,
+      description: params.description,
+      timezone: params.timezone,
+    });
+    return { success: true, data: schedule };
+  } catch (error: unknown) {
+    return mapSchedulingServiceError(error);
+  }
+}
+
+export async function aiPublishSchedule(params: {
+  userId: string;
+  businessId: string;
+  scheduleId: string;
+}): Promise<SchedulingAIActionOutcome> {
+  try {
+    const { publishBusinessSchedule } = await import('./schedulingPublishService.js');
+    const { resolveManagerScope } = await import('./schedulingServiceShared.js');
+    const scope = await resolveManagerScope(params.businessId, params.userId, undefined);
+    const result = await publishBusinessSchedule({
+      scheduleId: params.scheduleId,
+      businessId: params.businessId,
+      actorUserId: params.userId,
+      managerScope: scope,
+    });
+    return { success: true, data: result };
+  } catch (error: unknown) {
+    return mapSchedulingServiceError(error);
+  }
+}
+
+export async function aiAssignShift(params: {
+  userId: string;
+  businessId: string;
+  shiftId: string;
+  employeePositionId: string;
+}): Promise<SchedulingAIActionOutcome> {
+  try {
+    const { assignShiftToEmployeeByManager } = await import('./schedulingShiftService.js');
+    const { resolveManagerScope } = await import('./schedulingServiceShared.js');
+    const scope = await resolveManagerScope(params.businessId, params.userId, undefined);
+    const shift = await assignShiftToEmployeeByManager({
+      businessId: params.businessId,
+      shiftId: params.shiftId,
+      employeePositionId: params.employeePositionId,
+      actorUserId: params.userId,
+      scope,
+    });
+    return { success: true, data: shift };
+  } catch (error: unknown) {
+    return mapSchedulingServiceError(error);
+  }
+}
+
+export async function aiClaimOpenShift(params: {
+  userId: string;
+  businessId: string;
+  shiftId: string;
+  employeePositionId?: string;
+}): Promise<SchedulingAIActionOutcome> {
+  try {
+    const { claimOpenShiftForEmployee } = await import('./schedulingShiftService.js');
+    const shift = await claimOpenShiftForEmployee({
+      businessId: params.businessId,
+      shiftId: params.shiftId,
+      userId: params.userId,
+      employeePositionId: params.employeePositionId,
+    });
+    return { success: true, data: shift };
+  } catch (error: unknown) {
+    return mapSchedulingServiceError(error);
+  }
+}
+
+export async function aiRequestShiftSwap(params: {
+  userId: string;
+  businessId: string;
+  shiftId: string;
+  requestedToId?: string;
+  reason?: string;
+}): Promise<SchedulingAIActionOutcome> {
+  try {
+    const { requestShiftSwap } = await import('./schedulingSwapService.js');
+    const swap = await requestShiftSwap({
+      businessId: params.businessId,
+      userId: params.userId,
+      shiftId: params.shiftId,
+      requestedToId: params.requestedToId,
+      requestNotes: params.reason,
+    });
+    return { success: true, data: swap };
+  } catch (error: unknown) {
+    return mapSchedulingServiceError(error);
+  }
+}
+
+export async function aiSetAvailability(params: {
+  userId: string;
+  businessId: string;
+  dayOfWeek: string;
+  startTime: string;
+  endTime: string;
+  availabilityType?: string;
+  employeePositionId?: string;
+}): Promise<SchedulingAIActionOutcome> {
+  try {
+    const { createOwnAvailability } = await import('./schedulingAvailabilityService.js');
+    const row = await createOwnAvailability({
+      businessId: params.businessId,
+      userId: params.userId,
+      dayOfWeek: params.dayOfWeek,
+      startTime: params.startTime,
+      endTime: params.endTime,
+      availabilityType: params.availabilityType ?? 'AVAILABLE',
+      employeePositionId: params.employeePositionId,
+    });
+    return { success: true, data: row };
+  } catch (error: unknown) {
+    return mapSchedulingServiceError(error);
+  }
+}

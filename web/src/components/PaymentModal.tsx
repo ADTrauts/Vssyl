@@ -12,7 +12,7 @@ import {
   Zap
 } from 'lucide-react';
 import { loadStripe } from '@stripe/stripe-js';
-import { createSubscription, getStripeError } from '../lib/stripe';
+import { subscribeModule } from '../api/billing';
 
 interface Module {
   id: string;
@@ -35,18 +35,6 @@ export default function PaymentModal({ open, onClose, module, onSuccess }: Payme
   const [error, setError] = useState<string | null>(null);
   const [selectedTier, setSelectedTier] = useState<'premium' | 'enterprise'>('premium');
   const [selectedInterval, setSelectedInterval] = useState<'month' | 'year'>('month');
-  const [stripe, setStripe] = useState<any>(null);
-
-  useEffect(() => {
-    // Load Stripe
-    const loadStripeInstance = async () => {
-      const stripeInstance = await loadStripe(
-        process.env.NEXT_PUBLIC_STRIPE_PUBLISHABLE_KEY!
-      );
-      setStripe(stripeInstance);
-    };
-    loadStripeInstance();
-  }, []);
 
   useEffect(() => {
     if (module) {
@@ -55,27 +43,15 @@ export default function PaymentModal({ open, onClose, module, onSuccess }: Payme
   }, [module]);
 
   const handlePayment = async () => {
-    if (!module || !stripe) return;
+    if (!module) return;
 
     setLoading(true);
     setError(null);
 
     try {
-      // Create subscription
-      const subscription = await createSubscription({
-        tier: selectedTier === 'premium' ? 'standard' : 'enterprise',
-        interval: selectedInterval,
-        moduleId: module.id,
-      });
-
-      // If we have a client secret, redirect to Stripe Checkout
-      if (subscription.clientSecret) {
-        const { error } = await stripe.confirmCardPayment(subscription.clientSecret);
-        
-        if (error) {
-          throw new Error(getStripeError(error));
-        }
-      }
+      const tier: 'premium' | 'enterprise' =
+        selectedTier === 'enterprise' ? 'enterprise' : 'premium';
+      await subscribeModule(module.id, tier);
 
       onSuccess();
       onClose();
@@ -263,7 +239,7 @@ export default function PaymentModal({ open, onClose, module, onSuccess }: Payme
 
           <Button
             onClick={handlePayment}
-            disabled={loading || !stripe}
+            disabled={loading}
             className="flex-1"
           >
             {loading ? (

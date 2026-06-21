@@ -165,7 +165,7 @@ export default function HRPageLayout({
       />
 
       {/* Main Content Area */}
-      <div className="flex-1 overflow-y-auto bg-gray-50 dark:bg-slate-800">
+      <div className="flex-1 overflow-y-auto bg-v-surface-muted">
         {children}
       </div>
     </div>

@@ -114,8 +114,8 @@ export const DEFAULT_PIPELINE_GROUNDING_RULES: DefaultGroundingSeed[] = [
   {
     intentId: 'planning',
     requiredSources: [],
-    optionalSources: ['user_memory', 'calendar', 'drive_files', 'vlink'],
-    requirementSummary: 'optional memory, calendar, drive, vlink',
+    optionalSources: ['user_memory', 'calendar', 'drive_files', 'vlink', 'graph_bundle'],
+    requirementSummary: 'optional memory, calendar, drive, vlink, graph_bundle',
   },
   {
     intentId: 'recommendation',
@@ -132,7 +132,7 @@ export const DEFAULT_PIPELINE_GROUNDING_RULES: DefaultGroundingSeed[] = [
   {
     intentId: 'business_operations',
     requiredSources: ['business_context', 'module_context'],
-    optionalSources: ['notifications_activity', 'calendar', 'vlink'],
+    optionalSources: ['notifications_activity', 'calendar', 'vlink', 'graph_bundle'],
     requirementSummary: 'business_context + module_context',
   },
   {
@@ -144,14 +144,14 @@ export const DEFAULT_PIPELINE_GROUNDING_RULES: DefaultGroundingSeed[] = [
   {
     intentId: 'workflow_action',
     requiredSources: [],
-    optionalSources: ['calendar', 'drive_files', 'vlink', 'module_context'],
-    requirementSummary: 'optional workflow modules and vlink',
+    optionalSources: ['calendar', 'drive_files', 'vlink', 'graph_bundle', 'module_context'],
+    requirementSummary: 'optional workflow modules, vlink, graph_bundle',
   },
   {
     intentId: 'technical_help',
     requiredSources: [],
-    optionalSources: ['repo_context', 'module_context', 'vlink'],
-    requirementSummary: 'optional repo_context',
+    optionalSources: ['repo_context', 'module_context', 'vlink', 'graph_bundle'],
+    requirementSummary: 'optional repo_context, graph_bundle',
   },
 ];
 
@@ -159,6 +159,7 @@ export const SOURCE_TO_TOOLS: Record<string, PipelineToolPolicy['toolId'][]> = {
   location: ['location'],
   vssyl_place: ['place_search'],
   vlink: ['module_context'],
+  graph_bundle: ['module_context'],
   web_search: ['web_search'],
   user_memory: ['memory'],
   business_context: ['business_context'],
@@ -234,6 +235,14 @@ export const DEFAULT_PIPELINE_CONTEXT_SOURCES: DefaultSourceSeed[] = [
     id: 'vlink',
     label: 'V_Link Relationships',
     description: 'Permission-filtered relationship graph context from confirmed V_Links.',
+    enabled: true,
+    wiredInTwin: true,
+  },
+  {
+    id: 'graph_bundle',
+    label: 'Context Graph Bundles',
+    description:
+      'Formal ContextBundleDescriptor federation views via Tier 0 Context Graph provider (read-only; PE at every hop).',
     enabled: true,
     wiredInTwin: true,
   },

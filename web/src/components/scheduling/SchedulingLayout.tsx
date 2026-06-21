@@ -106,7 +106,7 @@ export default function SchedulingLayout({ businessId }: SchedulingLayoutProps) 
     return (
       <div className="flex items-center justify-center h-full">
         <div className="text-center">
-          <p className="text-gray-600 dark:text-gray-400">Loading scheduling module...</p>
+          <p className="text-v-text-secondary">Loading scheduling module...</p>
         </div>
       </div>
     );
@@ -143,7 +143,7 @@ export default function SchedulingLayout({ businessId }: SchedulingLayoutProps) 
       )}
 
       {/* Main Content Area */}
-      <div className="flex-1 overflow-hidden bg-gray-50 dark:bg-slate-800">
+      <div className="flex-1 overflow-hidden bg-v-surface-muted">
         <SchedulingContentView
           view={currentView}
           businessId={businessId}

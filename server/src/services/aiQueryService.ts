@@ -9,6 +9,7 @@ import { prisma } from '../lib/prisma';
 import Stripe from 'stripe';
 import { AI_QUERY_PACKS, AI_BASE_ALLOWANCES, getBaseAllowance, isUnlimitedTier, type QueryPackType, AI_QUERY_OVERAGE_CONFIG } from '../config/aiQueryPacks';
 import { logger } from '../lib/logger';
+import { resolveTier } from './account/entitlementService';
 
 function logSrvErr(operation: string, message: string, err: unknown, context?: Record<string, unknown>): void {
   const e = err instanceof Error ? err : new Error(String(err));
@@ -91,14 +92,8 @@ export class AIQueryService {
       }
 
       // Check if user has unlimited queries (Enterprise tier)
-      const subscription = await prisma.subscription.findFirst({
-        where: businessId
-          ? { businessId, status: 'active' }
-          : { userId, status: 'active' },
-        orderBy: { createdAt: 'desc' },
-      });
-
-      const tier = subscription?.tier || 'free';
+      const resolution = await resolveTier({ userId, businessId: businessId ?? undefined });
+      const tier = resolution.tier;
       const unlimited = isUnlimitedTier(tier);
 
       if (unlimited) {
@@ -494,15 +489,8 @@ export class AIQueryService {
     userId: string,
     businessId?: string
   ) {
-    // Get user's subscription
-    const subscription = await prisma.subscription.findFirst({
-      where: businessId
-        ? { businessId, status: 'active' }
-        : { userId, status: 'active' },
-      orderBy: { createdAt: 'desc' },
-    });
-
-    const tier = subscription?.tier || 'free';
+    const resolution = await resolveTier({ userId, businessId });
+    const tier = resolution.tier;
     const baseAllowance = getBaseAllowance(tier);
 
     const now = new Date();
@@ -547,15 +535,11 @@ export class AIQueryService {
       // Calculate rollover (unused base allowance)
       const unusedBase = Math.max(0, balance.baseAllowance - balance.baseAllowanceUsed);
       
-      // Get subscription for new base allowance
-      const subscription = await prisma.subscription.findFirst({
-        where: balance.businessId
-          ? { businessId: balance.businessId, status: 'active' }
-          : { userId: balance.userId, status: 'active' },
-        orderBy: { createdAt: 'desc' },
+      const resolution = await resolveTier({
+        userId: balance.userId,
+        businessId: balance.businessId ?? undefined,
       });
-
-      const tier = subscription?.tier || 'free';
+      const tier = resolution.tier;
       const newBaseAllowance = getBaseAllowance(tier);
 
       await prisma.aIQueryBalance.update({

@@ -2221,26 +2221,165 @@ export class ActionExecutor {
           };
         }
 
-        case 'view_schedules':
-        case 'create_schedule':
-        case 'publish_schedule':
-        case 'assign_shift':
-        case 'swap_shift':
-        case 'set_availability':
-        case 'claim_open_shift': {
-          // These actions would be implemented similar to the above
-          // For now, return a placeholder
+        case 'create_schedule': {
+          const { businessId, name, startDate, endDate, description, timezone } = parameters || {};
+          if (!businessId || !name || !startDate || !endDate) {
+            return {
+              actionId: action.id,
+              success: false,
+              error: 'businessId, name, startDate, and endDate are required',
+              metadata: { executionTime: 0, module: 'scheduling', operation: 'create_schedule', affectedUsers: [], rollbackAvailable: false },
+            };
+          }
+          const { aiCreateSchedule } = await import('../../services/schedulingAIActionService.js');
+          const outcome = await aiCreateSchedule({
+            userId: userContext.userId,
+            businessId: String(businessId),
+            name: String(name),
+            startDate: String(startDate),
+            endDate: String(endDate),
+            description: description != null ? String(description) : undefined,
+            timezone: timezone != null ? String(timezone) : undefined,
+          });
           return {
             actionId: action.id,
-            success: false,
-            error: `Action ${operation} is not yet implemented in AI executor`,
-            metadata: {
-              executionTime: 0,
-              module: 'scheduling',
-              operation,
-              affectedUsers: [],
-              rollbackAvailable: false
-            }
+            success: outcome.success,
+            result: outcome.success ? outcome.data : undefined,
+            error: outcome.success ? undefined : outcome.error,
+            metadata: { executionTime: 0, module: 'scheduling', operation: 'create_schedule', affectedUsers: [], rollbackAvailable: false },
+          };
+        }
+
+        case 'publish_schedule': {
+          const { businessId, scheduleId } = parameters || {};
+          if (!businessId || !scheduleId) {
+            return {
+              actionId: action.id,
+              success: false,
+              error: 'businessId and scheduleId are required',
+              metadata: { executionTime: 0, module: 'scheduling', operation: 'publish_schedule', affectedUsers: [], rollbackAvailable: false },
+            };
+          }
+          const { aiPublishSchedule } = await import('../../services/schedulingAIActionService.js');
+          const outcome = await aiPublishSchedule({
+            userId: userContext.userId,
+            businessId: String(businessId),
+            scheduleId: String(scheduleId),
+          });
+          return {
+            actionId: action.id,
+            success: outcome.success,
+            result: outcome.success ? outcome.data : undefined,
+            error: outcome.success ? undefined : outcome.error,
+            metadata: { executionTime: 0, module: 'scheduling', operation: 'publish_schedule', affectedUsers: [], rollbackAvailable: false },
+          };
+        }
+
+        case 'assign_shift': {
+          const { businessId, shiftId, employeePositionId } = parameters || {};
+          if (!businessId || !shiftId || !employeePositionId) {
+            return {
+              actionId: action.id,
+              success: false,
+              error: 'businessId, shiftId, and employeePositionId are required',
+              metadata: { executionTime: 0, module: 'scheduling', operation: 'assign_shift', affectedUsers: [], rollbackAvailable: false },
+            };
+          }
+          const { aiAssignShift } = await import('../../services/schedulingAIActionService.js');
+          const outcome = await aiAssignShift({
+            userId: userContext.userId,
+            businessId: String(businessId),
+            shiftId: String(shiftId),
+            employeePositionId: String(employeePositionId),
+          });
+          return {
+            actionId: action.id,
+            success: outcome.success,
+            result: outcome.success ? outcome.data : undefined,
+            error: outcome.success ? undefined : outcome.error,
+            metadata: { executionTime: 0, module: 'scheduling', operation: 'assign_shift', affectedUsers: [], rollbackAvailable: false },
+          };
+        }
+
+        case 'swap_shift': {
+          const { businessId, shiftId, requestedToId, reason } = parameters || {};
+          if (!businessId || !shiftId) {
+            return {
+              actionId: action.id,
+              success: false,
+              error: 'businessId and shiftId are required',
+              metadata: { executionTime: 0, module: 'scheduling', operation: 'swap_shift', affectedUsers: [], rollbackAvailable: false },
+            };
+          }
+          const { aiRequestShiftSwap } = await import('../../services/schedulingAIActionService.js');
+          const outcome = await aiRequestShiftSwap({
+            userId: userContext.userId,
+            businessId: String(businessId),
+            shiftId: String(shiftId),
+            requestedToId: requestedToId != null ? String(requestedToId) : undefined,
+            reason: reason != null ? String(reason) : undefined,
+          });
+          return {
+            actionId: action.id,
+            success: outcome.success,
+            result: outcome.success ? outcome.data : undefined,
+            error: outcome.success ? undefined : outcome.error,
+            metadata: { executionTime: 0, module: 'scheduling', operation: 'swap_shift', affectedUsers: [], rollbackAvailable: false },
+          };
+        }
+
+        case 'set_availability': {
+          const { businessId, dayOfWeek, startTime, endTime, availabilityType, employeePositionId } = parameters || {};
+          if (!businessId || !dayOfWeek || !startTime || !endTime) {
+            return {
+              actionId: action.id,
+              success: false,
+              error: 'businessId, dayOfWeek, startTime, and endTime are required',
+              metadata: { executionTime: 0, module: 'scheduling', operation: 'set_availability', affectedUsers: [], rollbackAvailable: false },
+            };
+          }
+          const { aiSetAvailability } = await import('../../services/schedulingAIActionService.js');
+          const outcome = await aiSetAvailability({
+            userId: userContext.userId,
+            businessId: String(businessId),
+            dayOfWeek: String(dayOfWeek),
+            startTime: String(startTime),
+            endTime: String(endTime),
+            availabilityType: availabilityType != null ? String(availabilityType) : undefined,
+            employeePositionId: employeePositionId != null ? String(employeePositionId) : undefined,
+          });
+          return {
+            actionId: action.id,
+            success: outcome.success,
+            result: outcome.success ? outcome.data : undefined,
+            error: outcome.success ? undefined : outcome.error,
+            metadata: { executionTime: 0, module: 'scheduling', operation: 'set_availability', affectedUsers: [], rollbackAvailable: false },
+          };
+        }
+
+        case 'claim_open_shift': {
+          const { businessId, shiftId, employeePositionId } = parameters || {};
+          if (!businessId || !shiftId) {
+            return {
+              actionId: action.id,
+              success: false,
+              error: 'businessId and shiftId are required',
+              metadata: { executionTime: 0, module: 'scheduling', operation: 'claim_open_shift', affectedUsers: [], rollbackAvailable: false },
+            };
+          }
+          const { aiClaimOpenShift } = await import('../../services/schedulingAIActionService.js');
+          const outcome = await aiClaimOpenShift({
+            userId: userContext.userId,
+            businessId: String(businessId),
+            shiftId: String(shiftId),
+            employeePositionId: employeePositionId != null ? String(employeePositionId) : undefined,
+          });
+          return {
+            actionId: action.id,
+            success: outcome.success,
+            result: outcome.success ? outcome.data : undefined,
+            error: outcome.success ? undefined : outcome.error,
+            metadata: { executionTime: 0, module: 'scheduling', operation: 'claim_open_shift', affectedUsers: [], rollbackAvailable: false },
           };
         }
 

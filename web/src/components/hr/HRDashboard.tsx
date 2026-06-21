@@ -32,8 +32,8 @@ export default function HRDashboard({
     <div className="p-6 space-y-6">
       {/* Header */}
       <div className="mb-6">
-        <h1 className="text-3xl font-bold text-gray-900 dark:text-gray-100">HR Dashboard</h1>
-        <p className="text-gray-600 dark:text-gray-400 mt-1">
+        <h1 className="text-3xl font-bold text-v-text-primary">HR Dashboard</h1>
+        <p className="text-v-text-secondary mt-1">
           Overview of your HR operations and team
         </p>
       </div>
@@ -43,8 +43,8 @@ export default function HRDashboard({
         <Card className="p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Total Employees</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-1">{stats.totalEmployees}</p>
+              <p className="text-sm font-medium text-v-text-secondary">Total Employees</p>
+              <p className="text-2xl font-bold text-v-text-primary mt-1">{stats.totalEmployees}</p>
             </div>
             <div className="p-3 bg-blue-100 rounded-lg">
               <Users className="w-6 h-6 text-blue-600" />
@@ -56,8 +56,8 @@ export default function HRDashboard({
           <Card className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Pending Requests</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-1">{stats.pendingTimeOff}</p>
+                <p className="text-sm font-medium text-v-text-secondary">Pending Requests</p>
+                <p className="text-2xl font-bold text-v-text-primary mt-1">{stats.pendingTimeOff}</p>
               </div>
               <div className="p-3 bg-orange-100 rounded-lg">
                 <AlertCircle className="w-6 h-6 text-orange-600" />
@@ -69,8 +69,8 @@ export default function HRDashboard({
         <Card className="p-6">
           <div className="flex items-center justify-between">
             <div>
-              <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Active Today</p>
-              <p className="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-1">{stats.activeToday}</p>
+              <p className="text-sm font-medium text-v-text-secondary">Active Today</p>
+              <p className="text-2xl font-bold text-v-text-primary mt-1">{stats.activeToday}</p>
             </div>
             <div className="p-3 bg-green-100 rounded-lg">
               <CheckCircle className="w-6 h-6 text-green-600" />
@@ -82,8 +82,8 @@ export default function HRDashboard({
           <Card className="p-6">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Upcoming Reviews</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100 mt-1">{stats.upcomingReviews}</p>
+                <p className="text-sm font-medium text-v-text-secondary">Upcoming Reviews</p>
+                <p className="text-2xl font-bold text-v-text-primary mt-1">{stats.upcomingReviews}</p>
               </div>
               <div className="p-3 bg-purple-100 rounded-lg">
                 <TrendingUp className="w-6 h-6 text-purple-600" />
@@ -95,7 +95,7 @@ export default function HRDashboard({
 
       {/* Quick Actions Section */}
       <div className="mt-8">
-        <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Quick Actions</h2>
+        <h2 className="text-xl font-semibold text-v-text-primary mb-4">Quick Actions</h2>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {isAdmin && (
             <>
@@ -105,8 +105,8 @@ export default function HRDashboard({
                     <Users className="w-5 h-5 text-blue-600" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-gray-900 dark:text-gray-100">Manage Employees</h3>
-                    <p className="text-sm text-gray-600 dark:text-gray-400">View and edit employee records</p>
+                    <h3 className="font-semibold text-v-text-primary">Manage Employees</h3>
+                    <p className="text-sm text-v-text-secondary">View and edit employee records</p>
                   </div>
                 </div>
               </Card>
@@ -120,8 +120,8 @@ export default function HRDashboard({
                   <AlertCircle className="w-5 h-5 text-orange-600" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-gray-900 dark:text-gray-100">Review Requests</h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">Approve time-off requests</p>
+                  <h3 className="font-semibold text-v-text-primary">Review Requests</h3>
+                  <p className="text-sm text-v-text-secondary">Approve time-off requests</p>
                 </div>
               </div>
             </Card>
@@ -133,8 +133,8 @@ export default function HRDashboard({
                 <CheckCircle className="w-5 h-5 text-green-600" />
               </div>
               <div>
-                <h3 className="font-semibold text-gray-900 dark:text-gray-100">My Profile</h3>
-                <p className="text-sm text-gray-600 dark:text-gray-400">View your HR information</p>
+                <h3 className="font-semibold text-v-text-primary">My Profile</h3>
+                <p className="text-sm text-v-text-secondary">View your HR information</p>
               </div>
             </div>
           </Card>

@@ -18,6 +18,10 @@ import {
   userCanLinkTodoTask,
 } from './todoVlinkAccessService';
 import {
+  resolveNoteForVLink,
+  userCanLinkNote,
+} from './notesVlinkAccessService';
+import {
   resolvePlaceListingForVLink,
   resolvePlaceMeetingForVLink,
   userCanLinkPlaceListing,
@@ -106,6 +110,17 @@ export async function resolveEntityAccess(
     case VLinkEntityType.TASK:
     case VLinkEntityType.TODO: {
       const result = await resolveTodoTaskForVLink(userId, entityId);
+      if (!result.allowed) {
+        return { access: 'restricted', title: result.title };
+      }
+      return {
+        access: 'full',
+        title: result.title,
+        url: result.url,
+      };
+    }
+    case VLinkEntityType.NOTE: {
+      const result = await resolveNoteForVLink(userId, entityId);
       if (!result.allowed) {
         return { access: 'restricted', title: result.title };
       }
@@ -246,22 +261,7 @@ async function resolveNonDriveEntityAccess(
   entityType: VLinkEntityType,
   entityId: string
 ): Promise<{ access: EntityAccessLevel; title?: string; url?: string }> {
-  // Non-drive types remain in this file until their modules adopt platform entity adapters.
-  const { prisma } = await import('../lib/prisma');
-
   switch (entityType) {
-    case VLinkEntityType.NOTE: {
-      const note = await prisma.note.findFirst({
-        where: {
-          id: entityId,
-          trashedAt: null,
-          OR: [{ createdById: userId }, { shares: { some: { sharedWithUserId: userId } } }],
-        },
-        select: { id: true, title: true },
-      });
-      if (!note) return { access: 'restricted' };
-      return { access: 'full', title: note.title, url: `/notebook/page/${entityId}` };
-    }
     default:
       return { access: 'restricted' };
   }
@@ -284,6 +284,8 @@ export async function userCanLinkEntity(
     case VLinkEntityType.TASK:
     case VLinkEntityType.TODO:
       return userCanLinkTodoTask(userId, entityId);
+    case VLinkEntityType.NOTE:
+      return userCanLinkNote(userId, entityId);
     case VLinkEntityType.PLACE_LISTING:
       return userCanLinkPlaceListing(userId, entityId);
     case VLinkEntityType.PLACE_MEETING:

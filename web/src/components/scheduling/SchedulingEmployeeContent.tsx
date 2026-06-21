@@ -5,7 +5,9 @@ import { useScheduling } from '@/hooks/useScheduling';
 import { ScheduleShift } from '@/api/scheduling';
 import { getBusiness } from '@/api/business';
 import { useSession } from 'next-auth/react';
-import { Button, Card } from 'shared/components';
+import { Button, Card, Modal, Input, Textarea } from 'shared/components';
+import { useConfirm } from 'shared/hooks/useConfirm';
+import { BusinessOperationsEmptyState } from '@/components/business-operations/BusinessOperationsEmptyState';
 import {
   Calendar,
   Clock,
@@ -27,6 +29,7 @@ export default function SchedulingEmployeeContent({
   businessId, 
   view 
 }: SchedulingEmployeeContentProps) {
+  const { confirm: confirmAction, ConfirmDialog } = useConfirm();
   const { data: session } = useSession();
   const {
     schedules,
@@ -45,6 +48,8 @@ export default function SchedulingEmployeeContent({
   const [employees, setEmployees] = useState<Array<{ id: string; name: string; position?: string; userId?: string }>>([]);
   const [positions, setPositions] = useState<Array<{ id: string; name: string; title?: string }>>([]);
   const [currentUserEmployeePositionIds, setCurrentUserEmployeePositionIds] = useState<string[]>([]);
+  const [swapNotesModalShiftId, setSwapNotesModalShiftId] = useState<string | null>(null);
+  const [swapNotes, setSwapNotes] = useState('');
 
   // Load business config, employees, and positions
   useEffect(() => {
@@ -203,7 +208,7 @@ export default function SchedulingEmployeeContent({
     return (
       <div className="flex items-center justify-center h-full">
         <div className="text-center">
-          <p className="text-gray-600 dark:text-gray-400">Loading your schedule...</p>
+          <p className="text-v-text-secondary">Loading your schedule...</p>
         </div>
       </div>
     );
@@ -229,8 +234,8 @@ export default function SchedulingEmployeeContent({
           <Card className="p-4 hover:shadow-md transition-shadow">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Hours This Week</p>
-                <p className="text-2xl font-semibold text-gray-900 dark:text-gray-100">{totalHoursThisWeek.toFixed(1)}</p>
+                <p className="text-xs font-medium text-v-text-muted uppercase tracking-wide mb-1">Hours This Week</p>
+                <p className="text-2xl font-semibold text-v-text-primary">{totalHoursThisWeek.toFixed(1)}</p>
               </div>
               <div className="flex-shrink-0">
                 <Clock className="h-5 w-5 text-blue-500" />
@@ -241,8 +246,8 @@ export default function SchedulingEmployeeContent({
           <Card className="p-4 hover:shadow-md transition-shadow">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Upcoming Shifts</p>
-                <p className="text-2xl font-semibold text-gray-900 dark:text-gray-100">{upcomingShifts.length}</p>
+                <p className="text-xs font-medium text-v-text-muted uppercase tracking-wide mb-1">Upcoming Shifts</p>
+                <p className="text-2xl font-semibold text-v-text-primary">{upcomingShifts.length}</p>
               </div>
               <div className="flex-shrink-0">
                 <CheckCircle2 className="h-5 w-5 text-green-500" />
@@ -253,8 +258,8 @@ export default function SchedulingEmployeeContent({
           <Card className="p-4 hover:shadow-md transition-shadow">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Open Shifts</p>
-                <p className="text-2xl font-semibold text-gray-900 dark:text-gray-100">{openShifts.length}</p>
+                <p className="text-xs font-medium text-v-text-muted uppercase tracking-wide mb-1">Open Shifts</p>
+                <p className="text-2xl font-semibold text-v-text-primary">{openShifts.length}</p>
               </div>
               <div className="flex-shrink-0">
                 <AlertCircle className="h-5 w-5 text-orange-500" />
@@ -267,7 +272,7 @@ export default function SchedulingEmployeeContent({
         <Card className="mb-6">
           <div className="p-6">
             <div className="flex items-center justify-between mb-4">
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">My Schedule</h2>
+              <h2 className="text-xl font-semibold text-v-text-primary">My Schedule</h2>
               <div className="flex items-center space-x-2">
                 <Button
                   variant="secondary"
@@ -313,21 +318,21 @@ export default function SchedulingEmployeeContent({
         {upcomingShifts.length > 0 && (
           <Card>
             <div className="p-6">
-              <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Upcoming Shifts</h2>
+              <h2 className="text-xl font-semibold text-v-text-primary mb-4">Upcoming Shifts</h2>
               <div className="space-y-3">
                 {upcomingShifts.map((shift) => (
-                  <div key={shift.id} className="border border-gray-200 dark:border-slate-700 rounded-lg p-4">
+                  <div key={shift.id} className="border border-v-border rounded-lg p-4">
                     <div className="flex items-center justify-between">
                       <div>
                         <p className="font-medium text-sm">
                           {safeFormatDate(shift.startTime, 'MMM d, yyyy', 'Invalid date')}
                         </p>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                        <p className="text-sm text-v-text-secondary">
                           {safeFormatDate(shift.startTime, 'HH:mm', '--')} - {safeFormatDate(shift.endTime, 'HH:mm', '--')}
                         </p>
                       </div>
                       {getShiftPositionTitle(shift) && (
-                        <span className="text-xs px-2 py-1 bg-gray-100 dark:bg-slate-700 text-gray-700 dark:text-gray-300 rounded">
+                        <span className="text-xs px-2 py-1 bg-v-surface-muted dark:bg-slate-700 text-v-text-secondary rounded">
                           {getShiftPositionTitle(shift)}
                         </span>
                       )}
@@ -356,21 +361,23 @@ export default function SchedulingEmployeeContent({
     );
 
     return (
+      <>
       <div className="h-full overflow-y-auto p-6">
         <div className="mb-6">
-          <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">Shift Swaps</h2>
-          <p className="text-sm text-gray-600 dark:text-gray-400">Request to swap your shifts with other employees</p>
+          <h2 className="text-xl font-semibold text-v-text-primary mb-2">Shift Swaps</h2>
+          <p className="text-sm text-v-text-secondary">Request to swap your shifts with other employees</p>
         </div>
 
         <div className="space-y-6">
           {/* My Swap Requests */}
           <div>
-            <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">My Swap Requests</h3>
+            <h3 className="text-lg font-medium text-v-text-primary mb-4">My Swap Requests</h3>
             {swapRequests.length === 0 ? (
-              <Card className="p-6 text-center">
-                <RefreshCw className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-600 dark:text-gray-400">No swap requests yet</p>
-              </Card>
+              <BusinessOperationsEmptyState
+                icon={<RefreshCw className="h-12 w-12" />}
+                title="No swap requests"
+                description="You have not submitted any shift swap requests yet."
+              />
             ) : (
               <div className="space-y-3">
                 {swapRequests.map((swap) => (
@@ -378,29 +385,29 @@ export default function SchedulingEmployeeContent({
                     <div className="flex items-center justify-between">
                       <div className="flex-1">
                         <div className="flex items-center gap-2 mb-2">
-                          <p className="font-medium text-gray-900 dark:text-gray-100">
+                          <p className="font-medium text-v-text-primary">
                             {swap.originalShift?.schedule?.name || 'Shift Swap Request'}
                           </p>
                           <span className={`px-2 py-1 text-xs font-medium rounded ${
                             swap.status === 'PENDING' ? 'bg-yellow-100 text-yellow-800' :
                             swap.status === 'APPROVED' ? 'bg-green-100 text-green-800' :
                             swap.status === 'DENIED' ? 'bg-red-100 text-red-800' :
-                            swap.status === 'CANCELLED' || swap.status === 'EXPIRED' ? 'bg-gray-100 text-gray-800' :
-                            'bg-gray-100 text-gray-800'
+                            swap.status === 'CANCELLED' || swap.status === 'EXPIRED' ? 'bg-v-surface-muted text-v-text-primary' :
+                            'bg-v-surface-muted text-v-text-primary'
                           }`}>
                             {swap.status}
                           </span>
                         </div>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                        <p className="text-sm text-v-text-secondary">
                           {safeFormatDate(swap.originalShift?.startTime, 'MMM d, yyyy HH:mm', '--')} - {safeFormatDate(swap.originalShift?.endTime, 'HH:mm', '--')}
                         </p>
                         {swap.requestedTo && (
-                          <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                          <p className="text-sm text-v-text-secondary mt-1">
                             Requested to: {swap.requestedTo.name}
                           </p>
                         )}
                         {swap.requestNotes && (
-                          <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">{swap.requestNotes}</p>
+                          <p className="text-sm text-v-text-muted mt-2">{swap.requestNotes}</p>
                         )}
                       </div>
                       {swap.status === 'PENDING' && (
@@ -408,7 +415,13 @@ export default function SchedulingEmployeeContent({
                           variant="secondary"
                           size="sm"
                           onClick={async () => {
-                            if (confirm('Are you sure you want to cancel this swap request?')) {
+                            const ok = await confirmAction({
+                              title: 'Cancel swap request?',
+                              description: 'This swap request will be withdrawn.',
+                              variant: 'destructive',
+                              confirmLabel: 'Cancel request',
+                            });
+                            if (ok) {
                               await cancelSwap(swap.id);
                               await refresh();
                             }
@@ -426,26 +439,27 @@ export default function SchedulingEmployeeContent({
 
           {/* Request New Swap */}
           <div>
-            <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4">Request a Swap</h3>
+            <h3 className="text-lg font-medium text-v-text-primary mb-4">Request a Swap</h3>
             {myShifts.length === 0 ? (
-              <Card className="p-6 text-center">
-                <Calendar className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                <p className="text-gray-600 dark:text-gray-400">No upcoming shifts available to swap</p>
-              </Card>
+              <BusinessOperationsEmptyState
+                icon={<Calendar className="h-12 w-12" />}
+                title="No shifts to swap"
+                description="You have no upcoming shifts available for swap requests."
+              />
             ) : (
               <div className="space-y-3">
                 {myShifts.slice(0, 10).map((shift) => (
                   <Card key={shift.id} className="p-4">
                     <div className="flex items-center justify-between">
                       <div>
-                        <p className="font-medium text-gray-900 dark:text-gray-100">
+                        <p className="font-medium text-v-text-primary">
                           {shift.schedule?.name || 'Shift'}
                         </p>
-                        <p className="text-sm text-gray-600 dark:text-gray-400">
+                        <p className="text-sm text-v-text-secondary">
                           {safeFormatDate(shift.startTime, 'MMM d, yyyy HH:mm', '--')} - {safeFormatDate(shift.endTime, 'HH:mm', '--')}
                         </p>
                         {getShiftPositionTitle(shift) && (
-                          <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
+                          <p className="text-sm text-v-text-muted mt-1">
                             Position: {getShiftPositionTitle(shift)}
                           </p>
                         )}
@@ -453,14 +467,9 @@ export default function SchedulingEmployeeContent({
                       <Button
                         variant="secondary"
                         size="sm"
-                        onClick={async () => {
-                          const notes = prompt('Enter reason for swap request (optional):');
-                          if (notes !== null) {
-                            await requestSwap(shift.id, {
-                              requestNotes: notes || undefined
-                            });
-                            await refresh();
-                          }
+                        onClick={() => {
+                          setSwapNotes('');
+                          setSwapNotesModalShiftId(shift.id);
                         }}
                       >
                         Request Swap
@@ -473,6 +482,50 @@ export default function SchedulingEmployeeContent({
           </div>
         </div>
       </div>
+      <Modal
+        open={swapNotesModalShiftId !== null}
+        onClose={() => {
+          setSwapNotesModalShiftId(null);
+          setSwapNotes('');
+        }}
+        title="Request shift swap"
+      >
+        <div className="space-y-4">
+          <Textarea
+            value={swapNotes}
+            onChange={(e) => setSwapNotes(e.target.value)}
+            placeholder="Reason for swap request (optional)"
+            rows={4}
+          />
+          <div className="flex justify-end gap-2">
+            <Button
+              variant="secondary"
+              onClick={() => {
+                setSwapNotesModalShiftId(null);
+                setSwapNotes('');
+              }}
+            >
+              Cancel
+            </Button>
+            <Button
+              variant="primary"
+              onClick={async () => {
+                if (!swapNotesModalShiftId) return;
+                await requestSwap(swapNotesModalShiftId, {
+                  requestNotes: swapNotes.trim() || undefined,
+                });
+                setSwapNotesModalShiftId(null);
+                setSwapNotes('');
+                await refresh();
+              }}
+            >
+              Submit request
+            </Button>
+          </div>
+        </div>
+      </Modal>
+      <ConfirmDialog />
+    </>
     );
   }
 

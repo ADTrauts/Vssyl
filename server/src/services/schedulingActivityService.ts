@@ -313,6 +313,29 @@ export async function recordShiftAssigned(params: {
   });
 }
 
+/** Employee self-claim of an open shift (distinct activity envelope). */
+export async function recordOpenShiftClaimed(params: {
+  actorUserId: string;
+  businessId: string;
+  shiftId: string;
+  scheduleId: string;
+  employeePositionId: string;
+}): Promise<void> {
+  await emitSchedulingActivity({
+    actorUserId: params.actorUserId,
+    businessId: params.businessId,
+    action: 'scheduling_open_shift_claimed',
+    targetType: 'shift',
+    targetId: params.shiftId,
+    parentType: 'schedule',
+    parentId: params.scheduleId,
+    metadata: {
+      employeePositionId: params.employeePositionId,
+      claimSource: 'employee_self_service',
+    },
+  });
+}
+
 export async function recordShiftUnassigned(params: {
   actorUserId: string;
   businessId: string;

@@ -26,6 +26,7 @@ export const SYSTEM_CONTEXT_SOURCE_IDS = [
   'business_context',
   'vssyl_place',
   'vlink',
+  'graph_bundle',
   'web_search',
   'module_context',
   'notifications_activity',

@@ -1,8 +1,8 @@
 # Business Operations Convergence Program
 
 **Program:** Business Operations Modernization Planning Program  
-**Status:** **Most important modernization planning document** — convergence initiatives as programs  
-**Last updated:** 2026-06-14  
+**Status:** **ARCHIVED** — certification modernization program closed BO-4 (2026-06-19); retained as convergence planning history  
+**Last updated:** 2026-06-19  
 **Source:** [BUSINESS_OPERATIONS_ALIGNMENT_PRIORITY_MATRIX.md](./BUSINESS_OPERATIONS_ALIGNMENT_PRIORITY_MATRIX.md) § CONVERGENCE OPPORTUNITIES  
 **Master plan:** [BUSINESS_OPERATIONS_MODERNIZATION_MASTER_PLAN.md](./BUSINESS_OPERATIONS_MODERNIZATION_MASTER_PLAN.md)  
 **Shared alignment:** [SHARED_ALIGNMENT_MODERNIZATION_PLAN.md](./SHARED_ALIGNMENT_MODERNIZATION_PLAN.md)

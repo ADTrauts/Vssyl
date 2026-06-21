@@ -34,12 +34,16 @@ export type PolicyResourceType =
   | 'attendance_exception'
   | 'onboarding_journey'
   | 'workforce_communication'
-  | 'workforce_campaign';
+  | 'workforce_campaign'
+  | 'user'
+  | 'relationship'
+  | 'subscription';
 
 export interface PolicyScope {
   dashboardId?: string;
   businessId?: string;
   householdId?: string;
+  userId?: string;
 }
 
 export interface PolicyInput {

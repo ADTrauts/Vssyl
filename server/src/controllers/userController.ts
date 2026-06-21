@@ -1,8 +1,13 @@
 import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { logger } from '../lib/logger';
-import { getUserPreference, setUserPreference } from '../services/userPreferenceService';
-import { emitUserPreferenceUpdatedEvent } from '../events/domainEventEmitters';
+import { getUserPreference, setUserPreferenceWithPolicy } from '../services/userPreferenceService';
+import {
+  resolvePreference,
+  updatePreference,
+  SettingsServiceError,
+} from '../services/account/settingsService';
+import { resolveRegistryMetadata } from '../services/account/preferenceRegistry';
 
 export const searchUsers = async (req: Request, res: Response) => {
   const { query } = req.query;
@@ -39,26 +44,48 @@ export const getUserPreferenceByKey = async (req: Request, res: Response) => {
   if (!req.user) return res.status(401).json({ success: false, error: 'Unauthorized' });
   const { key } = req.params;
   try {
+    const meta = resolveRegistryMetadata(key);
+    if (meta.known) {
+      const result = await resolvePreference(req.user.id, key);
+      return res.json({ success: true, key: result.key, value: result.value });
+    }
     const value = await getUserPreference(req.user.id, key);
     res.json({ success: true, key, value });
-  } catch {
-    res.status(500).json({ success: false, error: 'Failed to get user preference' });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Failed to get user preference';
+    const status =
+      error instanceof SettingsServiceError
+        ? error.statusCode
+        : message.includes('Invalid')
+          ? 400
+          : 500;
+    res.status(status).json({ success: false, error: message });
   }
 };
 
 export const setUserPreferenceByKey = async (req: Request, res: Response) => {
   if (!req.user) return res.status(401).json({ success: false, error: 'Unauthorized' });
   const { key } = req.params;
-  const { value } = req.body;
-  if (typeof value !== 'string') return res.status(400).json({ success: false, error: 'Value must be a string' });
-  try {
-    await setUserPreference(req.user.id, key, value);
-    emitUserPreferenceUpdatedEvent({
-      actorUserId: req.user.id,
-      preferenceKey: key,
-    });
-    res.json({ success: true });
-  } catch {
-    res.status(500).json({ success: false, error: 'Failed to set user preference' });
+  const { value } = req.body as { value?: unknown };
+  if (typeof value !== 'string') {
+    return res.status(400).json({ success: false, error: 'Value must be a string' });
   }
-}; 
+  try {
+    const meta = resolveRegistryMetadata(key);
+    if (meta.known) {
+      await updatePreference(req.user.id, key, value);
+      return res.json({ success: true });
+    }
+    await setUserPreferenceWithPolicy(req.user.id, key, value);
+    res.json({ success: true });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Failed to set user preference';
+    const status =
+      error instanceof SettingsServiceError
+        ? error.statusCode
+        : message.includes('Invalid') || message.includes('Policy')
+          ? 400
+          : 500;
+    res.status(status).json({ success: false, error: message });
+  }
+};

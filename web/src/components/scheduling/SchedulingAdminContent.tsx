@@ -4,6 +4,7 @@ import { useState, useEffect, useCallback, useRef } from 'react';
 import { useScheduling } from '@/hooks/useScheduling';
 import { Schedule, ScheduleShift, ScheduleTemplate, getScheduleTemplates, createScheduleTemplate, deleteScheduleTemplate } from '@/api/scheduling';
 import { Button, Card, Modal, Input, Textarea } from 'shared/components';
+import { useConfirm } from 'shared/hooks/useConfirm';
 import { getBusiness } from '@/api/business';
 import { getSession } from 'next-auth/react';
 import { useSession } from 'next-auth/react';
@@ -39,6 +40,7 @@ import {
   Filter,
   BarChart3,
 } from 'lucide-react';
+import { BusinessOperationsEmptyState } from '@/components/business-operations/BusinessOperationsEmptyState';
 import { format, parseISO, subDays, startOfDay, endOfDay } from 'date-fns';
 
 interface SchedulingAdminContentProps {
@@ -55,6 +57,7 @@ export default function SchedulingAdminContent({
   onEditingTemplateChange
 }: SchedulingAdminContentProps) {
   const { data: session } = useSession();
+  const { confirm, ConfirmDialog } = useConfirm();
   const { trashItem } = useGlobalTrash();
   const {
     schedules,
@@ -259,8 +262,14 @@ export default function SchedulingAdminContent({
     }
   };
 
-  const handleDeleteSchedule = useCallback(async (scheduleId: string) => {
-    if (!confirm('Are you sure you want to delete this schedule? This action cannot be undone.')) {
+  const handleDeleteSchedule = useCallback(async (scheduleId: string, scheduleName?: string) => {
+    const ok = await confirm({
+      title: scheduleName ? `Delete "${scheduleName}"?` : 'Delete schedule?',
+      description: 'This action cannot be undone.',
+      variant: 'destructive',
+      confirmLabel: 'Delete',
+    });
+    if (!ok) {
       return;
     }
     const success = await removeSchedule(scheduleId);
@@ -268,7 +277,7 @@ export default function SchedulingAdminContent({
       setSelectedSchedule(null);
     }
     await refresh();
-  }, [removeSchedule, selectedSchedule, refresh]);
+  }, [confirm, removeSchedule, selectedSchedule, refresh]);
 
   // Listen for schedule trash drops from GlobalTrashBin
   useEffect(() => {
@@ -284,10 +293,7 @@ export default function SchedulingAdminContent({
       const schedule = schedules.find(s => s.id === scheduleId);
       if (schedule) {
         try {
-          // Call the delete handler which includes confirmation
-          if (confirm(`Are you sure you want to delete "${schedule.name}"? This action cannot be undone.`)) {
-            await handleDeleteSchedule(scheduleId);
-          }
+          await handleDeleteSchedule(scheduleId, schedule.name);
         } catch (error) {
           console.error('Failed to delete schedule:', error);
         }
@@ -411,7 +417,13 @@ export default function SchedulingAdminContent({
   };
 
   const handleDeleteTemplate = async (templateId: string) => {
-    if (!confirm('Are you sure you want to delete this template?')) return;
+    const ok = await confirm({
+      title: 'Delete template?',
+      description: 'This template will be permanently removed.',
+      variant: 'destructive',
+      confirmLabel: 'Delete',
+    });
+    if (!ok) return;
     if (!session?.accessToken) return;
 
     try {
@@ -802,7 +814,13 @@ export default function SchedulingAdminContent({
   };
 
   const handleDeleteShift = async (shiftId: string) => {
-    if (!confirm('Are you sure you want to delete this shift?')) {
+    const ok = await confirm({
+      title: 'Delete shift?',
+      description: 'This shift will be removed from the schedule.',
+      variant: 'destructive',
+      confirmLabel: 'Delete',
+    });
+    if (!ok) {
       return;
     }
     await removeShift(shiftId);
@@ -824,7 +842,7 @@ export default function SchedulingAdminContent({
       >
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
+            <label className="block text-sm font-medium text-v-text-primary mb-1">
               Schedule Name *
             </label>
             <Input
@@ -834,7 +852,7 @@ export default function SchedulingAdminContent({
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
+            <label className="block text-sm font-medium text-v-text-primary mb-1">
               Description
             </label>
             <Textarea
@@ -846,7 +864,7 @@ export default function SchedulingAdminContent({
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
+              <label className="block text-sm font-medium text-v-text-primary mb-1">
                 Start Date *
               </label>
               <Input
@@ -856,7 +874,7 @@ export default function SchedulingAdminContent({
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
+              <label className="block text-sm font-medium text-v-text-primary mb-1">
                 End Date *
               </label>
               <Input
@@ -867,7 +885,7 @@ export default function SchedulingAdminContent({
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
+            <label className="block text-sm font-medium text-v-text-primary mb-1">
               Timezone
             </label>
             <Input
@@ -875,12 +893,12 @@ export default function SchedulingAdminContent({
               onChange={(e) => setFormData({ ...formData, timezone: e.target.value })}
               placeholder={businessConfig?.defaultTimezone || 'America/New_York'}
             />
-            <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+            <p className="text-xs text-v-text-secondary mt-1">
               Default: {businessConfig?.defaultTimezone || 'America/New_York'}. You can override for multi-location businesses.
             </p>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
+            <label className="block text-sm font-medium text-v-text-primary mb-1">
               Special Notes / Events (Week Schedule)
             </label>
             <Textarea
@@ -889,7 +907,7 @@ export default function SchedulingAdminContent({
               placeholder="e.g., Holiday schedule, special events, important reminders for this week"
               rows={3}
             />
-            <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+            <p className="text-xs text-v-text-secondary mt-1">
               Notes about holidays, events, or special information for this schedule period
             </p>
           </div>
@@ -916,7 +934,7 @@ export default function SchedulingAdminContent({
       >
         <div className="space-y-4">
           <div>
-            <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
+            <label className="block text-sm font-medium text-v-text-primary mb-1">
               Schedule Name *
             </label>
             <Input
@@ -926,7 +944,7 @@ export default function SchedulingAdminContent({
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
+            <label className="block text-sm font-medium text-v-text-primary mb-1">
               Description
             </label>
             <Textarea
@@ -938,7 +956,7 @@ export default function SchedulingAdminContent({
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
+              <label className="block text-sm font-medium text-v-text-primary mb-1">
                 Start Date *
               </label>
               <Input
@@ -948,7 +966,7 @@ export default function SchedulingAdminContent({
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
+              <label className="block text-sm font-medium text-v-text-primary mb-1">
                 End Date *
               </label>
               <Input
@@ -959,7 +977,7 @@ export default function SchedulingAdminContent({
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
+            <label className="block text-sm font-medium text-v-text-primary mb-1">
               Timezone
             </label>
             <Input
@@ -967,12 +985,12 @@ export default function SchedulingAdminContent({
               onChange={(e) => setFormData({ ...formData, timezone: e.target.value })}
               placeholder={businessConfig?.defaultTimezone || 'America/New_York'}
             />
-            <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+            <p className="text-xs text-v-text-secondary mt-1">
               Default: {businessConfig?.defaultTimezone || 'America/New_York'}. You can override for multi-location businesses.
             </p>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
+            <label className="block text-sm font-medium text-v-text-primary mb-1">
               Special Notes / Events (Week Schedule)
             </label>
             <Textarea
@@ -981,7 +999,7 @@ export default function SchedulingAdminContent({
               placeholder="e.g., Holiday schedule, special events, important reminders for this week"
               rows={3}
             />
-            <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+            <p className="text-xs text-v-text-secondary mt-1">
               Notes about holidays, events, or special information for this schedule period
             </p>
           </div>
@@ -1009,7 +1027,7 @@ export default function SchedulingAdminContent({
         <div className="space-y-4">
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
+              <label className="block text-sm font-medium text-v-text-primary mb-1">
                 Start Time *
               </label>
               <Input
@@ -1019,7 +1037,7 @@ export default function SchedulingAdminContent({
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
+              <label className="block text-sm font-medium text-v-text-primary mb-1">
                 End Time *
               </label>
               <Input
@@ -1031,7 +1049,7 @@ export default function SchedulingAdminContent({
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
+              <label className="block text-sm font-medium text-v-text-primary mb-1">
                 Break Minutes
               </label>
               <Input
@@ -1042,7 +1060,7 @@ export default function SchedulingAdminContent({
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
+              <label className="block text-sm font-medium text-v-text-primary mb-1">
                 Position ID
               </label>
               <Input
@@ -1053,7 +1071,7 @@ export default function SchedulingAdminContent({
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
+            <label className="block text-sm font-medium text-v-text-primary mb-1">
               Notes
             </label>
             <Textarea
@@ -1098,12 +1116,12 @@ export default function SchedulingAdminContent({
         <div className="space-y-6">
           {/* Source Selection */}
           <div>
-            <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-3">
+            <label className="block text-sm font-medium text-v-text-primary mb-3">
               Schedule Template Source *
             </label>
             <div className="space-y-3">
               {/* Blank Template Option */}
-              <label className="flex items-start gap-3 p-3 border border-gray-200 dark:border-slate-700 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800 transition-colors">
+              <label className="flex items-start gap-3 p-3 border border-v-border rounded-lg cursor-pointer hover:bg-v-surface-muted dark:bg-slate-800 transition-colors">
                 <input
                   type="radio"
                   name="templateSource"
@@ -1120,8 +1138,8 @@ export default function SchedulingAdminContent({
                   className="mt-1"
                 />
                 <div className="flex-1">
-                  <div className="font-medium text-gray-900 dark:text-gray-100">Blank {SCHEDULING_SCHEDULE_TEMPLATE_LABEL}</div>
-                  <div className="text-sm text-gray-600 dark:text-gray-400 mt-1">
+                  <div className="font-medium text-v-text-primary">Blank {SCHEDULING_SCHEDULE_TEMPLATE_LABEL}</div>
+                  <div className="text-sm text-v-text-secondary mt-1">
                     Start with an empty schedule template and build {SCHEDULING_SHIFT_PATTERN_LABEL.toLowerCase()}s using positions and stations
                   </div>
                 </div>
@@ -1129,7 +1147,7 @@ export default function SchedulingAdminContent({
 
               {/* Existing Templates Option */}
               {templates.length > 0 && (
-                <label className="flex items-start gap-3 p-3 border border-gray-200 dark:border-slate-700 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800 transition-colors">
+                <label className="flex items-start gap-3 p-3 border border-v-border rounded-lg cursor-pointer hover:bg-v-surface-muted dark:bg-slate-800 transition-colors">
                   <input
                     type="radio"
                     name="templateSource"
@@ -1145,8 +1163,8 @@ export default function SchedulingAdminContent({
                     className="mt-1"
                   />
                   <div className="flex-1">
-                    <div className="font-medium text-gray-900 dark:text-gray-100">Copy from Existing {SCHEDULING_SCHEDULE_TEMPLATE_LABEL}</div>
-                    <div className="text-sm text-gray-600 dark:text-gray-400 mt-1 mb-2">
+                    <div className="font-medium text-v-text-primary">Copy from Existing {SCHEDULING_SCHEDULE_TEMPLATE_LABEL}</div>
+                    <div className="text-sm text-v-text-secondary mt-1 mb-2">
                       Select an existing schedule template to copy
                     </div>
                     {templateFormData.sourceType === 'template' && (
@@ -1156,7 +1174,7 @@ export default function SchedulingAdminContent({
                           ...templateFormData, 
                           sourceTemplateId: e.target.value 
                         })}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                        className="w-full px-3 py-2 border border-v-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                       >
                         <option value="">Select a template...</option>
                         {templates.map((template) => (
@@ -1172,7 +1190,7 @@ export default function SchedulingAdminContent({
 
               {/* Published Schedule Option */}
               {schedules.filter((s: Schedule) => s.status === 'PUBLISHED').length > 0 && (
-                <label className="flex items-start gap-3 p-3 border border-gray-200 dark:border-slate-700 rounded-lg cursor-pointer hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800 transition-colors">
+                <label className="flex items-start gap-3 p-3 border border-v-border rounded-lg cursor-pointer hover:bg-v-surface-muted dark:bg-slate-800 transition-colors">
                   <input
                     type="radio"
                     name="templateSource"
@@ -1188,8 +1206,8 @@ export default function SchedulingAdminContent({
                     className="mt-1"
                   />
                   <div className="flex-1">
-                    <div className="font-medium text-gray-900 dark:text-gray-100">From Published Schedule</div>
-                    <div className="text-sm text-gray-600 dark:text-gray-400 mt-1 mb-2">
+                    <div className="font-medium text-v-text-primary">From Published Schedule</div>
+                    <div className="text-sm text-v-text-secondary mt-1 mb-2">
                       Create a template from a published schedule
                     </div>
                     {templateFormData.sourceType === 'schedule' && (
@@ -1206,7 +1224,7 @@ export default function SchedulingAdminContent({
                             });
                           }
                         }}
-                        className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                        className="w-full px-3 py-2 border border-v-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                       >
                         <option value="">Select a published schedule...</option>
                         {schedules.filter((s: Schedule) => s.status === 'PUBLISHED').map((schedule: Schedule) => (
@@ -1223,9 +1241,9 @@ export default function SchedulingAdminContent({
           </div>
 
           {/* Template Details */}
-          <div className="border-t border-gray-200 dark:border-slate-700 pt-4 space-y-4">
+          <div className="border-t border-v-border pt-4 space-y-4">
             <div>
-              <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
+              <label className="block text-sm font-medium text-v-text-primary mb-1">
                 Schedule Template Name *
               </label>
               <Input
@@ -1235,7 +1253,7 @@ export default function SchedulingAdminContent({
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
+              <label className="block text-sm font-medium text-v-text-primary mb-1">
                 Description
               </label>
               <Textarea
@@ -1246,7 +1264,7 @@ export default function SchedulingAdminContent({
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
+              <label className="block text-sm font-medium text-v-text-primary mb-1">
                 Schedule Duration (days) *
               </label>
               <Input
@@ -1262,7 +1280,7 @@ export default function SchedulingAdminContent({
                 }}
                 placeholder="7"
               />
-              <p className="text-xs text-gray-600 dark:text-gray-400 mt-1">
+              <p className="text-xs text-v-text-secondary mt-1">
                 Number of days for this schedule cycle. Default: {businessConfig?.defaultScheduleDuration || 7} days (from your settings)
                 {businessConfig?.viewPreference && (
                   <span className="ml-1">
@@ -1273,7 +1291,7 @@ export default function SchedulingAdminContent({
             </div>
           </div>
 
-          <div className="flex justify-end gap-2 pt-4 border-t border-gray-200 dark:border-slate-700">
+          <div className="flex justify-end gap-2 pt-4 border-t border-v-border">
             <Button
               variant="secondary"
               onClick={() => {
@@ -1333,7 +1351,7 @@ export default function SchedulingAdminContent({
             </div>
           )}
           <div>
-            <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
+            <label className="block text-sm font-medium text-v-text-primary mb-1">
               Schedule Name *
             </label>
             <Input
@@ -1343,7 +1361,7 @@ export default function SchedulingAdminContent({
             />
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
+            <label className="block text-sm font-medium text-v-text-primary mb-1">
               Description
             </label>
             <Textarea
@@ -1355,7 +1373,7 @@ export default function SchedulingAdminContent({
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div>
-              <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
+              <label className="block text-sm font-medium text-v-text-primary mb-1">
                 Start Date *
               </label>
               <Input
@@ -1389,7 +1407,7 @@ export default function SchedulingAdminContent({
               />
             </div>
             <div>
-              <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
+              <label className="block text-sm font-medium text-v-text-primary mb-1">
                 End Date *
               </label>
               <Input
@@ -1400,13 +1418,13 @@ export default function SchedulingAdminContent({
             </div>
           </div>
           <div>
-            <label className="block text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
+            <label className="block text-sm font-medium text-v-text-primary mb-1">
               Timezone
             </label>
             <select
               value={applyTemplateFormData.timezone}
               onChange={(e) => setApplyTemplateFormData({ ...applyTemplateFormData, timezone: e.target.value })}
-              className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+              className="w-full px-3 py-2 border border-v-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
             >
               <option value="America/New_York">Eastern Time (ET)</option>
               <option value="America/Chicago">Central Time (CT)</option>
@@ -1414,7 +1432,7 @@ export default function SchedulingAdminContent({
               <option value="America/Los_Angeles">Pacific Time (PT)</option>
             </select>
           </div>
-          <div className="flex justify-end gap-2 pt-4 border-t border-gray-200 dark:border-slate-700">
+          <div className="flex justify-end gap-2 pt-4 border-t border-v-border">
             <Button
               variant="secondary"
               onClick={() => {
@@ -1440,14 +1458,13 @@ export default function SchedulingAdminContent({
           </div>
         </div>
       </Modal>
+      <ConfirmDialog />
     </>
   );
-
-  if (loading && schedules.length === 0) {
     return (
       <div className="flex items-center justify-center h-full">
         <div className="text-center">
-          <p className="text-gray-600 dark:text-gray-400">Loading schedules...</p>
+          <p className="text-v-text-secondary">Loading schedules...</p>
         </div>
       </div>
     );
@@ -1507,9 +1524,9 @@ export default function SchedulingAdminContent({
             {/* Main Builder Content */}
             <div className="flex-1 flex flex-col overflow-hidden">
             {/* Header with Navigation and Build Next Button */}
-            <div className="flex-shrink-0 bg-white dark:bg-slate-900 border-b p-4 flex items-center justify-between">
+            <div className="flex-shrink-0 bg-v-surface border-b p-4 flex items-center justify-between">
               <div className="flex items-center space-x-4 flex-1">
-                <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Schedule Builder</h2>
+                <h2 className="text-lg font-semibold text-v-text-primary">Schedule Builder</h2>
                 
                 {/* Navigation Controls */}
                 <div className="flex items-center space-x-2">
@@ -1518,15 +1535,15 @@ export default function SchedulingAdminContent({
                     disabled={!canNavigatePrevious}
                     className={`p-2 rounded-lg border ${
                       canNavigatePrevious
-                        ? 'border-gray-300 text-gray-700 hover:bg-gray-50'
-                        : 'border-gray-200 text-gray-400 cursor-not-allowed'
+                        ? 'border-v-border text-v-text-secondary hover:bg-gray-50'
+                        : 'border-v-border text-v-text-muted cursor-not-allowed'
                     }`}
                     title="Previous schedule"
                   >
                     <ChevronLeft className="w-5 h-5" />
                   </button>
                   
-                  <div className="px-3 py-1 text-sm text-gray-700 dark:text-gray-300 min-w-[200px] text-center">
+                  <div className="px-3 py-1 text-sm text-v-text-secondary min-w-[200px] text-center">
                     {selectedSchedule.name}
                   </div>
                   
@@ -1535,8 +1552,8 @@ export default function SchedulingAdminContent({
                     disabled={!canNavigateNext}
                     className={`p-2 rounded-lg border ${
                       canNavigateNext
-                        ? 'border-gray-300 text-gray-700 hover:bg-gray-50'
-                        : 'border-gray-200 text-gray-400 cursor-not-allowed'
+                        ? 'border-v-border text-v-text-secondary hover:bg-gray-50'
+                        : 'border-v-border text-v-text-muted cursor-not-allowed'
                     }`}
                     title="Next schedule"
                   >
@@ -1562,7 +1579,7 @@ export default function SchedulingAdminContent({
                           handleSelectSchedule(schedule);
                         }
                       }}
-                      className="ml-4 px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
+                      className="ml-4 px-3 py-2 border border-v-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent text-sm"
                     >
                       {schedules.map(s => (
                         <option key={s.id} value={s.id}>
@@ -1625,9 +1642,9 @@ export default function SchedulingAdminContent({
     return (
       <div className="h-full flex flex-col">
         {/* Header with Schedule Selection and Create Button */}
-        <div className="flex-shrink-0 bg-white dark:bg-slate-900 border-b p-4 flex items-center justify-between">
+        <div className="flex-shrink-0 bg-v-surface border-b p-4 flex items-center justify-between">
           <div className="flex items-center space-x-4 flex-1">
-            <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Schedule Builder</h2>
+            <h2 className="text-lg font-semibold text-v-text-primary">Schedule Builder</h2>
             {schedules.length > 0 && (
               <select
                 value={(selectedSchedule as Schedule | null)?.id || ''}
@@ -1637,7 +1654,7 @@ export default function SchedulingAdminContent({
                     handleSelectSchedule(schedule);
                   }
                 }}
-                className="px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                className="px-3 py-2 border border-v-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
               >
                 <option key="empty" value="">Select a schedule...</option>
                 {schedules.map(s => (
@@ -1665,11 +1682,11 @@ export default function SchedulingAdminContent({
 
         {/* Visual Builder Area - Show empty state or builder */}
         {schedules.length === 0 ? (
-          <div className="flex-1 flex items-center justify-center bg-gray-50 dark:bg-slate-800 p-6">
+          <div className="flex-1 flex items-center justify-center bg-v-surface-muted p-6">
             <Card className="p-8 max-w-md text-center">
               <Calendar className="w-16 h-16 text-blue-500 mx-auto mb-4 opacity-50" />
-              <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">Welcome to Schedule Builder</h3>
-              <p className="text-gray-600 dark:text-gray-400 mb-6">
+              <h3 className="text-xl font-semibold text-v-text-primary mb-2">Welcome to Schedule Builder</h3>
+              <p className="text-v-text-secondary mb-6">
                 Create your first schedule to start using the visual drag-and-drop builder with AI-powered scheduling assistance.
               </p>
               <Button 
@@ -1687,15 +1704,15 @@ export default function SchedulingAdminContent({
             </Card>
           </div>
         ) : (
-          <div className="flex-1 bg-gray-50 dark:bg-slate-800 p-6">
+          <div className="flex-1 bg-v-surface-muted p-6">
             <Card className="h-full p-6">
               <div className="text-center py-12">
-                <FileText className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">Select a Schedule</h3>
-                <p className="text-gray-600 dark:text-gray-400 mb-4">
+                <FileText className="w-16 h-16 text-v-text-muted mx-auto mb-4" />
+                <h3 className="text-lg font-semibold text-v-text-primary mb-2">Select a Schedule</h3>
+                <p className="text-v-text-secondary mb-4">
                   Choose a schedule from the dropdown above to start building with the visual drag-and-drop interface.
                 </p>
-                <p className="text-sm text-gray-500 dark:text-gray-400">
+                <p className="text-sm text-v-text-muted">
                   Features: Drag-and-drop shifts, station/job function assignments, AI-powered scheduling suggestions
                 </p>
               </div>
@@ -1718,10 +1735,10 @@ export default function SchedulingAdminContent({
     if (editingTemplate) {
       return (
         <div className="h-full flex flex-col">
-          <div className="flex-shrink-0 bg-white dark:bg-slate-900 border-b p-4 flex items-center justify-between">
+          <div className="flex-shrink-0 bg-v-surface border-b p-4 flex items-center justify-between">
             <div>
-              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{SCHEDULING_SCHEDULE_TEMPLATE_LABEL} Builder: {editingTemplate.name}</h2>
-              <p className="text-sm text-gray-600 dark:text-gray-400">Build {SCHEDULING_SHIFT_PATTERN_LABEL.toLowerCase()}s using positions and stations</p>
+              <h2 className="text-lg font-semibold text-v-text-primary">{SCHEDULING_SCHEDULE_TEMPLATE_LABEL} Builder: {editingTemplate.name}</h2>
+              <p className="text-sm text-v-text-secondary">Build {SCHEDULING_SHIFT_PATTERN_LABEL.toLowerCase()}s using positions and stations</p>
             </div>
             <div className="flex items-center gap-2">
               <Button
@@ -1761,8 +1778,8 @@ export default function SchedulingAdminContent({
         <div className="h-full overflow-y-auto p-6">
         <div className="mb-6 flex items-center justify-between">
           <div>
-            <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">{SCHEDULING_SCHEDULE_TEMPLATE_LABEL}s</h2>
-            <p className="text-gray-600 dark:text-gray-400 mt-1">
+            <h2 className="text-2xl font-semibold text-v-text-primary">{SCHEDULING_SCHEDULE_TEMPLATE_LABEL}s</h2>
+            <p className="text-v-text-secondary mt-1">
               Create reusable schedule templates from published schedules or build from scratch using positions and stations.
               {SCHEDULING_TEMPLATE_DISAMBIGUATION_NOTE}
             </p>
@@ -1790,15 +1807,15 @@ export default function SchedulingAdminContent({
         {/* Existing Templates */}
         {templates.length > 0 && (
           <div className="mb-8">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Existing {SCHEDULING_SCHEDULE_TEMPLATE_LABEL}s</h3>
+            <h3 className="text-lg font-semibold text-v-text-primary mb-4">Existing {SCHEDULING_SCHEDULE_TEMPLATE_LABEL}s</h3>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {templates.map((template) => (
                 <Card key={template.id} className="p-4 hover:shadow-md transition-shadow">
                   <div className="flex items-start justify-between mb-2">
                     <div className="flex-1">
-                      <h4 className="text-base font-semibold text-gray-900 dark:text-gray-100">{template.name}</h4>
+                      <h4 className="text-base font-semibold text-v-text-primary">{template.name}</h4>
                       {template.description && (
-                        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{template.description}</p>
+                        <p className="text-sm text-v-text-secondary mt-1">{template.description}</p>
                       )}
                       <div className="flex items-center gap-2 mt-2">
                         <span className="text-xs px-2 py-1 bg-blue-100 text-blue-800 rounded">
@@ -1816,13 +1833,13 @@ export default function SchedulingAdminContent({
                           })()}
                         </span>
                         {!template.isActive && (
-                          <span className="text-xs px-2 py-1 bg-gray-100 dark:bg-slate-700 text-gray-600 dark:text-gray-400 rounded">
+                          <span className="text-xs px-2 py-1 bg-v-surface-muted dark:bg-slate-700 text-v-text-secondary rounded">
                             Inactive
                           </span>
                         )}
                       </div>
                       {template.templateData && typeof template.templateData === 'object' && 'shiftPatterns' in template.templateData && Array.isArray(template.templateData.shiftPatterns) && (
-                        <p className="text-xs text-gray-500 dark:text-gray-400 mt-2">
+                        <p className="text-xs text-v-text-muted mt-2">
                           {template.templateData.shiftPatterns.length} {SCHEDULING_SHIFT_PATTERN_LABEL.toLowerCase()}{template.templateData.shiftPatterns.length !== 1 ? 's' : ''}
                         </p>
                       )}
@@ -1865,8 +1882,8 @@ export default function SchedulingAdminContent({
         {/* Published Schedules Section */}
         {publishedSchedulesForTemplates.length > 0 && (
           <div>
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4">Create {SCHEDULING_SCHEDULE_TEMPLATE_LABEL} from Published Schedule</h3>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
+            <h3 className="text-lg font-semibold text-v-text-primary mb-4">Create {SCHEDULING_SCHEDULE_TEMPLATE_LABEL} from Published Schedule</h3>
+            <p className="text-sm text-v-text-secondary mb-4">
               Select a published schedule to create a reusable template
             </p>
           </div>
@@ -1875,8 +1892,8 @@ export default function SchedulingAdminContent({
         {publishedSchedulesForTemplates.length === 0 && templates.length === 0 ? (
           <Card className="p-12 text-center">
             <FileText className="h-16 w-16 text-gray-300 mx-auto mb-4" />
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">No {SCHEDULING_SCHEDULE_TEMPLATE_LABEL}s Yet</h3>
-            <p className="text-gray-600 dark:text-gray-400 mb-4">
+            <h3 className="text-lg font-semibold text-v-text-primary mb-2">No {SCHEDULING_SCHEDULE_TEMPLATE_LABEL}s Yet</h3>
+            <p className="text-v-text-secondary mb-4">
               Create schedule templates from published schedules or build from scratch using positions and stations.
               {SCHEDULING_TEMPLATE_DISAMBIGUATION_NOTE}
             </p>
@@ -1899,7 +1916,7 @@ export default function SchedulingAdminContent({
               </Button>
             </div>
             {publishedSchedulesForTemplates.length === 0 && (
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-4">
+              <p className="text-sm text-v-text-muted mt-4">
                 Publish a schedule first to create a template from it
               </p>
             )}
@@ -1934,16 +1951,16 @@ export default function SchedulingAdminContent({
                 <Card className="p-4 hover:shadow-md transition-shadow">
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
-                      <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">{schedule.name}</h3>
+                      <h3 className="text-lg font-semibold text-v-text-primary">{schedule.name}</h3>
                       {schedule.description && (
-                        <p className="text-sm text-gray-600 dark:text-gray-400 mt-1">{schedule.description}</p>
+                        <p className="text-sm text-v-text-secondary mt-1">{schedule.description}</p>
                       )}
                       <div className="flex items-center gap-4 mt-2">
-                        <p className="text-xs text-gray-500 dark:text-gray-400">
+                        <p className="text-xs text-v-text-muted">
                           {safeFormatDate(schedule.startDate, 'MMM d', '--')} - {safeFormatDate(schedule.endDate, 'MMM d, yyyy', '--')}
                         </p>
                         {schedule.shifts && schedule.shifts.length > 0 && (
-                          <p className="text-xs text-gray-500 dark:text-gray-400">
+                          <p className="text-xs text-v-text-muted">
                             {schedule.shifts.length} shift{schedule.shifts.length !== 1 ? 's' : ''}
                           </p>
                         )}
@@ -1998,8 +2015,8 @@ export default function SchedulingAdminContent({
     return (
       <div className="h-full overflow-y-auto p-6">
         <div className="mb-6">
-          <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">Scheduling Settings</h2>
-          <p className="text-gray-600 dark:text-gray-400 mt-1">Configure scheduling preferences, stations, and positions</p>
+          <h2 className="text-2xl font-semibold text-v-text-primary">Scheduling Settings</h2>
+          <p className="text-v-text-secondary mt-1">Configure scheduling preferences, stations, and positions</p>
         </div>
         {session?.accessToken && (
           <SchedulingConfiguration
@@ -2206,17 +2223,17 @@ export default function SchedulingAdminContent({
         <div className="h-full overflow-y-auto p-6">
           <div className="mb-6 flex items-center justify-between">
             <div>
-            <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">Labor Analytics</h2>
-            <p className="text-gray-600 dark:text-gray-400 mt-1">Workforce planning insights and metrics</p>
+            <h2 className="text-2xl font-semibold text-v-text-primary">Labor Analytics</h2>
+            <p className="text-v-text-secondary mt-1">Workforce planning insights and metrics</p>
             </div>
             <div className="flex items-center gap-3">
               {/* Time Range Filter */}
-              <div className="flex items-center gap-2 bg-gray-100 dark:bg-gray-800 rounded-lg p-1">
-                <Filter className="h-4 w-4 text-gray-500 dark:text-gray-400" />
+              <div className="flex items-center gap-2 bg-v-surface-muted dark:bg-gray-800 rounded-lg p-1">
+                <Filter className="h-4 w-4 text-v-text-muted" />
                 <select
                   value={analyticsTimeRange}
                   onChange={(e) => setAnalyticsTimeRange(e.target.value as '7d' | '30d' | '90d' | 'all')}
-                  className="bg-transparent border-none text-sm font-medium text-gray-700 dark:text-gray-300 cursor-pointer focus:outline-none"
+                  className="bg-transparent border-none text-sm font-medium text-v-text-secondary cursor-pointer focus:outline-none"
                 >
                   <option value="7d">Last 7 days</option>
                   <option value="30d">Last 30 days</option>
@@ -2242,9 +2259,9 @@ export default function SchedulingAdminContent({
           <Card className="p-4 hover:shadow-md transition-shadow">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Total Hours</p>
-                <p className="text-2xl font-semibold text-gray-900 dark:text-gray-100">{totalHours.toFixed(1)}</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">All time</p>
+                <p className="text-xs font-medium text-v-text-muted uppercase tracking-wide mb-1">Total Hours</p>
+                <p className="text-2xl font-semibold text-v-text-primary">{totalHours.toFixed(1)}</p>
+                <p className="text-xs text-v-text-muted mt-1">All time</p>
               </div>
               <div className="flex-shrink-0">
                 <Clock className="h-5 w-5 text-blue-500" />
@@ -2255,9 +2272,9 @@ export default function SchedulingAdminContent({
           <Card className="p-4 hover:shadow-md transition-shadow">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">This Week</p>
-                <p className="text-2xl font-semibold text-gray-900 dark:text-gray-100">{thisWeekHours.toFixed(1)}</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Hours scheduled</p>
+                <p className="text-xs font-medium text-v-text-muted uppercase tracking-wide mb-1">This Week</p>
+                <p className="text-2xl font-semibold text-v-text-primary">{thisWeekHours.toFixed(1)}</p>
+                <p className="text-xs text-v-text-muted mt-1">Hours scheduled</p>
               </div>
               <div className="flex-shrink-0">
                 <Calendar className="h-5 w-5 text-green-500" />
@@ -2268,9 +2285,9 @@ export default function SchedulingAdminContent({
           <Card className="p-4 hover:shadow-md transition-shadow">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Coverage Rate</p>
-                <p className="text-2xl font-semibold text-gray-900 dark:text-gray-100">{coverageRate.toFixed(0)}%</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                <p className="text-xs font-medium text-v-text-muted uppercase tracking-wide mb-1">Coverage Rate</p>
+                <p className="text-2xl font-semibold text-v-text-primary">{coverageRate.toFixed(0)}%</p>
+                <p className="text-xs text-v-text-muted mt-1">
                   {assignedShifts.length} / {allShifts.length} shifts
                 </p>
               </div>
@@ -2283,9 +2300,9 @@ export default function SchedulingAdminContent({
           <Card className="p-4 hover:shadow-md transition-shadow">
             <div className="flex items-center justify-between">
               <div>
-                <p className="text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wide mb-1">Avg Hours/Employee</p>
-                <p className="text-2xl font-semibold text-gray-900 dark:text-gray-100">{avgHoursPerEmployee.toFixed(1)}</p>
-                <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">
+                <p className="text-xs font-medium text-v-text-muted uppercase tracking-wide mb-1">Avg Hours/Employee</p>
+                <p className="text-2xl font-semibold text-v-text-primary">{avgHoursPerEmployee.toFixed(1)}</p>
+                <p className="text-xs text-v-text-muted mt-1">
                   {uniqueEmployees.size} employee{uniqueEmployees.size !== 1 ? 's' : ''}
                 </p>
               </div>
@@ -2302,7 +2319,7 @@ export default function SchedulingAdminContent({
             <Card className="p-6">
               <div className="flex items-center justify-center py-8">
                 <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-500"></div>
-                <span className="ml-3 text-gray-600 dark:text-gray-400">Loading analytics...</span>
+                <span className="ml-3 text-v-text-secondary">Loading analytics...</span>
               </div>
             </Card>
           </div>
@@ -2322,7 +2339,7 @@ export default function SchedulingAdminContent({
         {/* Detailed Stats */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card className="p-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
+            <h3 className="text-lg font-semibold text-v-text-primary mb-4 flex items-center gap-2">
               <BarChart3 className="h-5 w-5 text-blue-500" />
               Shift Status Breakdown
             </h3>
@@ -2333,87 +2350,88 @@ export default function SchedulingAdminContent({
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full bg-blue-500"></div>
-                  <span className="text-sm text-gray-700 dark:text-gray-300">Assigned</span>
+                  <span className="text-sm text-v-text-secondary">Assigned</span>
                 </div>
                       <div className="flex items-center gap-3">
-                        <div className="w-32 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                        <div className="w-32 bg-v-border dark:bg-gray-700 rounded-full h-2">
                           <div
                             className="bg-blue-500 h-2 rounded-full"
                             style={{ width: `${(assignedShifts.length / allShifts.length) * 100}%` }}
                           ></div>
                         </div>
-                        <span className="font-semibold text-gray-900 dark:text-gray-100 w-12 text-right">{assignedShifts.length}</span>
+                        <span className="font-semibold text-v-text-primary w-12 text-right">{assignedShifts.length}</span>
                       </div>
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
-                  <span className="text-sm text-gray-700 dark:text-gray-300">Open</span>
+                  <span className="text-sm text-v-text-secondary">Open</span>
                 </div>
                       <div className="flex items-center gap-3">
-                        <div className="w-32 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                        <div className="w-32 bg-v-border dark:bg-gray-700 rounded-full h-2">
                           <div
                             className="bg-yellow-500 h-2 rounded-full"
                             style={{ width: `${(openShifts / allShifts.length) * 100}%` }}
                           ></div>
                         </div>
-                        <span className="font-semibold text-gray-900 dark:text-gray-100 w-12 text-right">{openShifts}</span>
+                        <span className="font-semibold text-v-text-primary w-12 text-right">{openShifts}</span>
                       </div>
               </div>
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <div className="w-3 h-3 rounded-full bg-green-500"></div>
-                  <span className="text-sm text-gray-700 dark:text-gray-300">Covered/Swapped</span>
+                  <span className="text-sm text-v-text-secondary">Covered/Swapped</span>
                 </div>
                       <div className="flex items-center gap-3">
-                        <div className="w-32 bg-gray-200 dark:bg-gray-700 rounded-full h-2">
+                        <div className="w-32 bg-v-border dark:bg-gray-700 rounded-full h-2">
                           <div
                             className="bg-green-500 h-2 rounded-full"
                             style={{ width: `${(coveredShifts.length / allShifts.length) * 100}%` }}
                           ></div>
               </div>
-                        <span className="font-semibold text-gray-900 dark:text-gray-100 w-12 text-right">{coveredShifts.length}</span>
+                        <span className="font-semibold text-v-text-primary w-12 text-right">{coveredShifts.length}</span>
                       </div>
                     </div>
-                    <div className="flex items-center justify-between pt-2 border-t border-gray-200 dark:border-gray-700">
+                    <div className="flex items-center justify-between pt-2 border-t border-v-border dark:border-gray-700">
                 <div className="flex items-center gap-2">
-                  <div className="w-3 h-3 rounded-full bg-gray-400"></div>
-                        <span className="text-sm font-medium text-gray-900 dark:text-gray-100">Total</span>
+                  <div className="w-3 h-3 rounded-full bg-v-text-muted"></div>
+                        <span className="text-sm font-medium text-v-text-primary">Total</span>
                 </div>
-                <span className="font-semibold text-gray-900 dark:text-gray-100">{allShifts.length}</span>
+                <span className="font-semibold text-v-text-primary">{allShifts.length}</span>
               </div>
                   </div>
                 </>
               ) : (
-                <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                  <BarChart3 className="h-12 w-12 mx-auto mb-3 text-gray-400" />
-                  <p>No shifts found for selected time range</p>
-                </div>
+                <BusinessOperationsEmptyState
+                  icon={<BarChart3 className="h-12 w-12" />}
+                  title="No shifts in range"
+                  description="No shifts found for the selected time range."
+                />
               )}
             </div>
           </Card>
 
           <Card className="p-6">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-4 flex items-center gap-2">
+            <h3 className="text-lg font-semibold text-v-text-primary mb-4 flex items-center gap-2">
               <Calendar className="h-5 w-5 text-purple-500" />
               Schedule Overview
             </h3>
             <div className="space-y-3">
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-700 dark:text-gray-300">Total Schedules</span>
-                <span className="font-semibold text-gray-900 dark:text-gray-100">{filteredSchedules.length}</span>
+                <span className="text-sm text-v-text-secondary">Total Schedules</span>
+                <span className="font-semibold text-v-text-primary">{filteredSchedules.length}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-700 dark:text-gray-300">Published</span>
+                <span className="text-sm text-v-text-secondary">Published</span>
                 <span className="font-semibold text-green-600">{publishedSchedules}</span>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-sm text-gray-700 dark:text-gray-300">Draft</span>
+                <span className="text-sm text-v-text-secondary">Draft</span>
                 <span className="font-semibold text-yellow-600">{draftSchedules}</span>
               </div>
-              <div className="flex items-center justify-between pt-2 border-t border-gray-200 dark:border-gray-700">
-                <span className="text-sm font-medium text-gray-900 dark:text-gray-100">Total Shifts</span>
-                <span className="font-semibold text-gray-900 dark:text-gray-100">{allShifts.length}</span>
+              <div className="flex items-center justify-between pt-2 border-t border-v-border dark:border-gray-700">
+                <span className="text-sm font-medium text-v-text-primary">Total Shifts</span>
+                <span className="font-semibold text-v-text-primary">{allShifts.length}</span>
               </div>
             </div>
           </Card>
@@ -2428,7 +2446,7 @@ export default function SchedulingAdminContent({
   // Fallback
   return (
     <>
-      <div className="p-6 text-center text-gray-500 dark:text-gray-400">
+      <div className="p-6 text-center text-v-text-muted">
         View not implemented
       </div>
       {renderModals()}

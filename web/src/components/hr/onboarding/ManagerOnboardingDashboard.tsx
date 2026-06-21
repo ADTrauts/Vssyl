@@ -33,8 +33,8 @@ export default function ManagerOnboardingDashboard({
       <Card className="p-4">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Team Members</p>
-            <p className="text-2xl font-semibold text-gray-900 dark:text-gray-100">{teamMemberCount}</p>
+            <p className="text-sm text-v-text-secondary mb-1">Team Members</p>
+            <p className="text-2xl font-semibold text-v-text-primary">{teamMemberCount}</p>
           </div>
           <Users className="w-8 h-8 text-blue-500" />
         </div>
@@ -43,8 +43,8 @@ export default function ManagerOnboardingDashboard({
       <Card className="p-4">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Active Journeys</p>
-            <p className="text-2xl font-semibold text-gray-900 dark:text-gray-100">{activeJourneys}</p>
+            <p className="text-sm text-v-text-secondary mb-1">Active Journeys</p>
+            <p className="text-2xl font-semibold text-v-text-primary">{activeJourneys}</p>
           </div>
           <Users className="w-8 h-8 text-green-500" />
         </div>
@@ -53,8 +53,8 @@ export default function ManagerOnboardingDashboard({
       <Card className="p-4">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Pending Approvals</p>
-            <p className="text-2xl font-semibold text-gray-900 dark:text-gray-100">{pendingApprovals}</p>
+            <p className="text-sm text-v-text-secondary mb-1">Pending Approvals</p>
+            <p className="text-2xl font-semibold text-v-text-primary">{pendingApprovals}</p>
           </div>
           <CheckCircle2 className="w-8 h-8 text-yellow-500" />
         </div>
@@ -63,8 +63,8 @@ export default function ManagerOnboardingDashboard({
       <Card className="p-4">
         <div className="flex items-center justify-between">
           <div>
-            <p className="text-sm text-gray-600 dark:text-gray-400 mb-1">Overdue Tasks</p>
-            <p className="text-2xl font-semibold text-gray-900 dark:text-gray-100">{overdueTasks}</p>
+            <p className="text-sm text-v-text-secondary mb-1">Overdue Tasks</p>
+            <p className="text-2xl font-semibold text-v-text-primary">{overdueTasks}</p>
           </div>
           <AlertCircle className="w-8 h-8 text-red-500" />
         </div>
