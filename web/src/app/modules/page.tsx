@@ -322,10 +322,8 @@ export default function ModulesPage() {
           return;
         }
         
-        // Create subscription for premium modules
-        const tier =
-          module.pricingTier === 'enterprise' ? 'enterprise' : 'premium';
-        await subscribeModule(moduleId, tier);
+        // Create subscription for premium modules (enterprise handled above)
+        await subscribeModule(moduleId, 'premium');
       }
       
       // Install the module
