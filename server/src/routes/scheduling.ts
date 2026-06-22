@@ -12,7 +12,7 @@ import {
 import { checkSchedulingPolicy } from '../auth/schedulingPolicyDual';
 import { POLICY_ACTIONS } from '../auth/policyActions';
 import * as schedulingController from '../controllers/schedulingController';
-import { asyncHandler } from '../index';
+import { asyncHandler } from '../utils/asyncHandler';
 
 const router: express.Router = express.Router();
 

@@ -2,7 +2,7 @@ import express from 'express';
 import { body, param } from 'express-validator';
 import { validate } from '../middleware/validateRequest';
 import * as widgetController from '../controllers/widgetController';
-import { asyncHandler } from '../index';
+import { asyncHandler } from '../utils/asyncHandler';
 
 const router: express.Router = express.Router();
 

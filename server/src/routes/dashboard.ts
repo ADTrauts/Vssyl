@@ -4,7 +4,7 @@ import { validate } from '../middleware/validateRequest';
 import * as dashboardController from '../controllers/dashboardController';
 import * as dashboardAIContextController from '../controllers/dashboardAIContextController';
 import * as sidebarController from '../controllers/sidebarController';
-import { asyncHandler } from '../index';
+import { asyncHandler } from '../utils/asyncHandler';
 
 const router: express.Router = express.Router();
 

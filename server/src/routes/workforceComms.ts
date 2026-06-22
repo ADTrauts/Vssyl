@@ -21,7 +21,7 @@ import {
 import { checkWorkforceCommsPolicy } from '../auth/workforceCommsPolicyDual';
 import { POLICY_ACTIONS } from '../auth/policyActions';
 import * as workforceCommsController from '../controllers/workforceCommsController';
-import { asyncHandler } from '../index';
+import { asyncHandler } from '../utils/asyncHandler';
 
 const router: express.Router = express.Router();
 
