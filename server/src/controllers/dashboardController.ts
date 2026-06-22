@@ -27,6 +27,14 @@ function buildCreateScope(data: CreateDashboardRequest): { businessId?: string; 
   };
 }
 
+function countCreateContextIds(data: CreateDashboardRequest): number {
+  let n = 0;
+  if (data.businessId) n += 1;
+  if (data.institutionId) n += 1;
+  if (data.householdId) n += 1;
+  return n;
+}
+
 export async function getDashboards(req: Request, res: Response, next: NextFunction): Promise<void> {
   try {
     if (!hasUserId(req.user)) {
@@ -85,6 +93,13 @@ export async function createDashboard(req: Request, res: Response, next: NextFun
     }
     const userId = req.user.id;
     const data: CreateDashboardRequest = req.body;
+
+    if (countCreateContextIds(data) > 1) {
+      res.status(400).json({
+        error: 'Specify at most one of businessId, institutionId, or householdId',
+      });
+      return;
+    }
 
     if (await respondPolicyDenied(res, userId, {
       userId,

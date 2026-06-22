@@ -15,13 +15,14 @@ describe('ActivityFeedWidget trust (Package 1)', () => {
   });
 });
 
-describe('DashboardModuleWrapper enterprise gating (Package 1)', () => {
-  it('does not mount EnhancedDashboardModule by default', () => {
+describe('DashboardModuleWrapper enterprise gating (Package 1 / P3)', () => {
+  it('defaults to showcase; gates EnhancedDashboardModule behind enableEnterpriseAnalytics', () => {
     const source = readFileSync(
       resolve(repoRoot, 'web/src/components/dashboard/DashboardModuleWrapper.tsx'),
       'utf8'
     );
-    expect(source).not.toContain('EnhancedDashboardModule');
+    expect(source).toContain('enableEnterpriseAnalytics = false');
     expect(source).toContain('DashboardEnterpriseShowcase');
+    expect(source).toMatch(/enableEnterpriseAnalytics\s*&&\s*dashboardId/);
   });
 });

@@ -102,7 +102,8 @@ describe('Dashboard create — context membership', () => {
       });
 
     expect(res.status).toBe(403);
-    expect(res.body.error).toMatch(/business/i);
+    expect(res.body.message).toBe('Access denied');
+    expect(res.body.reason).toBe('NOT_MEMBER');
   });
 
   it('returns 400 when more than one context id is sent', async () => {
