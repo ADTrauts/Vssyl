@@ -63,9 +63,9 @@ export default function RootLayout({
         className={`${inter.variable} antialiased`}
         suppressHydrationWarning
       >
-        <ThemeProvider>
-          <HydrationHandler>
-            <SessionProvider>
+        <SessionProvider>
+          <ThemeProvider>
+            <HydrationHandler>
               <SessionReadyGate>
                 <WorkAuthProvider>
                   <DashboardProvider>
@@ -106,9 +106,9 @@ export default function RootLayout({
                   </DashboardProvider>
                 </WorkAuthProvider>
               </SessionReadyGate>
-            </SessionProvider>
-          </HydrationHandler>
-        </ThemeProvider>
+            </HydrationHandler>
+          </ThemeProvider>
+        </SessionProvider>
       </body>
     </html>
   )
