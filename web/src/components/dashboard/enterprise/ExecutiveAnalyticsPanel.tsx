@@ -25,9 +25,12 @@ import {
   Settings
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import { useSession } from 'next-auth/react';
+import { fetchDashboardAnalyticsSummary } from '../../../lib/dashboardAnalyticsFacade';
 
 interface ExecutiveAnalyticsPanelProps {
   businessId?: string;
+  dashboardId?: string;
   className?: string;
 }
 
@@ -96,8 +99,10 @@ const EXECUTIVE_KPI_CATEGORIES = [
 
 export const ExecutiveAnalyticsPanel: React.FC<ExecutiveAnalyticsPanelProps> = ({
   businessId,
+  dashboardId,
   className = ''
 }) => {
+  const { data: session } = useSession();
   const { recordUsage } = useFeatureGating(businessId);
   const [activeCategory, setActiveCategory] = useState('overview');
   const [executiveMetrics, setExecutiveMetrics] = useState<ExecutiveMetric[]>([]);
@@ -111,7 +116,7 @@ export const ExecutiveAnalyticsPanel: React.FC<ExecutiveAnalyticsPanelProps> = (
 
   useEffect(() => {
     loadExecutiveData();
-  }, [businessId, activeCategory]);
+  }, [businessId, dashboardId, activeCategory, session?.accessToken]);
 
   useEffect(() => {
     if (!autoRefresh) return;
@@ -121,249 +126,41 @@ export const ExecutiveAnalyticsPanel: React.FC<ExecutiveAnalyticsPanelProps> = (
     }, refreshInterval * 1000);
 
     return () => clearInterval(interval);
-  }, [autoRefresh, refreshInterval]);
+  }, [autoRefresh, refreshInterval, businessId, dashboardId, session?.accessToken]);
 
   const loadExecutiveData = async () => {
     try {
       setLoading(true);
-      
-      // Mock executive metrics
-      const mockMetrics: ExecutiveMetric[] = [
-        {
-          id: 'revenue',
-          name: 'Monthly Revenue',
-          value: '$2.4M',
-          previousValue: '$2.1M',
-          change: 14.3,
-          trend: 'up',
-          target: 2500000,
-          unit: '$',
-          status: 'healthy',
-          lastUpdated: new Date(Date.now() - 5 * 60 * 1000),
-          description: 'Total company revenue for current month'
-        },
-        {
-          id: 'active_users',
-          name: 'Active Users',
-          value: 1247,
-          previousValue: 1183,
-          change: 5.4,
-          trend: 'up',
-          target: 1500,
-          status: 'healthy',
-          lastUpdated: new Date(Date.now() - 2 * 60 * 1000),
-          description: 'Monthly active users across all modules'
-        },
-        {
-          id: 'productivity_score',
-          name: 'Productivity Index',
-          value: 87,
-          previousValue: 82,
-          change: 6.1,
-          trend: 'up',
-          target: 90,
-          unit: '/100',
-          status: 'healthy',
-          lastUpdated: new Date(Date.now() - 1 * 60 * 1000),
-          description: 'Overall organizational productivity score'
-        },
-        {
-          id: 'compliance_score',
-          name: 'Compliance Score',
-          value: 94,
-          previousValue: 91,
-          change: 3.3,
-          trend: 'up',
-          target: 95,
-          unit: '%',
-          status: 'healthy',
-          lastUpdated: new Date(Date.now() - 10 * 60 * 1000),
-          description: 'Overall compliance across all regulations'
-        },
-        {
-          id: 'cost_efficiency',
-          name: 'Cost Efficiency',
-          value: 78,
-          previousValue: 84,
-          change: -7.1,
-          trend: 'down',
-          target: 85,
-          unit: '%',
-          status: 'warning',
-          lastUpdated: new Date(Date.now() - 15 * 60 * 1000),
-          description: 'Cost efficiency vs operational targets'
-        },
-        {
-          id: 'security_incidents',
-          name: 'Security Incidents',
-          value: 3,
-          previousValue: 1,
-          change: 200,
-          trend: 'down', // down is bad for incidents
-          target: 0,
-          status: 'critical',
-          lastUpdated: new Date(Date.now() - 30 * 60 * 1000),
-          description: 'Security incidents this month'
-        }
-      ];
+      setExecutiveMetrics([]);
+      setDepartmentMetrics([]);
+      setModuleUsage([]);
+      setComplianceStatus([]);
+      setBusinessAlerts([]);
 
-      // Mock department metrics
-      const mockDepartments: DepartmentMetrics[] = [
-        {
-          departmentId: 'sales',
-          departmentName: 'Sales',
-          productivity: 92,
-          efficiency: 87,
-          collaboration: 85,
-          compliance: 96,
-          trend: 8.5,
-          teamSize: 23
-        },
-        {
-          departmentId: 'engineering',
-          departmentName: 'Engineering',
-          productivity: 89,
-          efficiency: 94,
-          collaboration: 91,
-          compliance: 88,
-          trend: 12.3,
-          teamSize: 45
-        },
-        {
-          departmentId: 'marketing',
-          departmentName: 'Marketing',
-          productivity: 84,
-          efficiency: 79,
-          collaboration: 88,
-          compliance: 92,
-          trend: -2.1,
-          teamSize: 18
-        },
-        {
-          departmentId: 'finance',
-          departmentName: 'Finance',
-          productivity: 95,
-          efficiency: 92,
-          collaboration: 76,
-          compliance: 98,
-          trend: 5.7,
-          teamSize: 12
-        }
-      ];
+      if (!session?.accessToken || !dashboardId) {
+        return;
+      }
 
-      // Mock module usage
-      const mockModuleUsage: ModuleUsageMetrics[] = [
-        {
-          module: 'Drive',
-          activeUsers: 1147,
-          totalSessions: 8947,
-          averageSessionTime: 23,
-          featureAdoption: 78,
-          businessValue: 92,
-          growthRate: 15.4
-        },
-        {
-          module: 'Chat',
-          activeUsers: 1203,
-          totalSessions: 15623,
-          averageSessionTime: 45,
-          featureAdoption: 85,
-          businessValue: 89,
-          growthRate: 22.1
-        },
-        {
-          module: 'Calendar',
-          activeUsers: 1089,
-          totalSessions: 6234,
-          averageSessionTime: 18,
-          featureAdoption: 72,
-          businessValue: 84,
-          growthRate: 8.7
-        },
-        {
-          module: 'Dashboard',
-          activeUsers: 856,
-          totalSessions: 3421,
-          averageSessionTime: 12,
-          featureAdoption: 65,
-          businessValue: 76,
-          growthRate: 34.2
-        }
-      ];
+      const summary = await fetchDashboardAnalyticsSummary(session.accessToken, dashboardId);
+      const enterprise = summary.enterprise;
 
-      // Mock compliance status
-      const mockCompliance: ComplianceStatus[] = [
-        {
-          category: 'GDPR',
-          status: 'compliant',
-          score: 96,
-          issuesCount: 2,
-          lastAudit: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000),
-          nextReview: new Date(Date.now() + 75 * 24 * 60 * 60 * 1000)
-        },
-        {
-          category: 'SOX',
-          status: 'compliant',
-          score: 94,
-          issuesCount: 1,
-          lastAudit: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000),
-          nextReview: new Date(Date.now() + 70 * 24 * 60 * 60 * 1000)
-        },
-        {
-          category: 'HIPAA',
-          status: 'at_risk',
-          score: 82,
-          issuesCount: 5,
-          lastAudit: new Date(Date.now() - 45 * 24 * 60 * 60 * 1000),
-          nextReview: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000)
-        }
-      ];
+      if (!enterprise || enterprise.degraded || enterprise.metrics.length === 0) {
+        return;
+      }
 
-      // Mock business alerts
-      const mockAlerts: BusinessAlert[] = [
-        {
-          id: '1',
-          type: 'warning',
-          title: 'Cost Efficiency Below Target',
-          message: 'Monthly cost efficiency has dropped to 78%, below the 85% target',
-          priority: 'high',
-          module: 'Dashboard',
-          timestamp: new Date(Date.now() - 15 * 60 * 1000),
-          actionRequired: true,
-          actionUrl: '/dashboard/cost-analysis'
-        },
-        {
-          id: '2',
-          type: 'error',
-          title: 'Security Incidents Detected',
-          message: '3 security incidents reported this month, exceeding acceptable threshold',
-          priority: 'critical',
-          module: 'Security',
-          timestamp: new Date(Date.now() - 30 * 60 * 1000),
-          actionRequired: true,
-          actionUrl: '/admin/security'
-        },
-        {
-          id: '3',
-          type: 'info',
-          title: 'HIPAA Compliance Review Due',
-          message: 'HIPAA compliance review scheduled for next week',
-          priority: 'medium',
-          module: 'Compliance',
-          timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000),
-          actionRequired: false
-        }
-      ];
-
-      setExecutiveMetrics(mockMetrics);
-      setDepartmentMetrics(mockDepartments);
-      setModuleUsage(mockModuleUsage);
-      setComplianceStatus(mockCompliance);
-      setBusinessAlerts(mockAlerts);
-      
-      // Record usage
-      await recordUsage('dashboard_executive_insights', 1);
-      
+      setExecutiveMetrics(
+        enterprise.metrics.map((m) => ({
+          id: m.id,
+          name: m.name,
+          value: m.value,
+          previousValue: m.value,
+          change: 0,
+          trend: 'stable' as const,
+          status: 'healthy' as const,
+          lastUpdated: new Date(enterprise.asOf),
+          description: m.unit ? `Measured in ${m.unit}` : 'Analytics capability metric',
+        }))
+      );
     } catch (error) {
       console.error('Failed to load executive data:', error);
       toast.error('Failed to load executive analytics');
@@ -425,15 +222,7 @@ export const ExecutiveAnalyticsPanel: React.FC<ExecutiveAnalyticsPanelProps> = (
     }
   };
 
-  const filteredMetrics = executiveMetrics.filter(metric => {
-    switch (activeCategory) {
-      case 'overview': return ['revenue', 'active_users'].includes(metric.id);
-      case 'productivity': return ['productivity_score', 'cost_efficiency'].includes(metric.id);
-      case 'collaboration': return metric.id.includes('collaboration') || metric.id === 'active_users';
-      case 'compliance': return ['compliance_score', 'security_incidents'].includes(metric.id);
-      default: return true;
-    }
-  });
+  const filteredMetrics = executiveMetrics.filter(() => activeCategory === 'overview');
 
   if (loading) {
     return (
@@ -541,6 +330,13 @@ export const ExecutiveAnalyticsPanel: React.FC<ExecutiveAnalyticsPanelProps> = (
         )}
 
         {/* Key Metrics Grid */}
+        {filteredMetrics.length === 0 && (
+          <Card className="p-6">
+            <p className="text-sm text-gray-600 dark:text-gray-400 text-center">
+              Executive metrics are unavailable. Analytics data may be degraded or not yet provisioned for this workspace.
+            </p>
+          </Card>
+        )}
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredMetrics.map(metric => (
             <Card key={metric.id} className="p-4">

@@ -31,7 +31,10 @@ export interface WidgetRegistryEntry {
   icon: LucideIcon;
   color: string;
   category: WidgetCategory;
+  /** Dashboard module hosts widget chrome (K3-04). */
   moduleId: string;
+  /** Analytics Capability owns rollup data (K3-04). */
+  capabilityId?: string;
   alwaysAvailable?: boolean;
   /** If set, widget only appears on these dashboard types. If unset, allowed on all. */
   contexts?: WidgetContext[];
@@ -143,11 +146,12 @@ export const WIDGET_REGISTRY: Record<string, WidgetRegistryEntry> = {
   quickstats: {
     id: 'quickstats',
     name: 'Quick Stats',
-    description: 'Key metrics at a glance',
+    description: 'Key metrics at a glance (Analytics capability)',
     icon: BarChart3,
     color: 'text-cyan-600 bg-cyan-100',
     category: 'utility',
-    moduleId: 'quickstats',
+    moduleId: 'dashboard',
+    capabilityId: 'analytics',
     alwaysAvailable: true,
   },
   quicknotes: {

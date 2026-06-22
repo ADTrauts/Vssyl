@@ -2,6 +2,10 @@ import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { logger } from '../lib/logger';
 import { getUserFromRequest } from '../middleware/auth';
+import {
+  AnalyticsDashboardAccessError,
+  getDashboardAnalyticsSummary,
+} from '../services/analytics/analyticsDashboardSummaryService';
 
 function logAnalyticsError(message: string, operation: string, err: unknown): void {
   const e = err instanceof Error ? err : new Error(String(err));
@@ -282,6 +286,49 @@ export const getModuleAnalytics = async (req: Request, res: Response) => {
   } catch (error) {
     logAnalyticsError('Error getting module analytics', 'analytics_module', error);
     res.status(500).json({ success: false, error: 'Failed to get module analytics' });
+  }
+};
+
+/**
+ * GET /api/analytics/dashboard-summary?dashboardId=
+ * Analytics Capability — tenant-scoped dashboard rollup (Package 3).
+ */
+export const getDashboardSummary = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const user = getUserFromRequest(req);
+    if (!user) {
+      res.status(401).json({ success: false, error: 'Unauthorized' });
+      return;
+    }
+
+    const dashboardId = req.query.dashboardId;
+    if (!dashboardId || typeof dashboardId !== 'string') {
+      res.status(400).json({ success: false, error: 'dashboardId is required' });
+      return;
+    }
+
+    const data = await getDashboardAnalyticsSummary({
+      userId: user.id,
+      dashboardId,
+    });
+
+    res.json({
+      success: true,
+      data,
+      metadata: {
+        provider: 'analytics',
+        endpoint: 'dashboard-summary',
+        degraded: data.degraded,
+        asOf: data.asOf,
+      },
+    });
+  } catch (error: unknown) {
+    if (error instanceof AnalyticsDashboardAccessError) {
+      res.status(error.statusCode).json({ success: false, error: error.message });
+      return;
+    }
+    logAnalyticsError('Error getting dashboard analytics summary', 'analytics_dashboard_summary', error);
+    res.status(500).json({ success: false, error: 'Failed to get dashboard analytics summary' });
   }
 };
 

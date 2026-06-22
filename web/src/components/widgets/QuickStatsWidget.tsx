@@ -7,14 +7,13 @@ import {
   Calendar,
   CheckSquare,
   HardDrive,
-  TrendingUp,
-  TrendingDown,
-  ArrowRight,
 } from 'lucide-react';
 import { Spinner } from 'shared/components';
-import { getConversations } from '../../api/chat';
-import { getTasks } from '../../api/todo';
-import { calendarAPI } from '../../api/calendar';
+import {
+  fetchDashboardAnalyticsSummary,
+  toQuickStatsDisplay,
+  DEGRADED_DASHBOARD_SUMMARY,
+} from '../../lib/dashboardAnalyticsFacade';
 
 interface QuickStatsWidgetProps {
   id: string;
@@ -34,10 +33,11 @@ interface QuickStatsWidgetConfig {
 }
 
 interface StatData {
-  unreadMessages: number;
-  pendingTasks: number;
-  todayEvents: number;
-  storageUsedPercent: number;
+  unreadMessages: number | null;
+  pendingTasks: number | null;
+  todayEvents: number | null;
+  storageUsedPercent: number | null;
+  degraded: boolean;
 }
 
 const defaultConfig: QuickStatsWidgetConfig = {
@@ -48,21 +48,29 @@ const defaultConfig: QuickStatsWidgetConfig = {
   compactMode: false,
 };
 
+function formatStatValue(value: number | null, isPercent = false): string {
+  if (value === null) {
+    return '—';
+  }
+  return isPercent ? `${value}%` : String(value);
+}
+
+/**
+ * Analytics-owned data (via dashboardAnalyticsFacade); Dashboard hosts widget chrome only (K3-04).
+ */
 export default function QuickStatsWidget({
-  id,
   config,
   onConfigChange,
   dashboardId,
-  dashboardType,
-  dashboardName,
 }: QuickStatsWidgetProps) {
   const { data: session } = useSession();
   const [loading, setLoading] = useState(true);
   const [stats, setStats] = useState<StatData>({
-    unreadMessages: 0,
-    pendingTasks: 0,
-    todayEvents: 0,
-    storageUsedPercent: 0,
+    unreadMessages: null,
+    pendingTasks: null,
+    todayEvents: null,
+    storageUsedPercent: null,
+    degraded: true,
   });
   const [showSettings, setShowSettings] = useState(false);
 
@@ -71,71 +79,22 @@ export default function QuickStatsWidget({
   useEffect(() => {
     if (!session?.accessToken || !dashboardId) return;
 
-    const fetchStats = async () => {
+    const load = async () => {
       try {
         setLoading(true);
-        const now = new Date();
-        const endOfDay = new Date(now);
-        endOfDay.setHours(23, 59, 59, 999);
-
-        const [chatResult, taskResult, eventResult] = await Promise.allSettled([
-          getConversations(session.accessToken!, dashboardId),
-          getTasks(session.accessToken!, { dashboardId }),
-          calendarAPI.listEvents({
-            start: now.toISOString(),
-            end: endOfDay.toISOString(),
-            contexts: [dashboardId],
-          }),
-        ]);
-
-        let unreadMessages = 0;
-        if (chatResult.status === 'fulfilled') {
-          const conversations = Array.isArray(chatResult.value)
-            ? chatResult.value
-            : chatResult.value?.data || [];
-          unreadMessages = conversations.reduce((sum: number, conv: Record<string, unknown>) => {
-            const messages = (conv.messages as Array<Record<string, unknown>>) || [];
-            const unread = messages.filter(
-              (msg) =>
-                msg.senderId !== session.user?.id &&
-                !(msg.readReceipts as Array<Record<string, unknown>> | undefined)?.some(
-                  (r) => r.userId === session.user?.id
-                )
-            ).length;
-            return sum + unread;
-          }, 0);
-        }
-
-        let pendingTasks = 0;
-        if (taskResult.status === 'fulfilled') {
-          const tasks = taskResult.value || [];
-          pendingTasks = tasks.filter(
-            (t) => t.status === 'TODO' || t.status === 'IN_PROGRESS'
-          ).length;
-        }
-
-        let todayEvents = 0;
-        if (eventResult.status === 'fulfilled' && eventResult.value?.success) {
-          todayEvents = eventResult.value.data?.length || 0;
-        }
-
-        setStats({
-          unreadMessages,
-          pendingTasks,
-          todayEvents,
-          storageUsedPercent: 23, // Placeholder - would need storage API
-        });
+        const summary = await fetchDashboardAnalyticsSummary(session.accessToken!, dashboardId);
+        setStats(toQuickStatsDisplay(summary));
       } catch {
-        // Keep existing stats on error
+        setStats(toQuickStatsDisplay({ ...DEGRADED_DASHBOARD_SUMMARY, dashboardId }));
       } finally {
         setLoading(false);
       }
     };
 
-    fetchStats();
-    const interval = setInterval(fetchStats, 120_000);
+    load();
+    const interval = setInterval(load, 120_000);
     return () => clearInterval(interval);
-  }, [session?.accessToken, dashboardId, session?.user?.id]);
+  }, [session?.accessToken, dashboardId]);
 
   if (loading) {
     return (
@@ -152,7 +111,7 @@ export default function QuickStatsWidget({
       show: safeConfig.showMessages,
       icon: MessageCircle,
       label: 'Unread',
-      value: stats.unreadMessages,
+      value: formatStatValue(stats.unreadMessages),
       color: 'text-blue-600 bg-blue-100',
       href: '/chat',
     },
@@ -161,7 +120,7 @@ export default function QuickStatsWidget({
       show: safeConfig.showTasks,
       icon: CheckSquare,
       label: 'Tasks',
-      value: stats.pendingTasks,
+      value: formatStatValue(stats.pendingTasks),
       color: 'text-violet-600 bg-violet-100',
       href: '/todo',
     },
@@ -170,7 +129,7 @@ export default function QuickStatsWidget({
       show: safeConfig.showEvents,
       icon: Calendar,
       label: 'Today',
-      value: stats.todayEvents,
+      value: formatStatValue(stats.todayEvents),
       color: 'text-green-600 bg-green-100',
       href: '/calendar/month',
     },
@@ -179,10 +138,9 @@ export default function QuickStatsWidget({
       show: safeConfig.showStorage,
       icon: HardDrive,
       label: 'Storage',
-      value: `${stats.storageUsedPercent}%`,
+      value: formatStatValue(stats.storageUsedPercent, true),
       color: 'text-amber-600 bg-amber-100',
       href: '/drive',
-      isPercent: true,
     },
   ];
 
@@ -190,6 +148,11 @@ export default function QuickStatsWidget({
 
   return (
     <div className="space-y-3">
+      {stats.degraded && (
+        <p className="text-xs text-amber-700 dark:text-amber-400 bg-amber-50 dark:bg-amber-950/40 rounded px-2 py-1">
+          Some metrics are temporarily unavailable.
+        </p>
+      )}
       <div className={`grid gap-3 ${safeConfig.compactMode ? 'grid-cols-4' : 'grid-cols-2'}`}>
         {visibleCards.map((card) => {
           const Icon = card.icon;
@@ -217,9 +180,9 @@ export default function QuickStatsWidget({
         })}
       </div>
 
-      {/* Settings toggle */}
       <div className="flex justify-end">
         <button
+          type="button"
           onClick={() => setShowSettings(!showSettings)}
           className="text-xs text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-gray-100"
         >
@@ -227,7 +190,6 @@ export default function QuickStatsWidget({
         </button>
       </div>
 
-      {/* Settings panel */}
       {showSettings && onConfigChange && (
         <div className="p-3 bg-gray-50 dark:bg-slate-800 rounded-lg space-y-2">
           <label className="flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300">

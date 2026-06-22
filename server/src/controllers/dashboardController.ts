@@ -2,11 +2,29 @@ import { Request, Response, NextFunction } from 'express';
 import * as dashboardService from '../services/dashboardService';
 import * as fileMigrationService from '../services/fileMigrationService';
 import { CreateDashboardRequest, UpdateDashboardRequest } from 'shared/types';
-import { authorize } from '../auth/policyEngine';
+import { evaluateDashboardPolicyDual } from '../auth/dashboardPolicyDual';
 import { POLICY_ACTIONS } from '../auth/policyActions';
+import type { FileHandlingAction } from '../services/fileMigrationService';
 
-function hasUserId(user: any): user is { id: string } {
-  return user && typeof user.id === 'string';
+function hasUserId(user: unknown): user is { id: string } {
+  return typeof user === 'object' && user !== null && 'id' in user && typeof (user as { id: unknown }).id === 'string';
+}
+
+async function respondPolicyDenied(res: Response, userId: string, params: Parameters<typeof evaluateDashboardPolicyDual>[0]): Promise<boolean> {
+  const decision = await evaluateDashboardPolicyDual(params);
+  if (decision.blocked) {
+    res.status(403).json({ message: 'Access denied', reason: decision.reason });
+    return true;
+  }
+  return false;
+}
+
+function buildCreateScope(data: CreateDashboardRequest): { businessId?: string; householdId?: string; institutionId?: string } {
+  return {
+    ...(data.businessId ? { businessId: data.businessId } : {}),
+    ...(data.householdId ? { householdId: data.householdId } : {}),
+    ...(data.institutionId ? { institutionId: data.institutionId } : {}),
+  };
 }
 
 export async function getDashboards(req: Request, res: Response, next: NextFunction): Promise<void> {
@@ -16,19 +34,43 @@ export async function getDashboards(req: Request, res: Response, next: NextFunct
       return;
     }
     const userId = req.user.id;
-    
-    // Get all dashboards including business and educational contexts
-    const allDashboards = await dashboardService.getAllUserDashboards(userId);
-    
-    // If no personal dashboards exist, create a default one
-    // Note: dashboardService.createDashboard will auto-provision a personal primary calendar
-    if (!allDashboards.personal || allDashboards.personal.length === 0) {
-      await dashboardService.createDashboard(userId, { name: 'My Dashboard' });
-      const updatedDashboards = await dashboardService.getAllUserDashboards(userId);
-      res.json({ dashboards: updatedDashboards });
-    } else {
-      res.json({ dashboards: allDashboards });
+
+    if (await respondPolicyDenied(res, userId, {
+      userId,
+      action: POLICY_ACTIONS.DASHBOARD_READ,
+      resourceId: userId,
+      metadata: { operation: 'list' },
+    })) {
+      return;
     }
+
+    const allDashboards = await dashboardService.getAllUserDashboards(userId);
+    res.json({ dashboards: allDashboards });
+    return;
+  } catch (err) {
+    next(err);
+  }
+}
+
+export async function ensureDefaultPersonalDashboard(req: Request, res: Response, next: NextFunction): Promise<void> {
+  try {
+    if (!hasUserId(req.user)) {
+      res.sendStatus(401);
+      return;
+    }
+    const userId = req.user.id;
+
+    if (await respondPolicyDenied(res, userId, {
+      userId,
+      action: POLICY_ACTIONS.DASHBOARD_WRITE,
+      resourceId: userId,
+      metadata: { operation: 'create' },
+    })) {
+      return;
+    }
+
+    const { dashboard, created } = await dashboardService.ensureDefaultPersonalDashboard(userId);
+    res.status(created ? 201 : 200).json({ dashboard, created });
     return;
   } catch (err) {
     next(err);
@@ -43,6 +85,17 @@ export async function createDashboard(req: Request, res: Response, next: NextFun
     }
     const userId = req.user.id;
     const data: CreateDashboardRequest = req.body;
+
+    if (await respondPolicyDenied(res, userId, {
+      userId,
+      action: POLICY_ACTIONS.DASHBOARD_WRITE,
+      resourceId: userId,
+      scope: buildCreateScope(data),
+      metadata: { operation: 'create' },
+    })) {
+      return;
+    }
+
     const dashboard = await dashboardService.createDashboard(userId, data);
     res.status(201).json({ dashboard });
     return;
@@ -70,19 +123,17 @@ export async function getDashboardById(req: Request, res: Response, next: NextFu
 
     const businessIdQ = req.query.businessId;
     const householdIdQ = req.query.householdId;
-    const policyDecision = await authorize({
+
+    if (await respondPolicyDenied(res, userId, {
       userId,
       action: POLICY_ACTIONS.DASHBOARD_READ,
-      resourceType: 'dashboard',
       resourceId: dashboardId,
       scope: {
         dashboardId,
         ...(typeof businessIdQ === 'string' ? { businessId: businessIdQ } : {}),
         ...(typeof householdIdQ === 'string' ? { householdId: householdIdQ } : {}),
       },
-    });
-    if (!policyDecision.allow) {
-      res.status(403).json({ message: 'Access denied', reason: policyDecision.reason });
+    })) {
       return;
     }
 
@@ -107,6 +158,16 @@ export async function updateDashboard(req: Request, res: Response, next: NextFun
     const userId = req.user.id;
     const dashboardId = req.params.id;
     const data: UpdateDashboardRequest = req.body;
+
+    if (await respondPolicyDenied(res, userId, {
+      userId,
+      action: POLICY_ACTIONS.DASHBOARD_WRITE,
+      resourceId: dashboardId,
+      scope: { dashboardId },
+    })) {
+      return;
+    }
+
     const dashboard = await dashboardService.updateDashboard(userId, dashboardId, data);
     if (!dashboard) {
       res.sendStatus(404);
@@ -127,14 +188,22 @@ export async function getDashboardFileSummary(req: Request, res: Response, next:
     }
     const userId = req.user.id;
     const dashboardId = req.params.id;
-    
-    // Verify dashboard exists and belongs to user
+
+    if (await respondPolicyDenied(res, userId, {
+      userId,
+      action: POLICY_ACTIONS.DASHBOARD_READ,
+      resourceId: dashboardId,
+      scope: { dashboardId },
+    })) {
+      return;
+    }
+
     const dashboard = await dashboardService.getDashboardById(userId, dashboardId);
     if (!dashboard) {
       res.sendStatus(404);
       return;
     }
-    
+
     const summary = await fileMigrationService.getDashboardFileSummary(userId, dashboardId);
     res.json({ summary });
     return;
@@ -151,68 +220,24 @@ export async function deleteDashboard(req: Request, res: Response, next: NextFun
     }
     const userId = req.user.id;
     const dashboardId = req.params.id;
-    
-    // Get file handling action from request body
-    const { fileAction }: { fileAction?: fileMigrationService.FileHandlingAction } = req.body;
-    
-    // Verify dashboard exists and belongs to user
-    const dashboard = await dashboardService.getDashboardById(userId, dashboardId);
-    if (!dashboard) {
+    const { fileAction }: { fileAction?: FileHandlingAction } = req.body;
+
+    if (await respondPolicyDenied(res, userId, {
+      userId,
+      action: POLICY_ACTIONS.DASHBOARD_DELETE,
+      resourceId: dashboardId,
+      scope: { dashboardId },
+    })) {
+      return;
+    }
+
+    const result = await dashboardService.deleteDashboardWithFiles(userId, dashboardId, fileAction);
+    if (!result) {
       res.sendStatus(404);
       return;
     }
-    
-    let migrationResult = null;
-    
-    // Handle files based on user's choice
-    if (fileAction) {
-      switch (fileAction.type) {
-        case 'move-to-main':
-          const folderName = fileAction.folderName || 
-            fileMigrationService.generateLabeledFolderName(dashboard.name);
-          migrationResult = await fileMigrationService.moveFilesToMainDrive(
-            userId, 
-            dashboardId, 
-            { 
-              createFolder: fileAction.createFolder,
-              folderName: fileAction.createFolder ? folderName : undefined
-            }
-          );
-          break;
-          
-        case 'move-to-trash':
-          migrationResult = await fileMigrationService.moveFilesToTrash(
-            userId, 
-            dashboardId, 
-            { retentionDays: fileAction.retentionDays }
-          );
-          break;
-          
-        case 'export':
-          const exportResult = await fileMigrationService.createDashboardExport(
-            userId, 
-            dashboardId, 
-            fileAction.format
-          );
-          migrationResult = { exportResult };
-          break;
-      }
-    }
-    
-    // Delete the dashboard
-    const result = await dashboardService.deleteDashboard(userId, dashboardId);
-    if (result.count === 0) {
-      res.sendStatus(404);
-      return;
-    }
-    
-    res.json({ 
-      deleted: result.count, 
-      migration: migrationResult,
-      message: migrationResult ? 
-        `Dashboard deleted and files handled successfully` : 
-        `Dashboard deleted successfully`
-    });
+
+    res.json(result);
     return;
   } catch (err) {
     next(err);

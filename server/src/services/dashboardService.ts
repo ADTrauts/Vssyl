@@ -1,7 +1,17 @@
 import { prisma } from '../lib/prisma';
 import { HouseholdRole, Prisma } from '@prisma/client';
-import { logger } from '../lib/logger';
-import { seedBusinessWorkspaceResources } from './businessWorkspaceSeeder';
+import {
+  recordDashboardCreated,
+  recordDashboardDeleted,
+  recordDashboardUpdated,
+  contextFromDashboard,
+} from './dashboardActivityService';
+import {
+  recordDashboardTabCreatedDomainEvent,
+  recordDashboardTabDeletedDomainEvent,
+} from './dashboardDomainEventService';
+import { prepareDashboardTabDeletion } from './chat/chatDashboardLifecycleService';
+import * as fileMigrationService from './fileMigrationService';
 
 /** Invalid context or forbidden tenant access when creating a context-bound dashboard */
 export class DashboardCreationError extends Error {
@@ -242,92 +252,50 @@ export async function createDashboard(userId: string, data: { name: string; layo
       householdId: data.householdId,
     },
   });
-  
-  // NOTE: No longer auto-creating default widgets
-  // Frontend DashboardBuildOutModal will prompt user to select modules
-  // This allows for customizable dashboard creation experience
-
-  // Auto-provision personal primary calendar if this is a personal dashboard
-  if (!data.businessId && !data.institutionId && !data.householdId) {
-    try {
-      const existingCalendar = await prisma.calendar.findFirst({
-        where: {
-          contextType: 'PERSONAL',
-          contextId: userId,
-          isPrimary: true,
-        },
-      });
-
-      if (!existingCalendar) {
-        const createdCalendar = await prisma.calendar.create({
-          data: {
-            name: data.name,
-            contextType: 'PERSONAL',
-            contextId: userId,
-            isPrimary: true,
-            isSystem: true,
-            isDeletable: false,
-            defaultReminderMinutes: 10,
-            members: {
-              create: {
-                userId,
-                role: 'OWNER',
-              },
-            },
-          },
-        });
-        await logger.info('Auto-provisioned personal primary calendar on dashboard creation', {
-          operation: 'auto_provision_personal_calendar',
-          context: { userId, dashboardId: dashboard.id, calendarId: createdCalendar.id, calendarName: data.name },
-        });
-      }
-    } catch (error: unknown) {
-      const err = error as Error;
-      await logger.error('Failed to auto-provision personal calendar on dashboard creation', {
-        operation: 'auto_provision_personal_calendar',
-        error: { message: err.message, stack: err.stack },
-        context: { userId, dashboardId: dashboard.id },
-      });
-      // Don't fail dashboard creation if calendar creation fails
-    }
-  }
 
   const dashboardWithWidgets = await prisma.dashboard.findUnique({
     where: { id: dashboard.id },
     include: { widgets: true },
   });
 
-  if (dashboardWithWidgets && data.businessId) {
-    const business = await prisma.business.findUnique({
-      where: { id: data.businessId },
-      select: { name: true },
+  if (dashboardWithWidgets) {
+    await recordDashboardCreated({
+      actorUserId: userId,
+      dashboard: {
+        id: dashboardWithWidgets.id,
+        name: dashboardWithWidgets.name,
+        businessId: dashboardWithWidgets.businessId,
+        householdId: dashboardWithWidgets.householdId,
+        institutionId: dashboardWithWidgets.institutionId,
+      },
     });
+    recordDashboardTabCreatedDomainEvent({
+      actorUserId: userId,
+      dashboard: dashboardWithWidgets,
+    });
+  }
+  return dashboardWithWidgets;
+}
 
-    try {
-      await seedBusinessWorkspaceResources({
-        userId,
-        businessId: data.businessId,
-        businessName: business?.name,
-        dashboardId: dashboardWithWidgets.id,
-      });
-    } catch (error) {
-      await logger.error('Failed to seed business workspace resources', {
-        operation: 'seed_business_workspace',
-        error: {
-          message: error instanceof Error ? error.message : 'Unknown error',
-          stack: error instanceof Error ? error.stack : undefined,
-        },
-        context: {
-          userId,
-          businessId: data.businessId,
-          dashboardId: dashboardWithWidgets.id,
-        },
-      });
-    }
+export async function ensureDefaultPersonalDashboard(userId: string) {
+  const existing = await prisma.dashboard.findFirst({
+    where: {
+      userId,
+      businessId: null,
+      institutionId: null,
+      householdId: null,
+      trashedAt: null,
+    },
+    include: { widgets: true },
+    orderBy: { createdAt: 'asc' },
+  });
+
+  if (existing) {
+    return { dashboard: existing, created: false };
   }
 
-  // Return the dashboard with empty widgets array
-  return dashboardWithWidgets;
+  const dashboard = await createDashboard(userId, { name: 'My Dashboard' });
+  return { dashboard, created: true };
 }
 
 export async function getDashboardById(userId: string, dashboardId: string) {
@@ -402,10 +370,21 @@ export async function updateDashboard(userId: string, dashboardId: string, data:
     data: updateData,
   });
   if (updated.count === 0) return null;
-  return prisma.dashboard.findFirst({ where: { id: dashboardId, userId }, include: { widgets: true } });
+  const dashboard = await prisma.dashboard.findFirst({ where: { id: dashboardId, userId }, include: { widgets: true } });
+  if (dashboard) {
+    const changedFields = Object.keys(updateData);
+    if (changedFields.length > 0) {
+      await recordDashboardUpdated({
+        actorUserId: userId,
+        dashboard: contextFromDashboard(dashboard),
+        changedFields,
+      });
+    }
+  }
+  return dashboard;
 }
 
-export async function deleteDashboard(userId: string, dashboardId: string) {
+export async function deleteDashboard(userId: string, dashboardId: string, options?: { fileAction?: string }) {
   // First, validate that the user exists
   const user = await prisma.user.findUnique({
     where: { id: userId },
@@ -419,6 +398,8 @@ export async function deleteDashboard(userId: string, dashboardId: string) {
   // Fetch the dashboard to check its associations
   const dashboard = await prisma.dashboard.findFirst({ where: { id: dashboardId, userId } });
   if (!dashboard) return { count: 0 };
+
+  const activityCtx = contextFromDashboard(dashboard);
   
   // Business and educational dashboards are protected
   if (dashboard.businessId || dashboard.institutionId) {
@@ -439,43 +420,123 @@ export async function deleteDashboard(userId: string, dashboardId: string) {
     });
 
     if (!ownerMembership) {
-      // Only household owner can delete household dashboard
       return { count: 0 };
     }
 
-    // Delete widgets and conversations first to avoid foreign key issues
     await prisma.widget.deleteMany({
       where: { dashboardId },
     });
-    
-    await prisma.conversation.deleteMany({
-      where: { dashboardId },
-    });
 
-    // Delete the dashboard first
+    await prepareDashboardTabDeletion({ actorUserId: userId, dashboardId });
+
     const dashboardDeleteResult = await prisma.dashboard.deleteMany({
       where: { id: dashboardId, userId },
     });
 
-    // Then delete the household and its members
     await prisma.household.delete({
-      where: { id: dashboard.householdId }
+      where: { id: dashboard.householdId },
     });
+
+    if (dashboardDeleteResult.count > 0) {
+      await recordDashboardDeleted({
+        actorUserId: userId,
+        dashboard: activityCtx,
+        hardDelete: true,
+      });
+      recordDashboardTabDeletedDomainEvent({
+        actorUserId: userId,
+        dashboard: activityCtx,
+        hardDelete: true,
+      });
+    }
 
     return dashboardDeleteResult;
-  } else {
-    // For regular dashboards, delete widgets and conversations first
-    await prisma.widget.deleteMany({
-      where: { dashboardId },
-    });
-    
-    await prisma.conversation.deleteMany({
-      where: { dashboardId },
-    });
+  }
 
-    // Delete the dashboard
-    return prisma.dashboard.deleteMany({
-      where: { id: dashboardId, userId },
+  await prisma.widget.deleteMany({
+    where: { dashboardId },
+  });
+
+  await prepareDashboardTabDeletion({ actorUserId: userId, dashboardId });
+
+  const result = await prisma.dashboard.deleteMany({
+    where: { id: dashboardId, userId },
+  });
+
+  if (result.count > 0) {
+    await recordDashboardDeleted({
+      actorUserId: userId,
+      dashboard: activityCtx,
+      hardDelete: true,
+      fileAction: options?.fileAction,
+    });
+    recordDashboardTabDeletedDomainEvent({
+      actorUserId: userId,
+      dashboard: activityCtx,
+      hardDelete: true,
+      fileAction: options?.fileAction,
     });
   }
+
+  return result;
+}
+
+export interface DeleteDashboardWithFilesResult {
+  deleted: number;
+  migration: unknown;
+  message: string;
+}
+
+export async function deleteDashboardWithFiles(
+  userId: string,
+  dashboardId: string,
+  fileAction?: fileMigrationService.FileHandlingAction
+): Promise<DeleteDashboardWithFilesResult | null> {
+  const dashboard = await getDashboardById(userId, dashboardId);
+  if (!dashboard) {
+    return null;
+  }
+
+  let migrationResult: unknown = null;
+
+  if (fileAction) {
+    switch (fileAction.type) {
+      case 'move-to-main': {
+        const folderName =
+          fileAction.folderName || fileMigrationService.generateLabeledFolderName(dashboard.name);
+        migrationResult = await fileMigrationService.moveFilesToMainDrive(userId, dashboardId, {
+          createFolder: fileAction.createFolder,
+          folderName: fileAction.createFolder ? folderName : undefined,
+        });
+        break;
+      }
+      case 'move-to-trash':
+        migrationResult = await fileMigrationService.moveFilesToTrash(userId, dashboardId, {
+          retentionDays: fileAction.retentionDays,
+        });
+        break;
+      case 'export': {
+        const exportResult = await fileMigrationService.createDashboardExport(
+          userId,
+          dashboardId,
+          fileAction.format
+        );
+        migrationResult = { exportResult };
+        break;
+      }
+    }
+  }
+
+  const result = await deleteDashboard(userId, dashboardId, { fileAction: fileAction?.type });
+  if (result.count === 0) {
+    return null;
+  }
+
+  return {
+    deleted: result.count,
+    migration: migrationResult,
+    message: migrationResult
+      ? 'Dashboard deleted and files handled successfully'
+      : 'Dashboard deleted successfully',
+  };
 }

@@ -74,6 +74,68 @@ describe('authorize (policyEngine)', () => {
     expect(d.matchedPolicy).toBe('delegate_owner_scope');
   });
 
+  it('dashboard:read list allows authenticated user', async () => {
+    const d = await authorize({
+      userId: 'u1',
+      action: POLICY_ACTIONS.DASHBOARD_READ,
+      resourceType: 'dashboard',
+      resourceId: 'u1',
+      metadata: { operation: 'list' },
+    });
+    expect(d.allow).toBe(true);
+    expect(d.matchedPolicy).toBe('dashboard_list_authenticated');
+  });
+
+  it('dashboard:write denies non-owner on existing dashboard', async () => {
+    vi.spyOn(prisma.dashboard, 'findFirst').mockResolvedValue({
+      id: 'd1',
+      userId: 'u_owner',
+      businessId: null,
+      householdId: null,
+    } as never);
+
+    const d = await authorize({
+      userId: 'u_intruder',
+      action: POLICY_ACTIONS.DASHBOARD_WRITE,
+      resourceType: 'dashboard',
+      resourceId: 'd1',
+      scope: { dashboardId: 'd1' },
+    });
+    expect(d.allow).toBe(false);
+    expect(d.reason).toBe('NOT_OWNER');
+  });
+
+  it('dashboard:write allows authenticated create path', async () => {
+    const d = await authorize({
+      userId: 'u1',
+      action: POLICY_ACTIONS.DASHBOARD_WRITE,
+      resourceType: 'dashboard',
+      resourceId: 'u1',
+      metadata: { operation: 'create' },
+    });
+    expect(d.allow).toBe(true);
+    expect(d.matchedPolicy).toBe('dashboard_authenticated_write');
+  });
+
+  it('dashboard:delete allows owner delete', async () => {
+    vi.spyOn(prisma.dashboard, 'findFirst').mockResolvedValue({
+      id: 'd1',
+      userId: 'u1',
+      businessId: null,
+      householdId: null,
+    } as never);
+
+    const d = await authorize({
+      userId: 'u1',
+      action: POLICY_ACTIONS.DASHBOARD_DELETE,
+      resourceType: 'dashboard',
+      resourceId: 'd1',
+      scope: { dashboardId: 'd1' },
+    });
+    expect(d.allow).toBe(true);
+    expect(d.matchedPolicy).toBe('dashboard_owner_delete');
+  });
+
   it('calendar:event.create allows editor membership', async () => {
     vi.spyOn(prisma.calendarMember, 'findFirst').mockResolvedValue({ id: 'm1' } as never);
 

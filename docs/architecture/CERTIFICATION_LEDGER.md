@@ -1,7 +1,7 @@
 # Platform Module Certification Ledger
 
 **Version:** 1.0.0  
-**Last updated:** 2026-06-20 (Account Platform trilogy + umbrella L3 WITH FINDINGS executed; program archived)  
+**Last updated:** 2026-06-21 (Dashboard L3 WITH FINDINGS executed; Wave 3 program archived)  
 **Status:** Active — executive dashboard for platform architecture health  
 **Owner:** Platform Engineering / Architecture Governance
 
@@ -93,7 +93,7 @@ Vssyl certifies modules against **two authorities simultaneously**. A module is 
 | **Notebook** | `notebook` | **High** | **Partial** | **3 — Certified** | **Composition module** (2026-06-02) — not Reference #5 | [NOTEBOOK_LEVEL3_CERTIFICATION_REVIEW](./audits/NOTEBOOK_LEVEL3_CERTIFICATION_REVIEW.md), [NOTEBOOK_OPERATION_MATRIX](./audits/NOTEBOOK_OPERATION_MATRIX.md) |
 | **Notes** | `notes` | **Partial** | **Low** | **2 — Sub-domain** | **Dependency** of Notebook L3 — page storage; Global Trash handler | `notes*Service`; `notes:page` entity; no separate product L3 |
 | **Place** | `place` | **Partial** | **Partial** | **3 — Certified** | **Reference Module #5** (Level 3) — Wave **4B** council 2026-06-02 | [PLACE_REFERENCE_COUNCIL_REVIEW](./audits/PLACE_REFERENCE_COUNCIL_REVIEW.md), [PLACE_PATTERN_GUIDE](./PLACE_PATTERN_GUIDE.md), [PLACE_COMMERCE_BOUNDARY](./PLACE_COMMERCE_BOUNDARY.md), [PLACE_LEVEL3_CERTIFICATION_REVIEW](./audits/PLACE_LEVEL3_CERTIFICATION_REVIEW.md) |
-| **Dashboard** | `dashboard` | **Partial** | **Partial** | **1 — Stabilizing** | Not started (Wave 3) | Dual widget registry; weak activity |
+| **Dashboard** | `dashboard` | **High** | **Partial** | **3 — Certified** | **LEVEL 3 CERTIFIED WITH FINDINGS** · Ratified & executed 2026-06-21 (RD-DASH-001) · G1–G9 **24/27 (~89%)** · **0 blocking · 4 majors (M1-R, M4, M5, M7) · 7 advisories** · Program **ARCHIVED** — [DASHBOARD_CERTIFICATION_RECORD](../dashboard/DASHBOARD_CERTIFICATION_RECORD.md), [DASHBOARD_GOVERNANCE_EXECUTION](../dashboard/DASHBOARD_GOVERNANCE_EXECUTION.md), [DASHBOARD_COUNCIL_RATIFICATION](../dashboard/DASHBOARD_COUNCIL_RATIFICATION.md), [DASHBOARD_OPERATION_MATRIX](../dashboard/DASHBOARD_OPERATION_MATRIX.md), [DASHBOARD_PROGRAM_ARCHIVE](../dashboard/DASHBOARD_PROGRAM_ARCHIVE.md) |
 | **Analytics** | `analytics` | **Partial** | **N/A** | **1 — Stabilizing** | Not started (Wave 3) | Pseudo-module; subscriber stubs |
 | **Business Workspace** | *(platform shell)* | **Partial** | **Partial** | **WS-L3 — Certified WITH FINDINGS** | **WS-L3 CERTIFIED WITH FINDINGS** · Ratified & promoted 2026-06-19 · **co-surface** of Reference Workspace program · **not** standalone L3 product module · Dashboard `dashboard` id **out of scope** | [WORKSPACE_CERTIFICATION_RECORD](../workspace/WORKSPACE_CERTIFICATION_RECORD.md), [WORKSPACE_COUNCIL_RATIFICATION](../workspace/WORKSPACE_COUNCIL_RATIFICATION.md), [BUSINESS_WORKSPACE_OPERATION_MATRIX](./audits/BUSINESS_WORKSPACE_OPERATION_MATRIX.md), [REFERENCE_WORKSPACE_PLATFORM_SHELL.md](./REFERENCE_WORKSPACE_PLATFORM_SHELL.md) |
 | **HR** | `hr` | **High** | **Partial** | **3 — Certified** | **LEVEL 3 CERTIFIED WITH FINDINGS** · Ratified & promoted 2026-06-19 · **Reference Candidate #1 — Workforce Lifecycle** · Domain G1–G9 **24/27 (~89%)** · **6 advisories** | [HR_OPERATION_MATRIX](./audits/HR_OPERATION_MATRIX.md), [BUSINESS_OPERATIONS_CERTIFICATION_RECORD](../business-operations/BUSINESS_OPERATIONS_CERTIFICATION_RECORD.md), [BUSINESS_OPERATIONS_COUNCIL_RATIFICATION](../business-operations/BUSINESS_OPERATIONS_COUNCIL_RATIFICATION.md) |
@@ -176,20 +176,20 @@ Copy row into module audit; mark ✅ / ⚠️ / ❌.
 
 | Requirement | File Hub | Chat | Calendar | Todo | Notes | Place | Dashboard | Analytics | Bus. Workspace |
 |-------------|----------|------|----------|------|-------|-------|-----------|-----------|----------------|
-| Canonical services | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ | ⚠️ | ⚠️ | ⚠️ |
-| Thin controllers | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ❌ | ⚠️ | ⚠️ | N/A |
-| Policy Engine | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ | ⚠️ | ⚠️ | ⚠️ |
-| Global Trash handler | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ | ⚠️ | N/A | ⚠️ |
+| Canonical services | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ | ✅ | ⚠️ | ⚠️ |
+| Thin controllers | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ❌ | ✅ | ⚠️ | N/A |
+| Policy Engine | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ | ✅ | ⚠️ | ⚠️ |
+| Global Trash handler | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ | ✅ | N/A | ⚠️ |
 | V_Link (if declared) | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ | N/A | ⚠️ |
 | Platform entities | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ | ⚠️ | ⚠️ | ⚠️ |
-| Domain events | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ | ⚠️ | ⚠️ | ⚠️ |
-| Module activity writes | ✅ | ✅ | ✅ | ✅ | ⚠️ | ❌ | ❌ | ⚠️ | ⚠️ |
-| Notifications | ✅ | ✅ | ✅ | ✅ | ⚠️ | ❌ | ❌ | N/A | ⚠️ |
+| Domain events | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ | ✅ | ⚠️ | ⚠️ |
+| Module activity writes | ✅ | ✅ | ✅ | ✅ | ⚠️ | ❌ | ✅ | ⚠️ | ⚠️ |
+| Notifications | ✅ | ✅ | ✅ | ✅ | ⚠️ | ❌ | ⚠️ | N/A | ⚠️ |
 | Realtime | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ | ⚠️ | N/A | ⚠️ |
-| AI compliance | ✅ | ✅ | ⚠️ | ❌ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ |
+| AI compliance | ✅ | ✅ | ⚠️ | ❌ | ⚠️ | ⚠️ | ✅ | ⚠️ | ⚠️ |
 | Capability truth | ✅ | ✅ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ |
 | Tests | ✅ | ✅ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ |
-| Documentation | ✅ | ✅ | ❌ | ⚠️ | ❌ | ❌ | ⚠️ | ⚠️ | ⚠️ |
+| Documentation | ✅ | ✅ | ❌ | ⚠️ | ❌ | ❌ | ✅ | ⚠️ | ⚠️ |
 | Legacy retired | ⚠️ | ✅ | ❌ | ❌ | ❌ | ❌ | ⚠️ | ⚠️ | ⚠️ |
 
 ---
@@ -322,7 +322,7 @@ Waves align with [`PLATFORM_MODULE_MODERNIZATION_ROADMAP.md`](../plans/PLATFORM_
 |--------|-------------|-------|-------------------|------------|---------------|--------------|
 | Place | ○ | **●** | **●** | **●** | **●** | 3 |
 | Business Workspace | **●** | **●** | ○ | ○ | ○ | 2 (platform shell) |
-| Dashboard | **●** | ○ | ○ | ○ | ○ | 2 |
+| Dashboard | ○ | **●** | **●** | **●** | **●** | **3 — L3 CwF** |
 | Analytics | **●** | ○ | ○ | ○ | ○ | 2 |
 
 **Place** certified **Level 3** (Wave 3C). **Reference Module #5** designated (Wave 4B council). Optional post-Reference hygiene PL-H1–H7.
@@ -378,6 +378,7 @@ Waves align with [`PLATFORM_MODULE_MODERNIZATION_ROADMAP.md`](../plans/PLATFORM_
 
 | Date | Change |
 |------|--------|
+| 2026-06-21 | **Dashboard** — **LEVEL 3 CERTIFIED WITH FINDINGS** executed (RD-DASH-001); G1–G9 **24/27 (~89%)**; 0 blocking · 4 majors (M1-R, M4, M5, M7) · 7 advisories; program **ARCHIVED** — [DASHBOARD_CERTIFICATION_RECORD](../dashboard/DASHBOARD_CERTIFICATION_RECORD.md), [DASHBOARD_GOVERNANCE_EXECUTION](../dashboard/DASHBOARD_GOVERNANCE_EXECUTION.md), [DASHBOARD_PROGRAM_ARCHIVE](../dashboard/DASHBOARD_PROGRAM_ARCHIVE.md) |
 | 2026-06-20 | **Account Platform** — **Final Governance Execution**: **LEVEL 3 CERTIFIED WITH FINDINGS** executed for **PP-3 Billing & Entitlements** (23/27) and **Account Platform umbrella** (22/27); PP-1/PP-2 rows reaffirmed; **#AP-BILL-1** reference catalog; 0 blocking · 7 umbrella majors · 19 advisories; program **ARCHIVED** — [ACCOUNT_PLATFORM_CERTIFICATION_RECORD](../account-platform/ACCOUNT_PLATFORM_CERTIFICATION_RECORD.md), [PP3_CERTIFICATION_RECORD](../account-platform/PP3_CERTIFICATION_RECORD.md), [ACCOUNT_PLATFORM_PROGRAM_ARCHIVE](../account-platform/ACCOUNT_PLATFORM_PROGRAM_ARCHIVE.md), [ACCOUNT_PLATFORM_GOVERNANCE_EXECUTION](../account-platform/ACCOUNT_PLATFORM_GOVERNANCE_EXECUTION.md) |
 | 2026-06-20 | **Account Platform** — **LEVEL 3 CERTIFIED WITH FINDINGS** executed for **PP-1 Identity & Profile** (24/27) and **PP-2 Settings Platform** (26/27); platform system rows; 0 blocking; certification tracks archived — [PP1_CERTIFICATION_RECORD](../account-platform/PP1_CERTIFICATION_RECORD.md), [PP2_CERTIFICATION_RECORD](../account-platform/PP2_CERTIFICATION_RECORD.md) |
 | 2026-06-19 | **Reference Workspace** — **WS-L3 CERTIFIED WITH FINDINGS** awarded (WS-L3-3); platform row + Business Workspace co-surface update; Reference Workspace With Findings; 11 advisories; program archived — [WORKSPACE_CERTIFICATION_RECORD](../workspace/WORKSPACE_CERTIFICATION_RECORD.md), [WORKSPACE_PROGRAM_ARCHIVE](../workspace/WORKSPACE_PROGRAM_ARCHIVE.md) |

@@ -169,7 +169,7 @@ export const CORE_MODULE_DEFINITIONS: ModuleDefinition[] = [
   coreModule({
     id: 'quickstats',
     name: 'Quick Stats',
-    description: 'Key metrics at a glance',
+    description: 'Dashboard-hosted widget; data owned by Analytics capability (K3-04)',
     icon: 'analytics',
     requiredPermissions: [],
     widgets: ['quickstats'],

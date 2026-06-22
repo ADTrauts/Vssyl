@@ -8,6 +8,8 @@ import { placeholderAnalyticsDomainEventConsumer } from './subscribers/analytics
 import { consumeDomainEventForAI } from '../ai/consumers/AIEventConsumer';
 import { deliverDomainEventToWebhooks } from './subscribers/webhookDomainEventSubscriber';
 import { searchIndexDomainEventConsumer } from './subscribers/searchIndexDomainEventSubscriber';
+import { calendarDashboardTabCreatedConsumer } from './subscribers/calendarDashboardDomainEventSubscriber';
+import { workspaceDashboardTabCreatedConsumer } from './subscribers/workspaceDashboardDomainEventSubscriber';
 import { routeDomainEventToWorkflows } from '../workflows/domainEventWorkflowRouter';
 
 let registered = false;
@@ -52,5 +54,7 @@ export function registerDomainEventSubscribers(): void {
     void runSubscriber('webhook_subscriptions', (e) => deliverDomainEventToWebhooks(e), event);
     void runSubscriber('search_index_stub', (e) => searchIndexDomainEventConsumer(e), event);
     void runSubscriber('workflow_router_stub', (e) => routeDomainEventToWorkflows(e), event);
+    void runSubscriber('calendar_dashboard_bootstrap', (e) => calendarDashboardTabCreatedConsumer(e), event);
+    void runSubscriber('workspace_dashboard_seed', (e) => workspaceDashboardTabCreatedConsumer(e), event);
   });
 }

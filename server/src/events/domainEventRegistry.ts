@@ -178,6 +178,10 @@ export const DOMAIN_EVENT_TYPES = {
   BILLING_SUBSCRIPTION_CANCELLED: 'billing.subscription_cancelled',
   BILLING_SUBSCRIPTION_RESUMED: 'billing.subscription_resumed',
   BILLING_SYNC_COMPLETED: 'billing.sync_completed',
+  DASHBOARD_TAB_CREATED: 'dashboard.tab.created',
+  DASHBOARD_TAB_DELETED: 'dashboard.tab.deleted',
+  DASHBOARD_WIDGET_ADDED: 'dashboard.widget.added',
+  DASHBOARD_WIDGET_REMOVED: 'dashboard.widget.removed',
 } as const;
 
 export type DomainEventType = (typeof DOMAIN_EVENT_TYPES)[keyof typeof DOMAIN_EVENT_TYPES];
@@ -1814,6 +1818,42 @@ export const DOMAIN_EVENT_CONTRACTS: Record<DomainEventType, DomainEventContract
     version: 1,
     description: 'Subscription state synced from Stripe via billingService.',
     recommendedMetadataFields: ['source'],
+    disallowedMetadataFields: [],
+  },
+  [DOMAIN_EVENT_TYPES.DASHBOARD_TAB_CREATED]: {
+    type: DOMAIN_EVENT_TYPES.DASHBOARD_TAB_CREATED,
+    entityType: 'Dashboard',
+    defaultAction: 'create',
+    version: 1,
+    description: 'Dashboard tab created.',
+    recommendedMetadataFields: ['moduleId', 'contextType', 'userId', 'name'],
+    disallowedMetadataFields: [],
+  },
+  [DOMAIN_EVENT_TYPES.DASHBOARD_TAB_DELETED]: {
+    type: DOMAIN_EVENT_TYPES.DASHBOARD_TAB_DELETED,
+    entityType: 'Dashboard',
+    defaultAction: 'delete',
+    version: 1,
+    description: 'Dashboard tab permanently deleted.',
+    recommendedMetadataFields: ['moduleId', 'hardDelete', 'fileAction'],
+    disallowedMetadataFields: [],
+  },
+  [DOMAIN_EVENT_TYPES.DASHBOARD_WIDGET_ADDED]: {
+    type: DOMAIN_EVENT_TYPES.DASHBOARD_WIDGET_ADDED,
+    entityType: 'Widget',
+    defaultAction: 'add',
+    version: 1,
+    description: 'Widget added to dashboard tab.',
+    recommendedMetadataFields: ['moduleId', 'widgetType', 'dashboardId'],
+    disallowedMetadataFields: [],
+  },
+  [DOMAIN_EVENT_TYPES.DASHBOARD_WIDGET_REMOVED]: {
+    type: DOMAIN_EVENT_TYPES.DASHBOARD_WIDGET_REMOVED,
+    entityType: 'Widget',
+    defaultAction: 'remove',
+    version: 1,
+    description: 'Widget removed from dashboard tab.',
+    recommendedMetadataFields: ['moduleId', 'widgetType', 'dashboardId'],
     disallowedMetadataFields: [],
   },
 };

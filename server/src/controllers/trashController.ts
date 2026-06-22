@@ -14,6 +14,11 @@ import {
   listAccessibleTrashedFiles,
   listAccessibleTrashedFolders,
 } from '../services/driveVisibilityService';
+import {
+  permanentlyDeleteDashboardTab,
+  restoreDashboardTab,
+  softTrashDashboardTab,
+} from '../services/dashboardTrashService';
 
 function hasUserId(user: unknown): user is { id: string } | { sub: string } {
   return typeof user === 'object' && user !== null && 
@@ -827,7 +832,7 @@ export async function trashItem(req: Request, res: Response) {
     const userId = (req.user as any).id || (req.user as any).sub;
     const { id, name, type, moduleId, moduleName, metadata }: TrashItemRequest = req.body;
 
-    let result;
+    let result: { count: number } | undefined;
 
     switch (type) {
       case 'file':
@@ -878,12 +883,11 @@ export async function trashItem(req: Request, res: Response) {
         }
       }
 
-      case 'dashboard_tab':
-        result = await prisma.dashboard.updateMany({
-          where: { id, userId, trashedAt: null },
-          data: { trashedAt: new Date() },
-        });
+      case 'dashboard_tab': {
+        const handled = await softTrashDashboardTab(res, userId, id);
+        if (handled) return;
         break;
+      }
 
       case 'ai_conversation':
         result = await prisma.aIConversation.updateMany({
@@ -1053,7 +1057,7 @@ export async function trashItem(req: Request, res: Response) {
         return res.status(400).json({ message: 'Invalid item type' });
     }
 
-    if (result.count === 0) {
+    if (!result || result.count === 0) {
       return res.status(404).json({ message: 'Item not found or already trashed' });
     }
 
@@ -1138,6 +1142,11 @@ export async function restoreItem(req: Request, res: Response) {
     } catch (error: unknown) {
       if (mapHRTrashError(res, error)) return;
       throw error;
+    }
+
+    if (type === 'dashboard_tab' || moduleId === 'dashboard') {
+      const handled = await restoreDashboardTab(res, userId, id);
+      if (handled) return;
     }
 
     // Try to restore from each table (non-module handlers)
@@ -1245,6 +1254,11 @@ export async function deleteItem(req: Request, res: Response) {
     } catch (error: unknown) {
       if (mapHRTrashError(res, error)) return;
       throw error;
+    }
+
+    if (type === 'dashboard_tab' || moduleId === 'dashboard') {
+      const handled = await permanentlyDeleteDashboardTab(res, userId, id);
+      if (handled) return;
     }
 
     // Try to delete from each table (non-module handlers)

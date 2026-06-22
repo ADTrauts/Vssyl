@@ -3,6 +3,8 @@
  */
 export const POLICY_ACTIONS = {
   DASHBOARD_READ: 'dashboard:read',
+  DASHBOARD_WRITE: 'dashboard:write',
+  DASHBOARD_DELETE: 'dashboard:delete',
   BUSINESS_UPDATE: 'business:update',
   BUSINESS_MEMBER_MANAGE: 'business:member.manage',
   BUSINESS_MEMBER_INVITE: 'business:member.invite',

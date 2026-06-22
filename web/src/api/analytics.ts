@@ -1,4 +1,7 @@
+import type { DashboardAnalyticsSummary } from 'shared/types';
 import { authenticatedApiCall } from '../lib/apiUtils';
+
+export type { DashboardAnalyticsSummary };
 
 export interface PersonalAnalytics {
   usageStats: {
@@ -70,6 +73,19 @@ export const getModuleAnalytics = async (moduleId: string, timeRange: '7d' | '30
 // Export analytics data
 export const exportAnalytics = async (format: 'csv' | 'json' = 'json', timeRange: '7d' | '30d' | '90d' = '30d'): Promise<AnalyticsExportData> => {
   const response = await authenticatedApiCall<{ success: boolean; data: AnalyticsExportData }>(`/api/analytics/export?format=${format}&timeRange=${timeRange}`, {
+    method: 'GET',
+  });
+  return response.data;
+};
+
+/** Analytics Capability — dashboard-scoped summary (Package 3). */
+export const getDashboardAnalyticsSummary = async (
+  dashboardId: string
+): Promise<DashboardAnalyticsSummary> => {
+  const response = await authenticatedApiCall<{
+    success: boolean;
+    data: DashboardAnalyticsSummary;
+  }>(`/api/analytics/dashboard-summary?dashboardId=${encodeURIComponent(dashboardId)}`, {
     method: 'GET',
   });
   return response.data;

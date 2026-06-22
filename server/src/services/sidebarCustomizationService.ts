@@ -1,6 +1,7 @@
 import { prisma } from '../lib/prisma';
 import { Prisma } from '@prisma/client';
 import { logger } from '../lib/logger';
+import { contextFromDashboard, recordSidebarCustomized } from './dashboardActivityService';
 
 // Type definitions (mirrored from web/src/types/sidebar.ts)
 export interface SidebarFolder {
@@ -254,7 +255,7 @@ export async function saveSidebarConfig(
 ): Promise<void> {
   const dashboard = await prisma.dashboard.findFirst({
     where: { id: dashboardId, userId },
-    select: { preferences: true },
+    select: { preferences: true, businessId: true, householdId: true, institutionId: true, id: true },
   });
 
   if (!dashboard) {
@@ -272,6 +273,14 @@ export async function saveSidebarConfig(
     data: {
       preferences: updatedPreferences as Prisma.InputJsonValue,
     },
+  });
+
+  await recordSidebarCustomized({
+    actorUserId: userId,
+    dashboard: contextFromDashboard(dashboard),
+    scope: 'save',
+    leftChanged: Boolean(config.leftSidebar && Object.keys(config.leftSidebar).length > 0),
+    rightChanged: Boolean(config.rightSidebar && Object.keys(config.rightSidebar).length > 0),
   });
 
   await logger.info('Sidebar customization saved', {
@@ -294,7 +303,7 @@ export async function resetSidebarConfig(
 ): Promise<void> {
   const dashboard = await prisma.dashboard.findFirst({
     where: { id: dashboardId, userId },
-    select: { preferences: true, businessId: true },
+    select: { preferences: true, businessId: true, householdId: true, institutionId: true, id: true },
   });
 
   if (!dashboard) {
@@ -351,6 +360,14 @@ export async function resetSidebarConfig(
     data: {
       preferences: updatedPreferences as Prisma.InputJsonValue,
     },
+  });
+
+  await recordSidebarCustomized({
+    actorUserId: userId,
+    dashboard: contextFromDashboard(dashboard),
+    scope: options?.scope ?? 'global',
+    leftChanged: options?.scope === 'tab' || options?.scope === 'global' || !options?.scope,
+    rightChanged: options?.scope === 'sidebar' || options?.scope === 'global' || !options?.scope,
   });
 
   await logger.info('Sidebar customization reset', {

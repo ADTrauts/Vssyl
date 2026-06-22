@@ -242,7 +242,7 @@ UX reference slots live under `docs/ux/audits/` per [`REFERENCE_MODULE_PROGRAM.m
 | **Open majors** | **0** |
 | **Open advisories** | **11** — tracked on certificate; 90-day remediation plan |
 | **Co-surfaces** | Business Workspace shell · Personal Dashboard shell |
-| **Dashboard module** | **Out of scope** — `dashboard` ledger row unchanged (L1) |
+| **Dashboard module** | **Separate certification** — `dashboard` **L3 WITH FINDINGS** executed 2026-06-21 (see Dashboard section below) |
 | **Program status** | **ARCHIVED** — [WORKSPACE_PROGRAM_ARCHIVE.md](../workspace/WORKSPACE_PROGRAM_ARCHIVE.md) |
 
 ### Qualifying reference areas
@@ -264,10 +264,47 @@ UX reference slots live under `docs/ux/audits/` per [`REFERENCE_MODULE_PROGRAM.m
 - Not Architecture Reference Module #N integer
 - Not UX Reference #6 slot
 - Not plain Reference Workspace (11 advisories + REG-B3 open)
-- Not Dashboard **module** L3 (`DashboardClient` widget grid — separate Wave 3)
+- Not Dashboard **module** plain L3 — **L3 WITH FINDINGS** executed 2026-06-21; separate from shell certification
 - Not authorization for new workspace modernization program waves (program archived)
 
 **Governance records:** [WORKSPACE_REFERENCE_STATUS_RECORD.md](../workspace/WORKSPACE_REFERENCE_STATUS_RECORD.md), [WORKSPACE_REFERENCE_DECISION.md](../workspace/WORKSPACE_REFERENCE_DECISION.md), [WORKSPACE_CERTIFICATION_RECORD.md](../workspace/WORKSPACE_CERTIFICATION_RECORD.md), [WORKSPACE_COUNCIL_RATIFICATION.md](../workspace/WORKSPACE_COUNCIL_RATIFICATION.md)
+
+---
+
+## Dashboard — Level 3 Certified With Findings (2026-06-21)
+
+**Not** a Reference Module #N integer (#1–#5 remain File Hub, Chat, Calendar, Todo, Place). Dashboard certification is tracked as a **product module L3 WITH FINDINGS** — reference designation **Deferred**.
+
+| Field | Value |
+|-------|-------|
+| **Module id** | `dashboard` |
+| **Certification** | **LEVEL 3 CERTIFIED WITH FINDINGS** (ratified RD-DASH-001 2026-06-21; executed 2026-06-21) |
+| **Gates** | G1–G9 **24/27 (~89%)** — G1/G2/G3/G7/G8/G9 PASS; G4/G5/G6 PARTIAL |
+| **Open blockers** | **0** |
+| **Open majors** | **4** — M1-R (registry), M4 (matrix CI), M5 (tenancy), M7 (business hub) |
+| **Open advisories** | **7** — A1–A5, A7, A8 |
+| **Reference Module** | **Not designated** — **Deferred** |
+| **Program status** | **ARCHIVED** — [DASHBOARD_PROGRAM_ARCHIVE.md](../dashboard/DASHBOARD_PROGRAM_ARCHIVE.md) |
+
+### Qualifying teachable patterns (citation allowed — not Reference Module)
+
+| Pattern | What to copy | Key artifacts |
+|---------|--------------|---------------|
+| Widget composition host | Dashboard owns grid; modules supply widgets | `widgetRegistry`, `DashboardClient` |
+| Analytics consumption | Facade over Analytics capability API | `dashboardAnalyticsFacade`, `GET /api/analytics/dashboard-summary` |
+| Trust remediation sequence | PE + activity on all mutations | `dashboardActivityService`, `dashboardPolicyDual` |
+| Cross-module decoupling | Domain events for foreign side effects | `dashboardDomainEventService`, P2 subscribers |
+| Degraded honest metrics | Strict degraded mode when analytics unavailable | `QuickStatsWidget`, enterprise panel gating |
+
+### What this certification is NOT
+
+- Not Level 4 Reference Implementation (File Hub only)
+- Not Reference Module #N designation
+- Not plain **LEVEL 3 CERTIFIED** (27/27)
+- Not Personal/Business **Workspace shell** certification (WS-L3 separate co-surfaces)
+- Not Analytics **capability** certification (separate program)
+
+**Governance records:** [DASHBOARD_CERTIFICATION_RECORD.md](../dashboard/DASHBOARD_CERTIFICATION_RECORD.md), [DASHBOARD_GOVERNANCE_EXECUTION.md](../dashboard/DASHBOARD_GOVERNANCE_EXECUTION.md), [DASHBOARD_COUNCIL_RATIFICATION.md](../dashboard/DASHBOARD_COUNCIL_RATIFICATION.md), [DASHBOARD_REFERENCE_REVIEW.md](../dashboard/DASHBOARD_REFERENCE_REVIEW.md), [DASHBOARD_OPERATION_MATRIX.md](../dashboard/DASHBOARD_OPERATION_MATRIX.md)
 
 ---
 
@@ -551,7 +588,7 @@ UX reference slots live under `docs/ux/audits/` per [`REFERENCE_MODULE_PROGRAM.m
 | **AI surfaces** | File Hub (#1) read providers | Notifications (#2) routing | **Reference UX #4** — twin/chat workspace |
 | **Place** | **Self (future UX #6)** — graph/dual-surface; Drive #1 (confirm/trash/empty) | Calendar #5 (scheduling links), Todo UX #3 (hub chrome), File Hub (V_Link) | **Arch #5** + **UX-L3 Certified** — Ref UX **#6 Eligible CwF** (not registered) |
 | **Inbox / feed modules** | **Notifications UX #2** | Drive #1 (workspace), Calendar #5 (time-grid) | Management-page archetype; cross-module routing hub |
-| **Dashboard** | File Hub (manifest, activity), Chat (realtime widgets) | — | Widget registry, composition (not full module CRUD) |
+| **Dashboard** | File Hub (manifest, activity), Chat (realtime widgets) | Analytics facade (consumer) | **L3 CwF** — composition host + analytics consumer; not Reference Module |
 | **Analytics** | File Hub (activity vs analytics separation) | — | Read-only / derived metrics; often N/A trash |
 | **Business Workspace** | Notebook (composition), File Hub (manifest) | [WORKSPACE_ROUTING_CONTRACT.md](./WORKSPACE_ROUTING_CONTRACT.md) | **Registered** Reference Workspace hub — segment navigation, CI drift tests |
 
@@ -607,6 +644,7 @@ Use this catalog when filling **“reference module pattern to copy”** columns
 | Notebook (L3) | [NOTEBOOK_LEVEL3_CERTIFICATION_REVIEW.md](./audits/NOTEBOOK_LEVEL3_CERTIFICATION_REVIEW.md) | [NOTEBOOK_CONSTITUTIONAL_AUDIT.md](./audits/NOTEBOOK_CONSTITUTIONAL_AUDIT.md), [NOTEBOOK_OPERATION_MATRIX.md](./audits/NOTEBOOK_OPERATION_MATRIX.md) |
 | Place (Reference #5) | [PLACE_REFERENCE_COUNCIL_REVIEW.md](./audits/PLACE_REFERENCE_COUNCIL_REVIEW.md) | [PLACE_PATTERN_GUIDE.md](./PLACE_PATTERN_GUIDE.md), [PLACE_COMMERCE_BOUNDARY.md](./PLACE_COMMERCE_BOUNDARY.md), [PLACE_REFERENCE_IMPLEMENTATION_REVIEW.md](./audits/PLACE_REFERENCE_IMPLEMENTATION_REVIEW.md) |
 | Reference Workspace | [REFERENCE_WORKSPACE_REGISTRATION_REVIEW.md](./audits/REFERENCE_WORKSPACE_REGISTRATION_REVIEW.md) | [REFERENCE_WORKSPACE_PLATFORM_SHELL.md](./REFERENCE_WORKSPACE_PLATFORM_SHELL.md) |
+| Dashboard (L3 CwF) | [DASHBOARD_CERTIFICATION_RECORD.md](../dashboard/DASHBOARD_CERTIFICATION_RECORD.md) | [DASHBOARD_OPERATION_MATRIX.md](../dashboard/DASHBOARD_OPERATION_MATRIX.md), [DASHBOARD_GOVERNANCE_EXECUTION.md](../dashboard/DASHBOARD_GOVERNANCE_EXECUTION.md) |
 | AI Platform (cross-cutting) | [AI_PLATFORM_CERTIFICATION_STRATEGY.md](./AI_PLATFORM_CERTIFICATION_STRATEGY.md) | [AI_PLATFORM_CONSTITUTION.md](./AI_PLATFORM_CONSTITUTION.md), [AI_PLATFORM_OPERATION_MATRIX.md](./AI_PLATFORM_OPERATION_MATRIX.md), [audits/AI_PLATFORM_CONSTITUTIONAL_AUDIT.md](./audits/AI_PLATFORM_CONSTITUTIONAL_AUDIT.md) |
 
 ---
@@ -675,7 +713,7 @@ Use this catalog when filling **“reference module pattern to copy”** columns
 | Holder model | **Hybrid** — Platform Shell + Business (hub) + Personal (dashboard shell) |
 | G1–G9 at WS-L3 | **23/27 (~85%)** |
 | Open findings | **11** advisory (RWS-F1 **closed** ENG-1) |
-| Dashboard module | **Out of scope** — ledger `dashboard` row L1 unchanged |
+| Dashboard module | **L3 WITH FINDINGS** (2026-06-21) — separate from shell; M7 hub open |
 | Program | **ARCHIVED** — [WORKSPACE_PROGRAM_ARCHIVE.md](../workspace/WORKSPACE_PROGRAM_ARCHIVE.md) |
 
 **Evidence:** [REFERENCE_WORKSPACE_REGISTRATION_REVIEW.md](./audits/REFERENCE_WORKSPACE_REGISTRATION_REVIEW.md) · [REFERENCE_WORKSPACE_WS_L2_CERTIFICATION_REVIEW.md](./audits/REFERENCE_WORKSPACE_WS_L2_CERTIFICATION_REVIEW.md) · [REFERENCE_WORKSPACE_OPERATION_MATRIX_REAUDIT.md](./audits/REFERENCE_WORKSPACE_OPERATION_MATRIX_REAUDIT.md)
@@ -694,4 +732,4 @@ Use this catalog when filling **“reference module pattern to copy”** columns
 
 ---
 
-*Last updated: 2026-06-20 (Account Platform trilogy + umbrella L3 WITH FINDINGS executed; #AP-BILL-1 catalog; program archived)*
+*Last updated: 2026-06-21 (Dashboard L3 WITH FINDINGS executed; program archived; reference deferred)*

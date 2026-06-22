@@ -32,9 +32,12 @@ import {
   Globe
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import { useSession } from 'next-auth/react';
+import { fetchDashboardAnalyticsSummary } from '../../../lib/dashboardAnalyticsFacade';
 
 interface EnhancedDashboardModuleProps {
   businessId?: string;
+  dashboardId?: string;
   className?: string;
 }
 
@@ -87,8 +90,10 @@ const DASHBOARD_VIEWS = [
 
 export const EnhancedDashboardModule: React.FC<EnhancedDashboardModuleProps> = ({
   businessId,
+  dashboardId,
   className = ''
 }) => {
+  const { data: session } = useSession();
   const { recordUsage } = useFeatureGating(businessId);
   const [activeView, setActiveView] = useState('overview');
   const [quickMetrics, setQuickMetrics] = useState<QuickMetric[]>([]);
@@ -99,119 +104,36 @@ export const EnhancedDashboardModule: React.FC<EnhancedDashboardModuleProps> = (
 
   useEffect(() => {
     loadDashboardData();
-  }, [businessId, activeView]);
+  }, [businessId, dashboardId, activeView, session?.accessToken]);
 
   const loadDashboardData = async () => {
     try {
       setLoading(true);
-      
-      // Mock quick metrics
-      const mockQuickMetrics: QuickMetric[] = [
-        {
-          id: 'total_users',
-          name: 'Active Users',
-          value: 1247,
-          change: 15.4,
-          trend: 'up',
-          icon: <Users className="w-5 h-5" />,
-          color: 'text-blue-600 bg-blue-50',
-          target: 1500,
-          unit: ''
-        },
-        {
-          id: 'productivity_score',
-          name: 'Productivity Score',
-          value: 87,
-          change: 6.1,
-          trend: 'up',
-          icon: <Target className="w-5 h-5" />,
-          color: 'text-green-600 bg-green-50',
-          target: 90,
-          unit: '%'
-        },
-        {
-          id: 'collaboration_index',
-          name: 'Collaboration Index',
-          value: 82,
-          change: 8.7,
-          trend: 'up',
-          icon: <Users className="w-5 h-5" />,
-          color: 'text-purple-600 bg-purple-50',
-          target: 85,
-          unit: '%'
-        },
-        {
-          id: 'compliance_score',
-          name: 'Compliance Score',
-          value: 94,
-          change: 3.3,
-          trend: 'up',
-          icon: <Shield className="w-5 h-5" />,
-          color: 'text-orange-600 bg-orange-50',
-          target: 95,
-          unit: '%'
-        },
-        {
-          id: 'cost_efficiency',
-          name: 'Cost Efficiency',
-          value: 78,
-          change: -2.1,
-          trend: 'down',
-          icon: <DollarSign className="w-5 h-5" />,
-          color: 'text-red-600 bg-red-50',
-          target: 85,
-          unit: '%'
-        },
-        {
-          id: 'ai_insights',
-          name: 'AI Insights Generated',
-          value: 156,
-          change: 23.8,
-          trend: 'up',
-          icon: <Zap className="w-5 h-5" />,
-          color: 'text-indigo-600 bg-indigo-50',
-          unit: ''
-        }
-      ];
-
-      // Mock recent alerts
-      const mockAlerts: RecentAlert[] = [
-        {
-          id: '1',
-          type: 'warning',
-          title: 'Cost Efficiency Below Target',
-          message: 'Monthly cost efficiency has dropped to 78%, below the 85% target',
-          timestamp: new Date(Date.now() - 15 * 60 * 1000),
-          module: 'Dashboard',
-          actionRequired: true
-        },
-        {
-          id: '2',
-          type: 'success',
-          title: 'Productivity Target Achieved',
-          message: 'Team productivity has reached 87%, exceeding monthly target',
-          timestamp: new Date(Date.now() - 2 * 60 * 60 * 1000),
-          module: 'Analytics',
-          actionRequired: false
-        },
-        {
-          id: '3',
-          type: 'info',
-          title: 'New Compliance Report Available',
-          message: 'Q3 compliance report has been generated and is ready for review',
-          timestamp: new Date(Date.now() - 4 * 60 * 60 * 1000),
-          module: 'Compliance',
-          actionRequired: false
-        }
-      ];
-
-      setQuickMetrics(mockQuickMetrics);
-      setRecentAlerts(mockAlerts);
+      setQuickMetrics([]);
+      setRecentAlerts([]);
       setLastUpdated(new Date());
-      
-      // Record usage
-      await recordUsage('dashboard_advanced_analytics', 1);
-      
+
+      if (!session?.accessToken || !dashboardId) {
+        return;
+      }
+
+      const summary = await fetchDashboardAnalyticsSummary(session.accessToken, dashboardId);
+      const enterprise = summary.enterprise;
+
+      if (enterprise && !enterprise.degraded && enterprise.metrics.length > 0) {
+        setQuickMetrics(
+          enterprise.metrics.slice(0, 4).map((m) => ({
+            id: m.id,
+            name: m.name,
+            value: m.value,
+            change: 0,
+            trend: 'stable' as const,
+            icon: <BarChart3 className="w-4 h-4" />,
+            color: 'text-blue-600',
+            unit: m.unit,
+          }))
+        );
+      }
     } catch (error) {
       console.error('Failed to load dashboard data:', error);
       toast.error('Failed to load dashboard data');
@@ -508,14 +430,14 @@ export const EnhancedDashboardModule: React.FC<EnhancedDashboardModuleProps> = (
         {/* Analytics View */}
         {activeView === 'analytics' && (
           <FeatureGate feature="dashboard_advanced_analytics" businessId={businessId}>
-            <ExecutiveAnalyticsPanel businessId={businessId} />
+            <ExecutiveAnalyticsPanel businessId={businessId} dashboardId={dashboardId} />
           </FeatureGate>
         )}
 
         {/* Cross-Module View */}
         {activeView === 'cross-module' && (
           <FeatureGate feature="dashboard_cross_module_analytics" businessId={businessId}>
-            <CrossModuleAnalyticsPanel businessId={businessId} />
+            <CrossModuleAnalyticsPanel businessId={businessId} dashboardId={dashboardId} />
           </FeatureGate>
         )}
 

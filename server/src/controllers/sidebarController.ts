@@ -1,6 +1,8 @@
 import { Request, Response, NextFunction } from 'express';
 import * as sidebarService from '../services/sidebarCustomizationService';
 import type { SidebarCustomization } from '../services/sidebarCustomizationService';
+import { evaluateDashboardPolicyDual } from '../auth/dashboardPolicyDual';
+import { POLICY_ACTIONS } from '../auth/policyActions';
 
 interface SaveSidebarConfigRequest {
   config: SidebarCustomization;
@@ -8,6 +10,15 @@ interface SaveSidebarConfigRequest {
 
 function hasUserId(user: unknown): user is { id: string } {
   return typeof user === 'object' && user !== null && 'id' in user && typeof (user as { id: unknown }).id === 'string';
+}
+
+async function respondPolicyDenied(res: Response, params: Parameters<typeof evaluateDashboardPolicyDual>[0]): Promise<boolean> {
+  const decision = await evaluateDashboardPolicyDual(params);
+  if (decision.blocked) {
+    res.status(403).json({ message: 'Access denied', reason: decision.reason });
+    return true;
+  }
+  return false;
 }
 
 /**
@@ -26,6 +37,15 @@ export async function getSidebarConfig(req: Request, res: Response, next: NextFu
 
     if (!dashboardId) {
       res.status(400).json({ success: false, message: 'Dashboard ID is required' });
+      return;
+    }
+
+    if (await respondPolicyDenied(res, {
+      userId,
+      action: POLICY_ACTIONS.DASHBOARD_READ,
+      resourceId: dashboardId,
+      scope: { dashboardId },
+    })) {
       return;
     }
 
@@ -65,6 +85,15 @@ export async function saveSidebarConfig(req: Request, res: Response, next: NextF
       return;
     }
 
+    if (await respondPolicyDenied(res, {
+      userId,
+      action: POLICY_ACTIONS.DASHBOARD_WRITE,
+      resourceId: dashboardId,
+      scope: { dashboardId },
+    })) {
+      return;
+    }
+
     await sidebarService.saveSidebarConfig(userId, dashboardId, body.config);
 
     res.json({
@@ -82,7 +111,6 @@ export async function saveSidebarConfig(req: Request, res: Response, next: NextF
  * (Same as POST, but using PUT method)
  */
 export async function updateSidebarConfig(req: Request, res: Response, next: NextFunction): Promise<void> {
-  // Reuse saveSidebarConfig logic
   await saveSidebarConfig(req, res, next);
 }
 
@@ -108,7 +136,6 @@ export async function resetSidebarConfig(req: Request, res: Response, next: Next
       return;
     }
 
-    // Validate scope-specific parameters
     if (scope === 'tab' && !dashboardTabId) {
       res.status(400).json({ success: false, message: 'dashboardTabId is required when scope is "tab"' });
       return;
@@ -116,6 +143,15 @@ export async function resetSidebarConfig(req: Request, res: Response, next: Next
 
     if (scope === 'sidebar' && !context) {
       res.status(400).json({ success: false, message: 'context is required when scope is "sidebar"' });
+      return;
+    }
+
+    if (await respondPolicyDenied(res, {
+      userId,
+      action: POLICY_ACTIONS.DASHBOARD_WRITE,
+      resourceId: dashboardId,
+      scope: { dashboardId },
+    })) {
       return;
     }
 
@@ -133,4 +169,3 @@ export async function resetSidebarConfig(req: Request, res: Response, next: Next
     next(err);
   }
 }
-

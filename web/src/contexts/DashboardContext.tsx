@@ -3,7 +3,7 @@
 import React, { createContext, useContext, useState, useEffect, useMemo, ReactNode } from 'react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { getDashboards } from '../api/dashboard';
+import { getDashboards, ensureDefaultPersonalDashboard } from '../api/dashboard';
 import { getUserPreference, setUserPreference } from '../api/user';
 import { Dashboard } from 'shared/types';
 import {
@@ -174,8 +174,14 @@ export function DashboardProvider({ children }: DashboardProviderProps) {
     
     setLoading(true);
     getDashboards(session.accessToken)
-      .then((allDashboards) => {
-        setDashboards(allDashboards);
+      .then(async (loaded) => {
+        if (!loaded.personal || loaded.personal.length === 0) {
+          await ensureDefaultPersonalDashboard(session.accessToken);
+          const refreshed = await getDashboards(session.accessToken);
+          setDashboards(refreshed);
+        } else {
+          setDashboards(loaded);
+        }
       })
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));

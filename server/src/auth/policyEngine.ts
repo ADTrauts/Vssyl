@@ -105,6 +105,118 @@ async function authorizeDashboardRead(input: PolicyInput): Promise<PolicyDecisio
   return { allow: true, matchedPolicy: 'dashboard_owner' };
 }
 
+async function authorizeDashboardList(input: PolicyInput): Promise<PolicyDecision> {
+  const userId = resolveUserId(input);
+  if (!userId) {
+    return deny(input, 'INSUFFICIENT_ROLE');
+  }
+  if (input.resourceType !== 'dashboard') {
+    return deny(input, 'POLICY_NOT_IMPLEMENTED');
+  }
+  return { allow: true, matchedPolicy: 'dashboard_list_authenticated' };
+}
+
+async function assertDashboardContextMembershipForWrite(
+  userId: string,
+  scope: PolicyInput['scope']
+): Promise<PolicyDenyReason | null> {
+  if (scope?.businessId) {
+    const m = await prisma.businessMember.findUnique({
+      where: { businessId_userId: { businessId: scope.businessId, userId } },
+      select: { isActive: true },
+    });
+    if (!m?.isActive) {
+      return 'NOT_MEMBER';
+    }
+  }
+  if (scope?.householdId) {
+    const m = await prisma.householdMember.findUnique({
+      where: { userId_householdId: { userId, householdId: scope.householdId } },
+      select: { isActive: true },
+    });
+    if (!m?.isActive) {
+      return 'NOT_MEMBER';
+    }
+  }
+  const institutionId =
+    typeof scope === 'object' && scope && 'institutionId' in scope
+      ? (scope as { institutionId?: string }).institutionId
+      : undefined;
+  if (institutionId) {
+    const m = await prisma.institutionMember.findUnique({
+      where: { institutionId_userId: { institutionId, userId } },
+      select: { isActive: true },
+    });
+    if (!m?.isActive) {
+      return 'NOT_MEMBER';
+    }
+  }
+  return null;
+}
+
+async function authorizeDashboardWrite(input: PolicyInput): Promise<PolicyDecision> {
+  const userId = resolveUserId(input);
+  if (!userId) {
+    return deny(input, 'INSUFFICIENT_ROLE');
+  }
+  if (input.resourceType !== 'dashboard') {
+    return deny(input, 'POLICY_NOT_IMPLEMENTED');
+  }
+
+  const resourceId = input.resourceId;
+  const scope = input.scope;
+  const isCreatePath =
+    !resourceId ||
+    resourceId === 'new' ||
+    resourceId === userId ||
+    input.metadata?.operation === 'create';
+
+  if (isCreatePath) {
+    const memberErr = await assertDashboardContextMembershipForWrite(userId, scope);
+    if (memberErr) {
+      return deny(input, memberErr);
+    }
+    return { allow: true, matchedPolicy: 'dashboard_authenticated_write' };
+  }
+
+  const dashboard = await prisma.dashboard.findFirst({
+    where: { id: resourceId },
+    select: { id: true, userId: true, businessId: true, householdId: true },
+  });
+
+  if (!dashboard) {
+    return { allow: true, matchedPolicy: 'delegate_not_found' };
+  }
+
+  if (scope?.dashboardId && scope.dashboardId !== resourceId) {
+    return deny(input, 'TENANT_MISMATCH');
+  }
+
+  const tenantErr = scopeBusinessHouseholdMatchDashboard(scope, dashboard);
+  if (tenantErr) {
+    return deny(input, tenantErr);
+  }
+
+  if (dashboard.userId !== userId) {
+    return deny(input, 'NOT_OWNER');
+  }
+
+  return { allow: true, matchedPolicy: 'dashboard_owner_write' };
+}
+
+async function authorizeDashboardDelete(input: PolicyInput): Promise<PolicyDecision> {
+  const writeDecision = await authorizeDashboardWrite(input);
+  if (!writeDecision.allow) {
+    return writeDecision;
+  }
+  return {
+    ...writeDecision,
+    matchedPolicy: writeDecision.matchedPolicy?.includes('authenticated')
+      ? 'dashboard_authenticated_delete'
+      : 'dashboard_owner_delete',
+  };
+}
+
 async function authorizeFileRead(input: PolicyInput): Promise<PolicyDecision> {
   const userId = resolveUserId(input);
   if (!userId) {
@@ -749,7 +861,18 @@ export async function authorize(input: PolicyInput): Promise<PolicyDecision> {
   const action = input.action;
 
   if (action === POLICY_ACTIONS.DASHBOARD_READ) {
+    if (input.metadata?.operation === 'list') {
+      return authorizeDashboardList(input);
+    }
     return authorizeDashboardRead(input);
+  }
+
+  if (action === POLICY_ACTIONS.DASHBOARD_WRITE) {
+    return authorizeDashboardWrite(input);
+  }
+
+  if (action === POLICY_ACTIONS.DASHBOARD_DELETE) {
+    return authorizeDashboardDelete(input);
   }
 
   if (action === POLICY_ACTIONS.FILE_READ && input.resourceType === 'file') {

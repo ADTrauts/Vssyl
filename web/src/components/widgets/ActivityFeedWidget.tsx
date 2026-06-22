@@ -89,44 +89,6 @@ export default function ActivityFeedWidget({
 
   const safeConfig = config || defaultConfig;
 
-  const generatePlaceholderActivities = useCallback((): ActivityItem[] => {
-    const now = new Date();
-    return [
-      {
-        id: '1',
-        type: 'file_upload',
-        action: 'upload',
-        description: 'Uploaded project-plan.pdf',
-        module: 'drive',
-        createdAt: new Date(now.getTime() - 5 * 60_000).toISOString(),
-      },
-      {
-        id: '2',
-        type: 'task_complete',
-        action: 'complete',
-        description: 'Completed "Review proposal"',
-        module: 'todo',
-        createdAt: new Date(now.getTime() - 15 * 60_000).toISOString(),
-      },
-      {
-        id: '3',
-        type: 'message_sent',
-        action: 'message',
-        description: 'Sent message in "Team Chat"',
-        module: 'chat',
-        createdAt: new Date(now.getTime() - 30 * 60_000).toISOString(),
-      },
-      {
-        id: '4',
-        type: 'event_created',
-        action: 'create',
-        description: 'Created "Team sync" event',
-        module: 'calendar',
-        createdAt: new Date(now.getTime() - 60 * 60_000).toISOString(),
-      },
-    ];
-  }, []);
-
   const fetchActivity = useCallback(
     async (opts?: { isInitial?: boolean }) => {
       const token = session?.accessToken;
@@ -148,16 +110,16 @@ export default function ActivityFeedWidget({
           const data = await res.json();
           setActivities(data.activities || data.data || []);
         } else {
-          setActivities(generatePlaceholderActivities());
+          setActivities([]);
         }
       } catch {
-        setActivities(generatePlaceholderActivities());
+        setActivities([]);
       } finally {
         initialDoneRef.current = true;
         setLoading(false);
       }
     },
-    [session?.accessToken, dashboardId, safeConfig.maxItems, generatePlaceholderActivities]
+    [session?.accessToken, dashboardId, safeConfig.maxItems]
   );
 
   useEffect(() => {

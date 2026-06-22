@@ -23,6 +23,15 @@ export async function getDashboards(token: string): Promise<AllDashboards> {
   return data.dashboards;
 }
 
+export async function ensureDefaultPersonalDashboard(token: string): Promise<{ dashboard: Dashboard; created: boolean }> {
+  const res = await fetch(`${API_BASE}/ensure-default`, {
+    method: 'POST',
+    headers: authHeaders(token),
+  });
+  if (!res.ok) throw new Error('Failed to ensure default dashboard');
+  return res.json();
+}
+
 export async function getDashboard(token: string, id: string): Promise<Dashboard> {
   const res = await fetch(`${API_BASE}/${id}`, { 
     headers: authHeaders(token) 

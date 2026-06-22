@@ -2340,3 +2340,100 @@ export function emitWorkforceBridgeCreatedEvent(params: {
     })
   );
 }
+
+export function emitDashboardTabCreatedEvent(params: {
+  actorUserId: string;
+  dashboardId: string;
+  businessId?: string | null;
+  householdId?: string | null;
+  contextType: string;
+  name?: string;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.DASHBOARD_TAB_CREATED, {
+      actorUserId: params.actorUserId,
+      entityId: params.dashboardId,
+      dashboardId: params.dashboardId,
+      businessId: params.businessId ?? null,
+      householdId: params.householdId ?? null,
+      metadata: {
+        moduleId: 'dashboard',
+        contextType: params.contextType,
+        userId: params.actorUserId,
+        ...(params.name ? { name: params.name } : {}),
+      },
+    })
+  );
+}
+
+export function emitDashboardTabDeletedEvent(params: {
+  actorUserId: string;
+  dashboardId: string;
+  businessId?: string | null;
+  householdId?: string | null;
+  hardDelete?: boolean;
+  fileAction?: string;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.DASHBOARD_TAB_DELETED, {
+      actorUserId: params.actorUserId,
+      entityId: params.dashboardId,
+      dashboardId: params.dashboardId,
+      businessId: params.businessId ?? null,
+      householdId: params.householdId ?? null,
+      metadata: {
+        moduleId: 'dashboard',
+        hardDelete: params.hardDelete ?? true,
+        ...(params.fileAction ? { fileAction: params.fileAction } : {}),
+      },
+    })
+  );
+}
+
+export function emitDashboardWidgetAddedEvent(params: {
+  actorUserId: string;
+  widgetId: string;
+  dashboardId: string;
+  businessId?: string | null;
+  householdId?: string | null;
+  widgetType: string;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.DASHBOARD_WIDGET_ADDED, {
+      actorUserId: params.actorUserId,
+      entityId: params.widgetId,
+      dashboardId: params.dashboardId,
+      businessId: params.businessId ?? null,
+      householdId: params.householdId ?? null,
+      metadata: {
+        moduleId: 'dashboard',
+        widgetType: params.widgetType,
+        dashboardId: params.dashboardId,
+      },
+    })
+  );
+}
+
+export function emitDashboardWidgetRemovedEvent(params: {
+  actorUserId: string;
+  widgetId: string;
+  dashboardId: string;
+  businessId?: string | null;
+  householdId?: string | null;
+  widgetType: string;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.DASHBOARD_WIDGET_REMOVED, {
+      actorUserId: params.actorUserId,
+      entityId: params.widgetId,
+      dashboardId: params.dashboardId,
+      businessId: params.businessId ?? null,
+      householdId: params.householdId ?? null,
+      metadata: {
+        moduleId: 'dashboard',
+        widgetType: params.widgetType,
+        dashboardId: params.dashboardId,
+      },
+    })
+  );
+}

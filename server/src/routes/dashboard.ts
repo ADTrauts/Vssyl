@@ -13,6 +13,9 @@ router.get('/ai/context/overview', asyncHandler(dashboardAIContextController.get
 router.get('/ai/context/quick-stats', asyncHandler(dashboardAIContextController.getDashboardQuickStats));
 router.get('/ai/context/widgets', asyncHandler(dashboardAIContextController.getDashboardWidgets));
 
+// POST /dashboards/ensure-default — explicit default personal dashboard (D-02 resolution)
+router.post('/ensure-default', asyncHandler(dashboardController.ensureDefaultPersonalDashboard));
+
 // GET /dashboards
 router.get('/', async (req, res, next) => {
   try {

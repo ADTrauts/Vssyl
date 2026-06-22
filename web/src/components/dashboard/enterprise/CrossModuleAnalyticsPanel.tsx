@@ -24,9 +24,12 @@ import {
   Target
 } from 'lucide-react';
 import { toast } from 'react-hot-toast';
+import { useSession } from 'next-auth/react';
+import { fetchDashboardAnalyticsSummary } from '../../../lib/dashboardAnalyticsFacade';
 
 interface CrossModuleAnalyticsPanelProps {
   businessId?: string;
+  dashboardId?: string;
   className?: string;
 }
 
@@ -116,8 +119,10 @@ const MODULE_CONFIGS = {
 
 export const CrossModuleAnalyticsPanel: React.FC<CrossModuleAnalyticsPanelProps> = ({
   businessId,
+  dashboardId,
   className = ''
 }) => {
+  const { data: session } = useSession();
   const { recordUsage } = useFeatureGating(businessId);
   const [activeView, setActiveView] = useState<'overview' | 'insights' | 'journeys' | 'compliance'>('overview');
   const [moduleMetrics, setModuleMetrics] = useState<ModuleMetrics[]>([]);
@@ -129,248 +134,51 @@ export const CrossModuleAnalyticsPanel: React.FC<CrossModuleAnalyticsPanelProps>
 
   useEffect(() => {
     loadCrossModuleData();
-  }, [businessId, selectedTimeframe]);
+  }, [businessId, dashboardId, selectedTimeframe, session?.accessToken]);
 
   const loadCrossModuleData = async () => {
     try {
       setLoading(true);
-      
-      // Mock comprehensive module metrics
-      const mockModuleMetrics: ModuleMetrics[] = [
-        {
-          module: 'drive',
-          activeUsers: 1147,
-          totalSessions: 8947,
-          averageSessionTime: 23,
-          dataVolume: 2847, // GB
-          collaborationScore: 87,
-          productivityIndex: 82,
-          complianceScore: 94,
-          costMetrics: {
-            operationalCost: 3200,
-            userCost: 28,
-            storageCost: 1200,
-            totalCost: 4400
-          },
-          enterpriseFeatureUsage: [
-            { featureName: 'Advanced Sharing', usageCount: 2847, adoptionRate: 74 },
-            { featureName: 'Audit Logs', usageCount: 1523, adoptionRate: 65 },
-            { featureName: 'Data Classification', usageCount: 987, adoptionRate: 42 }
-          ],
-          trends: {
-            userGrowth: 15.4,
-            engagementGrowth: 22.1,
-            productivityGrowth: 12.8
-          }
-        },
-        {
-          module: 'chat',
-          activeUsers: 1203,
-          totalSessions: 15623,
-          averageSessionTime: 45,
-          dataVolume: 125847, // messages
-          collaborationScore: 91,
-          productivityIndex: 88,
-          complianceScore: 89,
-          costMetrics: {
-            operationalCost: 2100,
-            userCost: 18,
-            storageCost: 400,
-            totalCost: 2500
-          },
-          enterpriseFeatureUsage: [
-            { featureName: 'Message Retention', usageCount: 15623, adoptionRate: 89 },
-            { featureName: 'Content Moderation', usageCount: 8743, adoptionRate: 67 },
-            { featureName: 'End-to-End Encryption', usageCount: 5234, adoptionRate: 45 }
-          ],
-          trends: {
-            userGrowth: 18.7,
-            engagementGrowth: 28.3,
-            productivityGrowth: 19.2
-          }
-        },
-        {
-          module: 'calendar',
-          activeUsers: 1089,
-          totalSessions: 6234,
-          averageSessionTime: 18,
-          dataVolume: 3421, // events
-          collaborationScore: 85,
-          productivityIndex: 79,
-          complianceScore: 92,
-          costMetrics: {
-            operationalCost: 1800,
-            userCost: 16,
-            storageCost: 200,
-            totalCost: 2000
-          },
-          enterpriseFeatureUsage: [
-            { featureName: 'Resource Booking', usageCount: 2847, adoptionRate: 78 },
-            { featureName: 'Approval Workflows', usageCount: 1234, adoptionRate: 56 },
-            { featureName: 'Calendar Analytics', usageCount: 876, adoptionRate: 38 }
-          ],
-          trends: {
-            userGrowth: 8.7,
-            engagementGrowth: 14.2,
-            productivityGrowth: 16.5
-          }
-        },
-        {
-          module: 'dashboard',
-          activeUsers: 856,
-          totalSessions: 3421,
-          averageSessionTime: 12,
-          dataVolume: 125, // dashboards
-          collaborationScore: 72,
-          productivityIndex: 76,
-          complianceScore: 88,
-          costMetrics: {
-            operationalCost: 1200,
-            userCost: 14,
-            storageCost: 100,
-            totalCost: 1300
-          },
-          enterpriseFeatureUsage: [
-            { featureName: 'Advanced Analytics', usageCount: 1876, adoptionRate: 67 },
-            { featureName: 'Custom Widgets', usageCount: 543, adoptionRate: 34 },
-            { featureName: 'Executive Insights', usageCount: 287, adoptionRate: 28 }
-          ],
-          trends: {
-            userGrowth: 34.2,
-            engagementGrowth: 42.1,
-            productivityGrowth: 25.8
-          }
-        }
-      ];
+      setModuleMetrics([]);
+      setCrossModuleInsights([]);
+      setUserJourneys([]);
+      setComplianceOverview(null);
 
-      // Mock cross-module insights
-      const mockInsights: CrossModuleInsight[] = [
-        {
-          id: '1',
-          title: 'Drive-Calendar Integration Opportunity',
-          description: 'Users who actively use both Drive and Calendar show 34% higher productivity scores',
-          type: 'opportunity',
-          impact: 'high',
-          modules: ['drive', 'calendar'],
-          metrics: {
-            current: 67,
-            potential: 89,
-            improvement: 34
-          },
-          actionItems: [
-            'Promote Drive integration in Calendar events',
-            'Add file attachment suggestions in meeting creation',
-            'Create cross-module productivity tutorials'
-          ],
-          timeframe: '2-4 weeks'
-        },
-        {
-          id: '2',
-          title: 'Chat Compliance Risk',
-          description: 'Message retention policies are inconsistently applied across departments',
-          type: 'warning',
-          impact: 'medium',
-          modules: ['chat'],
-          metrics: {
-            current: 78,
-            potential: 95,
-            improvement: 22
-          },
-          actionItems: [
-            'Standardize retention policies company-wide',
-            'Implement automated compliance monitoring',
-            'Train department heads on compliance requirements'
-          ],
-          timeframe: '1-2 weeks'
-        },
-        {
-          id: '3',
-          title: 'Cross-Module Collaboration Patterns',
-          description: 'Teams using all four modules show 45% better project outcomes',
-          type: 'insight',
-          impact: 'high',
-          modules: ['drive', 'chat', 'calendar', 'dashboard'],
-          metrics: {
-            current: 56,
-            potential: 81,
-            improvement: 45
-          },
-          actionItems: [
-            'Create integrated workflow templates',
-            'Develop cross-module training programs',
-            'Implement usage incentive programs'
-          ],
-          timeframe: '4-6 weeks'
-        }
-      ];
+      if (!session?.accessToken || !dashboardId) {
+        return;
+      }
 
-      // Mock user journeys
-      const mockUserJourneys: UserJourney[] = [
-        {
-          userId: 'user1',
-          userName: 'John Doe',
-          department: 'Sales',
-          moduleUsage: [
-            { module: 'chat', timeSpent: 180, actionsPerformed: 45, lastActive: new Date(Date.now() - 2 * 60 * 60 * 1000), productivityScore: 87 },
-            { module: 'calendar', timeSpent: 95, actionsPerformed: 12, lastActive: new Date(Date.now() - 4 * 60 * 60 * 1000), productivityScore: 82 },
-            { module: 'drive', timeSpent: 67, actionsPerformed: 23, lastActive: new Date(Date.now() - 6 * 60 * 60 * 1000), productivityScore: 79 },
-            { module: 'dashboard', timeSpent: 34, actionsPerformed: 8, lastActive: new Date(Date.now() - 8 * 60 * 60 * 1000), productivityScore: 75 }
-          ],
-          crossModulePatterns: [
-            { pattern: 'Chat → Calendar → Drive', frequency: 23, efficiency: 89 },
-            { pattern: 'Calendar → Chat → Dashboard', frequency: 18, efficiency: 84 }
-          ]
-        },
-        {
-          userId: 'user2',
-          userName: 'Jane Smith',
-          department: 'Engineering',
-          moduleUsage: [
-            { module: 'drive', timeSpent: 145, actionsPerformed: 67, lastActive: new Date(Date.now() - 1 * 60 * 60 * 1000), productivityScore: 92 },
-            { module: 'chat', timeSpent: 123, actionsPerformed: 34, lastActive: new Date(Date.now() - 3 * 60 * 60 * 1000), productivityScore: 88 },
-            { module: 'dashboard', timeSpent: 89, actionsPerformed: 15, lastActive: new Date(Date.now() - 5 * 60 * 60 * 1000), productivityScore: 86 },
-            { module: 'calendar', timeSpent: 45, actionsPerformed: 9, lastActive: new Date(Date.now() - 7 * 60 * 60 * 1000), productivityScore: 81 }
-          ],
-          crossModulePatterns: [
-            { pattern: 'Drive → Chat → Dashboard', frequency: 31, efficiency: 94 },
-            { pattern: 'Dashboard → Drive → Chat', frequency: 19, efficiency: 87 }
-          ]
-        }
-      ];
+      const summary = await fetchDashboardAnalyticsSummary(session.accessToken, dashboardId);
+      const enterprise = summary.enterprise;
 
-      // Mock compliance overview
-      const mockCompliance: ComplianceOverview = {
-        overallScore: 91,
-        moduleCompliance: [
-          { module: 'drive', score: 94, criticalIssues: 2, lastAudit: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000) },
-          { module: 'chat', score: 89, criticalIssues: 5, lastAudit: new Date(Date.now() - 20 * 24 * 60 * 60 * 1000) },
-          { module: 'calendar', score: 92, criticalIssues: 1, lastAudit: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000) },
-          { module: 'dashboard', score: 88, criticalIssues: 3, lastAudit: new Date(Date.now() - 25 * 24 * 60 * 60 * 1000) }
-        ],
-        riskAreas: [
-          {
-            area: 'Data Retention Inconsistency',
-            riskLevel: 'medium',
-            affectedModules: ['chat', 'drive'],
-            recommendation: 'Standardize retention policies across modules'
+      if (!enterprise || enterprise.degraded) {
+        return;
+      }
+
+      setModuleMetrics(
+        enterprise.moduleRollups.map((rollup) => ({
+          module: rollup.module as ModuleMetrics['module'],
+          activeUsers: 0,
+          totalSessions: 0,
+          averageSessionTime: 0,
+          dataVolume: rollup.value,
+          collaborationScore: 0,
+          productivityIndex: 0,
+          complianceScore: 0,
+          costMetrics: {
+            operationalCost: 0,
+            userCost: 0,
+            storageCost: 0,
+            totalCost: 0,
           },
-          {
-            area: 'External Sharing Controls',
-            riskLevel: 'high',
-            affectedModules: ['drive', 'calendar'],
-            recommendation: 'Implement stricter external sharing approval workflows'
-          }
-        ]
-      };
-
-      setModuleMetrics(mockModuleMetrics);
-      setCrossModuleInsights(mockInsights);
-      setUserJourneys(mockUserJourneys);
-      setComplianceOverview(mockCompliance);
-      
-      // Record usage
-      await recordUsage('dashboard_cross_module_analytics', 1);
-      
+          enterpriseFeatureUsage: [],
+          trends: {
+            userGrowth: 0,
+            engagementGrowth: 0,
+            productivityGrowth: 0,
+          },
+        }))
+      );
     } catch (error) {
       console.error('Failed to load cross-module data:', error);
       toast.error('Failed to load cross-module analytics');
@@ -514,6 +322,13 @@ export const CrossModuleAnalyticsPanel: React.FC<CrossModuleAnalyticsPanelProps>
         {/* Module Overview */}
         {activeView === 'overview' && (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {moduleMetrics.length === 0 && (
+              <Card className="p-6 md:col-span-2">
+                <p className="text-sm text-gray-600 dark:text-gray-400 text-center">
+                  Cross-module metrics are unavailable. Analytics data may be degraded for this workspace.
+                </p>
+              </Card>
+            )}
             {moduleMetrics.map(module => {
               const config = MODULE_CONFIGS[module.module];
               return (

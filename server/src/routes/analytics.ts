@@ -2,10 +2,14 @@ import express from 'express';
 import { 
   getPersonalAnalytics, 
   getModuleAnalytics, 
-  exportAnalytics 
+  exportAnalytics,
+  getDashboardSummary,
 } from '../controllers/analyticsController';
 
 const router: express.Router = express.Router();
+
+// Dashboard-scoped tenant summary (Analytics Capability — Package 3)
+router.get('/dashboard-summary', getDashboardSummary);
 
 // Get personal analytics for the current user
 router.get('/personal', getPersonalAnalytics);
