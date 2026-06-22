@@ -1133,4 +1133,80 @@ describe('authorize (policyEngine)', () => {
       expect(d.matchedPolicy).toBe('delegate_not_found');
     });
   });
+
+  describe('analytics:read', () => {
+    it('allows personal read for self', async () => {
+      const d = await authorize({
+        userId: 'u1',
+        action: POLICY_ACTIONS.ANALYTICS_READ,
+        resourceType: 'analytics',
+        resourceId: 'u1',
+        metadata: { operation: 'personal' },
+      });
+      expect(d.allow).toBe(true);
+      expect(d.matchedPolicy).toBe('analytics_self_read');
+    });
+
+    it('denies personal read for other user', async () => {
+      const d = await authorize({
+        userId: 'u1',
+        action: POLICY_ACTIONS.ANALYTICS_READ,
+        resourceType: 'analytics',
+        resourceId: 'u2',
+        metadata: { operation: 'personal' },
+      });
+      expect(d.allow).toBe(false);
+      expect(d.reason).toBe('NOT_OWNER');
+    });
+
+    it('delegates dashboard_summary to dashboard read', async () => {
+      vi.spyOn(prisma.dashboard, 'findFirst').mockResolvedValue({
+        id: 'd1',
+        userId: 'u1',
+        businessId: null,
+        householdId: null,
+      } as never);
+
+      const d = await authorize({
+        userId: 'u1',
+        action: POLICY_ACTIONS.ANALYTICS_READ,
+        resourceType: 'analytics',
+        resourceId: 'd1',
+        scope: { dashboardId: 'd1' },
+        metadata: { operation: 'dashboard_summary' },
+      });
+      expect(d.allow).toBe(true);
+      expect(d.matchedPolicy).toBe('dashboard_owner');
+    });
+  });
+
+  describe('analytics:admin', () => {
+    it('allows business admin for business scope', async () => {
+      vi.spyOn(prisma.businessMember, 'findFirst').mockResolvedValue({
+        role: 'ADMIN',
+      } as never);
+
+      const d = await authorize({
+        userId: 'u1',
+        action: POLICY_ACTIONS.ANALYTICS_ADMIN,
+        resourceType: 'analytics',
+        scope: { businessId: 'b1' },
+      });
+      expect(d.allow).toBe(true);
+      expect(d.matchedPolicy).toBe('analytics_business_admin');
+    });
+
+    it('denies non-member business admin', async () => {
+      vi.spyOn(prisma.businessMember, 'findFirst').mockResolvedValue(null);
+
+      const d = await authorize({
+        userId: 'u1',
+        action: POLICY_ACTIONS.ANALYTICS_ADMIN,
+        resourceType: 'analytics',
+        scope: { businessId: 'b1' },
+      });
+      expect(d.allow).toBe(false);
+      expect(d.reason).toBe('NOT_MEMBER');
+    });
+  });
 });

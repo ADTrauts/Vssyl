@@ -94,7 +94,7 @@ Vssyl certifies modules against **two authorities simultaneously**. A module is 
 | **Notes** | `notes` | **Partial** | **Low** | **2 — Sub-domain** | **Dependency** of Notebook L3 — page storage; Global Trash handler | `notes*Service`; `notes:page` entity; no separate product L3 |
 | **Place** | `place` | **Partial** | **Partial** | **3 — Certified** | **Reference Module #5** (Level 3) — Wave **4B** council 2026-06-02 | [PLACE_REFERENCE_COUNCIL_REVIEW](./audits/PLACE_REFERENCE_COUNCIL_REVIEW.md), [PLACE_PATTERN_GUIDE](./PLACE_PATTERN_GUIDE.md), [PLACE_COMMERCE_BOUNDARY](./PLACE_COMMERCE_BOUNDARY.md), [PLACE_LEVEL3_CERTIFICATION_REVIEW](./audits/PLACE_LEVEL3_CERTIFICATION_REVIEW.md) |
 | **Dashboard** | `dashboard` | **High** | **Partial** | **3 — Certified** | **LEVEL 3 CERTIFIED WITH FINDINGS** · Ratified & executed 2026-06-21 (RD-DASH-001) · G1–G9 **24/27 (~89%)** · **0 blocking · 4 majors (M1-R, M4, M5, M7) · 7 advisories** · Program **ARCHIVED** — [DASHBOARD_CERTIFICATION_RECORD](../dashboard/DASHBOARD_CERTIFICATION_RECORD.md), [DASHBOARD_GOVERNANCE_EXECUTION](../dashboard/DASHBOARD_GOVERNANCE_EXECUTION.md), [DASHBOARD_COUNCIL_RATIFICATION](../dashboard/DASHBOARD_COUNCIL_RATIFICATION.md), [DASHBOARD_OPERATION_MATRIX](../dashboard/DASHBOARD_OPERATION_MATRIX.md), [DASHBOARD_PROGRAM_ARCHIVE](../dashboard/DASHBOARD_PROGRAM_ARCHIVE.md) |
-| **Analytics** | `analytics` | **Partial** | **N/A** | **1 — Stabilizing** | Not started (Wave 3) | Pseudo-module; subscriber stubs |
+| **Analytics** | `analytics` | **Partial** | **N/A** | **2 — Certified** | **LEVEL 2 CERTIFIED WITH FINDINGS** · **Platform Capability** (Hybrid Domain primary engine — **not** product module) · Ratified & executed 2026-06-22 (RD-AN-001) · G1–G9 **21/27 (~78%)** · **0 blocking · 6 majors (AN-M1–M6) · 8 advisories** · Program **ARCHIVED** — [ANALYTICS_CERTIFICATION_RECORD](../analytics/ANALYTICS_CERTIFICATION_RECORD.md), [ANALYTICS_GOVERNANCE_EXECUTION](../analytics/ANALYTICS_GOVERNANCE_EXECUTION.md), [ANALYTICS_COUNCIL_DECISION](../analytics/ANALYTICS_COUNCIL_DECISION.md), [ANALYTICS_OPERATION_MATRIX](../analytics/ANALYTICS_OPERATION_MATRIX.md), [ANALYTICS_PROGRAM_ARCHIVE](../analytics/ANALYTICS_PROGRAM_ARCHIVE.md) |
 | **Business Workspace** | *(platform shell)* | **Partial** | **Partial** | **WS-L3 — Certified WITH FINDINGS** | **WS-L3 CERTIFIED WITH FINDINGS** · Ratified & promoted 2026-06-19 · **co-surface** of Reference Workspace program · **not** standalone L3 product module · Dashboard `dashboard` id **out of scope** | [WORKSPACE_CERTIFICATION_RECORD](../workspace/WORKSPACE_CERTIFICATION_RECORD.md), [WORKSPACE_COUNCIL_RATIFICATION](../workspace/WORKSPACE_COUNCIL_RATIFICATION.md), [BUSINESS_WORKSPACE_OPERATION_MATRIX](./audits/BUSINESS_WORKSPACE_OPERATION_MATRIX.md), [REFERENCE_WORKSPACE_PLATFORM_SHELL.md](./REFERENCE_WORKSPACE_PLATFORM_SHELL.md) |
 | **HR** | `hr` | **High** | **Partial** | **3 — Certified** | **LEVEL 3 CERTIFIED WITH FINDINGS** · Ratified & promoted 2026-06-19 · **Reference Candidate #1 — Workforce Lifecycle** · Domain G1–G9 **24/27 (~89%)** · **6 advisories** | [HR_OPERATION_MATRIX](./audits/HR_OPERATION_MATRIX.md), [BUSINESS_OPERATIONS_CERTIFICATION_RECORD](../business-operations/BUSINESS_OPERATIONS_CERTIFICATION_RECORD.md), [BUSINESS_OPERATIONS_COUNCIL_RATIFICATION](../business-operations/BUSINESS_OPERATIONS_COUNCIL_RATIFICATION.md) |
 | **Scheduling** | `scheduling` | **High** | **Partial** | **3 — Certified** | **LEVEL 3 CERTIFIED WITH FINDINGS** · Ratified & promoted 2026-06-19 · **Reference Candidate WITH FINDINGS #6 — Planning** · Domain G1–G9 **24/27 (~89%)** · **5 advisories** | [SCHEDULING_OPERATION_MATRIX](./audits/SCHEDULING_OPERATION_MATRIX.md), [BUSINESS_OPERATIONS_CERTIFICATION_RECORD](../business-operations/BUSINESS_OPERATIONS_CERTIFICATION_RECORD.md), [BUSINESS_OPERATIONS_COUNCIL_RATIFICATION](../business-operations/BUSINESS_OPERATIONS_COUNCIL_RATIFICATION.md) |
@@ -122,6 +122,7 @@ Track cross-cutting certification separately; modules depend on these.
 | **PP-2 Settings Platform** | *(Account Platform sub-program)* | **High** | **Partial** (settings orchestration — registry + adapter patterns) | **N/A** (sub-program — not a workspace module) | **3 — Certified** | **LEVEL 3 CERTIFIED WITH FINDINGS** · Ratified & executed 2026-06-20 · G1–G9 **26/27 (~96%)** · **0 blocking · PP2-F05 on certificate · 6 advisories** · Certification track **ARCHIVED** · Program **ARCHIVED** — [PP2_CERTIFICATION_RECORD](../account-platform/PP2_CERTIFICATION_RECORD.md), [PP2_CERTIFICATION_RATIFICATION](../account-platform/PP2_CERTIFICATION_RATIFICATION.md), [PP2_CERTIFICATION_EVALUATION](../account-platform/PP2_CERTIFICATION_EVALUATION.md), [PP2_OPERATION_MATRIX_REAUDIT](../account-platform/PP2_OPERATION_MATRIX_REAUDIT.md), [ACCOUNT_PLATFORM_GOVERNANCE_EXECUTION](../account-platform/ACCOUNT_PLATFORM_GOVERNANCE_EXECUTION.md) |
 | **PP-3 Billing & Entitlements** | *(Account Platform sub-program)* | **High** | **Partial** (billing + entitlement substrate — service facade patterns) | **N/A** (sub-program — not a workspace module) | **3 — Certified** | **LEVEL 3 CERTIFIED WITH FINDINGS** · Ratified & executed 2026-06-20 (RD-AP3-001) · G1–G9 **23/27 (~85%)** · **0 blocking · PP3-F08/F05/F07/EVAL-F01 on certificate · advisories tracked** · **Reference Capability With Findings #AP-BILL-1** · Certification track **ARCHIVED** · Program **ARCHIVED** — [PP3_CERTIFICATION_RECORD](../account-platform/PP3_CERTIFICATION_RECORD.md), [PP3_CERTIFICATION_RATIFICATION](../account-platform/PP3_CERTIFICATION_RATIFICATION.md), [PP3_CERTIFICATION_EVALUATION](../account-platform/PP3_CERTIFICATION_EVALUATION.md), [PP3_OPERATION_MATRIX_REAUDIT](../account-platform/PP3_OPERATION_MATRIX_REAUDIT.md), [ACCOUNT_PLATFORM_GOVERNANCE_EXECUTION](../account-platform/ACCOUNT_PLATFORM_GOVERNANCE_EXECUTION.md) |
 | **Account Platform** | *(platform domain — PP-1, PP-2, PP-3)* | **High** | **Partial** (multi sub-program domain) | **N/A** (domain — not a single FH-pattern module) | **3 — Certified** | **LEVEL 3 CERTIFIED WITH FINDINGS** · Ratified & executed 2026-06-20 (RD-AP-UMB-001) · G1–G9 **22/27 (~81%)** · **0 blocking · 7 majors · 19 advisories** · **#AP-BILL-1** Reference Capability With Findings · Program **ARCHIVED** — [ACCOUNT_PLATFORM_CERTIFICATION_RECORD](../account-platform/ACCOUNT_PLATFORM_CERTIFICATION_RECORD.md), [ACCOUNT_PLATFORM_CERTIFICATION_RATIFICATION](../account-platform/ACCOUNT_PLATFORM_CERTIFICATION_RATIFICATION.md), [ACCOUNT_PLATFORM_CERTIFICATION_EVALUATION](../account-platform/ACCOUNT_PLATFORM_CERTIFICATION_EVALUATION.md), [ACCOUNT_PLATFORM_UNIFIED_OPERATION_MATRIX](../account-platform/ACCOUNT_PLATFORM_UNIFIED_OPERATION_MATRIX.md), [ACCOUNT_PLATFORM_PROGRAM_ARCHIVE](../account-platform/ACCOUNT_PLATFORM_PROGRAM_ARCHIVE.md), [ACCOUNT_PLATFORM_GOVERNANCE_EXECUTION](../account-platform/ACCOUNT_PLATFORM_GOVERNANCE_EXECUTION.md) |
+| **Platform Analytics Capability** | *(Tier 0 platform capability — federated L2)* | **Partial** | **N/A** (derived metrics — FH module SoR patterns not applicable) | **N/A** | **2 — Certified** | **LEVEL 2 CERTIFIED WITH FINDINGS** · Same row as `analytics` id · Hybrid Domain primary engine · Consumer pattern: Dashboard `dashboardAnalyticsFacade` · **0 blocking · 6 majors · 8 advisories** · Program **ARCHIVED** — [ANALYTICS_CERTIFICATION_RECORD](../analytics/ANALYTICS_CERTIFICATION_RECORD.md), [ANALYTICS_STATUS_RECORD](../analytics/ANALYTICS_STATUS_RECORD.md) |
 | AI Tools / Actions | Partial | Partial (drive/HR/scheduling services) | 2 | [AI_TOOL_ACTION_COMPLIANCE_MATRIX](./audits/AI_TOOL_ACTION_COMPLIANCE_MATRIX.md) — catalog tools **C**; built-in L3 module actions **C**; LifeTwin stubs deferred L3 |
 | Platform Scheduler | Partial | Partial | 1 | Inventory-first per §22 |
 | Manifest / Capability governance | Partial | High (drive manifest) | 1 | Reconcile-on-startup incomplete for all built-ins |
@@ -176,21 +177,21 @@ Copy row into module audit; mark ✅ / ⚠️ / ❌.
 
 | Requirement | File Hub | Chat | Calendar | Todo | Notes | Place | Dashboard | Analytics | Bus. Workspace |
 |-------------|----------|------|----------|------|-------|-------|-----------|-----------|----------------|
-| Canonical services | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ | ✅ | ⚠️ | ⚠️ |
-| Thin controllers | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ❌ | ✅ | ⚠️ | N/A |
-| Policy Engine | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ | ✅ | ⚠️ | ⚠️ |
+| Canonical services | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ | ✅ | ✅ | ⚠️ |
+| Thin controllers | ✅ | ✅ | ✅ | ⚠️ | ⚠️ | ❌ | ✅ | ✅ | N/A |
+| Policy Engine | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ | ✅ | ✅ | ⚠️ |
 | Global Trash handler | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ | ✅ | N/A | ⚠️ |
 | V_Link (if declared) | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ | ❌ | N/A | ⚠️ |
-| Platform entities | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ | ⚠️ | ⚠️ | ⚠️ |
-| Domain events | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ | ✅ | ⚠️ | ⚠️ |
-| Module activity writes | ✅ | ✅ | ✅ | ✅ | ⚠️ | ❌ | ✅ | ⚠️ | ⚠️ |
+| Platform entities | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ | ⚠️ | N/A | ⚠️ |
+| Domain events | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ | ✅ | N/A | ⚠️ |
+| Module activity writes | ✅ | ✅ | ✅ | ✅ | ⚠️ | ❌ | ✅ | ✅ | ⚠️ |
 | Notifications | ✅ | ✅ | ✅ | ✅ | ⚠️ | ❌ | ⚠️ | N/A | ⚠️ |
 | Realtime | ✅ | ✅ | ✅ | ✅ | ❌ | ❌ | ⚠️ | N/A | ⚠️ |
 | AI compliance | ✅ | ✅ | ⚠️ | ❌ | ⚠️ | ⚠️ | ✅ | ⚠️ | ⚠️ |
-| Capability truth | ✅ | ✅ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ |
+| Capability truth | ✅ | ✅ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ✅ | ⚠️ |
 | Tests | ✅ | ✅ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ | ⚠️ |
-| Documentation | ✅ | ✅ | ❌ | ⚠️ | ❌ | ❌ | ✅ | ⚠️ | ⚠️ |
-| Legacy retired | ⚠️ | ✅ | ❌ | ❌ | ❌ | ❌ | ⚠️ | ⚠️ | ⚠️ |
+| Documentation | ✅ | ✅ | ❌ | ⚠️ | ❌ | ❌ | ✅ | ✅ | ⚠️ |
+| Legacy retired | ⚠️ | ✅ | ❌ | ❌ | ❌ | ❌ | ⚠️ | ✅ | ⚠️ |
 
 ---
 
@@ -323,7 +324,7 @@ Waves align with [`PLATFORM_MODULE_MODERNIZATION_ROADMAP.md`](../plans/PLATFORM_
 | Place | ○ | **●** | **●** | **●** | **●** | 3 |
 | Business Workspace | **●** | **●** | ○ | ○ | ○ | 2 (platform shell) |
 | Dashboard | ○ | **●** | **●** | **●** | **●** | **3 — L3 CwF** |
-| Analytics | **●** | ○ | ○ | ○ | ○ | 2 |
+| Analytics | ○ | **●** | **●** | **●** | **●** | **2 — L2 CwF** |
 
 **Place** certified **Level 3** (Wave 3C). **Reference Module #5** designated (Wave 4B council). Optional post-Reference hygiene PL-H1–H7.
 
@@ -378,6 +379,7 @@ Waves align with [`PLATFORM_MODULE_MODERNIZATION_ROADMAP.md`](../plans/PLATFORM_
 
 | Date | Change |
 |------|--------|
+| 2026-06-22 | **Platform Analytics Capability** (`analytics`) — **LEVEL 2 CERTIFIED WITH FINDINGS** executed (RD-AN-001); reclassified from L1 pseudo-module to **Platform Capability**; G1–G9 **21/27 (~78%)**; 0 blocking · 6 majors (AN-M1–M6) · 8 advisories; program **ARCHIVED** — [ANALYTICS_CERTIFICATION_RECORD](../analytics/ANALYTICS_CERTIFICATION_RECORD.md), [ANALYTICS_GOVERNANCE_EXECUTION](../analytics/ANALYTICS_GOVERNANCE_EXECUTION.md), [ANALYTICS_PROGRAM_ARCHIVE](../analytics/ANALYTICS_PROGRAM_ARCHIVE.md) |
 | 2026-06-21 | **Dashboard** — **LEVEL 3 CERTIFIED WITH FINDINGS** executed (RD-DASH-001); G1–G9 **24/27 (~89%)**; 0 blocking · 4 majors (M1-R, M4, M5, M7) · 7 advisories; program **ARCHIVED** — [DASHBOARD_CERTIFICATION_RECORD](../dashboard/DASHBOARD_CERTIFICATION_RECORD.md), [DASHBOARD_GOVERNANCE_EXECUTION](../dashboard/DASHBOARD_GOVERNANCE_EXECUTION.md), [DASHBOARD_PROGRAM_ARCHIVE](../dashboard/DASHBOARD_PROGRAM_ARCHIVE.md) |
 | 2026-06-20 | **Account Platform** — **Final Governance Execution**: **LEVEL 3 CERTIFIED WITH FINDINGS** executed for **PP-3 Billing & Entitlements** (23/27) and **Account Platform umbrella** (22/27); PP-1/PP-2 rows reaffirmed; **#AP-BILL-1** reference catalog; 0 blocking · 7 umbrella majors · 19 advisories; program **ARCHIVED** — [ACCOUNT_PLATFORM_CERTIFICATION_RECORD](../account-platform/ACCOUNT_PLATFORM_CERTIFICATION_RECORD.md), [PP3_CERTIFICATION_RECORD](../account-platform/PP3_CERTIFICATION_RECORD.md), [ACCOUNT_PLATFORM_PROGRAM_ARCHIVE](../account-platform/ACCOUNT_PLATFORM_PROGRAM_ARCHIVE.md), [ACCOUNT_PLATFORM_GOVERNANCE_EXECUTION](../account-platform/ACCOUNT_PLATFORM_GOVERNANCE_EXECUTION.md) |
 | 2026-06-20 | **Account Platform** — **LEVEL 3 CERTIFIED WITH FINDINGS** executed for **PP-1 Identity & Profile** (24/27) and **PP-2 Settings Platform** (26/27); platform system rows; 0 blocking; certification tracks archived — [PP1_CERTIFICATION_RECORD](../account-platform/PP1_CERTIFICATION_RECORD.md), [PP2_CERTIFICATION_RECORD](../account-platform/PP2_CERTIFICATION_RECORD.md) |

@@ -4,7 +4,6 @@ import type { DomainEvent } from './types';
 import { recordDomainEventToActivityLog } from './subscribers/activityDomainEventSubscriber';
 import { broadcastDomainEventOnSocket } from './subscribers/socketDomainEventSubscriber';
 import { notificationDomainEventConsumer } from './subscribers/notificationDomainEventSubscriber';
-import { placeholderAnalyticsDomainEventConsumer } from './subscribers/analyticsDomainEventSubscriber';
 import { consumeDomainEventForAI } from '../ai/consumers/AIEventConsumer';
 import { deliverDomainEventToWebhooks } from './subscribers/webhookDomainEventSubscriber';
 import { searchIndexDomainEventConsumer } from './subscribers/searchIndexDomainEventSubscriber';
@@ -47,9 +46,6 @@ export function registerDomainEventSubscribers(): void {
       broadcastDomainEventOnSocket(e);
     }, event);
     void runSubscriber('notification', (e) => notificationDomainEventConsumer(e), event);
-    void runSubscriber('analytics_placeholder', (e) => {
-      placeholderAnalyticsDomainEventConsumer(e);
-    }, event);
     void runSubscriber('ai_event_consumer', (e) => consumeDomainEventForAI(e), event);
     void runSubscriber('webhook_subscriptions', (e) => deliverDomainEventToWebhooks(e), event);
     void runSubscriber('search_index_stub', (e) => searchIndexDomainEventConsumer(e), event);

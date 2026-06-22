@@ -1,11 +1,14 @@
 import { Request, Response } from 'express';
-import { prisma } from '../lib/prisma';
 import { logger } from '../lib/logger';
 import { getUserFromRequest } from '../middleware/auth';
 import {
+  AnalyticsAccessError,
   AnalyticsDashboardAccessError,
-  getDashboardAnalyticsSummary,
-} from '../services/analytics/analyticsDashboardSummaryService';
+  exportAnalyticsCapability,
+  getDashboardSummaryCapability,
+  getModuleAnalyticsCapability,
+  getPersonalAnalyticsCapability,
+} from '../services/analytics/analyticsCapabilityService.js';
 
 function logAnalyticsError(message: string, operation: string, err: unknown): void {
   const e = err instanceof Error ? err : new Error(String(err));
@@ -15,275 +18,60 @@ function logAnalyticsError(message: string, operation: string, err: unknown): vo
   });
 }
 
+function resolveTimeRange(queryValue: unknown): string {
+  if (typeof queryValue === 'string' && ['7d', '30d', '90d'].includes(queryValue)) {
+    return queryValue;
+  }
+  return '30d';
+}
 
-// Get personal analytics for the current user
-export const getPersonalAnalytics = async (req: Request, res: Response) => {
+export const getPersonalAnalytics = async (req: Request, res: Response): Promise<void> => {
   try {
     const user = getUserFromRequest(req);
     if (!user) {
-      return res.status(401).json({ success: false, error: 'Unauthorized' });
+      res.status(401).json({ success: false, error: 'Unauthorized' });
+      return;
     }
 
-    const { timeRange = '30d' } = req.query;
-    
-    // Calculate date range
-    const now = new Date();
-    let startDate: Date;
-    
-    switch (timeRange) {
-      case '7d':
-        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-        break;
-      case '90d':
-        startDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
-        break;
-      default: // 30d
-        startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-        break;
+    const timeRange = resolveTimeRange(req.query.timeRange);
+    const data = await getPersonalAnalyticsCapability({ userId: user.id, timeRange });
+    res.json({ success: true, data });
+  } catch (error: unknown) {
+    if (error instanceof AnalyticsAccessError) {
+      res.status(error.statusCode).json({ success: false, error: error.message });
+      return;
     }
-
-    // Get user's activities
-    const activities = await prisma.activity.findMany({
-      where: {
-        userId: user.id,
-        timestamp: {
-          gte: startDate,
-          lte: now,
-        },
-      },
-      orderBy: {
-        timestamp: 'desc',
-      },
-      take: 50, // Limit to recent activities
-    });
-
-    // Get user's module installations
-    const moduleInstallations = await prisma.moduleInstallation.findMany({
-      where: {
-        userId: user.id,
-        enabled: true,
-      },
-      include: {
-        module: {
-          select: {
-            id: true,
-            name: true,
-            category: true,
-          },
-        },
-      },
-    });
-
-    // Get user's files
-    const files = await prisma.file.findMany({
-      where: {
-        userId: user.id,
-        createdAt: {
-          gte: startDate,
-          lte: now,
-        },
-        trashedAt: null,
-      },
-    });
-
-    // Get user's messages
-    const messages = await prisma.message.findMany({
-      where: {
-        senderId: user.id,
-        createdAt: {
-          gte: startDate,
-          lte: now,
-        },
-      },
-    });
-
-    // Calculate usage statistics
-    const totalSessions = activities.length;
-    const totalTime = activities.reduce((sum, activity) => {
-      const details = activity.details as any;
-      return sum + (details?.duration || 0);
-    }, 0) / 3600; // Convert to hours
-
-    const modulesUsed = moduleInstallations.length;
-    const filesCreated = files.length;
-    const messagesSent = messages.length;
-
-    // Get module usage statistics
-    const moduleUsage = moduleInstallations.map(installation => {
-      const moduleActivities = activities.filter(
-        activity => {
-          const details = activity.details as any;
-          return details?.moduleId === installation.moduleId;
-        }
-      );
-      
-      return {
-        module: installation.module.name,
-        usageCount: moduleActivities.length,
-        lastUsed: moduleActivities[0]?.timestamp || installation.installedAt,
-        totalTime: moduleActivities.reduce((sum, activity) => {
-          const details = activity.details as any;
-          return sum + (details?.duration || 0);
-        }, 0) / 3600, // Convert to hours
-      };
-    });
-
-    // Format activity data
-    const formattedActivities = activities.map(activity => {
-      const details = activity.details as any;
-      return {
-        id: activity.id,
-        type: activity.type,
-        module: details?.moduleName || 'Unknown',
-        description: getActivityDescription(activity),
-        timestamp: activity.timestamp.toISOString(),
-        duration: details?.duration,
-      };
-    });
-
-    const analytics = {
-      usageStats: {
-        totalSessions,
-        totalTime: Math.round(totalTime * 10) / 10, // Round to 1 decimal
-        modulesUsed,
-        filesCreated,
-        messagesSent,
-        connectionsMade: 0, // TODO: Implement when connections are available
-      },
-      moduleUsage,
-      recentActivity: formattedActivities,
-    };
-
-    res.json({ success: true, data: analytics });
-  } catch (error) {
     logAnalyticsError('Error getting personal analytics', 'analytics_personal', error);
     res.status(500).json({ success: false, error: 'Failed to get personal analytics' });
   }
 };
 
-// Helper function to generate activity descriptions
-interface ActivityRecord {
-  type: string;
-  details?: unknown; // Prisma JsonValue
-}
-
-const getActivityDescription = (activity: ActivityRecord): string => {
-  const { type, details } = activity;
-  const detailsObj = details as Record<string, unknown> | undefined;
-  
-  switch (type) {
-    case 'file_created':
-      return `Created ${detailsObj?.fileName || 'a file'}`;
-    case 'file_edited':
-      return `Edited ${detailsObj?.fileName || 'a file'}`;
-    case 'file_shared':
-      return `Shared ${detailsObj?.fileName || 'a file'}`;
-    case 'message_sent':
-      return `Sent message in ${detailsObj?.conversationName || 'a conversation'}`;
-    case 'module_accessed':
-      return `Accessed ${detailsObj?.moduleName || 'a module'}`;
-    case 'connection_made':
-      return `Connected with ${detailsObj?.userName || 'a user'}`;
-    default:
-      return 'Performed an action';
-  }
-};
-
-// Get module-specific analytics for a user
-export const getModuleAnalytics = async (req: Request, res: Response) => {
+export const getModuleAnalytics = async (req: Request, res: Response): Promise<void> => {
   try {
     const user = getUserFromRequest(req);
     if (!user) {
-      return res.status(401).json({ success: false, error: 'Unauthorized' });
+      res.status(401).json({ success: false, error: 'Unauthorized' });
+      return;
     }
 
     const { moduleId } = req.params;
-    const { timeRange = '30d' } = req.query;
-
-    // Calculate date range
-    const now = new Date();
-    let startDate: Date;
-    
-    switch (timeRange) {
-      case '7d':
-        startDate = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
-        break;
-      case '90d':
-        startDate = new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
-        break;
-      default: // 30d
-        startDate = new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-        break;
+    if (!moduleId || typeof moduleId !== 'string') {
+      res.status(400).json({ success: false, error: 'moduleId is required' });
+      return;
     }
 
-    // Get module installation
-    const installation = await prisma.moduleInstallation.findFirst({
-      where: {
-        userId: user.id,
-        moduleId,
-        enabled: true,
-      },
-      include: {
-        module: {
-          select: {
-            id: true,
-            name: true,
-            category: true,
-          },
-        },
-      },
+    const timeRange = resolveTimeRange(req.query.timeRange);
+    const data = await getModuleAnalyticsCapability({
+      userId: user.id,
+      moduleId,
+      timeRange,
     });
-
-    if (!installation) {
-      return res.status(404).json({ success: false, error: 'Module not found or not installed' });
+    res.json({ success: true, data });
+  } catch (error: unknown) {
+    if (error instanceof AnalyticsAccessError) {
+      res.status(error.statusCode).json({ success: false, error: error.message });
+      return;
     }
-
-    // Get module-specific activities
-    const activities = await prisma.activity.findMany({
-      where: {
-        userId: user.id,
-        timestamp: {
-          gte: startDate,
-          lte: now,
-        },
-        details: {
-          path: ['moduleId'],
-          equals: moduleId,
-        },
-      },
-      orderBy: {
-        timestamp: 'desc',
-      },
-    });
-
-    // Calculate module statistics
-    const totalUsage = activities.length;
-    const totalTime = activities.reduce((sum, activity) => {
-      const details = activity.details as any;
-      return sum + (details?.duration || 0);
-    }, 0) / 3600; // Convert to hours
-
-    const lastUsed = activities[0]?.timestamp || installation.installedAt;
-
-    const moduleAnalytics = {
-      module: installation.module,
-      totalUsage,
-      totalTime: Math.round(totalTime * 10) / 10,
-      lastUsed: lastUsed.toISOString(),
-      activities: activities.map(activity => {
-        const details = activity.details as any;
-        return {
-          id: activity.id,
-          type: activity.type,
-          description: getActivityDescription(activity),
-          timestamp: activity.timestamp.toISOString(),
-          duration: details?.duration,
-        };
-      }),
-    };
-
-    res.json({ success: true, data: moduleAnalytics });
-  } catch (error) {
     logAnalyticsError('Error getting module analytics', 'analytics_module', error);
     res.status(500).json({ success: false, error: 'Failed to get module analytics' });
   }
@@ -291,7 +79,7 @@ export const getModuleAnalytics = async (req: Request, res: Response) => {
 
 /**
  * GET /api/analytics/dashboard-summary?dashboardId=
- * Analytics Capability — tenant-scoped dashboard rollup (Package 3).
+ * Analytics Capability — tenant-scoped dashboard rollup.
  */
 export const getDashboardSummary = async (req: Request, res: Response): Promise<void> => {
   try {
@@ -307,7 +95,7 @@ export const getDashboardSummary = async (req: Request, res: Response): Promise<
       return;
     }
 
-    const data = await getDashboardAnalyticsSummary({
+    const data = await getDashboardSummaryCapability({
       userId: user.id,
       dashboardId,
     });
@@ -323,7 +111,7 @@ export const getDashboardSummary = async (req: Request, res: Response): Promise<
       },
     });
   } catch (error: unknown) {
-    if (error instanceof AnalyticsDashboardAccessError) {
+    if (error instanceof AnalyticsDashboardAccessError || error instanceof AnalyticsAccessError) {
       res.status(error.statusCode).json({ success: false, error: error.message });
       return;
     }
@@ -332,27 +120,30 @@ export const getDashboardSummary = async (req: Request, res: Response): Promise<
   }
 };
 
-// Export analytics data
-export const exportAnalytics = async (req: Request, res: Response) => {
+export const exportAnalytics = async (req: Request, res: Response): Promise<void> => {
   try {
     const user = getUserFromRequest(req);
     if (!user) {
-      return res.status(401).json({ success: false, error: 'Unauthorized' });
+      res.status(401).json({ success: false, error: 'Unauthorized' });
+      return;
     }
 
-    const { format = 'csv', timeRange = '30d' } = req.query;
+    const format = typeof req.query.format === 'string' ? req.query.format : 'json';
+    const timeRange = resolveTimeRange(req.query.timeRange);
 
-    // Get analytics data
-    const analyticsResponse = await getPersonalAnalytics(req, res);
-    
-    if (format === 'json') {
-      return analyticsResponse;
+    const data = await exportAnalyticsCapability({
+      userId: user.id,
+      format,
+      timeRange,
+    });
+
+    res.json({ success: true, data });
+  } catch (error: unknown) {
+    if (error instanceof AnalyticsAccessError) {
+      res.status(error.statusCode).json({ success: false, error: error.message });
+      return;
     }
-
-    // TODO: Implement CSV export
-    res.json({ success: false, error: 'Export format not yet implemented' });
-  } catch (error) {
     logAnalyticsError('Error exporting analytics', 'analytics_export', error);
     res.status(500).json({ success: false, error: 'Failed to export analytics' });
   }
-}; 
+};

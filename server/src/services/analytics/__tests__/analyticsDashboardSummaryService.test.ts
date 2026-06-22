@@ -1,17 +1,19 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { prisma } from '../../../lib/prisma';
-import { evaluateDashboardPolicyDual } from '../../../auth/dashboardPolicyDual';
+import { evaluateAnalyticsPolicyDual } from '../../../auth/analyticsPolicyDual';
 import { listEventsInRange } from '../../calendarVisibilityService';
 import { aggregateAccessibleDriveStorageForAIContext } from '../../driveVisibilityService';
 import { NotificationService } from '../../notificationService';
 import { getBusinessAnalytics } from '../../business/businessAnalyticsService';
+import { countUnreadMessagesForDashboardRollup } from '../../chatAnalyticsService';
+import { countPendingTasksForDashboardRollup } from '../../todo/todoAnalyticsRollupService';
 import {
   AnalyticsDashboardAccessError,
   getDashboardAnalyticsSummary,
 } from '../analyticsDashboardSummaryService';
 
-vi.mock('../../../auth/dashboardPolicyDual', () => ({
-  evaluateDashboardPolicyDual: vi.fn(),
+vi.mock('../../../auth/analyticsPolicyDual', () => ({
+  evaluateAnalyticsPolicyDual: vi.fn(),
 }));
 
 vi.mock('../../calendarVisibilityService', () => ({
@@ -32,10 +34,18 @@ vi.mock('../../business/businessAnalyticsService', () => ({
   getBusinessAnalytics: vi.fn(),
 }));
 
+vi.mock('../../chatAnalyticsService', () => ({
+  countUnreadMessagesForDashboardRollup: vi.fn(),
+}));
+
+vi.mock('../../todo/todoAnalyticsRollupService', () => ({
+  countPendingTasksForDashboardRollup: vi.fn(),
+}));
+
 describe('analyticsDashboardSummaryService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.mocked(evaluateDashboardPolicyDual).mockResolvedValue({ blocked: false });
+    vi.mocked(evaluateAnalyticsPolicyDual).mockResolvedValue({ blocked: false });
     vi.mocked(listEventsInRange).mockResolvedValue([{ id: 'e1' }] as never);
     vi.mocked(aggregateAccessibleDriveStorageForAIContext).mockResolvedValue({
       totalFiles: 1,
@@ -45,29 +55,32 @@ describe('analyticsDashboardSummaryService', () => {
       storageUsedBytes: 1_073_741_824,
     });
     vi.mocked(NotificationService.getUnreadCount).mockResolvedValue(2);
+    vi.mocked(countUnreadMessagesForDashboardRollup).mockResolvedValue(4);
+    vi.mocked(countPendingTasksForDashboardRollup).mockResolvedValue(3);
   });
 
-  it('denies when dashboard policy blocks', async () => {
-    vi.mocked(evaluateDashboardPolicyDual).mockResolvedValue({ blocked: true, reason: 'NOT_MEMBER' });
+  it('denies when analytics policy blocks', async () => {
+    vi.mocked(evaluateAnalyticsPolicyDual).mockResolvedValue({ blocked: true, reason: 'NOT_MEMBER' });
 
     await expect(
       getDashboardAnalyticsSummary({ userId: 'u1', dashboardId: 'd1' })
     ).rejects.toBeInstanceOf(AnalyticsDashboardAccessError);
   });
 
-  it('returns summary rollups for authorized dashboard', async () => {
+  it('returns summary rollups via module rollup APIs', async () => {
     vi.spyOn(prisma.dashboard, 'findFirst').mockResolvedValue({
       id: 'd1',
       businessId: null,
       householdId: null,
       institutionId: null,
     } as never);
-    vi.spyOn(prisma.conversation, 'findMany').mockResolvedValue([] as never);
-    vi.spyOn(prisma.task, 'count').mockResolvedValue(3 as never);
 
     const result = await getDashboardAnalyticsSummary({ userId: 'u1', dashboardId: 'd1' });
 
+    expect(countUnreadMessagesForDashboardRollup).toHaveBeenCalledWith('u1', 'd1');
+    expect(countPendingTasksForDashboardRollup).toHaveBeenCalledWith('d1');
     expect(result.summary.pendingTasks).toBe(3);
+    expect(result.summary.unreadMessages).toBe(4);
     expect(result.summary.upcomingEvents).toBe(1);
     expect(result.summary.storageUsedPercent).toBe(10);
     expect(result.summary.unreadNotifications).toBe(2);
@@ -81,8 +94,6 @@ describe('analyticsDashboardSummaryService', () => {
       householdId: null,
       institutionId: null,
     } as never);
-    vi.spyOn(prisma.conversation, 'findMany').mockResolvedValue([] as never);
-    vi.spyOn(prisma.task, 'count').mockResolvedValue(0 as never);
     vi.mocked(getBusinessAnalytics).mockResolvedValue({
       memberCount: 5,
       dashboardCount: 2,

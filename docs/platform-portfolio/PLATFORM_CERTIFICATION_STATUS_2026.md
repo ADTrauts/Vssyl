@@ -3,7 +3,7 @@
 **Program:** Platform Portfolio Refresh 2026  
 **Date:** 2026-06-21  
 **Authority:** [`CERTIFICATION_LEDGER.md`](../architecture/CERTIFICATION_LEDGER.md)  
-**Status:** Portfolio snapshot — synchronized 2026-06-21 (Dashboard L3 CwF executed)
+**Status:** Portfolio snapshot — synchronized 2026-06-22 (Analytics L2 CwF executed)
 
 ---
 
@@ -37,7 +37,8 @@
 | **Scheduling** | `scheduling` | **3w** | BO Ref Candidate #6 CwF · 5 advisories | BO certification record |
 | **Workforce Communications** | `workforce_comms` | **3w** | BO Ref Candidate #7 · 3 advisories | BO certification record |
 | **Dashboard** | `dashboard` | **3w** | L3 WITH FINDINGS · 4 majors · 7 advisories · program **ARCHIVED** | [DASHBOARD_CERTIFICATION_RECORD](../dashboard/DASHBOARD_CERTIFICATION_RECORD.md) |
-| **Analytics** | `analytics` | **1** | Pseudo-module; stubs | Roadmap § Wave 3 |
+
+*Note: **`analytics`** is certified as **Platform Capability L2 CwF** — see Platform systems table below (not a product module).*
 
 ---
 
@@ -54,12 +55,13 @@
 | **PP-2 Settings Platform** | **3w** | Account Platform sub-program | 6 advisories | **Archived** |
 | **PP-3 Billing & Entitlements** | **3w** | #AP-BILL-1 Reference Capability CwF | 5+ advisories | **Archived** |
 | **Account Platform** (umbrella) | **3w** | PP-1 + PP-2 + PP-3 composite | 19 advisories | **Archived** |
+| **Platform Analytics Capability** | **2w** | L2 WITH FINDINGS · Hybrid Domain primary engine · 6 majors · 8 advisories · program **ARCHIVED** | AN-M2–M6, AN-A1–A8 | **Archived** |
 | **AI Platform** | **2** | Platform Compliant; **L3 deferred** | L3 blockers B-01–B-07 | Active L2 |
 | **Global Trash API** | **2** | L3 handlers registered | — | Platform L2 |
 | **NotificationService** | **2** | UX Ref #2 certified separately | Consolidation partial | Platform L2 |
 | **V_Link** | **2** | L3 module participation | Resolver expansion | Platform L2 |
 | **Policy Engine** | **2** | L3 write modules covered; reads partial | — | Platform L2 |
-| **Domain Event Bus** | **1** | Taxonomy thin | Placeholder subscribers | **Uncertified** |
+| **Domain Event Bus** | **1** | Taxonomy thin | Placeholder subscribers reduced (analytics placeholder removed) | **Uncertified** |
 | **Module Activity** | **1** | Legacy read paths | ACT-R1 platform-wide | **Uncertified** |
 | **AI Tools / Actions** | **2** | Catalog tools C; LifeTwin stubs | — | Platform L2 |
 | **Platform Scheduler** | **1** | Inventory-first | — | **Uncertified** |
@@ -102,7 +104,12 @@
 
 | Domain | Est. maturity | Audit exists? | Cert readiness |
 |--------|---------------|---------------|----------------|
-| **Analytics** | L1 | No | **Low** — scope decision first |
+| *(none at L1)* | — | — | **All product modules L3+ or L2 sub-domain** |
+
+### Platform capabilities — remaining gaps
+
+| Domain | Est. maturity | Audit exists? | Cert readiness |
+|--------|---------------|---------------|----------------|
 | **Search** | L1 | Guidelines only | **Low** |
 | **AI Platform** | L2 | L3 readiness review (52/100) | **Deferred** |
 | **Marketplace / partners** | — | Rulebook only | Not assessed |
@@ -126,15 +133,15 @@
 
 | Category | Certified (L3+) | WITH FINDINGS | L2 | L1 | Unaudited |
 |----------|-----------------|---------------|-----|-----|-----------|
-| Product modules | 6 plain L3 + 1 L4 | 4 (BO modules + dashboard) | 1 (notes) | 1 (analytics) | 0 |
-| Platform domains | 3 plain L3 (AP, BA, CG, Admin) | 4 (BO, AP umbrella, PP-1/2/3, WS) | 1 (AI) | 4 systems | Search, Realtime |
+| Product modules | 6 plain L3 + 1 L4 | 4 (BO modules + dashboard) | 1 (notes) | **0** | 0 |
+| Platform domains | 3 plain L3 (AP, BA, CG, Admin) | 5 (BO, AP umbrella, PP-1/2/3, WS, **Analytics**) | 1 (AI) | 4 systems | Search, Realtime |
 | Workspace | WS-L3w combined | — | — | — | Plain WS-L3 |
 
 **Coverage estimate:**
 
 | Dimension | Score | Notes |
 |-----------|-------|-------|
-| Built-in **product modules** at L3+ | **~91%** (10/11 excluding notes sub-domain) | Analytics only L1 drag |
+| Built-in **product modules** at L3+ | **~100%** (10/10 excluding notes sub-domain) | Analytics reclassified Platform Capability |
 | **Platform domain programs** completed | **100%** of chartered 2026 wave | All archived |
 | **Platform kernel capabilities** at L2+ honest | **~50%** | L1 systems remain material |
 | **Daily user path** (workspace + dashboard) | **L3 CwF both** | Shell WS-L3; dashboard module L3 CwF |
@@ -152,6 +159,7 @@
 | Reference Workspace | WS-L3 WITH FINDINGS | 2026-06-19 |
 | Account Platform (PP-1, PP-2, PP-3, umbrella) | L3 WITH FINDINGS | 2026-06-20 |
 | Dashboard Wave 3 | L3 WITH FINDINGS | 2026-06-21 |
+| **Analytics Capability** | **L2 WITH FINDINGS** (Platform Capability) | 2026-06-22 |
 | Notebook initiative | L3 CERTIFIED | 2026-06-02 |
 | Place Wave 4B | L3 + Ref #5 | 2026-06-02 |
 
@@ -161,8 +169,8 @@
 
 | State | Count | Examples |
 |-------|-------|----------|
-| **Archived certification programs** | 9 | Admin Portal, BA, CG, BO, WS, AP, Dashboard, Notebook, Place Ref |
-| **Active roadmap tracks** | 1 | Wave 3 (Analytics); UX Ref #6 eligibility |
+| **Archived certification programs** | **10** | Admin Portal, BA, CG, BO, WS, AP, Dashboard, **Analytics**, Notebook, Place Ref |
+| **Active roadmap tracks** | 0 | Wave 3 complete |
 | **Deferred by council/ROI** | 1 | AI Platform L3 |
 | **Uncertified — no program** | 4+ | Search, Realtime platform, Marketplace, platform L1 systems |
 
@@ -175,4 +183,4 @@
 - [CERTIFICATION_LEDGER.md](../architecture/CERTIFICATION_LEDGER.md)
 - [REFERENCE_MODULE_CATALOG.md](../architecture/REFERENCE_MODULE_CATALOG.md)
 
-**Last updated:** 2026-06-21
+**Last updated:** 2026-06-22

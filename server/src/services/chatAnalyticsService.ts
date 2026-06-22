@@ -167,6 +167,37 @@ async function getResponseTimeStats(userId: string, startDate?: string, endDate?
   };
 }
 
+/**
+ * Chat module — dashboard-scoped unread message rollup for Analytics Capability federation.
+ */
+export async function countUnreadMessagesForDashboardRollup(
+  userId: string,
+  dashboardId: string
+): Promise<number> {
+  const conversations = await prisma.conversation.findMany({
+    where: {
+      dashboardId,
+      trashedAt: null,
+      participants: { some: { userId, isActive: true } },
+    },
+    select: { id: true },
+  });
+
+  const conversationIds = conversations.map((c) => c.id);
+  if (conversationIds.length === 0) {
+    return 0;
+  }
+
+  return prisma.message.count({
+    where: {
+      conversationId: { in: conversationIds },
+      senderId: { not: userId },
+      deletedAt: null,
+      readReceipts: { none: { userId } },
+    },
+  });
+}
+
 export async function getChatAnalytics(query: ChatAnalyticsQuery) {
   const { userId, dashboardId, startDate, endDate } = query;
   const createdAt = buildCreatedAtFilter(startDate, endDate);

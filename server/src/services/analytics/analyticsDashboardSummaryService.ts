@@ -1,11 +1,12 @@
 import { prisma } from '../../lib/prisma';
-import { TaskStatus } from '@prisma/client';
-import { evaluateDashboardPolicyDual } from '../../auth/dashboardPolicyDual';
+import { evaluateAnalyticsPolicyDual } from '../../auth/analyticsPolicyDual';
 import { POLICY_ACTIONS } from '../../auth/policyActions';
 import { listEventsInRange } from '../calendarVisibilityService';
 import { aggregateAccessibleDriveStorageForAIContext } from '../driveVisibilityService';
 import { NotificationService } from '../notificationService';
 import { getBusinessAnalytics } from '../business/businessAnalyticsService';
+import { countUnreadMessagesForDashboardRollup } from '../chatAnalyticsService';
+import { countPendingTasksForDashboardRollup } from '../todo/todoAnalyticsRollupService';
 import type {
   AnalyticsSourceStatus,
   DashboardAnalyticsSummary,
@@ -22,44 +23,6 @@ export class AnalyticsDashboardAccessError extends Error {
     super(message);
     this.name = 'AnalyticsDashboardAccessError';
   }
-}
-
-async function countUnreadMessagesForDashboard(
-  userId: string,
-  dashboardId: string
-): Promise<number> {
-  const conversations = await prisma.conversation.findMany({
-    where: {
-      dashboardId,
-      trashedAt: null,
-      participants: { some: { userId, isActive: true } },
-    },
-    select: { id: true },
-  });
-
-  const conversationIds = conversations.map((c) => c.id);
-  if (conversationIds.length === 0) {
-    return 0;
-  }
-
-  return prisma.message.count({
-    where: {
-      conversationId: { in: conversationIds },
-      senderId: { not: userId },
-      deletedAt: null,
-      readReceipts: { none: { userId } },
-    },
-  });
-}
-
-async function countPendingTasksForDashboard(dashboardId: string): Promise<number> {
-  return prisma.task.count({
-    where: {
-      dashboardId,
-      trashedAt: null,
-      status: { in: [TaskStatus.TODO, TaskStatus.IN_PROGRESS] },
-    },
-  });
 }
 
 async function countTodayEventsForDashboard(userId: string, dashboardId: string): Promise<number> {
@@ -155,8 +118,8 @@ function markSource(
 }
 
 /**
- * Analytics Capability — canonical dashboard-scoped summary (Package 3).
- * Dashboard module consumes this contract; does not compute rollups client-side.
+ * Analytics Capability — canonical dashboard-scoped summary.
+ * Federates module rollup APIs; does not query Chat/Todo Prisma directly.
  */
 export async function getDashboardAnalyticsSummary(params: {
   userId: string;
@@ -168,11 +131,12 @@ export async function getDashboardAnalyticsSummary(params: {
     throw new AnalyticsDashboardAccessError('dashboardId is required', 400);
   }
 
-  const policy = await evaluateDashboardPolicyDual({
+  const policy = await evaluateAnalyticsPolicyDual({
     userId,
-    action: POLICY_ACTIONS.DASHBOARD_READ,
+    action: POLICY_ACTIONS.ANALYTICS_READ,
     resourceId: dashboardId,
     scope: { dashboardId },
+    metadata: { operation: 'dashboard_summary' },
   });
 
   if (policy.blocked) {
@@ -209,14 +173,14 @@ export async function getDashboardAnalyticsSummary(params: {
   let unreadNotifications: number | null = null;
 
   try {
-    unreadMessages = await countUnreadMessagesForDashboard(userId, dashboardId);
+    unreadMessages = await countUnreadMessagesForDashboardRollup(userId, dashboardId);
     markSource(sources, degradedReasons, 'chat', 'ok');
   } catch {
     markSource(sources, degradedReasons, 'chat', 'degraded', 'chat rollup unavailable');
   }
 
   try {
-    pendingTasks = await countPendingTasksForDashboard(dashboardId);
+    pendingTasks = await countPendingTasksForDashboardRollup(dashboardId);
     markSource(sources, degradedReasons, 'todo', 'ok');
   } catch {
     markSource(sources, degradedReasons, 'todo', 'degraded', 'todo rollup unavailable');

@@ -287,9 +287,11 @@ export const removeBusinessMember = async (
 // Analytics functions
 export const getBusinessAnalytics = async (
   id: string,
-  token: string
+  token: string,
+  timeRange?: string
 ): Promise<{ success: boolean; data: BusinessStats }> => {
-  return apiCall(`/${id}/analytics`, { method: 'GET' }, token);
+  const query = timeRange ? `?timeRange=${encodeURIComponent(timeRange)}` : '';
+  return apiCall(`/${id}/analytics${query}`, { method: 'GET' }, token);
 };
 
 export const getBusinessModuleAnalytics = async (

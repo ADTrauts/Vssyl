@@ -33,31 +33,10 @@ interface CrossModuleAnalyticsPanelProps {
   className?: string;
 }
 
-interface ModuleMetrics {
-  module: 'drive' | 'chat' | 'calendar' | 'dashboard';
-  activeUsers: number;
-  totalSessions: number;
-  averageSessionTime: number;
-  dataVolume: number; // in GB for drive, messages for chat, events for calendar
-  collaborationScore: number;
-  productivityIndex: number;
-  complianceScore: number;
-  costMetrics: {
-    operationalCost: number;
-    userCost: number;
-    storageCost: number;
-    totalCost: number;
-  };
-  enterpriseFeatureUsage: {
-    featureName: string;
-    usageCount: number;
-    adoptionRate: number;
-  }[];
-  trends: {
-    userGrowth: number;
-    engagementGrowth: number;
-    productivityGrowth: number;
-  };
+interface ModuleRollupDisplay {
+  module: 'drive' | 'chat' | 'calendar' | 'dashboard' | string;
+  metric: string;
+  value: number;
 }
 
 interface CrossModuleInsight {
@@ -125,7 +104,7 @@ export const CrossModuleAnalyticsPanel: React.FC<CrossModuleAnalyticsPanelProps>
   const { data: session } = useSession();
   const { recordUsage } = useFeatureGating(businessId);
   const [activeView, setActiveView] = useState<'overview' | 'insights' | 'journeys' | 'compliance'>('overview');
-  const [moduleMetrics, setModuleMetrics] = useState<ModuleMetrics[]>([]);
+  const [moduleMetrics, setModuleMetrics] = useState<ModuleRollupDisplay[]>([]);
   const [crossModuleInsights, setCrossModuleInsights] = useState<CrossModuleInsight[]>([]);
   const [userJourneys, setUserJourneys] = useState<UserJourney[]>([]);
   const [complianceOverview, setComplianceOverview] = useState<ComplianceOverview | null>(null);
@@ -157,26 +136,9 @@ export const CrossModuleAnalyticsPanel: React.FC<CrossModuleAnalyticsPanelProps>
 
       setModuleMetrics(
         enterprise.moduleRollups.map((rollup) => ({
-          module: rollup.module as ModuleMetrics['module'],
-          activeUsers: 0,
-          totalSessions: 0,
-          averageSessionTime: 0,
-          dataVolume: rollup.value,
-          collaborationScore: 0,
-          productivityIndex: 0,
-          complianceScore: 0,
-          costMetrics: {
-            operationalCost: 0,
-            userCost: 0,
-            storageCost: 0,
-            totalCost: 0,
-          },
-          enterpriseFeatureUsage: [],
-          trends: {
-            userGrowth: 0,
-            engagementGrowth: 0,
-            productivityGrowth: 0,
-          },
+          module: rollup.module as ModuleRollupDisplay['module'],
+          metric: rollup.metric,
+          value: rollup.value,
         }))
       );
     } catch (error) {
@@ -329,75 +291,23 @@ export const CrossModuleAnalyticsPanel: React.FC<CrossModuleAnalyticsPanelProps>
                 </p>
               </Card>
             )}
-            {moduleMetrics.map(module => {
-              const config = MODULE_CONFIGS[module.module];
+            {moduleMetrics.map((module) => {
+              const config = MODULE_CONFIGS[module.module as keyof typeof MODULE_CONFIGS];
               return (
-                <Card key={module.module} className="p-4">
+                <Card key={`${module.module}-${module.metric}`} className="p-4">
                   <div className="flex items-center gap-3 mb-4">
-                    <div className={`p-2 rounded-lg ${config.color}`}>
-                      {config.icon}
-                    </div>
-                    <h3 className="font-medium text-gray-900 dark:text-gray-100">{config.name}</h3>
-                  </div>
-                  
-                  <div className="grid grid-cols-2 gap-4 mb-4">
+                    {config ? (
+                      <div className={`p-2 rounded-lg ${config.color}`}>{config.icon}</div>
+                    ) : null}
                     <div>
-                      <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">{module.activeUsers.toLocaleString()}</div>
-                      <div className="text-sm text-gray-600 dark:text-gray-400">Active Users</div>
-                      <div className="flex items-center gap-1 mt-1">
-                        {getTrendIcon(module.trends.userGrowth)}
-                        <span className="text-sm font-medium text-green-600">
-                          +{module.trends.userGrowth}%
-                        </span>
-                      </div>
-                    </div>
-                    <div>
-                      <div className="text-2xl font-bold text-gray-900 dark:text-gray-100">{module.totalSessions.toLocaleString()}</div>
-                      <div className="text-sm text-gray-600 dark:text-gray-400">Sessions</div>
-                      <div className="flex items-center gap-1 mt-1">
-                        {getTrendIcon(module.trends.engagementGrowth)}
-                        <span className="text-sm font-medium text-green-600">
-                          +{module.trends.engagementGrowth}%
-                        </span>
-                      </div>
+                      <h3 className="font-medium text-gray-900 dark:text-gray-100">
+                        {config?.name ?? module.module}
+                      </h3>
+                      <p className="text-sm text-gray-600 dark:text-gray-400">{module.metric}</p>
                     </div>
                   </div>
-                  
-                  <div className="grid grid-cols-3 gap-4 mb-4 text-sm">
-                    <div>
-                      <div className="text-gray-500 dark:text-gray-400">Collaboration</div>
-                      <div className="font-medium">{module.collaborationScore}%</div>
-                    </div>
-                    <div>
-                      <div className="text-gray-500 dark:text-gray-400">Productivity</div>
-                      <div className="font-medium">{module.productivityIndex}%</div>
-                    </div>
-                    <div>
-                      <div className="text-gray-500 dark:text-gray-400">Compliance</div>
-                      <div className="font-medium">{module.complianceScore}%</div>
-                    </div>
-                  </div>
-                  
-                  <div className="border-t pt-3">
-                    <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">Enterprise Feature Adoption</div>
-                    <div className="space-y-2">
-                      {module.enterpriseFeatureUsage.slice(0, 2).map((feature, index) => (
-                        <div key={index} className="flex justify-between text-sm">
-                          <span className="text-gray-700 dark:text-gray-300">{feature.featureName}</span>
-                          <span className="font-medium">{feature.adoptionRate}%</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                  
-                  <div className="border-t pt-3 mt-3">
-                    <div className="text-sm text-gray-600 dark:text-gray-400 mb-2">Cost Breakdown</div>
-                    <div className="text-lg font-bold text-gray-900 dark:text-gray-100">
-                      ${module.costMetrics.totalCost.toLocaleString()}/month
-                    </div>
-                    <div className="text-sm text-gray-500 dark:text-gray-400">
-                      ${module.costMetrics.userCost}/user/month
-                    </div>
+                  <div className="text-3xl font-bold text-gray-900 dark:text-gray-100">
+                    {module.value.toLocaleString()}
                   </div>
                 </Card>
               );
@@ -408,6 +318,13 @@ export const CrossModuleAnalyticsPanel: React.FC<CrossModuleAnalyticsPanelProps>
         {/* Cross-Module Insights */}
         {activeView === 'insights' && (
           <div className="space-y-4">
+            {crossModuleInsights.length === 0 && (
+              <Card className="p-6">
+                <p className="text-sm text-gray-600 dark:text-gray-400 text-center">
+                  Cross-module insights require historical analytics (Phase 3). No mock data is shown.
+                </p>
+              </Card>
+            )}
             {crossModuleInsights.map(insight => (
               <Card key={insight.id} className="p-4">
                 <div className="flex items-start gap-4">
@@ -481,6 +398,13 @@ export const CrossModuleAnalyticsPanel: React.FC<CrossModuleAnalyticsPanelProps>
         {/* User Journeys */}
         {activeView === 'journeys' && (
           <div className="space-y-4">
+            {userJourneys.length === 0 && (
+              <Card className="p-6">
+                <p className="text-sm text-gray-600 dark:text-gray-400 text-center">
+                  User journey analytics require historical rollups (Phase 3). No mock data is shown.
+                </p>
+              </Card>
+            )}
             {userJourneys.map(journey => (
               <Card key={journey.userId} className="p-4">
                 <div className="flex items-center justify-between mb-4">
@@ -549,7 +473,16 @@ export const CrossModuleAnalyticsPanel: React.FC<CrossModuleAnalyticsPanelProps>
         )}
 
         {/* Compliance Overview */}
-        {activeView === 'compliance' && complianceOverview && (
+        {activeView === 'compliance' && (
+          <div className="space-y-6">
+            {!complianceOverview && (
+              <Card className="p-6">
+                <p className="text-sm text-gray-600 dark:text-gray-400 text-center">
+                  Compliance overview requires domain analytics (Phase 3). No mock data is shown.
+                </p>
+              </Card>
+            )}
+            {complianceOverview && (
           <div className="space-y-6">
             <Card className="p-4">
               <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-4">Overall Compliance Score</h3>
@@ -625,6 +558,8 @@ export const CrossModuleAnalyticsPanel: React.FC<CrossModuleAnalyticsPanelProps>
                 ))}
               </div>
             </Card>
+          </div>
+            )}
           </div>
         )}
       </div>

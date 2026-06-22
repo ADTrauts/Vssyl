@@ -1,8 +1,8 @@
 # Platform Modernization Priority 2026
 
 **Program:** Platform Portfolio Refresh 2026  
-**Date:** 2026-06-21  
-**Status:** Recommendation only — **no implementation packages authorized**  
+**Date:** 2026-06-22  
+**Status:** Recommendation — synchronized post-Analytics L2 CwF execution  
 **Supersedes:** [`PLATFORM_PORTFOLIO_MODERNIZATION_PRIORITY.md`](./PLATFORM_PORTFOLIO_MODERNIZATION_PRIORITY.md) (2026-06-19)
 
 ---
@@ -16,7 +16,7 @@
 | Certification unlock (enables L3 path) | 20% |
 | Dependency order (unblocks other work) | 15% |
 
-**Excluded from prioritization:** All archived certification programs (Admin Portal, BA, Context Graph, BO, Reference Workspace, Account Platform, **Dashboard Wave 3**); Calendar/Place/Notebook hygiene-only work; AI Platform L3 full program (deferred per ROI).
+**Excluded from prioritization:** All archived certification programs (Admin Portal, BA, Context Graph, BO, Reference Workspace, Account Platform, Dashboard Wave 3, **Analytics Capability**); Calendar/Place/Notebook hygiene-only work; AI Platform L3 full program (deferred per ROI); **Analytics Phase 2** (not authorized).
 
 ---
 
@@ -24,16 +24,16 @@
 
 | Rank | Initiative | Type | Rationale | Est. effort |
 |------|------------|------|-----------|-------------|
-| **1** | **Analytics Wave 3 — scope audit + product vs platform decision** | Module | Last uncertified product module; scope ambiguity (R-05) | 2–3 weeks discovery |
-| **2** | **Platform Activity read migration + Domain Events taxonomy** | Platform | R-03/R-06; unblocks honest L3 claims | 3–5 weeks |
-| **3** | **AI Platform stub executor policy (narrow L3 prep)** | Platform | R-01 Critical; deny/stub policy — not full L3 wave | 2–3 weeks |
-| **4** | **Account Platform advisory burn-down (certificate majors)** | Hygiene | MFA, modal billing UX, business settings dedup — post-cert not new program | 4–8 weeks (phased) |
-| **5** | **Search / Relationship Search Phase 2B planning + platform audit charter** | Platform | Unaudited; cross-module findability after L3 density | 1–2 weeks planning + audit |
-| **6** | **Policy Engine read-path parity charter** | Platform | R-07; completes authorization story for certified modules | 2–4 weeks |
-| **7** | **Platform Scheduler §22 registry + Manifest reconcile** | Platform | L1 systems; job honesty; capability truth | 2–3 weeks |
-| **8** | **Realtime platform audit charter** | Platform | No ledger row; module-declared pattern needs platform matrix | 2 weeks discovery |
-| **9** | **Dashboard Package 4 finding remediation (optional)** | Hygiene | M1-R, M4, M5, M7 on certificate — separate ACT | 4–6 weeks |
-| **10** | **UX Reference #6 Place expansion registration prep** | UX | Eligible With Findings; completes UX baseline expansion | 2–3 weeks governance |
+| **1** | **Platform Activity read migration + Domain Events taxonomy** | Platform | R-03/R-06; unblocks honest L3 claims | 3–5 weeks |
+| **2** | **AI Platform stub executor policy (narrow L3 prep)** | Platform | R-01 Critical; deny/stub policy | 2–3 weeks |
+| **3** | **Account Platform advisory burn-down (certificate majors)** | Hygiene | MFA, modal billing UX, settings dedup | 4–8 weeks (phased) |
+| **4** | **Search / Relationship Search Phase 2B planning + platform audit charter** | Platform | Unaudited; cross-module findability | 1–2 weeks planning + audit |
+| **5** | **Policy Engine read-path parity charter** | Platform | R-07; completes authorization story | 2–4 weeks |
+| **6** | **Platform Scheduler §22 registry + Manifest reconcile** | Platform | L1 systems; job honesty | 2–3 weeks |
+| **7** | **Realtime platform audit charter** | Platform | No ledger row | 2 weeks discovery |
+| **8** | **Dashboard Package 4 finding remediation (optional)** | Hygiene | M1-R, M4, M5, M7 on certificate | 4–6 weeks |
+| **9** | **Analytics certificate finding burn-down (AN-M2–M6)** | Hygiene | Post-L2 CwF majors — not new cert program | Phased |
+| **10** | **UX Reference #6 Place expansion registration prep** | UX | Eligible With Findings | 2–3 weeks governance |
 
 ---
 
@@ -41,10 +41,10 @@
 
 **Recommended sequence (next 2 quarters):**
 
-1. **Analytics Wave 3 entry** — scope audit → product vs platform decision → implementation charter
-2. **Platform kernel increment** — Activity read migration + Domain Events taxonomy (parallel, incremental)
-3. **AI stub policy** — product decision on household/business/dashboard executors
-4. **AP advisory burn-down** — phased engineering against certificate majors (not a new cert program)
+1. **Platform kernel increment** — Activity read migration + Domain Events taxonomy
+2. **AI stub policy** — product decision on household/business/dashboard executors
+3. **AP advisory burn-down** — phased engineering against certificate majors
+4. **Analytics finding burn-down** — AN-M2–M6 (optional; not Phase 2)
 
 ---
 
@@ -55,6 +55,8 @@
 | Admin Portal, Business Administration, Context Graph, Business Operations | Programs **archived** — advisories are module backlog |
 | Reference Workspace WS-L3 program | **Complete** — WS-L3 CwF archived; plain WS-L3 is separate council path |
 | Account Platform certification trilogy | **Complete** — PP-1/2/3 + umbrella archived 2026-06-20 |
+| **Analytics Capability certification** | **Complete** — L2 CwF archived 2026-06-22 |
+| Dashboard Wave 3 | **Complete** — L3 CwF archived 2026-06-21 |
 | Identity / Settings / Billing **discovery audits** | **Obsolete** — superseded by Account Platform execution |
 | Calendar architecture L3 | **Complete** — hygiene P3 only |
 | Place L3 / Reference #5 | **Complete** — PL-H* optional |
@@ -77,7 +79,7 @@
 | 2 | **Account Platform advisory closure** | MFA, billing UX, settings coherence — daily trust |
 | 3 | **Platform kernel (Activity, Events)** | Honest audit trail for all modules |
 | 4 | **Billing entitlements UX** | Revenue, module gating (post-cert majors) |
-| 5 | **Analytics** | Business intelligence promise (scope TBD) |
+| 5 | **Analytics finding burn-down** | Certificate majors AN-M2–M6 (Phase 2 not authorized) |
 | 6 | **Search / discovery** | Cross-module findability |
 | 7 | **AI Platform L3** | Strategic but deferred |
 | 8 | **Workspace advisory burn-down** | Shell polish — WS-L3 achieved |
@@ -161,4 +163,4 @@ flowchart LR
 - [PLATFORM_RISK_MATRIX_2026.md](./PLATFORM_RISK_MATRIX_2026.md)
 - [PLATFORM_MODULE_MODERNIZATION_ROADMAP.md](../plans/PLATFORM_MODULE_MODERNIZATION_ROADMAP.md)
 
-**Last updated:** 2026-06-21
+**Last updated:** 2026-06-22

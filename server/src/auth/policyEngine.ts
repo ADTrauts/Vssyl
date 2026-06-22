@@ -853,12 +853,82 @@ async function authorizeModuleUninstall(input: PolicyInput): Promise<PolicyDecis
   return { allow: true, matchedPolicy: 'business_module_uninstall' };
 }
 
+async function authorizeAnalyticsRead(input: PolicyInput): Promise<PolicyDecision> {
+  const userId = resolveUserId(input);
+  if (!userId) {
+    return deny(input, 'INSUFFICIENT_ROLE');
+  }
+
+  const operation = input.metadata?.operation;
+  if (operation === 'personal' || operation === 'export') {
+    if (input.resourceId && input.resourceId !== userId) {
+      return deny(input, 'NOT_OWNER');
+    }
+    return { allow: true, matchedPolicy: 'analytics_self_read' };
+  }
+
+  if (operation === 'module') {
+    return { allow: true, matchedPolicy: 'analytics_module_read_authenticated' };
+  }
+
+  if (operation === 'dashboard_summary') {
+    return authorizeDashboardRead({
+      ...input,
+      action: POLICY_ACTIONS.DASHBOARD_READ,
+      resourceType: 'dashboard',
+      resourceId: typeof input.resourceId === 'string' ? input.resourceId : input.scope?.dashboardId,
+    });
+  }
+
+  return { allow: true, matchedPolicy: 'analytics_read_authenticated' };
+}
+
+async function authorizeAnalyticsAdmin(input: PolicyInput): Promise<PolicyDecision> {
+  const userId = resolveUserId(input);
+  if (!userId) {
+    return deny(input, 'INSUFFICIENT_ROLE');
+  }
+
+  const businessId = input.scope?.businessId;
+  if (typeof businessId === 'string') {
+    const membership = await prisma.businessMember.findFirst({
+      where: { businessId, userId, isActive: true },
+      select: { role: true },
+    });
+    if (!membership) {
+      return deny(input, 'NOT_MEMBER');
+    }
+    if (membership.role === 'ADMIN' || membership.role === 'MANAGER') {
+      return { allow: true, matchedPolicy: 'analytics_business_admin' };
+    }
+    return deny(input, 'INSUFFICIENT_ROLE');
+  }
+
+  const user = await prisma.user.findUnique({
+    where: { id: userId },
+    select: { role: true },
+  });
+  if (user?.role === 'ADMIN') {
+    return { allow: true, matchedPolicy: 'analytics_platform_admin' };
+  }
+
+  return deny(input, 'INSUFFICIENT_ROLE');
+}
+
 /**
  * Central policy check: authentication must already have established the actor (pass userId or user).
  * Denies are logged with operation `policy_deny`. Unknown actions fail closed.
  */
 export async function authorize(input: PolicyInput): Promise<PolicyDecision> {
   const action = input.action;
+
+  if (action === POLICY_ACTIONS.ANALYTICS_READ) {
+    return authorizeAnalyticsRead(input);
+  }
+
+  if (action === POLICY_ACTIONS.ANALYTICS_ADMIN) {
+    return authorizeAnalyticsAdmin(input);
+  }
 
   if (action === POLICY_ACTIONS.DASHBOARD_READ) {
     if (input.metadata?.operation === 'list') {

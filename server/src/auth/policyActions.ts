@@ -182,6 +182,8 @@ export const POLICY_ACTIONS = {
   ENTITLEMENT_WRITE: 'entitlement:write',
   BILLING_READ: 'billing:read',
   BILLING_WRITE: 'billing:write',
+  ANALYTICS_READ: 'analytics:read',
+  ANALYTICS_ADMIN: 'analytics:admin',
 } as const;
 
 export type PolicyAction = (typeof POLICY_ACTIONS)[keyof typeof POLICY_ACTIONS];

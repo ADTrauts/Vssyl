@@ -29,7 +29,7 @@
 | **R-02** | Dashboard L3 CwF — 4 majors on certificate (M1-R, M4, M5, M7) | 5 | 3 | 2 | 3 | 3 | **13.5** | **Medium** | ↓ (was High L1; **certified 2026-06-21**) |
 | **R-03** | Module Activity legacy read paths | 3 | 2 | 4 | 5 | 4 | **17.0** | **High** | — |
 | **R-04** | Account Platform majors (MFA, modal billing, triplication) | 5 | 4 | 3 | 4 | 3 | **18.5** | **High** | **New** (replaces Settings/Identity critical) |
-| **R-05** | Analytics L1 pseudo-module — scope ambiguity | 3 | 3 | 3 | 3 | 4 | **15.5** | **Medium** | — |
+| **R-05** | Analytics L2 CwF — 6 majors on certificate (AN-M2–M6) | 3 | 3 | 2 | 3 | 3 | **12.5** | **Medium** | ↓ (was L1 scope ambiguity; **certified 2026-06-22**) |
 | **R-06** | Domain Events thin taxonomy + placeholder subscribers | 2 | 2 | 4 | 4 | 3 | **15.5** | **Medium** | — |
 | **R-07** | Policy Engine read-path gaps | 3 | 3 | 4 | 4 | 3 | **16.5** | **High** | — |
 | **R-08** | Search — no unified discovery audit | 3 | 2 | 2 | 3 | 4 | **13.5** | **Medium** | — |
@@ -63,7 +63,7 @@
 |------|-------|-------|
 | **Critical** | 1 | AI stub executors |
 | **High** | 4 | Dashboard, Activity reads, AP majors, PE read gaps |
-| **Medium** | 10 | Domain Events, Analytics, Search, WS advisories, Scheduler, Manifest, Realtime, AP advisories, Billing overlap, Member PE |
+| **Medium** | 10 | Domain Events, Search, WS advisories, Scheduler, Manifest, Realtime, AP advisories, Billing overlap, Member PE, **Analytics CwF majors** |
 | **Low** | 5 | BO/CG advisories, Calendar/Place hygiene |
 
 ---
@@ -73,8 +73,8 @@
 | Rank | Area | Why |
 |------|------|-----|
 | 1 | **AI stub executors** | Constitutional violation risk — AI may report success without execution; affects trust across all L3 modules and UX Ref #4 |
-| 2 | **Dashboard L1** | Primary personal landing; dual widget registry; weak activity; last major uncertified user module |
-| 3 | **Module Activity legacy reads** | Undermines auditability claims platform-wide; blocks honest L3 promotion for new modules |
+| 2 | **Dashboard L3 CwF majors** | 4 certificate majors (M1-R, M4, M5, M7) on daily landing path |
+| 3 | **Module Activity legacy reads** | Undermines auditability claims platform-wide |
 | 4 | **Account Platform certificate majors** | MFA absent (AP-UMB-M01); modal-only billing (M02); business settings triplication (M03) — daily user + revenue trust |
 | 5 | **Policy Engine read-path gaps** | Authorization inconsistency on reads; Place/Todo/Dashboard gaps |
 
@@ -128,4 +128,4 @@ Account Platform    PP cert     Member PE   —           —
 - [PLATFORM_EXECUTIVE_SUMMARY_2026.md](./PLATFORM_EXECUTIVE_SUMMARY_2026.md)
 - [PLATFORM_PORTFOLIO_REFRESH_2026.md](./PLATFORM_PORTFOLIO_REFRESH_2026.md)
 
-**Last updated:** 2026-06-21
+**Last updated:** 2026-06-22

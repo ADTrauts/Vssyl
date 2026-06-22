@@ -5,7 +5,7 @@
 **Authority:** Post-completion of File Hub L4, six architecture L3 modules, seven platform domain programs (Admin Portal, Business Administration, Context Graph, Business Operations, Reference Workspace, Account Platform), and UX certification wave 5G  
 **Status:** Discovery only — **no certification, no implementation, no ledger changes, no council activity**
 
-**Supersedes:** [`PLATFORM_PORTFOLIO_REALITY_ASSESSMENT.md`](./PLATFORM_PORTFOLIO_REALITY_ASSESSMENT.md) (2026-06-19) — that snapshot predates Account Platform execution (2026-06-20) and WS-L3 promotion (2026-06-19).
+**Supersedes:** [`PLATFORM_PORTFOLIO_REALITY_ASSESSMENT.md`](./PLATFORM_PORTFOLIO_REALITY_ASSESSMENT.md) (2026-06-19) — partial refresh 2026-06-21 (Dashboard); **2026-06-22 Analytics L2 CwF execution**
 
 **Constraint:** Governance and discovery only. No runtime code, schemas, routes, tests, UX implementation, modernization packages, or certification execution.
 
@@ -19,13 +19,13 @@ Produce a fresh platform-wide reality map after a concentrated certification wav
 
 ## Executive posture
 
-The platform has crossed a **certification inflection point**. Ten major programs are **archived** with ledger execution (including **Dashboard Wave 3** 2026-06-21). The **product module core** is largely L3 (six modules + File Hub L4). **Platform-adjacent domains** that were unaudited in June 19 (Identity, Settings, Billing) are now **L3 WITH FINDINGS** under Account Platform (2026-06-20). **Reference Workspace** reached **WS-L3 WITH FINDINGS** (2026-06-19); ENG-1 / RWS-F1 closed at award.
+The platform has crossed a **certification inflection point**. **Eleven** major programs are **archived** with ledger execution (including **Analytics Capability** L2 CwF 2026-06-22). The **product module core** is fully L3+ (six modules + File Hub L4 + BO modules + Dashboard CwF). **Platform Analytics Capability** is **L2 WITH FINDINGS** — reclassified from the former L1 pseudo-module gap.
 
-The **remaining landscape** clusters into three buckets:
+The **remaining landscape** clusters into:
 
-2. **Uncertified product modules** — **Analytics (L1 pseudo-module)** only
-3. **Certified with finding backlog** — Dashboard (4 majors, 7 advisories on certificate); Business Operations (17); Account Platform (19); Reference Workspace (11); Context Graph (8); Business Administration (6); plus module hygiene
-4. **Uncertified platform kernel (L1–L2)** — Domain Events, Module Activity, Platform Scheduler, Manifest governance; Policy Engine, V_Link, Global Trash, Notifications at L2 without platform L3 charter; **Search** and **Realtime** without ledger rows; **AI Platform** at L2 with L3 deferred (52/100)
+1. **Certified with finding backlog** — Dashboard, Analytics, Business Operations, Account Platform, Reference Workspace, Context Graph, Business Administration; plus module hygiene
+2. **Uncertified platform kernel (L1–L2)** — Domain Events, Module Activity, Platform Scheduler, Manifest governance; Policy Engine, V_Link, Global Trash, Notifications at L2 without platform L3 charter; **Search** and **Realtime** without ledger rows; **AI Platform** at L2 with L3 deferred (52/100)
+3. **Future programs (not authorized)** — Analytics Phase 2 Event Pipeline; Phase 3 Historical
 
 ---
 
@@ -54,6 +54,7 @@ The **remaining landscape** clusters into three buckets:
 | | PP-2 Settings Platform | **L3 CwF** | Sub-program (pattern deferred) | PP2_CERTIFICATION_RECORD |
 | | PP-3 Billing & Entitlements | **L3 CwF** | **#AP-BILL-1** Reference Capability CwF | PP3_CERTIFICATION_RECORD |
 | | Account Platform umbrella | **L3 CwF** | Composite domain (not reference domain) | ACCOUNT_PLATFORM_CERTIFICATION_RECORD |
+| **Platform capability** | **Platform Analytics Capability** | **L2 CwF** | Hybrid Domain primary engine · 6 majors · 8 advisories | [ANALYTICS_CERTIFICATION_RECORD](../analytics/ANALYTICS_CERTIFICATION_RECORD.md) |
 
 ### UX certification track (independent)
 
@@ -78,6 +79,7 @@ The **remaining landscape** clusters into three buckets:
 | Business Operations | L3 WITH FINDINGS | 2026-06-19 | [BUSINESS_OPERATIONS_PROGRAM_ARCHIVE](../business-operations/BUSINESS_OPERATIONS_PROGRAM_ARCHIVE.md) |
 | Reference Workspace | WS-L3 WITH FINDINGS | 2026-06-19 | [WORKSPACE_PROGRAM_ARCHIVE](../workspace/WORKSPACE_PROGRAM_ARCHIVE.md) |
 | Account Platform (PP-1, PP-2, PP-3, umbrella) | L3 WITH FINDINGS | 2026-06-20 | [ACCOUNT_PLATFORM_PROGRAM_ARCHIVE](../account-platform/ACCOUNT_PLATFORM_PROGRAM_ARCHIVE.md) |
+| **Analytics Capability** | **L2 WITH FINDINGS** (Platform Capability) | 2026-06-22 | [ANALYTICS_PROGRAM_ARCHIVE](../analytics/ANALYTICS_PROGRAM_ARCHIVE.md) |
 | Notebook initiative | L3 CERTIFIED | 2026-06-02 | progress.md |
 | Place Wave 4B | L3 + Ref #5 | 2026-06-02 | PLACE reference council review |
 
@@ -89,13 +91,14 @@ The **remaining landscape** clusters into three buckets:
 
 | Program | Status | Notes |
 |---------|--------|-------|
-| **Platform Module Modernization Roadmap** | Active master roadmap | Wave 3 **Dashboard complete**; **Analytics** is next architectural track |
+| **Platform Module Modernization Roadmap** | Active master roadmap | Wave 3 **complete** (Dashboard L3 CwF + Analytics L2 CwF) |
 | **UX Reference expansion (#6 Place)** | Eligible, not registered | Wave 6C expansion review complete |
-| **Advisory burn-down** | Ongoing backlog | BO, AP, WS, CG, BA — not portfolio programs |
+| **Advisory burn-down** | Ongoing backlog | BO, AP, WS, CG, BA, Dashboard, **Analytics** — not portfolio programs |
 | **AI Platform L3** | **Deferred** | 52/100 readiness; ROI rank 5/5 (2026-06-03) |
+| **Analytics Phase 2** | **Not authorized** | Event pipeline — separate council gate |
 | **Relationship Search Phase 2B** | Planning only | Guidelines exist; no platform audit |
 
-**No active certification programs** for Identity, Settings, Billing, Reference Workspace, or Business Operations — all archived.
+**No active certification programs** for Identity, Settings, Billing, Reference Workspace, Business Operations, Dashboard, or **Analytics** — all archived.
 
 ---
 
@@ -105,8 +108,8 @@ The **remaining landscape** clusters into three buckets:
 
 | Domain | Module id | Maturity | Gap |
 |--------|-----------|----------|-----|
-| **Dashboard** | `dashboard` | **3w** | L3 WITH FINDINGS · 4 majors · 7 advisories · program **ARCHIVED** |
-| **Analytics** | `analytics` | **L1** | Pseudo-module; subscriber stubs; scope undecided |
+| **Dashboard** | `dashboard` | **3w** | L3 WITH FINDINGS · program **ARCHIVED** |
+| **Analytics** | `analytics` | **2w** | **Platform Capability L2 CwF** · program **ARCHIVED** — not product module |
 
 ### Platform capabilities (no L3 row)
 
@@ -145,7 +148,7 @@ The **remaining landscape** clusters into three buckets:
 | **Scheduler** | L1 | Uncertified | Platform Engineering | Medium — §22 compliance |
 | **Manifest governance** | L1 | Uncertified | Platform Engineering | Medium — capability truth drift |
 | **Search** | L1 | Unaudited | Platform Engineering | Medium — cross-module findability |
-| **Analytics (platform subscriber)** | L1 | Uncertified | TBD vs product module | Medium — conflation risk with `analytics` module |
+| **Analytics (platform capability)** | **2w** | L2 CwF executed | Federated L2; Phase 2 pipeline deferred |
 
 ---
 
@@ -154,7 +157,7 @@ The **remaining landscape** clusters into three buckets:
 | Domain | Posture | Remaining work | Future cert opportunity |
 |--------|---------|----------------|-------------------------|
 | **Dashboard** | **L3 CwF archived** | 4 majors · 7 advisories on certificate | Plain L3 / reference review (deferred) |
-| **Analytics** | **L1 — primary product gap** | Scope audit; product vs platform decision | **L3 module certification** — highest product priority |
+| **Analytics** | **L2 CwF archived** | 6 majors · 8 advisories on certificate | Phase 2 pipeline (separate charter) |
 | **Identity** | **L3 CwF (PP-1)** | MFA (PP1-F03); photo controller (PP1-F04); 9 advisories | Plain L3 / reference pattern promotion |
 | **Settings** | **L3 CwF (PP-2)** | BA business dedup (PP2-F05); 6 advisories | **Strongest AP reference pattern candidate** |
 | **Billing** | **L3 CwF (PP-3)** | Modal UX (PP3-F08); webhook activity; #AP-BILL-1 promotion | Reference Capability plain promotion |
@@ -167,7 +170,7 @@ The **remaining landscape** clusters into three buckets:
 
 | Lens | Top item | Rationale |
 |------|----------|-----------|
-| **Highest business value** | **Analytics Wave 3** | Last uncertified product module; scope decision blocks platform completeness |
+| **Highest business value** | **Platform kernel (Activity/Events)** | Unblocks honest audit platform-wide |
 | **Highest technical risk** | **AI stub executors** | Constitutional trust violation — fake success paths |
 | **Highest modernization value** | **Platform Activity read migration + Domain Events taxonomy** | Unblocks honest L3 claims for all future modules |
 | **Highest reference potential** | **PP-2 Settings Platform** (deferred) | 26/27 G-score; orchestration/registry patterns teachable |
@@ -181,8 +184,8 @@ The **remaining landscape** clusters into three buckets:
 | Identity, Settings, Billing **unaudited** | **L3 WITH FINDINGS** — Account Platform archived |
 | Reference Workspace **WS-L3 not started** | **WS-L3 WITH FINDINGS** — program archived |
 | ENG-1 Place segment **P0 blocker** | **RWS-F1 closed** at WS-L3 award |
-| Top priority = WS-L3 prep | **Complete** — Dashboard Wave 3 **complete**; shift to Analytics + platform kernel |
-| Platform domain cert ~60% | **~85%** of completed platform programs certified |
+| Top priority = WS-L3 prep | **Complete** — Wave 3 **complete** (Dashboard + Analytics) |
+| Platform domain cert ~60% | **~90%** of chartered 2026 wave programs certified |
 
 ---
 
@@ -192,21 +195,21 @@ See [`PLATFORM_EXECUTIVE_SUMMARY_2026.md`](./PLATFORM_EXECUTIVE_SUMMARY_2026.md)
 
 | # | Question | Short answer |
 |---|----------|--------------|
-| 1 | What is certified today? | L4 File Hub; 6 L3 modules + 3 BO modules CwF + **Dashboard CwF**; 7 platform domains/systems L3; WS-L3; Account Platform trilogy |
-| 2 | What programs are archived? | Admin Portal, BA, CG, BO, Reference Workspace, Account Platform, **Dashboard Wave 3** (+ Notebook, Place Ref) |
-| 3 | What domains remain uncertified? | **Analytics**; platform kernel L1–L2 rows; Search unaudited |
+| 1 | What is certified today? | L4 File Hub; 6 L3 modules + 3 BO modules CwF + Dashboard CwF; 7 platform domains/systems L3; WS-L3; Account Platform trilogy; **Platform Analytics Capability L2 CwF** |
+| 2 | What programs are archived? | Admin Portal · BA · CG · BO · Reference Workspace · Account Platform · Dashboard · **Analytics** (+ Notebook, Place Ref) |
+| 3 | What domains remain uncertified? | **Product modules:** none at L1 · **Platform:** AI Platform (L2 deferred), Search (unaudited), Realtime (no row) · **Kernel L1:** Domain Events, Activity, Scheduler, Manifest |
 | 4 | What platform systems remain L1/L2? | **L1:** Domain Events, Activity, Scheduler, Manifest · **L2:** PE, V_Link, Trash, Notifications, AI Platform |
 | 5 | Highest architectural risk? | **AI stub executors** |
-| 6 | Highest business value? | **Analytics** (last uncertified product module) |
+| 6 | Highest business value? | **Platform kernel (Activity/Events)** |
 | 7 | Highest modernization value? | **Activity reads + Domain Events** |
 | 8 | Highest reference candidate? | **PP-2 Settings Platform** (deferred pattern) |
-| 9 | Modernize next? | Analytics Wave 3 + platform kernel L2 promotion |
+| 9 | Modernize next? | Platform kernel increment + AI stub policy |
 | 10 | Do NOT modernize next? | All archived cert programs; Calendar/Place L4; AI full L3; standalone Notes L3 |
 | 11 | Top 10 priorities? | See [PLATFORM_MODERNIZATION_PRIORITY_2026.md](./PLATFORM_MODERNIZATION_PRIORITY_2026.md) |
-| 12 | Top 5 cert candidates? | Analytics (post-scope), AI Platform (deferred), Platform PE L3 charter, Search platform, Dashboard plain L3 (post-P4) |
+| 12 | Top 5 cert candidates? | Search · PE platform L3 · AI (deferred) · Dashboard plain L3 · Analytics Phase 2 (not authorized) |
 | 13 | Top 5 reference candidates? | PP-2 Settings, HR #1, #AP-BILL-1, PP-1 Identity, UX Ref #6 Place |
 | 14 | 12-month roadmap? | See modernization priority doc |
-| 15 | Recommended next initiative? | **Analytics Wave 3 — scope audit + product vs platform decision** |
+| 15 | Recommended next initiative? | **Platform kernel increment** (Activity/Events) + **AI stub policy** |
 
 ---
 
@@ -232,4 +235,4 @@ See [`PLATFORM_EXECUTIVE_SUMMARY_2026.md`](./PLATFORM_EXECUTIVE_SUMMARY_2026.md)
 - No council activity
 - No modernization packages created
 
-**Last updated:** 2026-06-21
+**Last updated:** 2026-06-22
