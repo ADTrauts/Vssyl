@@ -2,6 +2,8 @@ import express from 'express';
 import { authenticateJWT, requireRole } from '../middleware/auth';
 import { prisma } from '../lib/prisma';
 import { logger } from '../lib/logger';
+import { getFeedForUser } from '../services/platform/platformActivityQueryService';
+import { toAiRecentActivityDebugRow } from '../services/platform/platformActivityContextMapper';
 
 function logSrvErr(operation: string, message: string, err: unknown, context?: Record<string, unknown>): void {
   const e = err instanceof Error ? err : new Error(String(err));
@@ -98,18 +100,9 @@ router.get('/user/:userId', authenticateJWT, requireAdmin, async (req, res) => {
       }
     });
 
-    // Get user's recent activity across modules
-    const recentActivity = await prisma.activity.findMany({
-      where: { userId },
-      orderBy: { timestamp: 'desc' },
-      take: 20,
-      select: {
-        id: true,
-        type: true,
-        details: true,
-        timestamp: true
-      }
-    });
+    // Get user's recent activity across modules (canonical platform activity query)
+    const activityRecords = await getFeedForUser({ userId, limit: 20 });
+    const recentActivity = activityRecords.map(toAiRecentActivityDebugRow);
 
     // Get user's business memberships
     const businessMemberships = await prisma.businessMember.findMany({

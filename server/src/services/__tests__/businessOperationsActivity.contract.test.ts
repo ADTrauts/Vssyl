@@ -42,11 +42,21 @@ describe('CO-01 activity wiring contract', () => {
     expect(hrEmployeeServiceSource).toMatch(/hrActivityService/);
     expect(hrEmployeeServiceSource).not.toMatch(/emitModuleActivityEvent/);
     expect(hrEmployeeServiceSource).toMatch(/recordEmployeeCreated/);
+    expect(hrEmployeeServiceSource).not.toMatch(/hrDomainEventService/);
 
     expect(hrPtoServiceSource).toMatch(/hrActivityService/);
     expect(hrPtoServiceSource).not.toMatch(/emitModuleActivityEvent/);
     expect(hrPtoServiceSource).toMatch(/recordPtoRequested/);
 
     expect(hrControllerSource).not.toMatch(/emitModuleActivityEvent/);
+  });
+
+  it('hr activity service dual-emits domain events via hrDomainEventService', () => {
+    const hrActivitySource = readFileSync(
+      join(process.cwd(), 'src/services/hrActivityService.ts'),
+      'utf8'
+    );
+    expect(hrActivitySource).toMatch(/hrDomainEventService/);
+    expect(hrActivitySource).toMatch(/recordEmployeeCreatedDomainEvent/);
   });
 });

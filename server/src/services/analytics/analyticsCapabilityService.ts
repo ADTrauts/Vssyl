@@ -1,5 +1,4 @@
 import { prisma } from '../../lib/prisma';
-import { Prisma } from '@prisma/client';
 import { evaluateAnalyticsPolicyDual } from '../../auth/analyticsPolicyDual';
 import { POLICY_ACTIONS } from '../../auth/policyActions';
 import {
@@ -13,6 +12,15 @@ import {
   getDashboardAnalyticsSummary,
   getDashboardAnalyticsSummaryForAI,
 } from './analyticsDashboardSummaryService';
+import {
+  getActivitySummary,
+  getModuleActivity,
+  getRecentActivity,
+} from '../platform/platformActivityQueryService';
+import {
+  analyticsDescriptionFromRecord,
+  durationHoursFromRecord,
+} from '../platform/platformActivityFeedMapper';
 
 export { AnalyticsDashboardAccessError, getDashboardAnalyticsSummary, getDashboardAnalyticsSummaryForAI };
 
@@ -35,25 +43,6 @@ function resolveStartDate(timeRange: string): Date {
       return new Date(now.getTime() - 90 * 24 * 60 * 60 * 1000);
     default:
       return new Date(now.getTime() - 30 * 24 * 60 * 60 * 1000);
-  }
-}
-
-function getActivityDescription(type: string, details?: Record<string, unknown>): string {
-  switch (type) {
-    case 'file_created':
-      return `Created ${String(details?.fileName ?? 'a file')}`;
-    case 'file_edited':
-      return `Edited ${String(details?.fileName ?? 'a file')}`;
-    case 'file_shared':
-      return `Shared ${String(details?.fileName ?? 'a file')}`;
-    case 'message_sent':
-      return `Sent message in ${String(details?.conversationName ?? 'a conversation')}`;
-    case 'module_accessed':
-      return `Accessed ${String(details?.moduleName ?? 'a module')}`;
-    case 'connection_made':
-      return `Connected with ${String(details?.userName ?? 'a user')}`;
-    default:
-      return 'Performed an action';
   }
 }
 
@@ -90,75 +79,77 @@ export async function getPersonalAnalyticsCapability(params: {
   const now = new Date();
   const startDate = resolveStartDate(timeRange);
 
-  const [activities, moduleInstallations, filesCreated, messagesSent] = await Promise.all([
-    prisma.activity.findMany({
-      where: {
+  const [activities, moduleInstallations, filesCreated, messagesSent, summary] =
+    await Promise.all([
+      getRecentActivity({
         userId: params.userId,
-        timestamp: { gte: startDate, lte: now },
-      },
-      orderBy: { timestamp: 'desc' },
-      take: 50,
-    }),
-    prisma.moduleInstallation.findMany({
-      where: { userId: params.userId, enabled: true },
-      include: {
-        module: { select: { id: true, name: true, category: true } },
-      },
-    }),
-    prisma.file.count({
-      where: {
+        since: startDate,
+        until: now,
+        limit: 50,
+      }),
+      prisma.moduleInstallation.findMany({
+        where: { userId: params.userId, enabled: true },
+        include: {
+          module: { select: { id: true, name: true, category: true } },
+        },
+      }),
+      prisma.file.count({
+        where: {
+          userId: params.userId,
+          createdAt: { gte: startDate, lte: now },
+          trashedAt: null,
+        },
+      }),
+      prisma.message.count({
+        where: {
+          senderId: params.userId,
+          createdAt: { gte: startDate, lte: now },
+          deletedAt: null,
+        },
+      }),
+      getActivitySummary({
         userId: params.userId,
-        createdAt: { gte: startDate, lte: now },
-        trashedAt: null,
-      },
-    }),
-    prisma.message.count({
-      where: {
-        senderId: params.userId,
-        createdAt: { gte: startDate, lte: now },
-        deletedAt: null,
-      },
-    }),
-  ]);
+        since: startDate,
+        until: now,
+      }),
+    ]);
 
-  const totalSessions = activities.length;
-  const totalTime =
-    activities.reduce((sum, activity) => {
-      const details = activity.details as Record<string, unknown> | null;
-      const duration = typeof details?.duration === 'number' ? details.duration : 0;
-      return sum + duration;
-    }, 0) / 3600;
+  const totalSessions = summary.totalEvents;
+  const totalTime = activities.reduce(
+    (sum, record) => sum + durationHoursFromRecord(record),
+    0
+  );
 
   const moduleUsage = moduleInstallations.map((installation) => {
-    const moduleActivities = activities.filter((activity) => {
-      const details = activity.details as Record<string, unknown> | null;
-      return details?.moduleId === installation.moduleId;
-    });
+    const moduleActivities = activities.filter(
+      (record) => record.moduleId === installation.moduleId
+    );
 
     return {
       module: installation.module.name,
       usageCount: moduleActivities.length,
       lastUsed: moduleActivities[0]?.timestamp ?? installation.installedAt,
       totalTime:
-        moduleActivities.reduce((sum, activity) => {
-          const details = activity.details as Record<string, unknown> | null;
-          const duration = typeof details?.duration === 'number' ? details.duration : 0;
-          return sum + duration;
-        }, 0) / 3600,
+        Math.round(
+          moduleActivities.reduce(
+            (sum, record) => sum + durationHoursFromRecord(record),
+            0
+          ) * 10
+        ) / 10,
     };
   });
 
-  const recentActivity = activities.map((activity) => {
-    const details = activity.details as Record<string, unknown> | null;
-    return {
-      id: activity.id,
-      type: activity.type,
-      module: String(details?.moduleName ?? 'Unknown'),
-      description: getActivityDescription(activity.type, details ?? undefined),
-      timestamp: activity.timestamp.toISOString(),
-      duration: typeof details?.duration === 'number' ? details.duration : undefined,
-    };
-  });
+  const recentActivity = activities.map((record) => ({
+    id: record.eventId,
+    type: record.action,
+    module: record.moduleId,
+    description: analyticsDescriptionFromRecord(record),
+    timestamp: record.timestamp.toISOString(),
+    duration:
+      typeof record.metadata.duration === 'number'
+        ? record.metadata.duration
+        : undefined,
+  }));
 
   await recordAnalyticsPersonalView({
     actorUserId: params.userId,
@@ -209,25 +200,21 @@ export async function getModuleAnalyticsCapability(params: {
     throw new AnalyticsAccessError('Module not found or not installed', 404);
   }
 
-  const activities = await prisma.activity.findMany({
-    where: {
-      userId: params.userId,
-      timestamp: { gte: startDate, lte: now },
-      details: {
-        path: ['moduleId'],
-        equals: params.moduleId,
-      } as Prisma.JsonFilter,
-    },
-    orderBy: { timestamp: 'desc' },
+  const activities = await getModuleActivity({
+    userId: params.userId,
+    moduleId: params.moduleId,
+    since: startDate,
+    until: now,
   });
 
   const totalUsage = activities.length;
   const totalTime =
-    activities.reduce((sum, activity) => {
-      const details = activity.details as Record<string, unknown> | null;
-      const duration = typeof details?.duration === 'number' ? details.duration : 0;
-      return sum + duration;
-    }, 0) / 3600;
+    Math.round(
+      activities.reduce(
+        (sum, record) => sum + durationHoursFromRecord(record),
+        0
+      ) * 10
+    ) / 10;
 
   const lastUsed = activities[0]?.timestamp ?? installation.installedAt;
 
@@ -240,18 +227,18 @@ export async function getModuleAnalyticsCapability(params: {
   return {
     module: installation.module,
     totalUsage,
-    totalTime: Math.round(totalTime * 10) / 10,
+    totalTime,
     lastUsed: lastUsed.toISOString(),
-    activities: activities.map((activity) => {
-      const details = activity.details as Record<string, unknown> | null;
-      return {
-        id: activity.id,
-        type: activity.type,
-        description: getActivityDescription(activity.type, details ?? undefined),
-        timestamp: activity.timestamp.toISOString(),
-        duration: typeof details?.duration === 'number' ? details.duration : undefined,
-      };
-    }),
+    activities: activities.map((record) => ({
+      id: record.eventId,
+      type: record.action,
+      description: analyticsDescriptionFromRecord(record),
+      timestamp: record.timestamp.toISOString(),
+      duration:
+        typeof record.metadata.duration === 'number'
+          ? record.metadata.duration
+          : undefined,
+    })),
   };
 }
 

@@ -12,6 +12,8 @@ import {
 } from './contextDensityReport';
 import { isSyntheticContextEnabled } from './syntheticContextPolicy';
 import { prisma } from '../../lib/prisma';
+import { getFeedForUser } from '../../services/platform/platformActivityQueryService';
+import { toAiContextActivityRow } from '../../services/platform/platformActivityContextMapper';
 import {
   orchestrateContextRetrieval,
   type OrchestrateContextScope,
@@ -432,16 +434,13 @@ export class CrossModuleContextEngine {
    * Get recent activity context
    */
   private async getActivityContext(userId: string) {
-    const activities = await prisma.activity.findMany({
-      where: { userId },
-      orderBy: { timestamp: 'desc' },
-      take: 100
-    });
+    const records = await getFeedForUser({ userId, limit: 100 });
+    const activities: ActivityData[] = records.map(toAiContextActivityRow);
 
     return {
       recentActivities: activities.slice(0, 20),
       moduleUsage: this.analyzeModuleUsage(activities),
-      timePatterns: this.analyzeTimePatterns(activities)
+      timePatterns: this.analyzeTimePatterns(activities),
     };
   }
 

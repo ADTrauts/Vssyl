@@ -66,13 +66,24 @@ Full contracts (version, description, `recommendedMetadataFields`, `disallowedMe
 
 ## Subscriber map (current)
 
-| Subscriber | File | Role |
-|------------|------|------|
-| activity | `subscribers/activityDomainEventSubscriber.ts` | Record to activity log path |
-| socket | `subscribers/socketDomainEventSubscriber.ts` | `platform:domain_event` to actor |
-| notification_placeholder | `subscribers/notificationDomainEventSubscriber.ts` | Debug placeholder |
-| analytics_placeholder | `subscribers/analyticsDomainEventSubscriber.ts` | Debug placeholder |
-| **ai_event_consumer** | `ai/consumers/AIEventConsumer.ts` | Learning stubs + ambient suggestion signals (`domain_event`); no auto-exec |
+**Canonical matrix:** `server/src/events/domainEventOperationMatrix.ts` + [DOMAIN_EVENT_OPERATION_MATRIX.md](../platform-kernel/DOMAIN_EVENT_OPERATION_MATRIX.md) (PK-W3-DE-1).
+
+| Subscriber | File | Class | Role |
+|------------|------|-------|------|
+| `activity` | `subscribers/activityDomainEventSubscriber.ts` | Production | `domain_event_recorded` Log mirror |
+| `socket` | `subscribers/socketDomainEventSubscriber.ts` | Production | `platform:domain_event` to actor |
+| `notification` | `subscribers/notificationDomainEventSubscriber.ts` | Partial | FILE_SHARED, BUSINESS_MEMBER_ADDED, MODULE_INSTALLED |
+| `ai_event_consumer` | `ai/consumers/AIEventConsumer.ts` | Partial | Learning stubs + ambient suggestions (6 types) |
+| `webhook_subscriptions` | `subscribers/webhookDomainEventSubscriber.ts` | Production | Business webhook delivery |
+| `calendar_dashboard_bootstrap` | `subscribers/calendarDashboardDomainEventSubscriber.ts` | Partial | Personal calendar bootstrap on tab create |
+| `workspace_dashboard_seed` | `subscribers/workspaceDashboardDomainEventSubscriber.ts` | Partial | Business workspace seed on tab create |
+
+**Not registered in production (opt-in dev only):**
+
+| Subscriber | Env flag | Default |
+|------------|----------|---------|
+| `search_index_stub` | `DOMAIN_EVENT_SEARCH_INDEX_SUBSCRIBER_ENABLED` | **off** |
+| `workflow_router_stub` | `DOMAIN_EVENT_WORKFLOW_ROUTER_SUBSCRIBER_ENABLED` | **off** |
 
 Subscriber failures are logged; they do not roll back the mutation.
 

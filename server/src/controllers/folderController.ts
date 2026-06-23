@@ -24,6 +24,11 @@ import {
   softTrashDriveItem,
   DriveDeleteError,
 } from '../services/driveDeleteService';
+import {
+  toDriveLegacyActivityRow,
+  toNormalizedModuleActivityLogRow,
+} from '../services/platform/platformActivityDriveMapper';
+import { getRecentActivity as getPlatformRecentActivity } from '../services/platform/platformActivityQueryService';
 
 // List folders with dashboard context support
 export async function listFolders(req: Request, res: Response) {
@@ -444,35 +449,49 @@ export async function hardDeleteFolder(req: Request, res: Response) {
 // Get recent activity for the user
 export async function getRecentActivity(req: Request, res: Response) {
   try {
-    const userId = (req.user as any).id || (req.user as any).sub;
-    const activities = await prisma.activity.findMany({
-      where: { userId },
-      orderBy: { timestamp: 'desc' },
-      take: 20,
-      include: {
-        file: true,
-        user: {
-          select: { id: true, name: true, email: true },
-        },
-      },
-    });
-    const normalizedLogs = await prisma.log.findMany({
-      where: {
-        userId,
-        operation: 'module_activity_event',
-        module: 'drive',
-      },
-      orderBy: { timestamp: 'desc' },
-      take: 20,
-      select: {
-        id: true,
-        timestamp: true,
-        module: true,
-        metadata: true,
-      },
+    const userId = (req.user as { id?: string; sub?: string }).id
+      || (req.user as { id?: string; sub?: string }).sub;
+    if (!userId) {
+      return res.status(401).json({ message: 'Unauthorized' });
+    }
+
+    const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
+    const records = await getPlatformRecentActivity({
+      userId,
+      since,
+      limit: 20,
+      moduleId: 'drive',
     });
 
-    res.json({ activities, normalizedEvents: normalizedLogs });
+    const fileRecords = records.filter((r) => r.targetType === 'file');
+    const fileIds = [...new Set(fileRecords.map((r) => r.targetId))];
+    const userIds = [...new Set(records.map((r) => r.actorUserId).filter(Boolean))];
+
+    const [files, users] = await Promise.all([
+      prisma.file.findMany({
+        where: { id: { in: fileIds } },
+      }),
+      prisma.user.findMany({
+        where: { id: { in: userIds } },
+        select: { id: true, name: true, email: true },
+      }),
+    ]);
+
+    const fileById = new Map(files.map((f) => [f.id, f]));
+    const userById = new Map(users.map((u) => [u.id, u]));
+
+    const activities = fileRecords
+      .map((record) => {
+        const file = fileById.get(record.targetId);
+        const user = userById.get(record.actorUserId);
+        if (!file || !user) return null;
+        return toDriveLegacyActivityRow({ record, user, file });
+      })
+      .filter((row): row is NonNullable<typeof row> => row !== null);
+
+    const normalizedEvents = records.map(toNormalizedModuleActivityLogRow);
+
+    res.json({ activities, normalizedEvents });
   } catch (err) {
     res.status(500).json({ message: 'Failed to get recent activity' });
   }

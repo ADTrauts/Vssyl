@@ -31,6 +31,8 @@ import {
 } from '../events/domainEventEmitters';
 import { listAccessibleDriveFilesForBrowse } from '../services/driveVisibilityService';
 import { createDriveFile, DriveUploadError } from '../services/driveUploadService';
+import { getActivityForEntity } from '../services/platform/platformActivityQueryService';
+import { toNormalizedModuleActivityLogRow } from '../services/platform/platformActivityDriveMapper';
 
 interface JWTPayload {
   sub?: string;
@@ -248,33 +250,25 @@ export async function getItemActivity(req: Request, res: Response) {
   }
   try {
     const { itemId } = req.params;
-    const userId = (req as AuthenticatedRequest).user?.id;
+    const userId = req.user.id;
 
     // Check if the item is a folder the user owns
     const folder = await prisma.folder.findFirst({
       where: { id: itemId, userId: userId },
     });
 
-    // If it's a folder, return normalized events from module activity log
+    // If it's a folder, return normalized events from platform activity query
     if (folder) {
-      const folderEvents = await prisma.log.findMany({
-        where: {
-          userId,
-          operation: 'module_activity_event',
-          module: 'drive',
-        },
-        orderBy: { timestamp: 'desc' },
-        take: 100,
-        select: { id: true, timestamp: true, metadata: true },
+      const records = await getActivityForEntity({
+        userId,
+        moduleId: 'drive',
+        targetType: 'folder',
+        targetId: itemId,
+        limit: 100,
       });
+      const normalizedEvents = records.map(toNormalizedModuleActivityLogRow);
 
-      const filtered = folderEvents.filter((event) => {
-        const metadata = event.metadata as Record<string, unknown> | null;
-        const target = (metadata?.target as Record<string, unknown> | undefined) ?? {};
-        return target.type === 'folder' && target.id === itemId;
-      });
-
-      return res.json({ activities: [], normalizedEvents: filtered });
+      return res.json({ activities: [], normalizedEvents });
     }
 
     // Check if the item is a file the user owns or has permission to see
@@ -292,37 +286,16 @@ export async function getItemActivity(req: Request, res: Response) {
       return res.status(404).json({ message: 'Item not found or access denied' });
     }
 
-    const fileEvents = await prisma.log.findMany({
-      where: {
-        userId,
-        operation: 'module_activity_event',
-        module: 'drive',
-      },
-      orderBy: { timestamp: 'desc' },
-      take: 100,
-      select: { id: true, timestamp: true, metadata: true },
+    const records = await getActivityForEntity({
+      userId,
+      moduleId: 'drive',
+      targetType: 'file',
+      targetId: itemId,
+      limit: 100,
     });
+    const normalizedEvents = records.map(toNormalizedModuleActivityLogRow);
 
-    const normalizedEvents = fileEvents.filter((event) => {
-      const metadata = event.metadata as Record<string, unknown> | null;
-      const target = (metadata?.target as Record<string, unknown> | undefined) ?? {};
-      return target.type === 'file' && target.id === itemId;
-    });
-
-    // Legacy Activity rows (file-scoped) plus normalized drive events for this file
-    const activities = await prisma.activity.findMany({
-      where: { fileId: itemId },
-      include: {
-        user: {
-          select: { id: true, name: true, email: true },
-        },
-      },
-      orderBy: {
-        timestamp: 'desc',
-      },
-    });
-
-    res.json({ activities, normalizedEvents });
+    res.json({ activities: [], normalizedEvents });
   } catch (err) {
     await logger.error('Failed to get item activity', {
       operation: 'file_get_item_activity',

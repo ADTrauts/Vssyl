@@ -2437,3 +2437,245 @@ export function emitDashboardWidgetRemovedEvent(params: {
     })
   );
 }
+
+function hrBusinessScope(businessId: string) {
+  return { businessId, dashboardId: null, householdId: null };
+}
+
+export function emitHrEmployeeCreatedEvent(params: {
+  actorUserId: string;
+  businessId: string;
+  employeeHrProfileId: string;
+  employeePositionId: string;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.HR_EMPLOYEE_CREATED, {
+      actorUserId: params.actorUserId,
+      entityId: params.employeeHrProfileId,
+      ...hrBusinessScope(params.businessId),
+      metadata: {
+        moduleId: 'hr',
+        employeePositionId: params.employeePositionId,
+      },
+    })
+  );
+}
+
+export function emitHrEmployeeUpdatedEvent(params: {
+  actorUserId: string;
+  businessId: string;
+  employeeHrProfileId: string;
+  employeePositionId: string;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.HR_EMPLOYEE_UPDATED, {
+      actorUserId: params.actorUserId,
+      entityId: params.employeeHrProfileId,
+      ...hrBusinessScope(params.businessId),
+      metadata: {
+        moduleId: 'hr',
+        employeePositionId: params.employeePositionId,
+      },
+    })
+  );
+}
+
+export function emitHrEmployeeTerminatedEvent(params: {
+  actorUserId: string;
+  businessId: string;
+  employeeHrProfileId: string;
+  employeePositionId: string;
+  terminationDate?: string;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.HR_EMPLOYEE_TERMINATED, {
+      actorUserId: params.actorUserId,
+      entityId: params.employeeHrProfileId,
+      ...hrBusinessScope(params.businessId),
+      metadata: {
+        moduleId: 'hr',
+        employeePositionId: params.employeePositionId,
+        ...(params.terminationDate ? { terminationDate: params.terminationDate } : {}),
+      },
+    })
+  );
+}
+
+export function emitHrEmployeeTrashedEvent(params: {
+  actorUserId: string;
+  businessId: string;
+  employeeHrProfileId: string;
+  employeePositionId: string;
+  reason?: string;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.HR_EMPLOYEE_TRASHED, {
+      actorUserId: params.actorUserId,
+      entityId: params.employeeHrProfileId,
+      ...hrBusinessScope(params.businessId),
+      metadata: {
+        moduleId: 'hr',
+        employeePositionId: params.employeePositionId,
+        ...(params.reason ? { reason: params.reason } : {}),
+      },
+    })
+  );
+}
+
+export function emitHrEmployeeRestoredEvent(params: {
+  actorUserId: string;
+  businessId: string;
+  employeeHrProfileId: string;
+  employeePositionId: string;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.HR_EMPLOYEE_RESTORED, {
+      actorUserId: params.actorUserId,
+      entityId: params.employeeHrProfileId,
+      ...hrBusinessScope(params.businessId),
+      metadata: {
+        moduleId: 'hr',
+        employeePositionId: params.employeePositionId,
+      },
+    })
+  );
+}
+
+export function emitHrEmployeePermanentlyDeletedEvent(params: {
+  actorUserId: string;
+  businessId: string;
+  employeeHrProfileId: string;
+  employeePositionId: string;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.HR_EMPLOYEE_PERMANENTLY_DELETED, {
+      actorUserId: params.actorUserId,
+      entityId: params.employeeHrProfileId,
+      ...hrBusinessScope(params.businessId),
+      metadata: {
+        moduleId: 'hr',
+        employeePositionId: params.employeePositionId,
+      },
+    })
+  );
+}
+
+export function emitHrOnboardingCreatedEvent(params: {
+  actorUserId: string;
+  businessId: string;
+  journeyId: string;
+  employeeHrProfileId: string;
+  templateId?: string;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.HR_ONBOARDING_CREATED, {
+      actorUserId: params.actorUserId,
+      entityId: params.journeyId,
+      ...hrBusinessScope(params.businessId),
+      metadata: {
+        moduleId: 'hr',
+        employeeHrProfileId: params.employeeHrProfileId,
+        ...(params.templateId ? { templateId: params.templateId } : {}),
+      },
+    })
+  );
+}
+
+export function emitHrOnboardingCompletedEvent(params: {
+  actorUserId: string;
+  businessId: string;
+  journeyId: string;
+  employeeHrProfileId: string;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.HR_ONBOARDING_COMPLETED, {
+      actorUserId: params.actorUserId,
+      entityId: params.journeyId,
+      ...hrBusinessScope(params.businessId),
+      metadata: {
+        moduleId: 'hr',
+        employeeHrProfileId: params.employeeHrProfileId,
+      },
+    })
+  );
+}
+
+export function emitHrPtoRequestedEvent(params: {
+  actorUserId: string;
+  businessId: string;
+  timeOffRequestId: string;
+  employeePositionId: string;
+  type?: string;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.HR_PTO_REQUESTED, {
+      actorUserId: params.actorUserId,
+      entityId: params.timeOffRequestId,
+      ...hrBusinessScope(params.businessId),
+      metadata: {
+        moduleId: 'hr',
+        employeePositionId: params.employeePositionId,
+        ...(params.type ? { type: params.type } : {}),
+      },
+    })
+  );
+}
+
+export function emitHrPtoApprovedEvent(params: {
+  actorUserId: string;
+  businessId: string;
+  timeOffRequestId: string;
+  employeePositionId: string;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.HR_PTO_APPROVED, {
+      actorUserId: params.actorUserId,
+      entityId: params.timeOffRequestId,
+      ...hrBusinessScope(params.businessId),
+      metadata: {
+        moduleId: 'hr',
+        employeePositionId: params.employeePositionId,
+      },
+    })
+  );
+}
+
+export function emitHrPtoDeniedEvent(params: {
+  actorUserId: string;
+  businessId: string;
+  timeOffRequestId: string;
+  employeePositionId: string;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.HR_PTO_DENIED, {
+      actorUserId: params.actorUserId,
+      entityId: params.timeOffRequestId,
+      ...hrBusinessScope(params.businessId),
+      metadata: {
+        moduleId: 'hr',
+        employeePositionId: params.employeePositionId,
+      },
+    })
+  );
+}
+
+export function emitHrAttendanceExceptionCreatedEvent(params: {
+  actorUserId: string;
+  businessId: string;
+  exceptionId: string;
+  employeePositionId: string;
+  type?: string;
+}): DomainEvent {
+  return emitDomainEvent(
+    buildTypedDomainEventInput(DOMAIN_EVENT_TYPES.HR_ATTENDANCE_EXCEPTION_CREATED, {
+      actorUserId: params.actorUserId,
+      entityId: params.exceptionId,
+      ...hrBusinessScope(params.businessId),
+      metadata: {
+        moduleId: 'hr',
+        employeePositionId: params.employeePositionId,
+        ...(params.type ? { type: params.type } : {}),
+      },
+    })
+  );
+}

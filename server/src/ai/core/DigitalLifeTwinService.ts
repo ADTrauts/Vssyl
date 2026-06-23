@@ -16,6 +16,8 @@ import { hasExplicitRecallIntent, recallRelevantMessages } from '../../services/
 import { memoryRetrievalService } from '../memory/MemoryRetrievalService';
 import type { MemoryRetrievalReport } from '../memory/MemoryRetrievalService';
 import { maybePersistRememberThatFact } from '../../services/userMemoryFactService';
+import { getFeedForUser } from '../../services/platform/platformActivityQueryService';
+import { toAiRecentActivityDebugRow } from '../../services/platform/platformActivityContextMapper';
 
 export interface AIRequest {
   id: string;
@@ -635,14 +637,9 @@ export class DigitalLifeTwinService {
     });
   }
 
-  private async getRecentActivity(userId: string): Promise<any[]> {
-    // Get recent activity from all modules
-    const activities = await this.prisma.activity.findMany({
-      where: { userId },
-      orderBy: { timestamp: 'desc' },
-      take: 50
-    });
-    return activities;
+  private async getRecentActivity(userId: string): Promise<unknown[]> {
+    const records = await getFeedForUser({ userId, limit: 50 });
+    return records.map(toAiRecentActivityDebugRow);
   }
 
   private async getCurrentDashboardContext(userId: string): Promise<unknown | null> {

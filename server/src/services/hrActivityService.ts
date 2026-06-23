@@ -1,5 +1,6 @@
 import { emitModuleActivityEvent } from './moduleActivityService';
 import { ensureBusinessDashboardForUser } from './dashboardService';
+import * as hrDomain from './hrDomainEventService';
 
 async function resolveBusinessActivityContext(
   actorUserId: string,
@@ -53,6 +54,7 @@ export async function recordEmployeeCreated(params: {
     parentType: 'employee_position',
     parentId: params.employeePositionId,
   });
+  hrDomain.recordEmployeeCreatedDomainEvent(params);
 }
 
 export async function recordEmployeeUpdated(params: {
@@ -70,6 +72,7 @@ export async function recordEmployeeUpdated(params: {
     parentType: 'employee_position',
     parentId: params.employeePositionId,
   });
+  hrDomain.recordEmployeeUpdatedDomainEvent(params);
 }
 
 export async function recordEmployeeTerminated(params: {
@@ -89,6 +92,7 @@ export async function recordEmployeeTerminated(params: {
     parentId: params.employeePositionId,
     metadata: params.terminationDate ? { terminationDate: params.terminationDate } : undefined,
   });
+  hrDomain.recordEmployeeTerminatedDomainEvent(params);
 }
 
 export async function recordEmployeeTrashed(params: {
@@ -108,6 +112,7 @@ export async function recordEmployeeTrashed(params: {
     parentId: params.employeePositionId,
     metadata: params.reason ? { reason: params.reason } : undefined,
   });
+  hrDomain.recordEmployeeTrashedDomainEvent(params);
 }
 
 export async function recordEmployeeRestored(params: {
@@ -125,6 +130,7 @@ export async function recordEmployeeRestored(params: {
     parentType: 'employee_position',
     parentId: params.employeePositionId,
   });
+  hrDomain.recordEmployeeRestoredDomainEvent(params);
 }
 
 export async function recordEmployeePurged(params: {
@@ -142,6 +148,7 @@ export async function recordEmployeePurged(params: {
     parentType: 'employee_position',
     parentId: params.employeePositionId,
   });
+  hrDomain.recordEmployeePurgedDomainEvent(params);
 }
 
 export async function recordOnboardingCreated(params: {
@@ -161,6 +168,7 @@ export async function recordOnboardingCreated(params: {
     parentId: params.employeeHrProfileId,
     metadata: params.templateId ? { templateId: params.templateId } : undefined,
   });
+  hrDomain.recordOnboardingCreatedDomainEvent(params);
 }
 
 export async function recordOnboardingCompleted(params: {
@@ -178,6 +186,7 @@ export async function recordOnboardingCompleted(params: {
     parentType: 'employee',
     parentId: params.employeeHrProfileId,
   });
+  hrDomain.recordOnboardingCompletedDomainEvent(params);
 }
 
 export async function recordPtoRequested(params: {
@@ -197,6 +206,7 @@ export async function recordPtoRequested(params: {
     parentId: params.employeePositionId,
     metadata: params.type ? { type: params.type } : undefined,
   });
+  hrDomain.recordPtoRequestedDomainEvent(params);
 }
 
 export async function recordPtoApproved(params: {
@@ -214,6 +224,7 @@ export async function recordPtoApproved(params: {
     parentType: 'employee_position',
     parentId: params.employeePositionId,
   });
+  hrDomain.recordPtoApprovedDomainEvent(params);
 }
 
 export async function recordPtoDenied(params: {
@@ -231,6 +242,7 @@ export async function recordPtoDenied(params: {
     parentType: 'employee_position',
     parentId: params.employeePositionId,
   });
+  hrDomain.recordPtoDeniedDomainEvent(params);
 }
 
 export async function recordAttendanceExceptionCreated(params: {
@@ -250,4 +262,5 @@ export async function recordAttendanceExceptionCreated(params: {
     parentId: params.employeePositionId,
     metadata: params.type ? { type: params.type } : undefined,
   });
+  hrDomain.recordAttendanceExceptionCreatedDomainEvent(params);
 }

@@ -4,6 +4,9 @@ import type { DomainEvent } from '../types';
 /**
  * Batch 4 stub — federated search v2 will maintain a unified index from domain events.
  * v1 continues to use SearchProvider pattern per module.
+ *
+ * PK-W3-DE-1: Not registered in production. Opt-in only:
+ * DOMAIN_EVENT_SEARCH_INDEX_SUBSCRIBER_ENABLED=true
  */
 export function searchIndexDomainEventConsumer(event: DomainEvent): void {
   void logger.debug('Domain event (search index stub)', {

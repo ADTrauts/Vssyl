@@ -1,6 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import * as moduleActivity from '../moduleActivityService';
 import * as dashboardService from '../dashboardService';
+import * as hrDomain from '../hrDomainEventService';
 import {
   recordAttendanceExceptionCreated,
   recordEmployeeCreated,
@@ -19,6 +20,14 @@ describe('hrActivityService', () => {
     vi.spyOn(dashboardService, 'ensureBusinessDashboardForUser').mockResolvedValue({
       id: 'dash-hr-1',
     } as never);
+    vi.spyOn(hrDomain, 'recordEmployeeCreatedDomainEvent').mockImplementation(() => undefined);
+    vi.spyOn(hrDomain, 'recordEmployeeTerminatedDomainEvent').mockImplementation(() => undefined);
+    vi.spyOn(hrDomain, 'recordOnboardingCreatedDomainEvent').mockImplementation(() => undefined);
+    vi.spyOn(hrDomain, 'recordOnboardingCompletedDomainEvent').mockImplementation(() => undefined);
+    vi.spyOn(hrDomain, 'recordPtoRequestedDomainEvent').mockImplementation(() => undefined);
+    vi.spyOn(hrDomain, 'recordPtoApprovedDomainEvent').mockImplementation(() => undefined);
+    vi.spyOn(hrDomain, 'recordPtoDeniedDomainEvent').mockImplementation(() => undefined);
+    vi.spyOn(hrDomain, 'recordAttendanceExceptionCreatedDomainEvent').mockImplementation(() => undefined);
   });
 
   it('recordEmployeeCreated emits hr employee activity', async () => {
@@ -41,6 +50,12 @@ describe('hrActivityService', () => {
         dashboardId: 'dash-hr-1',
       })
     );
+    expect(hrDomain.recordEmployeeCreatedDomainEvent).toHaveBeenCalledWith({
+      actorUserId: 'admin-1',
+      businessId: 'biz-1',
+      employeeHrProfileId: 'profile-1',
+      employeePositionId: 'ep-1',
+    });
   });
 
   it('recordEmployeeTerminated includes termination metadata', async () => {
