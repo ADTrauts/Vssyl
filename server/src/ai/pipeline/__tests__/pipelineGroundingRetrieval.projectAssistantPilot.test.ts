@@ -139,7 +139,7 @@ function vlinkWithExplicitFile() {
             entityId: 'file-alpha',
             moduleId: 'drive',
             title: 'Project Alpha Brief.pdf',
-            access: 'full' as const,
+            access: 'full' as 'full' | 'restricted',
           },
         ],
         restrictedLinkedEntityCount: 0,
