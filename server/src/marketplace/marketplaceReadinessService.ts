@@ -169,3 +169,22 @@ export async function getMarketplaceReadiness(
     },
   };
 }
+
+export async function getPublishedModuleManifest(
+  moduleId: string
+): Promise<Record<string, unknown> | null> {
+  const mod = await prisma.module.findUnique({
+    where: { id: moduleId },
+    select: {
+      manifest: true,
+      versions: {
+        where: { isCurrent: true },
+        take: 1,
+        select: { manifestSnapshot: true },
+      },
+    },
+  });
+
+  if (!mod) return null;
+  return asRecordJson(mod.versions[0]?.manifestSnapshot ?? mod.manifest);
+}

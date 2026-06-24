@@ -10,6 +10,7 @@ import { CERTIFICATION_VALIDATOR_VERSION } from '../moduleCertificationValidator
 const validManifest = {
   name: 'Test Module',
   version: '1.0.0',
+  moduleScope: 'personal',
   supportedContexts: ['personal'],
   permissions: ['test:read'],
   runtime: { apiVersion: '1.0' },
@@ -67,6 +68,7 @@ describe('moduleVersionCertificationGate', () => {
         manifestSnapshot: {
           name: 'Test',
           version: '1.0.0',
+          moduleScope: 'personal',
           supportedContexts: ['personal'],
           permissions: [],
           runtime: {},

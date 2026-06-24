@@ -1298,31 +1298,18 @@ router.get('/modules/:moduleId/search-delegate-probe', async (req, res) => {
       return res.status(400).json({ error: 'moduleId is required' });
     }
 
-    const { prisma } = await import('../../lib/prisma.js');
     const { probeSearchDelegate } = await import('../../marketplace/searchDelegateProbe.js');
     const { getPartnerSearchDelegate } = await import('../../marketplace/searchDelegateRegistry.js');
     const { getSandboxPilotManifestSnapshot } = await import(
       '../../marketplace/registerSandboxPilotSearchDelegate.js'
     );
+    const { getPublishedModuleManifest } = await import('../../marketplace/marketplaceReadinessService.js');
     const { SANDBOX_PILOT_ASSETS_MODULE_ID } = await import('shared/types/search-delegate');
-
-    const mod = await prisma.module.findUnique({
-      where: { id: moduleId },
-      select: {
-        id: true,
-        manifest: true,
-        versions: {
-          where: { isCurrent: true },
-          take: 1,
-          select: { manifestSnapshot: true },
-        },
-      },
-    });
 
     const manifest =
       moduleId === SANDBOX_PILOT_ASSETS_MODULE_ID
         ? getSandboxPilotManifestSnapshot()
-        : ((mod?.versions[0]?.manifestSnapshot ?? mod?.manifest) as Record<string, unknown>);
+        : await getPublishedModuleManifest(moduleId);
 
     if (!manifest) {
       return res.status(404).json({ error: 'Module not found' });
@@ -1366,7 +1353,6 @@ router.get('/modules/:moduleId/workspace-bridge-probe', async (req, res) => {
       return res.status(400).json({ error: 'moduleId is required' });
     }
 
-    const { prisma } = await import('../../lib/prisma.js');
     const { probeWorkspaceBridge } = await import('../../marketplace/workspaceBridgeProbe.js');
     const { getPartnerWorkspaceParticipation } = await import(
       '../../marketplace/workspaceParticipationRegistry.js'
@@ -1374,25 +1360,13 @@ router.get('/modules/:moduleId/workspace-bridge-probe', async (req, res) => {
     const { getSandboxPilotWorkspaceManifestSnapshot } = await import(
       '../../marketplace/registerSandboxPilotWorkspaceParticipation.js'
     );
+    const { getPublishedModuleManifest } = await import('../../marketplace/marketplaceReadinessService.js');
     const { SANDBOX_PILOT_WORKSPACE_MODULE_ID } = await import('shared/types/workspace-bridge');
-
-    const mod = await prisma.module.findUnique({
-      where: { id: moduleId },
-      select: {
-        id: true,
-        manifest: true,
-        versions: {
-          where: { isCurrent: true },
-          take: 1,
-          select: { manifestSnapshot: true },
-        },
-      },
-    });
 
     const manifest =
       moduleId === SANDBOX_PILOT_WORKSPACE_MODULE_ID
         ? getSandboxPilotWorkspaceManifestSnapshot()
-        : ((mod?.versions[0]?.manifestSnapshot ?? mod?.manifest) as Record<string, unknown>);
+        : await getPublishedModuleManifest(moduleId);
 
     if (!manifest) {
       return res.status(404).json({ error: 'Module not found' });
@@ -1466,7 +1440,6 @@ router.get('/modules/:moduleId/activity-ingest-probe', async (req, res) => {
       return res.status(400).json({ error: 'moduleId is required' });
     }
 
-    const { prisma } = await import('../../lib/prisma.js');
     const { probeActivityIngest } = await import('../../marketplace/activityIngestProbe.js');
     const { getPartnerActivityIngest } = await import('../../marketplace/activityIngestRegistry.js');
     const { getSandboxPilotActivityManifestSnapshot } = await import(
@@ -1475,20 +1448,8 @@ router.get('/modules/:moduleId/activity-ingest-probe', async (req, res) => {
     const { getSandboxPilotManifestSnapshot } = await import(
       '../../marketplace/registerSandboxPilotSearchDelegate.js'
     );
+    const { getPublishedModuleManifest } = await import('../../marketplace/marketplaceReadinessService.js');
     const { SANDBOX_PILOT_ASSETS_MODULE_ID } = await import('shared/types/search-delegate');
-
-    const mod = await prisma.module.findUnique({
-      where: { id: moduleId },
-      select: {
-        id: true,
-        manifest: true,
-        versions: {
-          where: { isCurrent: true },
-          take: 1,
-          select: { manifestSnapshot: true },
-        },
-      },
-    });
 
     const manifest =
       moduleId === SANDBOX_PILOT_ASSETS_MODULE_ID
@@ -1496,7 +1457,7 @@ router.get('/modules/:moduleId/activity-ingest-probe', async (req, res) => {
             ...getSandboxPilotManifestSnapshot(),
             ...getSandboxPilotActivityManifestSnapshot(),
           }
-        : ((mod?.versions[0]?.manifestSnapshot ?? mod?.manifest) as Record<string, unknown>);
+        : await getPublishedModuleManifest(moduleId);
 
     if (!manifest) {
       return res.status(404).json({ error: 'Module not found' });

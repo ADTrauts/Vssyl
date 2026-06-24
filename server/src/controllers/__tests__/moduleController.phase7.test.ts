@@ -115,7 +115,11 @@ describe('moduleController Phase 7 critical paths', () => {
       status: 'APPROVED',
       pricingTier: 'premium',
       isProprietary: false,
-      manifest: { frontend: { entryUrl: 'https://modules.example.com/entry.html' } },
+      manifest: {
+        moduleScope: 'both',
+        supportedContexts: ['personal', 'business'],
+        frontend: { entryUrl: 'https://modules.example.com/entry.html' },
+      },
       permissions: ['files:read'],
       installations: [],
       businessInstallations: [{ id: 'install-1', enabled: true }],
