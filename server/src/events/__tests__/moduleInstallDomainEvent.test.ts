@@ -41,9 +41,10 @@ describe('installModule domain event emission', () => {
   it('does not emit when policy dual blocks install', async () => {
     const emitSpy = vi.spyOn(domainEventEmitters, 'emitModuleInstalledEvent');
     vi.spyOn(prisma.module, 'findUnique').mockResolvedValue({
-      id: 'scheduling',
+      id: 'todo',
       status: 'APPROVED',
       pricingTier: 'free',
+      manifest: { moduleScope: 'both', supportedContexts: ['personal', 'business'] },
     } as never);
     vi.spyOn(moduleInstallPolicyDual, 'evaluateModuleInstallPolicyDual').mockResolvedValue({
       blocked: true,
@@ -52,7 +53,7 @@ describe('installModule domain event emission', () => {
 
     const req = {
       user: { id: 'u1', role: 'USER' },
-      params: { moduleId: 'scheduling' },
+      params: { moduleId: 'todo' },
       query: {},
     } as unknown as Request;
     const res = mockResponse();
@@ -66,9 +67,10 @@ describe('installModule domain event emission', () => {
   it('emits module.installed after successful personal install', async () => {
     const emitSpy = vi.spyOn(domainEventEmitters, 'emitModuleInstalledEvent');
     vi.spyOn(prisma.module, 'findUnique').mockResolvedValue({
-      id: 'scheduling',
+      id: 'todo',
       status: 'APPROVED',
       pricingTier: 'free',
+      manifest: { moduleScope: 'both', supportedContexts: ['personal', 'business'] },
     } as never);
     vi.spyOn(moduleInstallPolicyDual, 'evaluateModuleInstallPolicyDual').mockResolvedValue({
       blocked: false,
@@ -76,14 +78,14 @@ describe('installModule domain event emission', () => {
     vi.spyOn(prisma.moduleInstallation, 'findUnique').mockResolvedValue(null);
     vi.spyOn(prisma.moduleInstallation, 'create').mockResolvedValue({
       id: 'inst_personal_1',
-      moduleId: 'scheduling',
+      moduleId: 'todo',
       userId: 'u1',
       enabled: true,
       installedAt: new Date(),
       configured: null,
       module: {
-        id: 'scheduling',
-        name: 'Scheduling',
+        id: 'todo',
+        name: 'Todo',
         description: '',
         version: '1',
         category: 'PRODUCTIVITY',
@@ -97,7 +99,7 @@ describe('installModule domain event emission', () => {
 
     const req = {
       user: { id: 'u1', role: 'USER' },
-      params: { moduleId: 'scheduling' },
+      params: { moduleId: 'todo' },
       query: {},
     } as unknown as Request;
     const res = mockResponse();
@@ -108,7 +110,7 @@ describe('installModule domain event emission', () => {
     expect(emitSpy).toHaveBeenCalledWith(
       expect.objectContaining({
         actorUserId: 'u1',
-        moduleId: 'scheduling',
+        moduleId: 'todo',
         installationId: 'inst_personal_1',
         installScope: 'personal',
       })
