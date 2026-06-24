@@ -4,9 +4,16 @@ import {
   hasProviderCertificationErrors,
   validateModuleAIContextProviders,
 } from '../ai/services/moduleContextProviderCertification';
+import { parseSearchDelegateFromManifest } from '../marketplace/searchDelegateManifest';
+import { parseWorkspaceParticipationFromManifest } from '../marketplace/workspaceParticipationManifest';
+import { parseActivityIngestFromManifest } from '../marketplace/activityIngestManifest';
+import {
+  validateModuleScopeManifest,
+  validateSubCapabilityContexts,
+} from '../marketplace/moduleScopeService';
 
 /** Bump when certification rules change materially (stored on ModuleVersion for audit). */
-export const CERTIFICATION_VALIDATOR_VERSION = '1.1.0';
+export const CERTIFICATION_VALIDATOR_VERSION = '1.4.0';
 
 export type CertificationCheckStatus = 'pass' | 'fail' | 'warn' | 'skip';
 
@@ -88,25 +95,6 @@ function declaresFileOrStorage(manifest: Record<string, unknown>): boolean {
   return caps.some((c) => c.includes('file') || c.includes('storage') || c.includes('drive'));
 }
 
-function resolveSupportedContexts(manifest: Record<string, unknown>): string[] {
-  const explicit = asStringArray(manifest.supportedContexts);
-  if (explicit.length > 0) return explicit;
-
-  const features = asRecordJson(manifest.features);
-  const fromFeatures = Object.keys(features).filter((k) => features[k] != null);
-  if (fromFeatures.length > 0) return fromFeatures;
-
-  const routes = asRecordJson(manifest.routes);
-  const fromRoutes = Object.keys(routes).filter((k) => routes[k] != null);
-  if (fromRoutes.length > 0) return fromRoutes;
-
-  const frontend = asRecordJson(manifest.frontend);
-  const inferred: string[] = [];
-  if (frontend.personalUrl || frontend.entryUrl) inferred.push('personal');
-  if (frontend.businessUrl) inferred.push('business');
-  return inferred;
-}
-
 function resolveRuntimeType(manifest: Record<string, unknown>): 'hosted' | 'bundle' | 'invalid' {
   const entryUrl = getManifestEntryUrl(manifest);
   if (isValidHttpsEntryUrl(entryUrl)) return 'hosted';
@@ -166,19 +154,46 @@ export function validateModuleCertification(
     pushCheck(checklist, { id: 'version', label: 'Version', status: 'pass' });
   }
 
-  const contexts = resolveSupportedContexts(manifest);
-  if (contexts.length === 0) {
-    const msg = 'supportedContexts (or features/routes) must declare at least one context (personal/business)';
-    errors.push(msg);
-    pushCheck(checklist, { id: 'contexts', label: 'Supported contexts', status: 'fail', message: msg });
+  const scopeValidation = validateModuleScopeManifest(manifest, {
+    moduleId: input.moduleId,
+    requireExplicitScope: isThirdParty,
+  });
+  for (const scopeError of scopeValidation.errors) {
+    errors.push(scopeError);
+  }
+  for (const scopeWarning of scopeValidation.warnings) {
+    warnings.push(scopeWarning);
+  }
+
+  if (scopeValidation.errors.length > 0 || !scopeValidation.moduleScope) {
+    pushCheck(checklist, {
+      id: 'module_scope',
+      label: 'Module scope',
+      status: 'fail',
+      message: scopeValidation.errors[0] ?? 'moduleScope unresolved',
+    });
+    pushCheck(checklist, {
+      id: 'contexts',
+      label: 'Supported contexts',
+      status: 'fail',
+      message: scopeValidation.errors.join('; ') || 'invalid',
+    });
   } else {
+    pushCheck(checklist, {
+      id: 'module_scope',
+      label: 'Module scope',
+      status: 'pass',
+      message: scopeValidation.moduleScope,
+    });
     pushCheck(checklist, {
       id: 'contexts',
       label: 'Supported contexts',
       status: 'pass',
-      message: contexts.join(', '),
+      message: scopeValidation.supportedContexts.join(', ') || '(internal)',
     });
   }
+
+  const moduleTenantContexts = scopeValidation.supportedContexts;
 
   if (!Array.isArray(permissions)) {
     const msg = 'permissions must be declared as an array';
@@ -359,6 +374,165 @@ export function validateModuleCertification(
       status: 'warn',
       message: 'Declare file/storage permissions',
     });
+  }
+
+  const capsRecord = asRecordJson(manifest.capabilities);
+  const claimsSearch =
+    capsRecord.search === true ||
+    (Array.isArray(manifest.capabilities) &&
+      manifest.capabilities.some((c) => typeof c === 'string' && c.toLowerCase() === 'search'));
+
+  if (claimsSearch) {
+    const { delegate, errors: delegateErrors } = parseSearchDelegateFromManifest(manifest);
+    if (!delegate || delegateErrors.length > 0) {
+      const msg = delegateErrors[0] ?? 'capabilities.search requires valid searchDelegate block';
+      errors.push(msg);
+      pushCheck(checklist, {
+        id: 'search_delegate',
+        label: 'Search delegate',
+        status: 'fail',
+        message: msg,
+      });
+    } else {
+      const subErr = validateSubCapabilityContexts(
+        moduleTenantContexts,
+        delegate.supportedContexts,
+        'searchDelegate'
+      );
+      if (subErr) {
+        errors.push(subErr);
+        pushCheck(checklist, {
+          id: 'search_delegate',
+          label: 'Search delegate',
+          status: 'fail',
+          message: subErr,
+        });
+      } else {
+        pushCheck(checklist, {
+          id: 'search_delegate',
+          label: 'Search delegate',
+          status: 'pass',
+          message: `${delegate.entityTypes.join(', ')} @ ${delegate.url.startsWith('vssyl-internal://') ? 'internal' : 'https'}`,
+        });
+      }
+    }
+  } else {
+    const rawDelegate = asRecordJson(manifest.searchDelegate);
+    if (rawDelegate && Object.keys(rawDelegate).length > 0) {
+      warnings.push('searchDelegate declared without capabilities.search');
+      pushCheck(checklist, {
+        id: 'search_delegate',
+        label: 'Search delegate',
+        status: 'warn',
+        message: 'Declare capabilities.search when using searchDelegate',
+      });
+    }
+  }
+
+  const claimsWorkspace =
+    capsRecord.workspace === true ||
+    (Array.isArray(manifest.capabilities) &&
+      manifest.capabilities.some((c) => typeof c === 'string' && c.toLowerCase() === 'workspace'));
+
+  if (claimsWorkspace) {
+    const { participation, errors: workspaceErrors } =
+      parseWorkspaceParticipationFromManifest(manifest);
+    if (!participation || workspaceErrors.length > 0) {
+      const msg =
+        workspaceErrors[0] ?? 'capabilities.workspace requires valid workspaceParticipation block';
+      errors.push(msg);
+      pushCheck(checklist, {
+        id: 'workspace_participation',
+        label: 'Workspace participation',
+        status: 'fail',
+        message: msg,
+      });
+    } else {
+      const subErr = validateSubCapabilityContexts(
+        moduleTenantContexts,
+        participation.supportedContexts,
+        'workspaceParticipation'
+      );
+      if (subErr) {
+        errors.push(subErr);
+        pushCheck(checklist, {
+          id: 'workspace_participation',
+          label: 'Workspace participation',
+          status: 'fail',
+          message: subErr,
+        });
+      } else {
+        pushCheck(checklist, {
+          id: 'workspace_participation',
+          label: 'Workspace participation',
+          status: 'pass',
+          message: `${participation.supportedContexts.join(', ')} (${participation.embedMode})`,
+        });
+      }
+    }
+  } else {
+    const rawWorkspace = asRecordJson(manifest.workspaceParticipation);
+    if (rawWorkspace && Object.keys(rawWorkspace).length > 0) {
+      warnings.push('workspaceParticipation declared without capabilities.workspace');
+      pushCheck(checklist, {
+        id: 'workspace_participation',
+        label: 'Workspace participation',
+        status: 'warn',
+        message: 'Declare capabilities.workspace when using workspaceParticipation',
+      });
+    }
+  }
+
+  const claimsActivity =
+    capsRecord.activity === true ||
+    (Array.isArray(manifest.capabilities) &&
+      manifest.capabilities.some((c) => typeof c === 'string' && c.toLowerCase() === 'activity'));
+
+  if (claimsActivity) {
+    const { ingest, errors: activityErrors } = parseActivityIngestFromManifest(manifest);
+    if (!ingest || activityErrors.length > 0) {
+      const msg = activityErrors[0] ?? 'capabilities.activity requires valid activityIngest block';
+      errors.push(msg);
+      pushCheck(checklist, {
+        id: 'activity_ingest',
+        label: 'Activity ingest',
+        status: 'fail',
+        message: msg,
+      });
+    } else {
+      const subErr = validateSubCapabilityContexts(
+        moduleTenantContexts,
+        ingest.supportedContexts,
+        'activityIngest'
+      );
+      if (subErr) {
+        errors.push(subErr);
+        pushCheck(checklist, {
+          id: 'activity_ingest',
+          label: 'Activity ingest',
+          status: 'fail',
+          message: subErr,
+        });
+      } else {
+        pushCheck(checklist, {
+          id: 'activity_ingest',
+          label: 'Activity ingest',
+          status: 'pass',
+          message: `${ingest.actionTypes.join(', ')} on ${ingest.entityTypes.join(', ')}`,
+        });
+      }
+    }
+  } else {
+    const rawActivity = asRecordJson(manifest.activityIngest);
+    if (rawActivity && Object.keys(rawActivity).length > 0) {
+      warnings.push('activityIngest declared without capabilities.activity');
+      pushCheck(checklist, {
+        id: 'activity_ingest',
+        label: 'Activity ingest',
+        status: 'warn',
+        message: 'Declare capabilities.activity when using activityIngest',
+      });
+    }
   }
 
   return {

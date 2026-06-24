@@ -8,4 +8,6 @@ export * from './module/moduleProvisionController';
 export * from './module/moduleBrowseController';
 export * from './module/moduleSubmissionController';
 export * from './module/moduleRuntimeController';
+export * from './module/moduleWorkspaceBridgeController';
+export * from './module/moduleActivityIngestController';
 export * from './module/moduleArtifactController';

@@ -15,6 +15,7 @@
     "author": "Vssyl Platform",
     "license": "MIT",
     "entryPoint": "/demo-ai-partner",
+    "moduleScope": "both",
     "supportedContexts": ["personal", "business"],
     "permissions": ["demo-ai-partner:read", "demo-ai-partner:write"],
     "capabilities": ["productivity", "notifications"],

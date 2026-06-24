@@ -16,6 +16,16 @@ import {
   VALID_MODULE_CATEGORIES,
   classifyArtifactUploadInitError,
 } from './moduleShared';
+import {
+  moduleRequiresBusinessSubscription,
+  evaluateBusinessModuleEntitlement,
+  ensureFreeBusinessModuleSubscription,
+} from '../../services/businessModuleSubscriptionService.js';
+import {
+  assertModuleInstallScopeAllowed,
+  resolveEffectiveModuleScope,
+} from '../../marketplace/moduleScopeService.js';
+import { asRecordJson } from './moduleShared.js';
 
 
 export const getModuleRuntimeConfig = async (req: Request, res: Response) => {
@@ -78,12 +88,56 @@ export const getModuleRuntimeConfig = async (req: Request, res: Response) => {
       return res.status(403).json({ success: false, error: scope === 'business' ? 'Module not installed for business' : 'Module not installed by user' });
     }
 
-    // For paid modules, ensure an active subscription exists
-    if (module.pricingTier && module.pricingTier !== 'free') {
-      const hasActiveSubscription =
-        scope === 'business'
-          ? Boolean((module as any).businessSubscriptions?.length)
-          : Boolean((module as any).subscriptions?.length);
+    const runtimeManifestEarly = asRecordJson(module.manifest);
+    const runtimeScopeCheck = assertModuleInstallScopeAllowed({
+      manifest: runtimeManifestEarly,
+      moduleId,
+      installScope: scope,
+    });
+    if (!runtimeScopeCheck.allowed) {
+      return res.status(403).json({
+        success: false,
+        error: runtimeScopeCheck.reason ?? 'Module scope does not support this runtime context',
+        moduleScope: runtimeScopeCheck.moduleScope,
+      });
+    }
+
+    if (scope === 'business' && businessId) {
+      const businessInstallation = (module as { businessInstallations?: Array<{ enabled?: boolean }> })
+        .businessInstallations?.[0];
+
+      const entitlement = await evaluateBusinessModuleEntitlement({
+        businessId,
+        moduleId,
+        module: {
+          pricingTier: module.pricingTier,
+          isProprietary: module.isProprietary,
+          status: module.status,
+        },
+        installation: businessInstallation ?? null,
+        userId: user.id,
+      });
+
+      if (!entitlement.allowed) {
+        return res.status(entitlement.statusCode ?? 403).json({
+          success: false,
+          error: entitlement.reason ?? 'Access denied',
+          requiresSubscription: entitlement.requiresSubscription,
+        });
+      }
+
+      if (
+        !moduleRequiresBusinessSubscription(module) &&
+        !module.isProprietary
+      ) {
+        await ensureFreeBusinessModuleSubscription({
+          businessId,
+          moduleId,
+          actorUserId: user.id,
+        });
+      }
+    } else if (moduleRequiresBusinessSubscription(module)) {
+      const hasActiveSubscription = Boolean((module as { subscriptions?: unknown[] }).subscriptions?.length);
       if (!hasActiveSubscription) {
         return res.status(402).json({ success: false, error: 'Active subscription required' });
       }

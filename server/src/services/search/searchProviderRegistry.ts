@@ -15,6 +15,8 @@ import { searchAccessiblePages } from '../notes/notesVisibilityService';
 import { buildMemberSearchVisibilityWhere } from './memberSearchVisibility';
 import { calculateRelevanceScore } from './searchRelevance';
 import { buildPersonalOrBusinessModuleUrl } from './searchUrlBuilder';
+import { getEnabledPartnerSearchDelegates } from '../../marketplace/searchDelegateRegistry';
+import { buildPartnerSearchProvider } from '../../marketplace/buildPartnerSearchProvider';
 
 async function searchDrive(query: string, userId: string, filters?: SearchFilters): Promise<SearchResult[]> {
   const results: SearchResult[] = [];
@@ -406,11 +408,19 @@ export function getRegisteredSearchProviders(): RegisteredSearchProvider[] {
 }
 
 export function getSearchProviderById(providerId: string): RegisteredSearchProvider | undefined {
-  return SEARCH_PROVIDERS.find((p) => p.providerId === providerId);
+  const builtin = SEARCH_PROVIDERS.find((p) => p.providerId === providerId);
+  if (builtin) return builtin;
+  const partner = getEnabledPartnerSearchDelegates().find((d) => d.moduleId === providerId);
+  if (partner) return buildPartnerSearchProvider(partner);
+  return undefined;
 }
 
 export function getReadySearchProviders(): RegisteredSearchProvider[] {
-  return SEARCH_PROVIDERS.filter((p) => p.readiness === 'ready');
+  const builtins = SEARCH_PROVIDERS.filter((p) => p.readiness === 'ready');
+  const partnerProviders = getEnabledPartnerSearchDelegates().map((registration) =>
+    buildPartnerSearchProvider(registration)
+  );
+  return [...builtins, ...partnerProviders];
 }
 
 /** Modules that claim manifest search must have a ready provider. */

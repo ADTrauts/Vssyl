@@ -779,10 +779,10 @@ Use this catalog when filling **“reference module pattern to copy”** columns
 |--------|------------------------|-------|
 | **HR** | Todo UX #3 + Drive UX #1 | Work management + entity browser annex |
 | **Scheduling** | Calendar UX #5 | Time-grid already covered |
-| **Marketplace (partner)** | Nearest built-in archetype + `moduleSpecs.md` | Partner pipeline doc — not UX slot |
+| **Marketplace (partner)** | Nearest built-in archetype + `moduleSpecs.md` | **L3 CwF** partner delegate foundation (RD-MP-1B-G-001) · Pilot `vssyl-pilot-assets` · [MARKETPLACE_PARTNER_CAPABILITY_CERTIFICATION_RECORD](../marketplace/MARKETPLACE_PARTNER_CAPABILITY_CERTIFICATION_RECORD.md) |
 | **Analytics** | Notifications UX #2 (feed/dashboard cards) | Annex when certification matures |
 | **Business Workspace** | Reference Workspace **registered** holder (hub) | Platform shell orchestration — [REFERENCE_WORKSPACE_REGISTRATION_REVIEW.md](./audits/REFERENCE_WORKSPACE_REGISTRATION_REVIEW.md) |
 
 ---
 
-*Last updated: 2026-06-21 (Dashboard L3 WITH FINDINGS executed; program archived; reference deferred)*
+*Last updated: 2026-06-24 (Marketplace Partner Runtime L3 CwF — Phase 1B-G)*

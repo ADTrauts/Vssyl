@@ -13,6 +13,8 @@
 import { PrismaClient } from '@prisma/client';
 import type { ModuleAIContext } from '../../../shared/src/types/module-ai-context';
 import { logger } from '../lib/logger';
+import { syncPartnerSearchDelegateForModuleId } from '../marketplace/syncPartnerSearchDelegateForModule';
+import { syncPartnerWorkspaceParticipationForModuleId } from '../marketplace/syncPartnerWorkspaceParticipationForModule';
 
 export class ModuleRegistrySyncService {
   private prisma: PrismaClient;
@@ -247,6 +249,40 @@ export class ModuleRegistrySyncService {
         }
       });
       throw error;
+    } finally {
+      try {
+        await syncPartnerSearchDelegateForModuleId(moduleId);
+      } catch (syncError: unknown) {
+        const err = syncError instanceof Error ? syncError : new Error(String(syncError));
+        await logger.warn('Partner search delegate sync failed (non-blocking)', {
+          operation: 'partner_search_delegate_sync_module',
+          moduleId,
+          error: { message: err.message },
+        });
+      }
+      try {
+        await syncPartnerWorkspaceParticipationForModuleId(moduleId);
+      } catch (syncError: unknown) {
+        const err = syncError instanceof Error ? syncError : new Error(String(syncError));
+        await logger.warn('Partner workspace participation sync failed (non-blocking)', {
+          operation: 'partner_workspace_participation_sync_module',
+          moduleId,
+          error: { message: err.message },
+        });
+      }
+      try {
+        const { syncPartnerActivityIngestForModuleId } = await import(
+          '../marketplace/syncPartnerActivityIngestForModule.js'
+        );
+        await syncPartnerActivityIngestForModuleId(moduleId);
+      } catch (syncError: unknown) {
+        const err = syncError instanceof Error ? syncError : new Error(String(syncError));
+        await logger.warn('Partner activity ingest sync failed (non-blocking)', {
+          operation: 'partner_activity_ingest_sync_module',
+          moduleId,
+          error: { message: err.message },
+        });
+      }
     }
   }
 

@@ -2,6 +2,12 @@ import Stripe from 'stripe';
 import { prisma } from '../lib/prisma';
 import { logger } from '../lib/logger';
 import { RevenueSplitService } from './revenueSplitService';
+import {
+  moduleRequiresBusinessSubscription,
+  upsertPaidBusinessModuleSubscription,
+  updateBusinessModuleSubscriptionStatusByStripeId,
+  ensureFreeBusinessModuleSubscription,
+} from './businessModuleSubscriptionService.js';
 
 const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY, {
   apiVersion: '2025-08-27.basil' as any, // TypeScript types may lag behind Stripe API versions
@@ -36,6 +42,14 @@ export class ModuleSubscriptionService {
 
     if (!module) {
       throw new Error('Module not found');
+    }
+
+    if (businessId && moduleRequiresBusinessSubscription(module)) {
+      if (!stripeCustomerId || !stripe) {
+        throw new Error(
+          'Paid business module subscription requires Stripe configuration and customer id'
+        );
+      }
     }
 
     // Set subscription period (monthly)
@@ -112,6 +126,18 @@ export class ModuleSubscriptionService {
             stripeSubscriptionId: stripeSubscription.id,
           },
         });
+
+        if (businessId && moduleRequiresBusinessSubscription(module)) {
+          await upsertPaidBusinessModuleSubscription({
+            businessId,
+            moduleId,
+            tier,
+            amount,
+            status: 'active',
+            stripeSubscriptionId: stripeSubscription.id,
+            actorUserId: userId,
+          });
+        }
       } catch (error: unknown) {
         const err = error as Error;
         await prisma.moduleSubscription.delete({ where: { id: subscription.id } }).catch(() => undefined);
@@ -126,6 +152,12 @@ export class ModuleSubscriptionService {
           'Could not activate paid module subscription with Stripe. Check module Stripe price configuration.'
         );
       }
+    } else if (businessId && amount === 0 && !moduleRequiresBusinessSubscription(module)) {
+      await ensureFreeBusinessModuleSubscription({
+        businessId,
+        moduleId,
+        actorUserId: userId,
+      });
     }
 
     return subscription;
@@ -506,22 +538,24 @@ export class ModuleSubscriptionService {
   }
 
   private async handleModulePaymentSucceeded(invoice: Stripe.Invoice) {
-    const subscriptionId = (invoice as any).subscription as string;
+    const subscriptionId = (invoice as { subscription?: string }).subscription;
     if (subscriptionId) {
       await prisma.moduleSubscription.updateMany({
         where: { stripeSubscriptionId: subscriptionId },
         data: { status: 'active' },
       });
+      await updateBusinessModuleSubscriptionStatusByStripeId(subscriptionId, 'active');
     }
   }
 
   private async handleModulePaymentFailed(invoice: Stripe.Invoice) {
-    const subscriptionId = (invoice as any).subscription as string;
+    const subscriptionId = (invoice as { subscription?: string }).subscription;
     if (subscriptionId) {
       await prisma.moduleSubscription.updateMany({
         where: { stripeSubscriptionId: subscriptionId },
         data: { status: 'past_due' },
       });
+      await updateBusinessModuleSubscriptionStatusByStripeId(subscriptionId, 'past_due');
     }
   }
 
@@ -530,5 +564,6 @@ export class ModuleSubscriptionService {
       where: { stripeSubscriptionId: subscription.id },
       data: { status: 'cancelled' },
     });
+    await updateBusinessModuleSubscriptionStatusByStripeId(subscription.id, 'cancelled');
   }
 } 

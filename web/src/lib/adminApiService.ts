@@ -30,7 +30,45 @@ export interface AnalyticsData {
   revenueGrowth: number;
 }
 
-export interface BusinessIntelligenceData {
+export interface MarketplaceReadinessShape {
+  moduleId: string;
+  moduleScope: string | null;
+  supportedContexts: string[];
+  certification: {
+    status: 'not_run' | 'passed' | 'warning' | 'failed';
+    validatorVersion: string | null;
+    passed: boolean;
+    errorCount: number;
+    warningCount: number;
+  };
+  searchDelegate: {
+    declared: boolean;
+    registered: boolean;
+    enabled: boolean;
+    allowlisted: boolean;
+  };
+  workspaceBridge: {
+    declared: boolean;
+    registered: boolean;
+    enabled: boolean;
+    allowlisted: boolean;
+  };
+  businessBilling: {
+    applicable: boolean;
+    requiresSubscription: boolean;
+    scopeCompatible: boolean;
+  };
+  activityIngest: {
+    declared: boolean;
+    registered: boolean;
+    enabled: boolean;
+    allowlisted: boolean;
+    manifestValid: boolean;
+    certificationActive: boolean;
+    lastProbeOutcome?: string | null;
+  };
+}
+
   userGrowth: {
     totalUsers: number;
     newUsers: number;
@@ -923,6 +961,42 @@ class AdminApiService {
     return this.makeRequest(`/modules/${moduleId}/revenue`, {
       method: 'GET'
     });
+  }
+
+  async getMarketplaceReadiness(moduleId: string): Promise<
+    ApiResponse<{ readiness: MarketplaceReadinessShape }>
+  > {
+    return this.makeRequest(`/modules/${encodeURIComponent(moduleId)}/marketplace-readiness`, {
+      method: 'GET',
+    });
+  }
+
+  async runSearchDelegateProbe(moduleId: string): Promise<ApiResponse<unknown>> {
+    return this.makeRequest(
+      `/modules/${encodeURIComponent(moduleId)}/search-delegate-probe?live=true`,
+      { method: 'GET' }
+    );
+  }
+
+  async runWorkspaceBridgeProbe(moduleId: string): Promise<ApiResponse<unknown>> {
+    return this.makeRequest(
+      `/modules/${encodeURIComponent(moduleId)}/workspace-bridge-probe?live=true`,
+      { method: 'GET' }
+    );
+  }
+
+  async runBusinessBillingProbe(moduleId: string): Promise<ApiResponse<unknown>> {
+    return this.makeRequest(
+      `/modules/${encodeURIComponent(moduleId)}/business-billing-probe`,
+      { method: 'GET' }
+    );
+  }
+
+  async runActivityIngestProbe(moduleId: string): Promise<ApiResponse<unknown>> {
+    return this.makeRequest(
+      `/modules/${encodeURIComponent(moduleId)}/activity-ingest-probe?live=true`,
+      { method: 'GET' }
+    );
   }
 
   async exportModuleData(filters?: Record<string, unknown>): Promise<ApiResponse<Blob>> {

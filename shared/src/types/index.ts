@@ -1,4 +1,8 @@
 export * from './search';
+export * from './search-delegate';
+export * from './workspace-bridge';
+export * from './module-scope';
+export * from './activity-ingest';
 export * from './file';
 export * from './widget';
 export type { Dashboard, DashboardWidget, CreateDashboardRequest, UpdateDashboardRequest, DashboardResponse, DashboardsResponse } from './dashboard';

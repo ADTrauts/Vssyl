@@ -350,9 +350,18 @@ export const createModuleSubscription = async (req: Request, res: Response) => {
       return res.status(401).json({ error: 'Unauthorized' });
     }
 
+    if (businessId && typeof businessId === 'string') {
+      const membership = await prisma.businessMember.findFirst({
+        where: { businessId, userId, isActive: true },
+      });
+      if (!membership || !(membership.role === 'ADMIN' || membership.role === 'MANAGER' || membership.canManage)) {
+        return res.status(403).json({ error: 'Insufficient permissions for business module subscription' });
+      }
+    }
+
     const subscription = await moduleSubscriptionService.createModuleSubscription({
       userId,
-      businessId,
+      businessId: typeof businessId === 'string' ? businessId : undefined,
       moduleId,
       tier: tier || 'premium',
     });

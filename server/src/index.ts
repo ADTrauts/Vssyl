@@ -41,6 +41,9 @@ import { startCleanupJob } from './services/cleanupService';
 import { initializeChatSocketService, getChatSocketService } from './services/chatSocketService';
 import { registerDomainEventSubscribers } from './events/registerDomainEventSubscribers';
 import { registerBuiltInModulesOnStartup } from './startup/registerBuiltInModules';
+import { syncAllPartnerSearchDelegatesFromDatabase } from './marketplace/syncPartnerSearchDelegates';
+import { syncAllPartnerActivityIngestFromDatabase } from './marketplace/syncPartnerActivityIngest';
+import { syncAllPartnerWorkspaceParticipationsFromDatabase } from './marketplace/syncPartnerWorkspaceParticipations';
 import { registerGlobalTrashHandlers } from './startup/registerGlobalTrashHandlers';
 import { registerPlatformEntities } from './startup/registerPlatformEntities';
 import { seedHRModuleOnStartup } from './startup/seedHRModule';
@@ -702,6 +705,36 @@ async function handleServerListening(): Promise<void> {
     const err = e as Error;
     void logger.error('Module registration startup failed (non-critical)', {
       operation: 'startup_module_registry',
+      error: { message: err.message, stack: err.stack },
+    }).catch(() => undefined);
+  }
+
+  try {
+    await syncAllPartnerSearchDelegatesFromDatabase();
+  } catch (e: unknown) {
+    const err = e as Error;
+    void logger.error('Partner search delegate sync failed (non-critical)', {
+      operation: 'startup_partner_search_delegate_sync',
+      error: { message: err.message, stack: err.stack },
+    }).catch(() => undefined);
+  }
+
+  try {
+    await syncAllPartnerWorkspaceParticipationsFromDatabase();
+  } catch (e: unknown) {
+    const err = e as Error;
+    void logger.error('Partner workspace participation sync failed (non-critical)', {
+      operation: 'startup_partner_workspace_participation_sync',
+      error: { message: err.message, stack: err.stack },
+    }).catch(() => undefined);
+  }
+
+  try {
+    await syncAllPartnerActivityIngestFromDatabase();
+  } catch (e: unknown) {
+    const err = e as Error;
+    void logger.error('Partner activity ingest sync failed (non-critical)', {
+      operation: 'startup_partner_activity_ingest_sync',
       error: { message: err.message, stack: err.stack },
     }).catch(() => undefined);
   }

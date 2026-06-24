@@ -1,8 +1,10 @@
 # Third-party module developer guide
 
-Last updated: 2026-04-21  
+Last updated: 2026-06-24  
 Audience: External developers and partners building modules for the Vssyl marketplace  
 Status: Entry point (links to authoritative specs)
+
+> **Full-capability partners (Search, Workspace, Activity, Business scope):** start with **[`PARTNER_DEVELOPER_GUIDE.md`](./PARTNER_DEVELOPER_GUIDE.md)** — canonical guide for Phase 1B+ delegate capabilities. This document remains the index for pipeline, AI, and legacy onboarding.
 
 ## What this document is
 
@@ -23,8 +25,9 @@ Use these entry points to create submissions, manage modules, and track status a
 
 ## Read this material in order
 
-1. **This guide** — scope, obligations, and links.
-2. **[`THIRD_PARTY_MODULE_RULEBOOK.md`](./THIRD_PARTY_MODULE_RULEBOOK.md)** — reviewer must-pass checklist (start here if preparing for approval).
+1. **[`PARTNER_DEVELOPER_GUIDE.md`](./PARTNER_DEVELOPER_GUIDE.md)** — **full-capability partner modules** (scope, search, workspace, activity, billing).
+2. **This guide** — scope, obligations, and links (AI + pipeline index).
+3. **[`THIRD_PARTY_MODULE_RULEBOOK.md`](./THIRD_PARTY_MODULE_RULEBOOK.md)** — reviewer must-pass checklist (start here if preparing for approval).
 3. **[`../../memory-bank/moduleSpecs.md`](../../memory-bank/moduleSpecs.md)** — canonical module interoperability contract (permissions, events, realtime, notifications, AI context, compliance).
 4. **[`THIRD_PARTY_MODULE_PIPELINE_SOURCE_OF_TRUTH.md`](./THIRD_PARTY_MODULE_PIPELINE_SOURCE_OF_TRUTH.md)** — artifact upload (GCS), versioning, security scan, admin approval, runtime resolution, iframe sandboxing, size limits, legacy `manifest.frontend.entryUrl` behavior.
 5. **[`NOTIFICATION_METADATA_GUIDE.md`](./NOTIFICATION_METADATA_GUIDE.md)** — declare notification types in the module manifest so the global notification center can categorize and surface your events.

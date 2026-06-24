@@ -3,6 +3,14 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { Spinner, Alert } from 'shared/components';
 import { mountZipAsBlobEntryHtml } from '../lib/moduleBundleRuntime';
+import type { WorkspaceBridgeInitPayload } from 'shared/types/workspace-bridge';
+import {
+  WORKSPACE_BRIDGE_HOST_INIT,
+  WORKSPACE_BRIDGE_HOST_LIFECYCLE,
+  WORKSPACE_BRIDGE_HOST_SETTINGS,
+  WORKSPACE_BRIDGE_MODULE_READY,
+  WORKSPACE_BRIDGE_MODULE_REQUEST_INIT,
+} from 'shared/types/workspace-bridge';
 
 interface ModuleMessage {
   type: string;
@@ -18,6 +26,8 @@ interface ModuleHostProps {
   bundleRuntime?: boolean;
   bundleEntryPath?: string;
   artifactSignedUrl?: string;
+  /** Signed workspace bridge init — never includes platform session token. */
+  workspaceBridgeInit?: WorkspaceBridgeInitPayload | null;
 }
 
 export default function ModuleHost({
@@ -27,12 +37,14 @@ export default function ModuleHost({
   bundleRuntime = false,
   bundleEntryPath = 'index.html',
   artifactSignedUrl,
+  workspaceBridgeInit = null,
 }: ModuleHostProps) {
   const iframeRef = useRef<HTMLIFrameElement | null>(null);
   const [bundleSrc, setBundleSrc] = useState<string | null>(null);
   const [bundleLoading, setBundleLoading] = useState(bundleRuntime);
   const [bundleError, setBundleError] = useState<string | null>(null);
   const revokeRef = useRef<(() => void) | null>(null);
+  const bridgeSentRef = useRef(false);
 
   const iframeSrc = bundleRuntime ? bundleSrc : entryUrl;
 
@@ -94,23 +106,62 @@ export default function ModuleHost({
   }, [bundleRuntime, artifactSignedUrl, bundleEntryPath]);
 
   useEffect(() => {
+    bridgeSentRef.current = false;
+  }, [workspaceBridgeInit?.lifecycleId]);
+
+  useEffect(() => {
+    function postToModule(message: ModuleMessage) {
+      const iframe = iframeRef.current;
+      if (!iframe || !iframe.contentWindow) return;
+      if (!allowedOrigin) return;
+      iframe.contentWindow.postMessage(message, allowedOrigin);
+    }
+
+    function sendBridgeInit() {
+      if (!workspaceBridgeInit || bridgeSentRef.current) return;
+      postToModule({
+        type: WORKSPACE_BRIDGE_HOST_INIT,
+        payload: workspaceBridgeInit as unknown as Record<string, unknown>,
+      });
+      bridgeSentRef.current = true;
+    }
+
+    function sendLifecycleActivate() {
+      if (!workspaceBridgeInit) return;
+      postToModule({
+        type: WORKSPACE_BRIDGE_HOST_LIFECYCLE,
+        payload: {
+          lifecycleId: workspaceBridgeInit.lifecycleId,
+          event: 'activate',
+          theme: workspaceBridgeInit.theme,
+          tenant: workspaceBridgeInit.context.tenant,
+        },
+      });
+    }
+
     function handleMessage(event: MessageEvent) {
       if (allowedOrigin && event.origin !== allowedOrigin) return;
       const data = event.data;
       if (!data || typeof data !== 'object') return;
 
       switch (data.type) {
+        case WORKSPACE_BRIDGE_MODULE_READY:
         case 'module:ready': {
-          // Optionally send initial settings/context
-          postToModule({ type: 'host:settings', payload: { settings } });
+          sendBridgeInit();
+          sendLifecycleActivate();
+          postToModule({ type: WORKSPACE_BRIDGE_HOST_SETTINGS, payload: { settings } });
+          break;
+        }
+        case WORKSPACE_BRIDGE_MODULE_REQUEST_INIT: {
+          sendBridgeInit();
           break;
         }
         case 'module:request:settings': {
-          postToModule({ type: 'host:settings', payload: { settings } });
+          postToModule({ type: WORKSPACE_BRIDGE_HOST_SETTINGS, payload: { settings } });
           break;
         }
         case 'module:request:resize': {
-          const height = Number(data?.payload?.height);
+          const height = Number((data as { payload?: { height?: unknown } }).payload?.height);
           if (iframeRef.current && Number.isFinite(height) && height > 0) {
             iframeRef.current.style.height = `${height}px`;
           }
@@ -121,24 +172,31 @@ export default function ModuleHost({
       }
     }
 
-    function postToModule(message: ModuleMessage) {
-      const iframe = iframeRef.current;
-      if (!iframe || !iframe.contentWindow) return;
-      if (!allowedOrigin) return;
-      iframe.contentWindow.postMessage(message, allowedOrigin);
-    }
-
     window.addEventListener('message', handleMessage);
-    // Send init when iframe mounts
     const timer = setTimeout(() => {
-      postToModule({ type: 'host:init', payload: { name: moduleName } });
+      if (workspaceBridgeInit) {
+        sendBridgeInit();
+        sendLifecycleActivate();
+      } else {
+        postToModule({ type: 'host:init', payload: { name: moduleName } });
+        postToModule({ type: WORKSPACE_BRIDGE_HOST_SETTINGS, payload: { settings } });
+      }
     }, 300);
 
     return () => {
       window.removeEventListener('message', handleMessage);
       clearTimeout(timer);
+      if (workspaceBridgeInit) {
+        postToModule({
+          type: WORKSPACE_BRIDGE_HOST_LIFECYCLE,
+          payload: {
+            lifecycleId: workspaceBridgeInit.lifecycleId,
+            event: 'deactivate',
+          },
+        });
+      }
     };
-  }, [allowedOrigin, moduleName, settings]);
+  }, [allowedOrigin, moduleName, settings, workspaceBridgeInit]);
 
   if (bundleRuntime && bundleError) {
     return (
@@ -177,4 +235,3 @@ export default function ModuleHost({
     </div>
   );
 }
-

@@ -97,16 +97,28 @@ describe('moduleController Phase 7 critical paths', () => {
       userId: 'u1',
       isActive: true,
     } as any);
+    vi.spyOn(prisma.businessModuleSubscription, 'findUnique').mockResolvedValue({
+      id: 'biz-sub-1',
+      moduleId: 'm1',
+      businessId: 'b1',
+      tier: 'premium',
+      amount: 10,
+      status: 'active',
+      stripeSubscriptionId: null,
+      createdAt: new Date(),
+      updatedAt: new Date(),
+    });
     vi.spyOn(prisma.module, 'findUnique').mockResolvedValue({
       id: 'm1',
       name: 'Paid Module',
       version: '1.0.0',
       status: 'APPROVED',
       pricingTier: 'premium',
+      isProprietary: false,
       manifest: { frontend: { entryUrl: 'https://modules.example.com/entry.html' } },
       permissions: ['files:read'],
       installations: [],
-      businessInstallations: [{ id: 'install-1' }],
+      businessInstallations: [{ id: 'install-1', enabled: true }],
       businessSubscriptions: [{ id: 'biz-sub-1', status: 'active' }],
       subscriptions: [],
     } as any);

@@ -215,6 +215,28 @@ export const getModuleRuntime = async (moduleId: string, opts?: { scope?: 'perso
   return response.data;
 };
 
+export const getWorkspaceBridgeInit = async (
+  moduleId: string,
+  opts?: {
+    scope?: 'personal' | 'business';
+    businessId?: string;
+    dashboardId?: string;
+    theme?: 'light' | 'dark' | 'system';
+  }
+): Promise<import('shared/types/workspace-bridge').WorkspaceBridgeInitPayload> => {
+  const params = new URLSearchParams();
+  if (opts?.scope) params.append('scope', opts.scope);
+  if (opts?.businessId) params.append('businessId', opts.businessId);
+  if (opts?.dashboardId) params.append('dashboardId', opts.dashboardId);
+  if (opts?.theme) params.append('theme', opts.theme);
+  const url = `/api/modules/${moduleId}/workspace-bridge-init${params.toString() ? `?${params.toString()}` : ''}`;
+  const response = await authenticatedApiCall<{
+    success: boolean;
+    data: import('shared/types/workspace-bridge').WorkspaceBridgeInitPayload;
+  }>(url, { method: 'GET' });
+  return response.data;
+};
+
 // Install a module
 export const installModule = async (moduleId: string, opts?: { scope?: 'personal' | 'business'; businessId?: string }): Promise<{ message: string; installation: ModuleInstallation }> => {
   const params = new URLSearchParams();

@@ -19,6 +19,7 @@ function mockResponse() {
 const validManifest = {
   name: 'Cert Module',
   version: '1.0.0',
+  moduleScope: 'personal',
   supportedContexts: ['personal'],
   permissions: ['test:read'],
   runtime: { apiVersion: '1.0' },

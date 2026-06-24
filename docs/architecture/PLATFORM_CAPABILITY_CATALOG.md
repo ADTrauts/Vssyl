@@ -1,7 +1,7 @@
 # Platform Capability Catalog
 
 **Version:** 1.0.0  
-**Last updated:** 2026-06-23 (Context Graph L4 CwF awarded)  
+**Last updated:** 2026-06-24 (Marketplace Partner Runtime L3 CwF)  
 **Status:** Living index of **platform capabilities** — distinct from product modules  
 **Authority:** [CERTIFICATION_LEDGER.md](./CERTIFICATION_LEDGER.md), [VSSYL_PLATFORM_STANDARDS_AND_MODULE_CONTRACT.md](./VSSYL_PLATFORM_STANDARDS_AND_MODULE_CONTRACT.md)
 
@@ -23,6 +23,7 @@ This catalog indexes capability class, certification band, and primary governanc
 | `analytics` | Platform Analytics | 2 | L2 CwF | 21/27 | [ANALYTICS_CERTIFICATION_RECORD](../analytics/ANALYTICS_CERTIFICATION_RECORD.md) |
 | `unified_search` | Unified Search | 2 | L2 CwF | 21/27 | [SEARCH_CAPABILITY_CERTIFICATION_REVIEW](../search/SEARCH_CAPABILITY_CERTIFICATION_REVIEW.md) |
 | `ai_retrieval` | AI Retrieval Adapter | 2 | L2 CwF | 20/27 | [AI_RETRIEVAL_CAPABILITY_CERTIFICATION_REVIEW](../ai/retrieval/AI_RETRIEVAL_CAPABILITY_CERTIFICATION_REVIEW.md) |
+| `marketplace_partner_runtime` | Marketplace Partner Runtime (delegates) | **3** | **L3 CwF** | *(delegate matrix)* | [MARKETPLACE_PARTNER_CAPABILITY_CERTIFICATION_RECORD](../marketplace/MARKETPLACE_PARTNER_CAPABILITY_CERTIFICATION_RECORD.md) |
 
 ---
 
@@ -93,4 +94,21 @@ Does it own user-facing workspace landing + moduleId?
 
 ---
 
-**Last updated:** 2026-06-23
+## 8. Marketplace Partner Runtime (`marketplace_partner_runtime`) — summary
+
+| Field | Value |
+|-------|-------|
+| **Class** | Partner delegate orchestration (not tenant SoR) |
+| **Surfaces** | Search Delegate · Workspace Bridge · Activity Ingest · Business Billing gates · Module Scope |
+| **Pilot module** | `vssyl-pilot-assets` |
+| **Certification** | Validator **1.4.0**; admin readiness card + four probes |
+| **Default posture** | Feature flags OFF; allowlist-gated |
+| **Level** | **3 — Platform Capability Participant (CwF)** |
+| **Record** | [MARKETPLACE_PARTNER_CAPABILITY_CERTIFICATION_RECORD](../marketplace/MARKETPLACE_PARTNER_CAPABILITY_CERTIFICATION_RECORD.md) |
+| **Phase closeout** | [MARKETPLACE_PHASE_1B_G_EXECUTIVE_SUMMARY](../marketplace/MARKETPLACE_PHASE_1B_G_EXECUTIVE_SUMMARY.md) |
+
+**Not included:** V_Link, Context Graph, partner notifications, AI-readable activity, developer portal.
+
+---
+
+**Last updated:** 2026-06-24

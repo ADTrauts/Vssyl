@@ -28,10 +28,11 @@ function buildScope(input: ModuleActivityEventInput): ActivityScope {
   return 'personal';
 }
 
-export async function emitModuleActivityEvent(input: ModuleActivityEventInput): Promise<void> {
+export async function emitModuleActivityEvent(input: ModuleActivityEventInput): Promise<string> {
   const safeMetadata = JSON.parse(JSON.stringify(input.metadata ?? {})) as Prisma.InputJsonValue;
+  const eventId = `evt_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
   const event = {
-    eventId: `evt_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`,
+    eventId,
     timestamp: new Date().toISOString(),
     actor: {
       userId: input.actorUserId,
@@ -88,6 +89,8 @@ export async function emitModuleActivityEvent(input: ModuleActivityEventInput): 
         context: { userId: input.actorUserId, moduleId: input.moduleId },
       });
     }
+
+    return eventId;
   } catch (error: unknown) {
     const err = error as Error;
     await logger.error('Failed to persist module activity event', {
@@ -100,6 +103,7 @@ export async function emitModuleActivityEvent(input: ModuleActivityEventInput): 
         targetId: input.targetId,
       },
     });
+    throw err;
   }
 }
 

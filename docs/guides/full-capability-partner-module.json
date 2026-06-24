@@ -1,0 +1,108 @@
+{
+  "name": "Asset Register",
+  "description": "Business asset tracking with search, workspace embed, activity feed, and optional billing. Canonical full-capability partner reference manifest (Phase 1C-A).",
+  "version": "1.0.0",
+  "category": "BUSINESS",
+  "tags": ["assets", "inventory", "reference", "full-capability", "partner"],
+  "permissions": ["asset-register:read", "asset-register:write", "asset-register:admin"],
+  "dependencies": [],
+  "pricingTier": "free",
+  "readme": "# Asset Register\n\nReference **full-capability** partner module for Vssyl marketplace certification.\n\n## Capabilities\n\n- **Search Delegate** — assets searchable in Unified Search\n- **Workspace Bridge** — embedded in business workspace\n- **Activity Ingest** — platform activity feed events\n- **Business billing** — free tier (set `pricingTier: premium` + Stripe for paid pilot)\n\n## Docs\n\n- `docs/guides/PARTNER_DEVELOPER_GUIDE.md`\n- `docs/guides/REFERENCE_PARTNER_MODULE_SPEC.md`\n- `docs/guides/full-capability-partner-module.json` (this file)\n\n## Partner validation\n\nFollow `docs/guides/PARTNER_VALIDATION_STRATEGY.md` before submit.",
+  "license": "MIT",
+  "manifest": {
+    "name": "Asset Register",
+    "version": "1.0.0",
+    "description": "Track business assets with search, workspace embed, and activity visibility",
+    "author": "Example Partner Co",
+    "license": "MIT",
+    "entryPoint": "/asset-register",
+    "moduleScope": "business",
+    "supportedContexts": ["business"],
+    "permissions": ["asset-register:read", "asset-register:write", "asset-register:admin"],
+    "capabilities": {
+      "search": true,
+      "workspace": true,
+      "activity": true
+    },
+    "runtime": {
+      "apiVersion": "1.0"
+    },
+    "frontend": {
+      "entryUrl": "https://assets.example-partner.com/vssyl/index.html"
+    },
+    "entities": [
+      {
+        "type": "asset",
+        "displayName": "Asset",
+        "supportsSearch": true,
+        "supportsActivity": true
+      },
+      {
+        "type": "location",
+        "displayName": "Location",
+        "supportsSearch": true,
+        "supportsActivity": false
+      }
+    ],
+    "searchDelegate": {
+      "contractVersion": "1",
+      "url": "https://api.example-partner.com/vssyl/search-delegate",
+      "entityTypes": ["asset", "location"],
+      "supportedContexts": ["business"],
+      "timeoutMs": 2500,
+      "maxResults": 25
+    },
+    "workspaceParticipation": {
+      "contractVersion": "1",
+      "supportedContexts": ["business"],
+      "embedMode": "iframe",
+      "lifecycleEvents": ["activate", "deactivate", "themeChange"]
+    },
+    "activityIngest": {
+      "contractVersion": "1",
+      "supportedContexts": ["business"],
+      "entityTypes": ["asset"],
+      "actionTypes": ["create", "update", "assign", "retire", "checked_out", "maintenance_scheduled"],
+      "maxMetadataBytes": 4096,
+      "idempotencyRequired": true
+    },
+    "aiContext": {
+      "purpose": "Help users find, track, and manage business assets",
+      "category": "business",
+      "keywords": ["asset", "equipment", "inventory", "register", "checkout", "maintenance"],
+      "patterns": [
+        "list assets",
+        "find asset by tag",
+        "who has asset",
+        "schedule maintenance"
+      ],
+      "concepts": ["asset lifecycle", "custody", "maintenance"],
+      "entities": [
+        {
+          "name": "asset",
+          "pluralName": "assets",
+          "description": "A trackable business asset"
+        }
+      ],
+      "actions": [
+        {
+          "name": "list_assets",
+          "description": "List assets for the current business",
+          "permissions": ["asset-register:read"]
+        }
+      ],
+      "contextProviders": [
+        {
+          "name": "asset_summary",
+          "description": "Asset counts and recent changes for the business",
+          "endpoint": "https://api.example-partner.com/vssyl/ai/context/asset-summary",
+          "cacheDuration": 300000
+        }
+      ]
+    },
+    "certification": {
+      "selfAssessmentVersion": "1.4.0",
+      "notes": "Replace example-partner.com URLs with your production HTTPS endpoints before submit. Delegate URLs must be reachable from Vssyl Cloud Run egress."
+    }
+  }
+}

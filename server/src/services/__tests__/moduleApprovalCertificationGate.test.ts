@@ -12,6 +12,7 @@ vi.mock('../ModuleRegistrySyncService.js', () => ({
 const validManifest = {
   name: 'Cert Module',
   version: '1.0.0',
+  moduleScope: 'personal',
   supportedContexts: ['personal'],
   permissions: ['test:read'],
   runtime: { apiVersion: '1.0' },
@@ -91,6 +92,7 @@ describe('MP-Q3 approval publish certification gate', () => {
         manifestSnapshot: {
           name: 'Warn',
           version: '1.0.0',
+          moduleScope: 'personal',
           supportedContexts: ['personal'],
           permissions: [],
           runtime: {},

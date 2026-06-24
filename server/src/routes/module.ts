@@ -8,6 +8,10 @@ import {
   getModuleCategories, 
   getModuleDetails,
   getModuleRuntimeConfig,
+  getWorkspaceBridgeInit,
+  verifyWorkspaceBridgeToken,
+  postActivityIngestToken,
+  postActivityIngest,
   submitModule,
   getModuleSubmissions,
   reviewModuleSubmission,
@@ -57,6 +61,14 @@ router.post('/:moduleId/uploads/:uploadSessionId/finalize', finalizeModuleArtifa
 
 // Get module runtime config
 router.get('/:moduleId/runtime', getModuleRuntimeConfig);
+
+// Workspace auth bridge init (partner embed)
+router.get('/:moduleId/workspace-bridge-init', getWorkspaceBridgeInit);
+router.post('/workspace-bridge/verify', verifyWorkspaceBridgeToken);
+
+// Partner activity ingest (JWT-bound)
+router.post('/:moduleId/activity-ingest-token', postActivityIngestToken);
+router.post('/:moduleId/activity-ingest', postActivityIngest);
 
 // Install a module
 router.post('/:moduleId/install', installModule);

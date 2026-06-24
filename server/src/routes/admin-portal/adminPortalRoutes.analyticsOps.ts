@@ -1286,4 +1286,277 @@ router.get('/modules/export', authenticateJWT, requireAdmin, async (req: Request
   }
 });
 
+router.get('/modules/:moduleId/search-delegate-probe', async (req, res) => {
+  try {
+    const adminUser = req.user;
+    if (!adminUser || adminUser.role !== 'ADMIN') {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    const moduleId = typeof req.params.moduleId === 'string' ? req.params.moduleId : '';
+    if (!moduleId) {
+      return res.status(400).json({ error: 'moduleId is required' });
+    }
+
+    const { prisma } = await import('../../lib/prisma.js');
+    const { probeSearchDelegate } = await import('../../marketplace/searchDelegateProbe.js');
+    const { getPartnerSearchDelegate } = await import('../../marketplace/searchDelegateRegistry.js');
+    const { getSandboxPilotManifestSnapshot } = await import(
+      '../../marketplace/registerSandboxPilotSearchDelegate.js'
+    );
+    const { SANDBOX_PILOT_ASSETS_MODULE_ID } = await import('shared/types/search-delegate');
+
+    const mod = await prisma.module.findUnique({
+      where: { id: moduleId },
+      select: {
+        id: true,
+        manifest: true,
+        versions: {
+          where: { isCurrent: true },
+          take: 1,
+          select: { manifestSnapshot: true },
+        },
+      },
+    });
+
+    const manifest =
+      moduleId === SANDBOX_PILOT_ASSETS_MODULE_ID
+        ? getSandboxPilotManifestSnapshot()
+        : ((mod?.versions[0]?.manifestSnapshot ?? mod?.manifest) as Record<string, unknown>);
+
+    if (!manifest) {
+      return res.status(404).json({ error: 'Module not found' });
+    }
+
+    const executeLiveProbe = req.query.live === 'true';
+    const probeBusinessId =
+      typeof req.query.businessId === 'string' ? req.query.businessId : 'sandbox-business-a';
+
+    const result = await probeSearchDelegate({
+      moduleId,
+      manifest,
+      registration: getPartnerSearchDelegate(moduleId),
+      probeUserId: adminUser.id,
+      probeBusinessId,
+      executeLiveProbe,
+    });
+
+    res.json({ success: true, probe: result });
+  } catch (error) {
+    await logger.error('Search delegate probe failed', {
+      operation: 'admin_search_delegate_probe',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+      },
+    });
+    res.status(500).json({ error: 'Search delegate probe failed' });
+  }
+});
+
+router.get('/modules/:moduleId/workspace-bridge-probe', async (req, res) => {
+  try {
+    const adminUser = req.user;
+    if (!adminUser || adminUser.role !== 'ADMIN') {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    const moduleId = typeof req.params.moduleId === 'string' ? req.params.moduleId : '';
+    if (!moduleId) {
+      return res.status(400).json({ error: 'moduleId is required' });
+    }
+
+    const { prisma } = await import('../../lib/prisma.js');
+    const { probeWorkspaceBridge } = await import('../../marketplace/workspaceBridgeProbe.js');
+    const { getPartnerWorkspaceParticipation } = await import(
+      '../../marketplace/workspaceParticipationRegistry.js'
+    );
+    const { getSandboxPilotWorkspaceManifestSnapshot } = await import(
+      '../../marketplace/registerSandboxPilotWorkspaceParticipation.js'
+    );
+    const { SANDBOX_PILOT_WORKSPACE_MODULE_ID } = await import('shared/types/workspace-bridge');
+
+    const mod = await prisma.module.findUnique({
+      where: { id: moduleId },
+      select: {
+        id: true,
+        manifest: true,
+        versions: {
+          where: { isCurrent: true },
+          take: 1,
+          select: { manifestSnapshot: true },
+        },
+      },
+    });
+
+    const manifest =
+      moduleId === SANDBOX_PILOT_WORKSPACE_MODULE_ID
+        ? getSandboxPilotWorkspaceManifestSnapshot()
+        : ((mod?.versions[0]?.manifestSnapshot ?? mod?.manifest) as Record<string, unknown>);
+
+    if (!manifest) {
+      return res.status(404).json({ error: 'Module not found' });
+    }
+
+    const issueTestToken = req.query.issueToken === 'true';
+    const probeBusinessId =
+      typeof req.query.businessId === 'string' ? req.query.businessId : 'sandbox-business-a';
+
+    const result = await probeWorkspaceBridge({
+      moduleId,
+      manifest,
+      registration: getPartnerWorkspaceParticipation(moduleId),
+      probeUserId: adminUser.id,
+      probeBusinessId,
+      issueTestToken,
+    });
+
+    res.json({ success: true, probe: result });
+  } catch (error) {
+    await logger.error('Workspace bridge probe failed', {
+      operation: 'admin_workspace_bridge_probe',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+      },
+    });
+    res.status(500).json({ error: 'Workspace bridge probe failed' });
+  }
+});
+
+router.get('/modules/:moduleId/business-billing-probe', async (req, res) => {
+  try {
+    const adminUser = req.user;
+    if (!adminUser || adminUser.role !== 'ADMIN') {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    const moduleId = typeof req.params.moduleId === 'string' ? req.params.moduleId : '';
+    const businessId =
+      typeof req.query.businessId === 'string' ? req.query.businessId : 'sandbox-business-a';
+
+    if (!moduleId) {
+      return res.status(400).json({ error: 'moduleId is required' });
+    }
+
+    const { probeBusinessModuleBilling } = await import('../../marketplace/businessBillingProbe.js');
+    const result = await probeBusinessModuleBilling({ moduleId, businessId });
+    res.json({ success: true, probe: result });
+  } catch (error) {
+    await logger.error('Business billing probe failed', {
+      operation: 'admin_business_billing_probe',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+      },
+    });
+    res.status(500).json({ error: 'Business billing probe failed' });
+  }
+});
+
+router.get('/modules/:moduleId/activity-ingest-probe', async (req, res) => {
+  try {
+    const adminUser = req.user;
+    if (!adminUser || adminUser.role !== 'ADMIN') {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    const moduleId = typeof req.params.moduleId === 'string' ? req.params.moduleId : '';
+    if (!moduleId) {
+      return res.status(400).json({ error: 'moduleId is required' });
+    }
+
+    const { prisma } = await import('../../lib/prisma.js');
+    const { probeActivityIngest } = await import('../../marketplace/activityIngestProbe.js');
+    const { getPartnerActivityIngest } = await import('../../marketplace/activityIngestRegistry.js');
+    const { getSandboxPilotActivityManifestSnapshot } = await import(
+      '../../marketplace/registerSandboxPilotActivityIngest.js'
+    );
+    const { getSandboxPilotManifestSnapshot } = await import(
+      '../../marketplace/registerSandboxPilotSearchDelegate.js'
+    );
+    const { SANDBOX_PILOT_ASSETS_MODULE_ID } = await import('shared/types/search-delegate');
+
+    const mod = await prisma.module.findUnique({
+      where: { id: moduleId },
+      select: {
+        id: true,
+        manifest: true,
+        versions: {
+          where: { isCurrent: true },
+          take: 1,
+          select: { manifestSnapshot: true },
+        },
+      },
+    });
+
+    const manifest =
+      moduleId === SANDBOX_PILOT_ASSETS_MODULE_ID
+        ? {
+            ...getSandboxPilotManifestSnapshot(),
+            ...getSandboxPilotActivityManifestSnapshot(),
+          }
+        : ((mod?.versions[0]?.manifestSnapshot ?? mod?.manifest) as Record<string, unknown>);
+
+    if (!manifest) {
+      return res.status(404).json({ error: 'Module not found' });
+    }
+
+    const executeLiveProbe = req.query.live === 'true';
+    const probeBusinessId =
+      typeof req.query.businessId === 'string' ? req.query.businessId : 'sandbox-business-a';
+
+    const result = await probeActivityIngest({
+      moduleId,
+      manifest,
+      registration: getPartnerActivityIngest(moduleId),
+      probeUserId: adminUser.id,
+      probeBusinessId,
+      executeLiveProbe,
+    });
+
+    res.json({ success: true, probe: result });
+  } catch (error) {
+    await logger.error('Activity ingest probe failed', {
+      operation: 'admin_activity_ingest_probe',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+      },
+    });
+    res.status(500).json({ error: 'Activity ingest probe failed' });
+  }
+});
+
+router.get('/modules/:moduleId/marketplace-readiness', async (req, res) => {
+  try {
+    const adminUser = req.user;
+    if (!adminUser || adminUser.role !== 'ADMIN') {
+      return res.status(403).json({ error: 'Admin access required' });
+    }
+
+    const moduleId = typeof req.params.moduleId === 'string' ? req.params.moduleId : '';
+    if (!moduleId) {
+      return res.status(400).json({ error: 'moduleId is required' });
+    }
+
+    const { getMarketplaceReadiness } = await import('../../marketplace/marketplaceReadinessService.js');
+    const readiness = await getMarketplaceReadiness(moduleId);
+    if (!readiness) {
+      return res.status(404).json({ error: 'Module not found' });
+    }
+
+    res.json({ success: true, readiness });
+  } catch (error) {
+    await logger.error('Marketplace readiness failed', {
+      operation: 'admin_marketplace_readiness',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+      },
+    });
+    res.status(500).json({ error: 'Marketplace readiness failed' });
+  }
+});
+
 }

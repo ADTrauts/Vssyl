@@ -17,7 +17,20 @@ import {
   emitModuleEnabledEvent,
   emitModuleDisabledEvent,
 } from '../../events/domainEventEmitters';
-import { BUILT_IN_MODULE_IDS, isBuiltInModuleId } from '../../constants/builtInModuleIds';
+import { BUILT_IN_MODULE_IDS } from '../../constants/builtInModuleIds';
+import {
+  moduleRequiresBusinessSubscription,
+  hasActiveBusinessModuleSubscription,
+  ensureFreeBusinessModuleSubscription,
+} from '../../services/businessModuleSubscriptionService';
+import { asRecordJson } from './moduleShared';
+import {
+  assertModuleInstallScopeAllowed,
+  builtInModuleAvailableForPersonalScope,
+  moduleScopeVisibleInMarketplace,
+  resolveEffectiveModuleScope,
+} from '../../marketplace/moduleScopeService';
+import { isBuiltInModuleId } from '../../constants/builtInModuleIds';
 
 // Get all installed modules for the current user
 export const getInstalledModules = async (req: Request, res: Response) => {
@@ -57,7 +70,14 @@ export const getInstalledModules = async (req: Request, res: Response) => {
         },
       });
 
-      const modules = installations.map((installation: Record<string, any>) => ({
+      const modules = installations
+        .filter((installation: Record<string, unknown>) => {
+          const mod = installation.module as { id: string; manifest: unknown };
+          const manifest = asRecordJson(mod.manifest);
+          const resolved = resolveEffectiveModuleScope(manifest, mod.id);
+          return resolved ? moduleScopeVisibleInMarketplace(resolved.moduleScope, 'business') : false;
+        })
+        .map((installation: Record<string, any>) => ({
         id: installation.module.id,
         name: installation.module.name,
         description: installation.module.description,
@@ -98,8 +118,10 @@ export const getInstalledModules = async (req: Request, res: Response) => {
       }
     });
 
-    // Get built-in modules (always available for personal users)
-    const builtInModuleIds = [...BUILT_IN_MODULE_IDS];
+    // Get built-in modules available for personal scope
+    const builtInModuleIds = BUILT_IN_MODULE_IDS.filter((id) =>
+      builtInModuleAvailableForPersonalScope(id)
+    );
     const builtInModules = await prisma.module.findMany({
       where: {
         id: { in: builtInModuleIds },
@@ -117,7 +139,13 @@ export const getInstalledModules = async (req: Request, res: Response) => {
     });
 
     // Combine explicitly installed modules with built-in modules
-    const installedModules = installations.map((installation: {
+    const installedModules = installations
+      .filter((installation) => {
+        const manifest = asRecordJson(installation.module.manifest);
+        const resolved = resolveEffectiveModuleScope(manifest, installation.module.id);
+        return resolved ? moduleScopeVisibleInMarketplace(resolved.moduleScope, 'personal') : false;
+      })
+      .map((installation: {
       module: {
         id: string;
         name: string;
@@ -305,8 +333,16 @@ export const getMarketplaceModules = async (req: Request, res: Response) => {
       orderBy: orderBy
     });
 
+    const scopeVisibleModules = modules.filter((module: { id: string; manifest: unknown }) => {
+      const manifest = asRecordJson(module.manifest);
+      const resolved = resolveEffectiveModuleScope(manifest, module.id);
+      if (!resolved) return false;
+      return moduleScopeVisibleInMarketplace(resolved.moduleScope, scope);
+    });
+
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const modulesWithStatus = modules.map((module: any) => {
+    const modulesWithStatus = scopeVisibleModules.map((module: any) => {
+      const resolvedScope = resolveEffectiveModuleScope(asRecordJson(module.manifest), module.id);
       // Check if this is a built-in module for personal scope
       const isBuiltInModule = isBuiltInModuleId(module.id);
       
@@ -317,7 +353,8 @@ export const getMarketplaceModules = async (req: Request, res: Response) => {
       } else {
         // For personal scope, check both explicit installations and built-in modules
         const hasExplicitInstallation = (module as any).installations?.length > 0;
-        const isBuiltInAndPersonal = isBuiltInModule && scope === 'personal';
+        const isBuiltInAndPersonal =
+          isBuiltInModule && scope === 'personal' && builtInModuleAvailableForPersonalScope(module.id);
         status = (hasExplicitInstallation || isBuiltInAndPersonal) ? 'installed' : 'available';
       }
 
@@ -354,6 +391,8 @@ export const getMarketplaceModules = async (req: Request, res: Response) => {
             : (module as any).subscriptions?.[0]?.amount || null,
         // Built-in module indicator
         isBuiltIn: isBuiltInModule,
+        moduleScope: resolvedScope?.moduleScope ?? null,
+        supportedContexts: resolvedScope?.supportedContexts ?? [],
       };
     });
 
@@ -415,6 +454,29 @@ export const installModule = async (req: Request, res: Response) => {
     // Check if module is approved
     if (module.status !== 'APPROVED') {
       return res.status(400).json({ success: false, error: 'Module is not available for installation' });
+    }
+
+    const installManifest = asRecordJson(module.manifest);
+    const scopeCheck = assertModuleInstallScopeAllowed({
+      manifest: installManifest,
+      moduleId,
+      installScope: scope,
+    });
+    if (!scopeCheck.allowed) {
+      logger.warn('Module installation denied: scope mismatch', {
+        operation: 'module_install',
+        userId: user.id,
+        businessId,
+        moduleId,
+        installScope: scope,
+        moduleScope: scopeCheck.moduleScope,
+        reason: scopeCheck.reason,
+      });
+      return res.status(403).json({
+        success: false,
+        error: scopeCheck.reason ?? 'Module scope does not support this installation target',
+        moduleScope: scopeCheck.moduleScope,
+      });
     }
 
     if (scope === 'business') {
@@ -481,13 +543,10 @@ export const installModule = async (req: Request, res: Response) => {
         return res.status(400).json({ success: false, error: 'Module is already installed for this business' });
       }
 
-      // Check subscription requirements for paid modules
-      // NOTE: Proprietary modules (like HR) are included in business tier, not separately paid
-      if (module.pricingTier && module.pricingTier !== 'free' && !module.isProprietary) {
-        const subscription = await (prisma as any).businessModuleSubscription.findFirst({
-          where: { businessId, moduleId, status: 'active' },
-        });
-        if (!subscription) {
+      // Check subscription requirements for paid partner modules
+      if (moduleRequiresBusinessSubscription(module)) {
+        const hasSubscription = await hasActiveBusinessModuleSubscription(businessId, moduleId);
+        if (!hasSubscription) {
           return res.status(402).json({
             success: false,
             error: 'Business subscription required',
@@ -562,8 +621,8 @@ export const installModule = async (req: Request, res: Response) => {
             moduleId, 
             businessId, 
             enabled: true,
-            installedAt: new Date()
-            // Note: installedBy column is optional, so we don't set it
+            installedAt: new Date(),
+            installedBy: user.id,
           }
         });
         
@@ -634,6 +693,14 @@ export const installModule = async (req: Request, res: Response) => {
             error: { message: errorMessage }
           });
         }
+      }
+
+      if (!moduleRequiresBusinessSubscription(module)) {
+        await ensureFreeBusinessModuleSubscription({
+          businessId,
+          moduleId,
+          actorUserId: user.id,
+        });
       }
 
       emitModuleInstalledEvent({

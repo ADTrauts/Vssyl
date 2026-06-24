@@ -15,7 +15,12 @@ import SchedulingLayout from '../scheduling/SchedulingLayout';
 import WorkforceCommsLayout from '../workforce-comms/WorkforceCommsLayout';
 import BusinessWorkspaceHubPanel from './BusinessWorkspaceHubPanel';
 import BusinessWorkspaceModuleRedirect from './BusinessWorkspaceModuleRedirect';
+import PartnerModuleWorkspaceEmbed from '../PartnerModuleWorkspaceEmbed';
 import { getModuleDefinition, normalizeModuleId } from '../../runtime/modules/moduleRegistry';
+import {
+  businessWorkspaceMountedModuleIds,
+  normalizeWorkspaceModuleId,
+} from '../../lib/businessWorkspaceContracts';
 
 interface Business {
   id: string;
@@ -115,8 +120,21 @@ export default function BusinessWorkspaceContent({
         return <PlaceWorkspaceLanding businessId={business.id} />;
       case 'vlink':
         return <VLinkModule dashboardId={businessDashboardId} />;
-      default:
+      default: {
+        const firstPartyIds = new Set(businessWorkspaceMountedModuleIds());
+        const normalized = normalizeWorkspaceModuleId(currentModule);
+        if (!firstPartyIds.has(normalized)) {
+          return (
+            <PartnerModuleWorkspaceEmbed
+              moduleId={currentModule}
+              businessId={business.id}
+              businessDashboardId={businessDashboardId}
+              className="h-full min-h-[400px]"
+            />
+          );
+        }
         return <BusinessWorkspaceHubPanel businessName={business.name} />;
+      }
     }
   };
 

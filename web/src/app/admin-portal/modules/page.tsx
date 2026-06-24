@@ -8,6 +8,7 @@ import {
   ModuleCertificationReviewPanel,
   type ModuleCertificationShape,
 } from '../../../components/admin/ModuleCertificationReviewPanel';
+import { MarketplaceReadinessCard } from '../../../components/admin/MarketplaceReadinessCard';
 import { 
   Eye, 
   CheckCircle, 
@@ -1174,6 +1175,12 @@ export default function AdminModulesPage() {
                             compact
                           />
                         </div>
+                        <div className="mt-3">
+                          <MarketplaceReadinessCard
+                            moduleId={submission.module.id}
+                            compact
+                          />
+                        </div>
                       </div>
                     );
                   })()}
@@ -1567,6 +1574,8 @@ export default function AdminModulesPage() {
               </div>
 
               <ModuleCertificationReviewPanel certification={getCertification(selectedSubmissionDetails)} />
+
+              <MarketplaceReadinessCard moduleId={selectedSubmissionDetails.module.id} />
 
               <div>
                 <p className="text-xs text-v-text-secondary uppercase mb-2">Declared permissions</p>

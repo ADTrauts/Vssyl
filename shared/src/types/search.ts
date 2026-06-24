@@ -32,7 +32,8 @@ export type SearchProviderReadiness = 'ready' | 'partial' | 'planned';
 export type SearchProviderMethod =
   | 'visibility_service'
   | 'prisma_filter'
-  | 'platform_delegate';
+  | 'platform_delegate'
+  | 'partner_http_delegate';
 
 export interface SearchResult {
   id: string;
