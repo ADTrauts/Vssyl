@@ -9,7 +9,7 @@ describe('calendarService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.spyOn(calendarPermission, 'enforceCalendarContextMembership').mockResolvedValue(undefined);
-    vi.spyOn(moduleActivity, 'emitModuleActivityEvent').mockResolvedValue(undefined);
+    vi.spyOn(moduleActivity, 'emitModuleActivityEvent').mockResolvedValue('evt_test');
     vi.spyOn(calendarDomain, 'recordCalendarCreatedDomainEvent').mockImplementation(() => undefined);
   });
 

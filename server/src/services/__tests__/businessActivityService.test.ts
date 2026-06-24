@@ -12,7 +12,7 @@ import {
 describe('businessActivityService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.spyOn(moduleActivity, 'emitModuleActivityEvent').mockResolvedValue(undefined);
+    vi.spyOn(moduleActivity, 'emitModuleActivityEvent').mockResolvedValue('evt_test');
     vi.spyOn(dashboardService, 'ensureBusinessDashboardForUser').mockResolvedValue({
       id: 'dash-ba-1',
     } as never);

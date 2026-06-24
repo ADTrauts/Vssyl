@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { ACTIVITY_INGEST_CONTRACT_VERSION } from 'shared/types/activity-ingest';
+import { ACTIVITY_INGEST_CONTRACT_VERSION, type PartnerActivityIngestRegistration } from 'shared/types/activity-ingest';
 import {
   validatePartnerActivityIngestRequest,
   ingestPartnerActivity,
@@ -15,13 +15,13 @@ vi.mock('../../services/moduleActivityService.js', () => ({
   emitModuleActivityEvent: vi.fn().mockResolvedValue('evt_test_1'),
 }));
 
-const registration = {
+const registration: PartnerActivityIngestRegistration = {
   moduleId: 'vssyl-pilot-assets',
   moduleName: 'Pilot',
   moduleVersionId: 'mv-1',
   semver: '1.0.0',
   contractVersion: ACTIVITY_INGEST_CONTRACT_VERSION,
-  supportedContexts: ['business'] as const,
+  supportedContexts: ['business'],
   entityTypes: ['asset'],
   actionTypes: ['create', 'update', 'checked_out', 'maintenance_scheduled'],
   maxMetadataBytes: 4096,

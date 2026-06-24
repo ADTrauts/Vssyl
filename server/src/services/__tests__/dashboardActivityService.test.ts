@@ -9,7 +9,7 @@ import {
 describe('dashboardActivityService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.spyOn(moduleActivity, 'emitModuleActivityEvent').mockResolvedValue(undefined);
+    vi.spyOn(moduleActivity, 'emitModuleActivityEvent').mockResolvedValue('evt_test');
   });
 
   it('recordDashboardCreated emits dashboard.create', async () => {

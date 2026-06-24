@@ -1,5 +1,7 @@
 import type { SearchContextScope, SearchTenantContext } from './search';
 
+export type { SearchTenantContext };
+
 /** Locked contract version for partner HTTP search delegates. */
 export const SEARCH_DELEGATE_CONTRACT_VERSION = '1' as const;
 

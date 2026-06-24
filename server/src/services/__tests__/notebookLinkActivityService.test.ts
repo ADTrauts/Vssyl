@@ -5,7 +5,7 @@ import { recordLinkArchived, recordLinkCreated } from '../notebook/notebookLinkA
 describe('notebookLinkActivityService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.spyOn(moduleActivity, 'emitModuleActivityEvent').mockResolvedValue(undefined);
+    vi.spyOn(moduleActivity, 'emitModuleActivityEvent').mockResolvedValue('evt_test');
   });
 
   it('recordLinkCreated emits linked_task_to_page for TASK', async () => {

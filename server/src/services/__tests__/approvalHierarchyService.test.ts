@@ -190,7 +190,7 @@ describe('approvalHierarchyService', () => {
 
 describe('approvalHierarchyActivityService', () => {
   beforeAll(() => {
-    vi.spyOn(moduleActivity, 'emitModuleActivityEvent').mockResolvedValue(undefined);
+    vi.spyOn(moduleActivity, 'emitModuleActivityEvent').mockResolvedValue('evt_test');
     vi.spyOn(dashboardService, 'ensureBusinessDashboardForUser').mockResolvedValue({
       id: 'dash-ah',
     } as never);

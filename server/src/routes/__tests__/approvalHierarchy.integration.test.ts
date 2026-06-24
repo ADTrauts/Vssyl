@@ -131,7 +131,7 @@ describe('/api/org-chart/approval-hierarchy — BA-4 integration', () => {
 
   beforeEach(() => {
     vi.restoreAllMocks();
-    vi.spyOn(moduleActivity, 'emitModuleActivityEvent').mockResolvedValue(undefined);
+    vi.spyOn(moduleActivity, 'emitModuleActivityEvent').mockResolvedValue('evt_test');
     vi.spyOn(dashboardService, 'ensureBusinessDashboardForUser').mockResolvedValue({
       id: 'dash-ah-int',
     } as never);

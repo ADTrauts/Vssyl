@@ -5,7 +5,7 @@ import { recordTaskCreated, recordTaskTrashed } from '../todoActivityService';
 describe('todoActivityService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.spyOn(moduleActivity, 'emitModuleActivityEvent').mockResolvedValue(undefined);
+    vi.spyOn(moduleActivity, 'emitModuleActivityEvent').mockResolvedValue('evt_test');
   });
 
   it('recordTaskCreated emits module activity', async () => {

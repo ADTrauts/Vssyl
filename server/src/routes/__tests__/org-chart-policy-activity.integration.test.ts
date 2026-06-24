@@ -77,7 +77,7 @@ describe('/api/org-chart — policy, activity, and domain events (BA-1D)', () =>
 
   beforeEach(() => {
     vi.restoreAllMocks();
-    vi.spyOn(moduleActivity, 'emitModuleActivityEvent').mockResolvedValue(undefined);
+    vi.spyOn(moduleActivity, 'emitModuleActivityEvent').mockResolvedValue('evt_test');
     vi.spyOn(dashboardService, 'ensureBusinessDashboardForUser').mockResolvedValue({
       id: 'dash-oc-1d',
     } as never);

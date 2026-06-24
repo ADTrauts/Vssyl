@@ -8,7 +8,7 @@ import { emitFileUploadedEvent } from '../../events/domainEventEmitters';
 import { createDriveFile, DriveUploadError } from '../driveUploadService';
 
 vi.mock('../moduleActivityService', () => ({
-  emitModuleActivityEvent: vi.fn().mockResolvedValue(undefined),
+  emitModuleActivityEvent: vi.fn().mockResolvedValue('evt_test'),
 }));
 
 vi.mock('../../events/domainEventEmitters', () => ({

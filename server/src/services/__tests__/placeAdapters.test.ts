@@ -17,7 +17,7 @@ describe('place adapters (Phase 1D)', () => {
   });
 
   it('activity emits on listing/meeting success', async () => {
-    vi.spyOn(moduleActivity, 'emitModuleActivityEvent').mockResolvedValue(undefined);
+    vi.spyOn(moduleActivity, 'emitModuleActivityEvent').mockResolvedValue('evt_test');
 
     await recordListingUpdated({
       actorUserId: 'u1',

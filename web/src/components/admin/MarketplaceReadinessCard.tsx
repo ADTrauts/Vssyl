@@ -5,16 +5,16 @@ import { Badge, Button, Spinner } from 'shared/components';
 import { RefreshCw } from 'lucide-react';
 import { adminApiService, type MarketplaceReadinessShape } from '../../lib/adminApiService';
 
-function scopeBadgeColor(scope: string | null): 'blue' | 'green' | 'purple' | 'gray' | 'yellow' {
+function scopeBadgeColor(scope: string | null): 'blue' | 'green' | 'gray' | 'yellow' | 'red' {
   switch (scope) {
     case 'personal':
       return 'green';
     case 'business':
       return 'blue';
     case 'both':
-      return 'purple';
-    case 'internal':
       return 'yellow';
+    case 'internal':
+      return 'gray';
     default:
       return 'gray';
   }

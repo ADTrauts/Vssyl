@@ -25,8 +25,6 @@ import {
   assertModuleInstallScopeAllowed,
   resolveEffectiveModuleScope,
 } from '../../marketplace/moduleScopeService.js';
-import { asRecordJson } from './moduleShared.js';
-
 
 export const getModuleRuntimeConfig = async (req: Request, res: Response) => {
   try {

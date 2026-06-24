@@ -7,9 +7,10 @@ import { registerPartnerSearchDelegate, clearPartnerSearchDelegateRegistry } fro
 import {
   SANDBOX_PILOT_INTERNAL_DELEGATE_URL,
   SEARCH_DELEGATE_CONTRACT_VERSION,
+  type PartnerSearchDelegateRegistration,
 } from 'shared/types/search-delegate';
 
-const registration = {
+const registration: PartnerSearchDelegateRegistration = {
   moduleId: 'vssyl-pilot-assets',
   moduleName: 'Pilot Assets',
   moduleVersionId: 'v1',
@@ -78,7 +79,7 @@ describe('searchDelegateProxy', () => {
   });
 
   it('handles HTTP delegate failure without throwing', async () => {
-    const httpRegistration = {
+    const httpRegistration: PartnerSearchDelegateRegistration = {
       ...registration,
       moduleId: 'http-partner',
       delegateUrl: 'https://partner.example.com/search',

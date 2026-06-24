@@ -69,6 +69,7 @@ export interface MarketplaceReadinessShape {
   };
 }
 
+export interface BusinessIntelligenceData {
   userGrowth: {
     totalUsers: number;
     newUsers: number;

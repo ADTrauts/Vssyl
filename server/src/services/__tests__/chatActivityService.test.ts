@@ -5,7 +5,7 @@ import { recordMessageSent, recordReaction, recordRead } from '../chatActivitySe
 describe('chatActivityService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.spyOn(moduleActivity, 'emitModuleActivityEvent').mockResolvedValue(undefined);
+    vi.spyOn(moduleActivity, 'emitModuleActivityEvent').mockResolvedValue('evt_test');
   });
 
   it('recordMessageSent emits normalized activity', async () => {

@@ -12,7 +12,7 @@ vi.mock('../auditService', () => ({
 describe('calendarActivityService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.spyOn(moduleActivity, 'emitModuleActivityEvent').mockResolvedValue(undefined);
+    vi.spyOn(moduleActivity, 'emitModuleActivityEvent').mockResolvedValue('evt_test');
   });
 
   it('recordEventCreated emits module activity and audit', async () => {

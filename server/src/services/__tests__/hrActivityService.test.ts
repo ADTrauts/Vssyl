@@ -16,7 +16,7 @@ import {
 describe('hrActivityService', () => {
   beforeEach(() => {
     vi.clearAllMocks();
-    vi.spyOn(moduleActivity, 'emitModuleActivityEvent').mockResolvedValue(undefined);
+    vi.spyOn(moduleActivity, 'emitModuleActivityEvent').mockResolvedValue('evt_test');
     vi.spyOn(dashboardService, 'ensureBusinessDashboardForUser').mockResolvedValue({
       id: 'dash-hr-1',
     } as never);

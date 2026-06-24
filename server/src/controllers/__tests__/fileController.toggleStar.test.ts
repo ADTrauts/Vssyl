@@ -6,7 +6,7 @@ import * as driveHelpers from '../../services/drivePermissionHelpers';
 import * as drivePolicyDual from '../../auth/drivePolicyDual';
 
 vi.mock('../../services/moduleActivityService', () => ({
-  emitModuleActivityEvent: vi.fn().mockResolvedValue(undefined),
+  emitModuleActivityEvent: vi.fn().mockResolvedValue('evt_test'),
 }));
 
 vi.mock('../../services/chatSocketService', () => ({

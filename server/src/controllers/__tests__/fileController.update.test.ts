@@ -8,7 +8,7 @@ import * as moduleActivity from '../../services/moduleActivityService';
 import * as domainEmitters from '../../events/domainEventEmitters';
 
 vi.mock('../../services/moduleActivityService', () => ({
-  emitModuleActivityEvent: vi.fn().mockResolvedValue(undefined),
+  emitModuleActivityEvent: vi.fn().mockResolvedValue('evt_test'),
 }));
 
 import * as driveDeleteService from '../../services/driveDeleteService';

@@ -18,7 +18,7 @@ vi.mock('../notificationService', () => ({
 }));
 
 vi.mock('../moduleActivityService', () => ({
-  emitModuleActivityEvent: vi.fn().mockResolvedValue(undefined),
+  emitModuleActivityEvent: vi.fn().mockResolvedValue('evt_test'),
 }));
 
 vi.mock('../dashboardService', () => ({
