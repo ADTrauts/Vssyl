@@ -31,6 +31,20 @@ import { optionalSourcesForInferredIntents } from './pipelineGroundingRuleReconc
 import { orchestratePipelineModuleSources } from '../context/ContextProviderOrchestrator';
 import { isModuleBackedPipelineSource } from '../context/pipelineSourceProviderMap';
 import { classifyProviderFailure } from '../context/contextDensityReport';
+import { runPipelineRetrievalDiscovery } from '../retrieval/aiRetrievalPipelineHook';
+import { resolveRetrievalConsumerIntent } from '../retrieval/aiRetrievalConsumerContract';
+import type { AIRetrievalDiscoverResult } from '../retrieval/aiRetrievalTypes';
+import {
+  emptyGraphBundlePipelineContext,
+  enrichGraphBundlesFromRetrieval,
+} from '../../context-graph/enrichGraphBundlesFromRetrieval.js';
+import { isRetrievalBundleBridgeEnabled } from '../../context-graph/retrievalBundleBridgeConfig.js';
+import type { TenantScope } from '../../context-graph/contextGraphTypes.js';
+import {
+  isGroundingReconcileEnabled,
+  reconcileGroundingArtifacts,
+  type GroundingReconcileDiagnostics,
+} from '../context/groundingReconcile.js';
 
 export interface PipelineGroundingRetrievalInput {
   userId: string;
@@ -72,6 +86,10 @@ export interface PipelineGroundingRetrievalResult {
     providerName: string;
   }>;
   orchestrationSnapshot?: import('../../../../shared/src/types/ai-orchestration-snapshot').AIOrchestrationSnapshot;
+  /** Phase 1A — optional Unified Search discovery for planning intent pilot. */
+  retrievalDiscovery?: AIRetrievalDiscoverResult;
+  /** Phase 1B — grounding dedup diagnostics (project_assistant pilot). */
+  groundingReconcileDiagnostics?: GroundingReconcileDiagnostics;
 }
 
 function isToolEnabled(catalog: PipelineCatalog, toolId: PipelineToolPolicy['toolId']): boolean {
@@ -384,7 +402,7 @@ export async function runPipelineGroundingRetrieval(
 
   const vlinkSignals = detectVLinkQuerySignals(input.userMessage, {
     intentBoost: inferredIntents.some((id) =>
-      ['planning', 'workflow_action', 'business_operations'].includes(id)
+      ['planning', 'workflow_action', 'business_operations', 'project_assistant'].includes(id)
     ),
   });
   const shouldFetchVLink =
@@ -431,7 +449,7 @@ export async function runPipelineGroundingRetrieval(
 
   const graphBundleSignals = detectGraphBundleQuerySignals(input.userMessage, {
     intentBoost: inferredIntents.some((id) =>
-      ['planning', 'workflow_action', 'business_operations', 'technical_help'].includes(id)
+      ['planning', 'workflow_action', 'business_operations', 'project_assistant', 'technical_help'].includes(id)
     ),
   });
   const shouldFetchGraphBundle =
@@ -474,6 +492,78 @@ export async function runPipelineGroundingRetrieval(
     if (input.existingGraphBundlePipelineContext.bundlesUsed > 0) {
       result.sourcesUsed.push('graph_bundle');
     }
+  }
+
+  const retrievalHook = await runPipelineRetrievalDiscovery({
+    userId: input.userId,
+    userMessage: input.userMessage,
+    inferredIntents,
+    businessId: input.businessId,
+    dashboardId: input.dashboardId,
+    householdId: input.householdId,
+  });
+
+  if (retrievalHook?.retrievalDiscovery) {
+    result.retrievalDiscovery = retrievalHook.retrievalDiscovery;
+    if (retrievalHook.moduleContextPatch) {
+      Object.assign(result.moduleContextsPatch, retrievalHook.moduleContextPatch);
+    }
+    if (retrievalHook.contextRetrieved) {
+      result.contextRetrieved.push(retrievalHook.contextRetrieved);
+    }
+    if (retrievalHook.sourcesUsed) {
+      result.sourcesUsed.push(...retrievalHook.sourcesUsed);
+    }
+
+    const bridgeConsumerIntent = resolveRetrievalConsumerIntent(inferredIntents);
+    if (
+      bridgeConsumerIntent &&
+      isRetrievalBundleBridgeEnabled(bridgeConsumerIntent) &&
+      input.dashboardId
+    ) {
+      const tenantScope: TenantScope = {
+        dashboardId: input.dashboardId,
+        businessId: input.businessId ?? null,
+        householdId: input.householdId ?? null,
+        scope: input.businessId ? 'BUSINESS' : input.householdId ? 'HOUSEHOLD' : 'PERSONAL',
+      };
+      const baseGraphContext =
+        result.graphBundlePipelineContext ?? emptyGraphBundlePipelineContext();
+      const bridgeResult = enrichGraphBundlesFromRetrieval({
+        graphBundleContext: baseGraphContext,
+        retrievalDiscovery: retrievalHook.retrievalDiscovery,
+        inferredIntents,
+        tenantScope,
+      });
+      result.graphBundlePipelineContext = bridgeResult.graphBundleContext;
+      if (bridgeResult.enrichment?.enrichmentApplied) {
+        result.contextRetrieved.push({
+          source: 'graph_bundle',
+          provider: 'retrieval_inference_bridge',
+          itemCount: bridgeResult.enrichment.inferenceNodesAdded,
+        });
+        if (!result.sourcesUsed.includes('graph_bundle')) {
+          result.sourcesUsed.push('graph_bundle');
+        }
+        result.sourcesUsed.push('retrieval_inference_bridge');
+      }
+    }
+  }
+
+  const reconcileConsumerIntent = resolveRetrievalConsumerIntent(inferredIntents);
+  if (isGroundingReconcileEnabled(reconcileConsumerIntent)) {
+    const reconciled = reconcileGroundingArtifacts({
+      consumerIntent: reconcileConsumerIntent,
+      vlinkPipelineContext: result.vlinkPipelineContext,
+      graphBundlePipelineContext: result.graphBundlePipelineContext,
+      moduleContextsPatch: result.moduleContextsPatch,
+      retrievalDiscovery: result.retrievalDiscovery,
+    });
+    result.vlinkPipelineContext = reconciled.vlinkPipelineContext;
+    result.graphBundlePipelineContext = reconciled.graphBundlePipelineContext;
+    result.retrievalDiscovery = reconciled.retrievalDiscovery;
+    Object.assign(result.moduleContextsPatch, reconciled.moduleContextsPatch);
+    result.groundingReconcileDiagnostics = reconciled.diagnostics;
   }
 
   return result;

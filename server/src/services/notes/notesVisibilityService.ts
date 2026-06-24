@@ -2,6 +2,8 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '../../lib/prisma';
 import type { ListPagesQuery, NotePageDetail, NotePageListItem } from './notesTypes';
 import { buildPageNotTrashedWhere, buildPageOwnerOrSharedReadWhere } from './notesPermissionService';
+import { evaluateNotesPolicyDual } from './notesPolicyDual';
+import { POLICY_ACTIONS } from '../../auth/policyActions';
 
 const PAGE_LIST_SELECT = {
   id: true,
@@ -90,6 +92,90 @@ export async function listPages(query: ListPagesQuery): Promise<NotePageListItem
     select: PAGE_LIST_SELECT,
   });
   return notes.map((n) => toListItem(n, query.userId));
+}
+
+/**
+ * Federated global search: owned + shared pages with tenant scope and PE read gate.
+ */
+export async function searchAccessiblePages(params: {
+  userId: string;
+  query: string;
+  dashboardId?: string;
+  businessId?: string;
+  householdId?: string;
+  limit?: number;
+}): Promise<NotePageListItem[]> {
+  const term = params.query.trim();
+  if (term.length < 2) {
+    return [];
+  }
+
+  const limit = Math.min(Math.max(params.limit ?? 10, 1), 25);
+  const normalizedBusinessId = normalizeBusinessId(params.businessId);
+
+  const where: Prisma.NoteWhereInput = {
+    ...buildPageOwnerOrSharedReadWhere(params.userId),
+    AND: [
+      {
+        OR: [
+          { title: { contains: term, mode: 'insensitive' } },
+          { content: { contains: term, mode: 'insensitive' } },
+        ],
+      },
+    ],
+  };
+
+  if (params.dashboardId) {
+    const dashboard = await prisma.dashboard.findFirst({
+      where: { id: params.dashboardId, userId: params.userId },
+      select: { businessId: true, householdId: true },
+    });
+
+    if (!dashboard) {
+      return [];
+    }
+
+    if (
+      normalizedBusinessId !== undefined &&
+      (dashboard.businessId ?? null) !== normalizedBusinessId
+    ) {
+      return [];
+    }
+
+    if (params.householdId && dashboard.householdId !== params.householdId) {
+      return [];
+    }
+
+    where.dashboardId = params.dashboardId;
+    where.businessId = dashboard.businessId ?? null;
+  } else if (normalizedBusinessId !== undefined) {
+    where.businessId = normalizedBusinessId;
+  }
+
+  const notes = await prisma.note.findMany({
+    where,
+    orderBy: [{ pinned: 'desc' }, { updatedAt: 'desc' }],
+    take: limit,
+    select: PAGE_LIST_SELECT,
+  });
+
+  const filtered: NotePageListItem[] = [];
+  for (const note of notes) {
+    const policy = await evaluateNotesPolicyDual({
+      userId: params.userId,
+      action: POLICY_ACTIONS.NOTES_PAGE_READ,
+      resourceId: note.id,
+      scope: {
+        dashboardId: note.dashboardId,
+        businessId: note.businessId ?? undefined,
+      },
+    });
+    if (!policy.blocked) {
+      filtered.push(toListItem(note, params.userId));
+    }
+  }
+
+  return filtered;
 }
 
 export async function getPageById(pageId: string, userId: string): Promise<NotePageDetail | null> {

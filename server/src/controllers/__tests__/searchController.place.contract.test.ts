@@ -2,10 +2,10 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { describe, expect, it } from 'vitest';
 
-const searchControllerPath = join(process.cwd(), 'src/controllers/searchController.ts');
+const registryPath = join(process.cwd(), 'src/services/search/searchProviderRegistry.ts');
 
-describe('searchController Place provider (Phase 1C)', () => {
-  const source = readFileSync(searchControllerPath, 'utf8');
+describe('searchProviderRegistry Place provider (Phase 1C)', () => {
+  const source = readFileSync(registryPath, 'utf8');
 
   it('delegates Place search to placeVisibilityService', () => {
     const start = source.indexOf('const placeSearchProvider');

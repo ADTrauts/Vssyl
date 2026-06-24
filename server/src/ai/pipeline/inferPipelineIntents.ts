@@ -31,6 +31,9 @@ const PERSONAL_REFLECTION =
 const BUSINESS_OPERATIONS =
   /\b(business\s+(kpi|metrics|operations)|our\s+team|employees?|workforce|company\s+policy|quarterly\s+results|org\s+chart)\b/i;
 
+const PROJECT_ASSISTANT =
+  /\b((this|the|my)\s+project|project\s+(status|overview|context|summary|update)|everything\s+(related|connected)\s+to\s+(this|the|my)\s+project|help\s+me\s+understand\s+(this|the|my)\s+project|what.?s\s+(going\s+on|happening)\s+with\s+(this|the|my)\s+project|all\s+(files|tasks|messages|notes)\s+(for|about|related\s+to)\s+(this|the|my)\s+project|related\s+to\s+(this|the|my)\s+project)\b/i;
+
 const WORKFLOW_ACTION =
   /\b(create\s+a\s+todo|add\s+a\s+task|share\s+(this\s+)?file|schedule\s+a\s+meeting|run\s+this\s+action|execute\s+workflow)\b/i;
 
@@ -61,6 +64,7 @@ export function inferPipelineIntents(userMessage: string): PipelineIntentId[] {
   if (PLANNING.test(text)) detected.push('planning');
   if (PERSONAL_REFLECTION.test(text)) detected.push('personal_reflection');
   if (BUSINESS_OPERATIONS.test(text)) detected.push('business_operations');
+  if (PROJECT_ASSISTANT.test(text)) detected.push('project_assistant');
   if (WORKFLOW_ACTION.test(text)) detected.push('workflow_action');
 
   if (detected.length === 0) {

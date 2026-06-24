@@ -1,297 +1,55 @@
 import { Request, Response } from 'express';
-import { prisma } from '../lib/prisma';
-import { Prisma, RelationshipStatus } from '@prisma/client';
-import { SearchFilters, SearchResult, SearchProvider } from 'shared/types/search';
-import { searchVLinksForUser } from '../services/vlinkService';
-import { searchAccessibleDriveFiles, searchAccessibleDriveFolders, type DriveSearchMimeCategory } from '../services/driveVisibilityService';
-import { searchAccessibleChat } from '../services/chatVisibilityService';
-import { searchListingsForUser } from '../services/place/placeVisibilityService';
+import { SearchFilters } from 'shared/types/search';
 import { logger } from '../lib/logger';
 import { AuthenticatedRequest } from '../middleware/auth';
+import {
+  SearchAccessError,
+  executeGlobalSearch,
+  getSearchSuggestionsForUser,
+} from '../services/searchCapabilityService';
 
-// Helper function to get user from request
 const getUserFromRequest = (req: Request) => {
   const user = (req as AuthenticatedRequest).user;
   if (!user) return null;
-  
-  return {
-    ...user,
-    id: user.id
-  };
+  return { ...user, id: user.id };
 };
 
-// Helper function to handle errors
 const handleError = async (res: Response, error: unknown, message: string = 'Internal server error') => {
   const err = error as Error;
   await logger.error('Search controller error', {
     operation: 'search_controller_error',
     error: {
       message: error instanceof Error ? error.message : 'Unknown error',
-      stack: error instanceof Error ? error.stack : undefined
-    }
+      stack: error instanceof Error ? error.stack : undefined,
+    },
   });
   res.status(500).json({ success: false, error: message });
 };
 
-/** Users discoverable in member search: shared business/household/institution or accepted connection. */
-async function buildMemberSearchVisibilityWhere(
-  searcherId: string
-): Promise<Prisma.UserWhereInput> {
-  const [bizRows, hhRows, instRows] = await Promise.all([
-    prisma.businessMember.findMany({
-      where: { userId: searcherId, isActive: true },
-      select: { businessId: true },
-    }),
-    prisma.householdMember.findMany({
-      where: { userId: searcherId, isActive: true },
-      select: { householdId: true },
-    }),
-    prisma.institutionMember.findMany({
-      where: { userId: searcherId, isActive: true },
-      select: { institutionId: true },
-    }),
-  ]);
-
-  const bizIds = bizRows.map((r) => r.businessId);
-  const hhIds = hhRows.map((r) => r.householdId);
-  const instIds = instRows.map((r) => r.institutionId);
-
-  const or: Prisma.UserWhereInput[] = [];
-
-  if (bizIds.length > 0) {
-    or.push({
-      businesses: {
-        some: { businessId: { in: bizIds }, isActive: true },
-      },
-    });
-  }
-  if (hhIds.length > 0) {
-    or.push({
-      householdMembers: {
-        some: { householdId: { in: hhIds }, isActive: true },
-      },
-    });
-  }
-  if (instIds.length > 0) {
-    or.push({
-      institutionMembers: {
-        some: { institutionId: { in: instIds }, isActive: true },
-      },
-    });
-  }
-
-  or.push({
-    relationshipsReceived: {
-      some: {
-        senderId: searcherId,
-        status: RelationshipStatus.ACCEPTED,
-      },
-    },
-  });
-  or.push({
-    relationshipsSent: {
-      some: {
-        receiverId: searcherId,
-        status: RelationshipStatus.ACCEPTED,
-      },
-    },
-  });
-
-  return { OR: or };
-}
-
-// --- Search Provider Implementations ---
-
-const driveSearchProvider: SearchProvider = {
-  moduleId: 'drive',
-  moduleName: 'Drive',
-  search: async (query, userId, filters) => await searchDrive(query, userId, filters),
-};
-
-const chatSearchProvider: SearchProvider = {
-  moduleId: 'chat',
-  moduleName: 'Chat',
-  search: async (query, userId, filters) => await searchAccessibleChat(query, userId, filters),
-};
-
-const dashboardSearchProvider: SearchProvider = {
-  moduleId: 'dashboard',
-  moduleName: 'Dashboard',
-  search: async (query, userId, filters) => await searchDashboard(query, userId, filters),
-};
-
-// Member search provider implementation
-const memberSearchProvider: SearchProvider = {
-  moduleId: 'member',
-  moduleName: 'Members',
-  search: async (query, userId, filters) => {
-    // Only search if query is at least 2 characters
-    if (!query || query.length < 2) return [];
-    const visibility = await buildMemberSearchVisibilityWhere(userId);
-    // Search users by name or email, excluding self; restrict to shared orgs or accepted connections
-    const users = await prisma.user.findMany({
-      where: {
-        AND: [
-          { id: { not: userId } },
-          visibility,
-          {
-            OR: [
-              { name: { contains: query, mode: 'insensitive' } },
-              { email: { contains: query, mode: 'insensitive' } },
-            ],
-          },
-        ],
-      },
-      take: 10,
-    });
-    return users.map((user) => ({
-      id: user.id,
-      title: user.name || user.email,
-      description: user.email,
-      moduleId: 'member',
-      moduleName: 'Members',
-      url: `/member/profile/${user.id}`,
-      type: 'user',
-      metadata: {},
-      permissions: [{ type: 'read', granted: true }],
-      lastModified: user.updatedAt,
-      relevanceScore: 0.7, // Basic score for now
-    }));
-  },
-};
-
-const placeSearchProvider: SearchProvider = {
-  moduleId: 'place',
-  moduleName: 'Place',
-  search: async (query, userId, _filters) => {
-    if (!userId) return [];
-    return searchListingsForUser(userId, query);
-  },
-};
-
-const vlinkSearchProvider: SearchProvider = {
-  moduleId: 'vlink',
-  moduleName: 'V_Link',
-  search: async (query, userId) => {
-    const rows = await searchVLinksForUser(userId, query);
-    return rows.map((row) => ({
-      id: row.id,
-      title: row.title,
-      description: row.publicCode,
-      moduleId: 'vlink',
-      moduleName: 'V_Link',
-      url: row.url,
-      type: 'vlink',
-      metadata: { publicCode: row.publicCode, scope: row.scope },
-      permissions: [{ type: 'read', granted: true }],
-      lastModified: new Date(),
-      relevanceScore: 0.85,
-    }));
-  },
-};
-
-// Provider registry
-const searchProviders: SearchProvider[] = [
-  driveSearchProvider,
-  chatSearchProvider,
-  dashboardSearchProvider,
-  memberSearchProvider,
-  placeSearchProvider,
-  vlinkSearchProvider,
-];
-
-// Refactored global search using provider registry
 export const globalSearch = async (req: Request, res: Response) => {
   try {
-    await logger.debug('Global search request received', {
-      operation: 'search_global_request',
-      context: {
-        method: req.method,
-        url: req.url,
-        headers: req.headers,
-        body: req.body
-      }
-    });
-
     const user = getUserFromRequest(req);
-    await logger.debug('Global search user extracted', {
-      operation: 'search_user_extracted',
-      userId: user?.id
-    });
-    
     if (!user) {
-      await logger.debug('Global search no user found', {
-        operation: 'search_no_user'
-      });
       return res.status(401).json({ success: false, error: 'Unauthorized' });
     }
 
     const { query, filters }: { query: string; filters?: SearchFilters } = req.body;
-    await logger.debug('Global search query and filters', {
-      operation: 'search_query_filters',
+
+    const { results } = await executeGlobalSearch({
+      userId: user.id,
       query,
-      filters
-    });
-
-    if (!query || typeof query !== 'string' || query.trim().length < 2) {
-      await logger.debug('Global search invalid query', {
-        operation: 'search_invalid_query'
-      });
-      return res.status(400).json({ success: false, error: 'Query must be at least 2 characters' });
-    }
-
-    const searchQuery = query.trim();
-    let results: SearchResult[] = [];
-
-    await logger.debug('Global search starting', {
-      operation: 'search_start',
-      query: searchQuery
-    });
-
-    // Use provider registry for modular search
-    for (const provider of searchProviders) {
-      await logger.debug('Global search provider search', {
-        operation: 'search_provider',
-        providerId: provider.moduleId
-      });
-      if (!filters?.moduleId || filters.moduleId === provider.moduleId) {
-        const providerResults = await provider.search(searchQuery, user.id, filters);
-        await logger.debug('Global search provider results', {
-          operation: 'search_provider_results',
-          providerId: provider.moduleId,
-          resultCount: providerResults.length
-        });
-        results.push(...providerResults);
-      }
-    }
-
-    await logger.debug('Global search results before sorting', {
-      operation: 'search_results_pre_sort',
-      count: results.length
-    });
-
-    // Sort results by relevance score
-    results.sort((a, b) => (b.relevanceScore || 0) - (a.relevanceScore || 0));
-
-    await logger.debug('Global search final results', {
-      operation: 'search_final_results',
-      count: results.length
+      filters,
     });
 
     res.json({ success: true, results });
-  } catch (error) {
-    await logger.error('Global search error', {
-      operation: 'search_global_error',
-      error: {
-        message: error instanceof Error ? error.message : 'Unknown error',
-        stack: error instanceof Error ? error.stack : undefined
-      }
-    });
+  } catch (error: unknown) {
+    if (error instanceof SearchAccessError) {
+      return res.status(error.statusCode).json({ success: false, error: error.message });
+    }
     await handleError(res, error, 'Failed to perform global search');
   }
 };
 
-// Get search suggestions
 export const getSuggestions = async (req: Request, res: Response) => {
   try {
     const user = getUserFromRequest(req);
@@ -301,191 +59,16 @@ export const getSuggestions = async (req: Request, res: Response) => {
 
     const { q: query } = req.query;
 
-    if (!query || typeof query !== 'string' || query.trim().length < 1) {
+    if (!query || typeof query !== 'string') {
       return res.json({ success: true, suggestions: [] });
     }
 
-    const searchQuery = query.trim();
-    const suggestions: Array<Record<string, unknown>> = [];
-
-    // Get recent search history (from user preferences or cache)
-    // For now, we'll return some basic suggestions
-    suggestions.push(
-      { text: searchQuery, type: 'query' },
-      { text: `${searchQuery} in drive`, type: 'query' },
-      { text: `${searchQuery} in chat`, type: 'query' },
-      { text: `${searchQuery} in dashboard`, type: 'query' }
-    );
-
+    const suggestions = await getSearchSuggestionsForUser(user.id, query);
     res.json({ success: true, suggestions });
-  } catch (error) {
+  } catch (error: unknown) {
+    if (error instanceof SearchAccessError) {
+      return res.status(error.statusCode).json({ success: false, error: error.message });
+    }
     await handleError(res, error, 'Failed to get suggestions');
   }
 };
-
-// Search in Drive module (FH-4: permission-aware via driveVisibilityService)
-async function searchDrive(query: string, userId: string, filters?: SearchFilters): Promise<SearchResult[]> {
-  await logger.debug('Drive search starting', {
-    operation: 'search_drive_start',
-    query,
-    userId
-  });
-  const results: SearchResult[] = [];
-
-  let dateStart: Date | undefined;
-  let dateEnd: Date | undefined;
-  if (filters?.dateRange) {
-    const startValue = filters.dateRange.start;
-    const endValue = filters.dateRange.end;
-    dateStart = startValue ? new Date(startValue) : undefined;
-    dateEnd = endValue ? new Date(endValue) : undefined;
-  }
-
-  const driveFilters = {
-    dateStart,
-    dateEnd,
-    pinnedOnly: filters?.pinned === true,
-    driveMimeCategory: filters?.driveMimeCategory as DriveSearchMimeCategory | undefined,
-  };
-
-  const files = await searchAccessibleDriveFiles(userId, query, driveFilters, 10);
-  const folders = await searchAccessibleDriveFolders(userId, query, driveFilters, 5);
-
-  await logger.debug('Drive search files found', {
-    operation: 'search_drive_files_found',
-    count: files.length
-  });
-
-  for (const file of files) {
-    const relevanceScore = calculateRelevanceScore(file.name, query);
-    results.push({
-      id: file.id,
-      title: file.name,
-      description: `File in ${file.folder?.name || 'root'}`,
-      moduleId: 'drive',
-      moduleName: 'File Hub',
-      url: `/drive?file=${file.id}`,
-      type: 'file',
-      metadata: {
-        size: file.size,
-        type: file.type,
-        folderId: file.folderId,
-      },
-      permissions: [{ type: 'read', granted: true }],
-      lastModified: file.updatedAt,
-      relevanceScore,
-    });
-  }
-
-  await logger.debug('Drive search folders found', {
-    operation: 'search_drive_folders_found',
-    count: folders.length
-  });
-
-  for (const folder of folders) {
-    const relevanceScore = calculateRelevanceScore(folder.name, query);
-    results.push({
-      id: folder.id,
-      title: folder.name,
-      description: 'Folder',
-      moduleId: 'drive',
-      moduleName: 'File Hub',
-      url: `/drive?folder=${folder.id}`,
-      type: 'folder',
-      metadata: {
-        parentId: folder.parentId,
-      },
-      permissions: [{ type: 'read', granted: true }],
-      lastModified: folder.updatedAt,
-      relevanceScore,
-    });
-  }
-
-  await logger.debug('Drive search total results', {
-    operation: 'search_drive_total',
-    count: results.length
-  });
-  return results;
-}
-
-// Search in Dashboard module
-async function searchDashboard(query: string, userId: string, filters?: SearchFilters): Promise<SearchResult[]> {
-  await logger.debug('Dashboard search starting', {
-    operation: 'search_dashboard_start',
-    query,
-    userId
-  });
-  const results: SearchResult[] = [];
-
-  // Search dashboards
-  await logger.debug('Dashboard search dashboards', {
-    operation: 'search_dashboard_dashboards'
-  });
-  const dashboards = await prisma.dashboard.findMany({
-    where: {
-      AND: [
-        { name: { contains: query, mode: 'insensitive' } },
-        { userId: userId },
-      ],
-    },
-    take: 5,
-  });
-
-  await logger.debug('Dashboard search dashboards found', {
-    operation: 'search_dashboard_dashboards_found',
-    count: dashboards.length
-  });
-
-  for (const dashboard of dashboards) {
-    const relevanceScore = calculateRelevanceScore(dashboard.name, query);
-    results.push({
-      id: dashboard.id,
-      title: dashboard.name,
-      description: 'Dashboard',
-      moduleId: 'dashboard',
-      moduleName: 'Dashboard',
-      url: `/dashboard/${dashboard.id}`,
-      type: 'dashboard',
-      metadata: {
-        userId: dashboard.userId,
-      },
-      permissions: [{ type: 'read', granted: true }],
-      lastModified: dashboard.updatedAt,
-      relevanceScore,
-    });
-  }
-
-  await logger.debug('Dashboard search total results', {
-    operation: 'search_dashboard_total',
-    count: results.length
-  });
-  return results;
-}
-
-// Calculate relevance score for search results
-function calculateRelevanceScore(text: string, query: string): number {
-  const lowerText = text.toLowerCase();
-  const lowerQuery = query.toLowerCase();
-  
-  // Exact match gets highest score
-  if (lowerText === lowerQuery) return 1.0;
-  
-  // Starts with query gets high score
-  if (lowerText.startsWith(lowerQuery)) return 0.9;
-  
-  // Contains query gets medium score
-  if (lowerText.includes(lowerQuery)) return 0.7;
-  
-  // Partial word match gets lower score
-  const queryWords = lowerQuery.split(' ');
-  const textWords = lowerText.split(' ');
-  const matchingWords = queryWords.filter(word => 
-    textWords.some(textWord => textWord.includes(word))
-  );
-  
-  if (matchingWords.length > 0) {
-    return 0.5 * (matchingWords.length / queryWords.length);
-  }
-  
-  return 0.1;
-} 

@@ -1,0 +1,192 @@
+import { logger } from '../../lib/logger';
+import {
+  SearchAccessError,
+  executeGlobalSearch,
+} from '../../services/searchCapabilityService';
+import type { SearchFilters } from 'shared/types/search';
+import { AI_RETRIEVAL_PATHWAY } from './aiRetrievalConsumerContract';
+import {
+  countEvidenceByProvider,
+  countEvidenceBySourceModule,
+  mapSearchResultsToEvidence,
+} from './aiRetrievalEvidenceMapper';
+import type {
+  AIRetrievalDiscoverInput,
+  AIRetrievalDiscoverResult,
+  AIRetrievalDiagnostics,
+} from './aiRetrievalTypes';
+
+const DEFAULT_LIMIT = 10;
+const MAX_LIMIT = 25;
+
+export { isAiRetrievalDiscoveryPilotEnabled, isRetrievalConsumerEnabled } from './aiRetrievalConsumerContract';
+
+function buildSearchFilters(input: AIRetrievalDiscoverInput): SearchFilters | undefined {
+  const context: SearchFilters['context'] = {};
+  if (input.dashboardId) context.dashboardId = input.dashboardId;
+  if (input.businessId) context.businessId = input.businessId;
+  if (input.householdId) context.householdId = input.householdId;
+
+  const hasContext = Object.keys(context).length > 0;
+  const filters: SearchFilters = {};
+
+  if (hasContext) {
+    filters.context = context;
+  }
+  if (input.moduleId) {
+    filters.moduleId = input.moduleId;
+  }
+
+  return Object.keys(filters).length > 0 ? filters : undefined;
+}
+
+function buildDiagnosticsBase(
+  input: AIRetrievalDiscoverInput,
+  searchContext: SearchFilters['context'] | undefined
+): Pick<
+  AIRetrievalDiagnostics,
+  'query' | 'intent' | 'retrievalPathway' | 'searchContext'
+> {
+  return {
+    query: input.query.trim(),
+    intent: input.intent,
+    retrievalPathway: AI_RETRIEVAL_PATHWAY,
+    searchContext,
+  };
+}
+
+function enrichOperationalDiagnostics(
+  diagnostics: AIRetrievalDiagnostics,
+  intent?: string
+): AIRetrievalDiagnostics {
+  const modulesContributingEvidence = Object.keys(diagnostics.retrievalSourceCounts);
+  const enriched: AIRetrievalDiagnostics = {
+    ...diagnostics,
+    modulesContributingEvidence,
+  };
+  if (intent === 'business_operations') {
+    enriched.consumerDomain = 'business_operations';
+  }
+  if (intent === 'project_assistant') {
+    enriched.consumerDomain = 'project_assistant';
+    enriched.retrievalSourceDiversity = modulesContributingEvidence.length;
+  }
+  if (intent === 'local_discovery') {
+    enriched.consumerDomain = 'local_discovery';
+    enriched.retrievalSourceDiversity = modulesContributingEvidence.length;
+  }
+  return enriched;
+}
+
+function buildDeniedDiagnostics(
+  input: AIRetrievalDiscoverInput,
+  durationMs: number,
+  status: 'denied' | 'error'
+): AIRetrievalDiagnostics {
+  const searchContext = buildSearchFilters(input)?.context;
+  return {
+    ...buildDiagnosticsBase(input, searchContext),
+    providersUsed: [],
+    providerCount: 0,
+    retrievalSourceCounts: {},
+    providerParticipation: {},
+    resultsReturned: 0,
+    resultsSelected: 0,
+    evidenceCount: 0,
+    searchDurationMs: durationMs,
+    retrievalDurationMs: durationMs,
+    permissionEnforcementStatus: status,
+  };
+}
+
+/**
+ * Internal AI retrieval capability — permission-safe discovery via Unified Search.
+ * Future entry point for query-driven retrieval; does not replace existing paths yet.
+ */
+export async function discover(
+  input: AIRetrievalDiscoverInput
+): Promise<AIRetrievalDiscoverResult> {
+  const startedAt = Date.now();
+  const limit = Math.min(Math.max(input.limit ?? DEFAULT_LIMIT, 1), MAX_LIMIT);
+  const filters = buildSearchFilters(input);
+  const searchContext = filters?.context;
+
+  try {
+    const searchStartedAt = Date.now();
+    const searchResult = await executeGlobalSearch({
+      userId: input.userId,
+      query: input.query,
+      filters,
+    });
+    const searchDurationMs = Date.now() - searchStartedAt;
+
+    const selected = searchResult.results.slice(0, limit);
+    const evidence = mapSearchResultsToEvidence(selected);
+    const retrievalDurationMs = Date.now() - startedAt;
+
+    const diagnostics = enrichOperationalDiagnostics(
+      {
+        ...buildDiagnosticsBase(input, searchContext),
+        providersUsed: searchResult.meta.providersInvoked,
+        providerCount: searchResult.meta.providerCount,
+        retrievalSourceCounts: countEvidenceBySourceModule(evidence),
+        providerParticipation: countEvidenceByProvider(evidence),
+        resultsReturned: searchResult.meta.resultCount,
+        resultsSelected: evidence.length,
+        evidenceCount: evidence.length,
+        searchDurationMs,
+        retrievalDurationMs,
+        permissionEnforcementStatus: 'enforced',
+      },
+      input.intent
+    );
+
+    await logger.info('AI retrieval discovery completed', {
+      operation: 'ai_retrieval_discover',
+      userId: input.userId,
+      intent: input.intent,
+      retrievalPathway: diagnostics.retrievalPathway,
+      providerCount: diagnostics.providerCount,
+      evidenceCount: diagnostics.evidenceCount,
+      resultsReturned: diagnostics.resultsReturned,
+      retrievalDurationMs,
+      searchDurationMs,
+    });
+
+    return { evidence, diagnostics };
+  } catch (error: unknown) {
+    const durationMs = Date.now() - startedAt;
+    const err = error instanceof Error ? error : new Error(String(error));
+
+    if (error instanceof SearchAccessError) {
+      await logger.warn('AI retrieval discovery denied', {
+        operation: 'ai_retrieval_discover_denied',
+        userId: input.userId,
+        intent: input.intent,
+        statusCode: error.statusCode,
+        error: { message: err.message },
+      });
+
+      return {
+        evidence: [],
+        diagnostics: buildDeniedDiagnostics(
+          input,
+          durationMs,
+          error.statusCode === 403 ? 'denied' : 'error'
+        ),
+      };
+    }
+
+    await logger.error('AI retrieval discovery failed', {
+      operation: 'ai_retrieval_discover_error',
+      userId: input.userId,
+      intent: input.intent,
+      error: { message: err.message, stack: err.stack },
+    });
+
+    return {
+      evidence: [],
+      diagnostics: buildDeniedDiagnostics(input, durationMs, 'error'),
+    };
+  }
+}

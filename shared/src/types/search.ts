@@ -1,5 +1,12 @@
 // Global Search Types and Interfaces
 
+/** Tenant scope for global search (backward-compatible optional fields). */
+export interface SearchContextScope {
+  dashboardId?: string;
+  businessId?: string;
+  householdId?: string;
+}
+
 export interface SearchFilters {
   moduleId?: string;
   type?: string;
@@ -12,7 +19,20 @@ export interface SearchFilters {
   pinned?: boolean;
   // Optional Drive-specific mime category for file-type filters
   driveMimeCategory?: 'documents' | 'spreadsheets' | 'images' | 'videos';
+  /** Personal / business / household tenant context (Phase 1A). */
+  context?: SearchContextScope;
+  /** Dashboard id list for calendar-style context filtering. */
+  contexts?: string[];
 }
+
+export type SearchTenantContext = 'personal' | 'business' | 'household';
+
+export type SearchProviderReadiness = 'ready' | 'partial' | 'planned';
+
+export type SearchProviderMethod =
+  | 'visibility_service'
+  | 'prisma_filter'
+  | 'platform_delegate';
 
 export interface SearchResult {
   id: string;
@@ -35,12 +55,32 @@ export interface SearchSuggestion {
   url?: string;
 }
 
-// Interface for modular search providers (Phase 2.5)
+/** Base search delegate (module + platform providers). */
 export interface SearchProvider {
   moduleId: string;
   moduleName: string;
   search: (query: string, userId: string, filters?: SearchFilters) => Promise<SearchResult[]>;
   getSuggestions?: (query: string, userId: string) => Promise<string[]>;
+}
+
+/** Registered provider with platform capability metadata (Phase 1A). */
+export interface RegisteredSearchProvider extends SearchProvider {
+  providerId: string;
+  displayName: string;
+  entityTypes: string[];
+  supportedContexts: SearchTenantContext[];
+  requiredPermission: string;
+  searchMethod: SearchProviderMethod;
+  readiness: SearchProviderReadiness;
+  /** Whether the module manifest claims `capabilities.search`. */
+  manifestSearchClaim: boolean;
+}
+
+export interface GlobalSearchResponseMeta {
+  query: string;
+  providerCount: number;
+  resultCount: number;
+  providersInvoked: string[];
 }
 
 export interface SearchState {
@@ -83,6 +123,8 @@ export const SEARCH_RESULT_TYPES = {
   DASHBOARD: 'dashboard',
   WIDGET: 'widget',
   VLINK: 'vlink',
+  NOTE: 'note',
+  PLACE_LISTING: 'place_listing',
 } as const;
 
 export type SearchResultType = typeof SEARCH_RESULT_TYPES[keyof typeof SEARCH_RESULT_TYPES];
@@ -94,6 +136,10 @@ export const MODULE_IDS = {
   DASHBOARD: 'dashboard',
   TASKS: 'tasks',
   CALENDAR: 'calendar',
+  TODO: 'todo',
+  NOTES: 'notes',
+  PLACE: 'place',
+  MEMBER: 'member',
   VLINK: 'vlink',
   ADMIN: 'admin',
 } as const;

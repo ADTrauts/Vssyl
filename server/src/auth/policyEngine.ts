@@ -853,6 +853,54 @@ async function authorizeModuleUninstall(input: PolicyInput): Promise<PolicyDecis
   return { allow: true, matchedPolicy: 'business_module_uninstall' };
 }
 
+async function authorizeSearchRead(input: PolicyInput): Promise<PolicyDecision> {
+  const userId = resolveUserId(input);
+  if (!userId) {
+    return deny(input, 'INSUFFICIENT_ROLE');
+  }
+
+  const businessId = input.scope?.businessId;
+  if (businessId) {
+    const membership = await prisma.businessMember.findFirst({
+      where: { userId, businessId, isActive: true },
+      select: { id: true },
+    });
+    if (!membership) {
+      return deny(input, 'NOT_MEMBER');
+    }
+  }
+
+  const householdId = input.scope?.householdId;
+  if (householdId) {
+    const membership = await prisma.householdMember.findFirst({
+      where: { userId, householdId, isActive: true },
+      select: { id: true },
+    });
+    if (!membership) {
+      return deny(input, 'NOT_MEMBER');
+    }
+  }
+
+  const dashboardId = input.scope?.dashboardId;
+  if (dashboardId) {
+    const dashboard = await prisma.dashboard.findFirst({
+      where: { id: dashboardId, userId },
+      select: { id: true, businessId: true, householdId: true },
+    });
+    if (!dashboard) {
+      return deny(input, 'NOT_OWNER');
+    }
+    if (businessId && (dashboard.businessId ?? null) !== businessId) {
+      return deny(input, 'TENANT_MISMATCH');
+    }
+    if (householdId && dashboard.householdId !== householdId) {
+      return deny(input, 'TENANT_MISMATCH');
+    }
+  }
+
+  return { allow: true, matchedPolicy: 'search_read_authenticated' };
+}
+
 async function authorizeAnalyticsRead(input: PolicyInput): Promise<PolicyDecision> {
   const userId = resolveUserId(input);
   if (!userId) {
@@ -921,6 +969,10 @@ async function authorizeAnalyticsAdmin(input: PolicyInput): Promise<PolicyDecisi
  */
 export async function authorize(input: PolicyInput): Promise<PolicyDecision> {
   const action = input.action;
+
+  if (action === POLICY_ACTIONS.SEARCH_READ) {
+    return authorizeSearchRead(input);
+  }
 
   if (action === POLICY_ACTIONS.ANALYTICS_READ) {
     return authorizeAnalyticsRead(input);

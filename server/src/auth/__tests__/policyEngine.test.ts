@@ -1209,4 +1209,41 @@ describe('authorize (policyEngine)', () => {
       expect(d.reason).toBe('NOT_MEMBER');
     });
   });
+
+  describe('search:read', () => {
+    it('allows authenticated global search', async () => {
+      const d = await authorize({
+        userId: 'u1',
+        action: POLICY_ACTIONS.SEARCH_READ,
+        resourceType: 'search',
+      });
+      expect(d.allow).toBe(true);
+      expect(d.matchedPolicy).toBe('search_read_authenticated');
+    });
+
+    it('denies business search for non-member', async () => {
+      vi.spyOn(prisma.businessMember, 'findFirst').mockResolvedValue(null);
+
+      const d = await authorize({
+        userId: 'u1',
+        action: POLICY_ACTIONS.SEARCH_READ,
+        resourceType: 'search',
+        scope: { businessId: 'b1' },
+      });
+      expect(d.allow).toBe(false);
+      expect(d.reason).toBe('NOT_MEMBER');
+    });
+
+    it('allows business search for active member', async () => {
+      vi.spyOn(prisma.businessMember, 'findFirst').mockResolvedValue({ id: 'm1' } as never);
+
+      const d = await authorize({
+        userId: 'u1',
+        action: POLICY_ACTIONS.SEARCH_READ,
+        resourceType: 'search',
+        scope: { businessId: 'b1' },
+      });
+      expect(d.allow).toBe(true);
+    });
+  });
 });

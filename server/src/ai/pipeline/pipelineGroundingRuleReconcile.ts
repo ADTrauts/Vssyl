@@ -21,6 +21,7 @@ export const VLINK_GROUNDING_INTENT_IDS: PipelineIntentId[] = [
   'planning',
   'workflow_action',
   'business_operations',
+  'project_assistant',
   'technical_help',
 ];
 
@@ -29,6 +30,7 @@ export const GRAPH_BUNDLE_GROUNDING_INTENT_IDS: PipelineIntentId[] = [
   'planning',
   'workflow_action',
   'business_operations',
+  'project_assistant',
   'technical_help',
 ];
 

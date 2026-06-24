@@ -13,6 +13,7 @@ export const SYSTEM_INTENT_IDS = [
   'technical_help',
   'workflow_action',
   'general_chat',
+  'project_assistant',
 ] as const;
 
 export const SYSTEM_CONTEXT_SOURCE_IDS = [

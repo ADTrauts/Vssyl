@@ -95,6 +95,17 @@ export const DEFAULT_PIPELINE_INTENT_DEFINITIONS: DefaultIntentSeed[] = [
     enabled: true,
   },
   {
+    id: 'project_assistant',
+    name: 'Project assistant',
+    description: 'Cross-module discovery and context for a project or initiative.',
+    triggerExamples: [
+      'Help me understand everything related to this project',
+      'What is the status of the launch project?',
+    ],
+    groundingRequired: false,
+    enabled: true,
+  },
+  {
     id: 'general_chat',
     name: 'General chat',
     description: 'Casual conversation without specialized grounding requirements.',
@@ -146,6 +157,19 @@ export const DEFAULT_PIPELINE_GROUNDING_RULES: DefaultGroundingSeed[] = [
     requiredSources: [],
     optionalSources: ['calendar', 'drive_files', 'vlink', 'graph_bundle', 'module_context'],
     requirementSummary: 'optional workflow modules, vlink, graph_bundle',
+  },
+  {
+    intentId: 'project_assistant',
+    requiredSources: [],
+    optionalSources: [
+      'module_context',
+      'drive_files',
+      'calendar',
+      'vlink',
+      'graph_bundle',
+      'notifications_activity',
+    ],
+    requirementSummary: 'optional cross-module context, drive, calendar, vlink, graph_bundle',
   },
   {
     intentId: 'technical_help',

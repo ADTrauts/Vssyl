@@ -184,6 +184,7 @@ export const POLICY_ACTIONS = {
   BILLING_WRITE: 'billing:write',
   ANALYTICS_READ: 'analytics:read',
   ANALYTICS_ADMIN: 'analytics:admin',
+  SEARCH_READ: 'search:read',
 } as const;
 
 export type PolicyAction = (typeof POLICY_ACTIONS)[keyof typeof POLICY_ACTIONS];

@@ -16,6 +16,13 @@ describe('inferPipelineIntents', () => {
     expect(intents).toContain('emotional_support');
   });
 
+  it('detects project_assistant for cross-module project queries', () => {
+    const intents = inferPipelineIntents(
+      'Help me understand everything related to this project'
+    );
+    expect(intents).toContain('project_assistant');
+  });
+
   it('falls back to general_chat for casual messages', () => {
     expect(inferPipelineIntents('Hello, how are you?')).toEqual(['general_chat']);
     expect(inferPipelineIntents('')).toEqual(['general_chat']);

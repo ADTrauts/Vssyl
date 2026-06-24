@@ -50,6 +50,7 @@ const INTENT_LABELS: Record<PipelineIntentId, string> = {
   business_operations: 'Business operations intent detected',
   technical_help: 'Technical help intent detected',
   workflow_action: 'Workflow action intent detected',
+  project_assistant: 'Project assistant intent detected',
   general_chat: 'General chat intent detected',
 };
 

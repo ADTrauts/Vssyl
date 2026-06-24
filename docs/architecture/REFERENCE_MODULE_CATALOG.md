@@ -2,7 +2,7 @@
 
 **Status:** Living guide (2026-06-01)  
 **Purpose:** Single map of **what to copy from which reference module** when modernizing built-in modules.  
-**Authorities:** [CERTIFICATION_LEDGER.md](./CERTIFICATION_LEDGER.md), [VSSYL_PLATFORM_STANDARDS_AND_MODULE_CONTRACT.md](./VSSYL_PLATFORM_STANDARDS_AND_MODULE_CONTRACT.md), [MODULE_REFERENCE_PATTERNS_FROM_FILE_HUB.md](../guides/MODULE_REFERENCE_PATTERNS_FROM_FILE_HUB.md), [RELATIONSHIP_FRAMEWORK_INDEX.md](./RELATIONSHIP_FRAMEWORK_INDEX.md)
+**Authorities:** [CERTIFICATION_LEDGER.md](./CERTIFICATION_LEDGER.md), [VSSYL_PLATFORM_STANDARDS_AND_MODULE_CONTRACT.md](./VSSYL_PLATFORM_STANDARDS_AND_MODULE_CONTRACT.md), [MODULE_REFERENCE_PATTERNS_FROM_FILE_HUB.md](../guides/MODULE_REFERENCE_PATTERNS_FROM_FILE_HUB.md), [RELATIONSHIP_FRAMEWORK_INDEX.md](./RELATIONSHIP_FRAMEWORK_INDEX.md), [PLATFORM_CAPABILITY_CATALOG.md](./PLATFORM_CAPABILITY_CATALOG.md)
 
 ---
 
@@ -66,6 +66,56 @@ UX reference slots live under `docs/ux/audits/` per [`REFERENCE_MODULE_PROGRAM.m
 **Constitutional authority:** [AI_PLATFORM_CONSTITUTION.md](./AI_PLATFORM_CONSTITUTION.md), [AI_PLATFORM_BOUNDARY_MODEL.md](./AI_PLATFORM_BOUNDARY_MODEL.md), [AI_PLATFORM_CERTIFICATION_STRATEGY.md](./AI_PLATFORM_CERTIFICATION_STRATEGY.md) (levels 0–4).
 
 **Evidence / audits:** [AI_PLATFORM_CONSTITUTIONAL_AUDIT.md](./audits/AI_PLATFORM_CONSTITUTIONAL_AUDIT.md), [AI_TOOL_ACTION_COMPLIANCE_MATRIX.md](./audits/AI_TOOL_ACTION_COMPLIANCE_MATRIX.md), [AI_CONTEXT_PROVIDER_MATRIX.md](./audits/AI_CONTEXT_PROVIDER_MATRIX.md). **Do not duplicate** certified module extraction work in platform waves.
+
+---
+
+## Unified Search — Platform Capability L2 CwF (2026-06-23)
+
+**Not** a Reference Module #N integer. Search is **platform discovery infrastructure** — modules **consume and register**, they do not copy File Hub trash/notification patterns for search itself.
+
+| Field | Value |
+|-------|-------|
+| **Capability id** | `unified_search` |
+| **Certification** | **LEVEL 2 CERTIFIED WITH FINDINGS** (RD-US-001) |
+| **G1–G9** | **21/27 (~78%)** |
+| **Architecture** | Option C Hybrid — federated providers authoritative |
+
+### What modules copy from Search
+
+| Pattern | Copy from | Key artifacts |
+|---------|-----------|---------------|
+| Visibility-bounded search | File Hub #1, Calendar, Todo | `searchAccessible*` in `*VisibilityService` |
+| Global provider registration | Unified Search standard | `RegisteredSearchProvider` in `searchProviderRegistry.ts` |
+| Tenant context in search | Search Phase 1A | `filters.context` + PE `search:read` |
+| Result normalization | Search constitution | `SearchResult` in `shared/types/search.ts` |
+| Manifest honesty | Search compliance | `capabilities.search` ↔ provider parity test |
+
+### What this designation is NOT
+
+- Not a product module with workspace landing
+- Not Level 4 Reference Implementation
+- Not a substitute for module visibility services — **providers delegate to SoR**
+
+**Governance records:** [SEARCH_CONSTITUTION.md](../search/SEARCH_CONSTITUTION.md), [SEARCH_PLATFORM_STANDARD.md](../search/SEARCH_PLATFORM_STANDARD.md), [SEARCH_MODULE_COMPLIANCE_REQUIREMENTS.md](../search/SEARCH_MODULE_COMPLIANCE_REQUIREMENTS.md), [SEARCH_CAPABILITY_CERTIFICATION_REVIEW.md](../search/SEARCH_CAPABILITY_CERTIFICATION_REVIEW.md), [PLATFORM_CAPABILITY_CATALOG.md](./PLATFORM_CAPABILITY_CATALOG.md)
+
+---
+
+## AI Retrieval Adapter — Phase 2A (2026-06-23)
+
+**Certified platform capability** — AI discovery orchestration (not a product module).
+
+| Field | Value |
+|-------|-------|
+| **Capability id** | `ai_retrieval` |
+| **Status** | **LEVEL 2 CERTIFIED WITH FINDINGS** (RD-AR-001) |
+| **Maturity** | L3 runtime · L4 certified governance |
+| **Architecture** | Option B Hybrid — Search for discovery, providers for summaries |
+| **Consumers** | `planning`, `workflow_action` |
+| **Search dependency** | `unified_search` (RD-US-001) |
+
+**Copy for modules:** Query-driven AI discovery must delegate through Retrieval Adapter — do not add parallel Prisma search in AI paths for Tier A/B intents.
+
+**Governance records:** [AI_RETRIEVAL_CONSTITUTION.md](../ai/retrieval/AI_RETRIEVAL_CONSTITUTION.md), [AI_RETRIEVAL_PLATFORM_STANDARD.md](../ai/retrieval/AI_RETRIEVAL_PLATFORM_STANDARD.md), [AI_RETRIEVAL_COMPLIANCE_REQUIREMENTS.md](../ai/retrieval/AI_RETRIEVAL_COMPLIANCE_REQUIREMENTS.md), [AI_RETRIEVAL_CAPABILITY_CERTIFICATION_REVIEW.md](../ai/retrieval/AI_RETRIEVAL_CAPABILITY_CERTIFICATION_REVIEW.md), [AI_RETRIEVAL_PHASE_2A_EXECUTIVE_SUMMARY.md](../ai/retrieval/AI_RETRIEVAL_PHASE_2A_EXECUTIVE_SUMMARY.md), [PLATFORM_CAPABILITY_CATALOG.md](./PLATFORM_CAPABILITY_CATALOG.md)
 
 ---
 
@@ -141,26 +191,28 @@ UX reference slots live under `docs/ux/audits/` per [`REFERENCE_MODULE_PROGRAM.m
 
 ---
 
-## Context Graph — Platform Capabilities (2026-06-19)
+## Context Graph — Platform Capabilities (2026-06-23)
 
 **Not** a Reference Module #N integer. Platform capability references under Tier 0 Context Graph certification — separate **#CG** taxonomy from architecture Reference Modules #1–#5 and Business Administration **#OC** capabilities.
 
 | Field | Value |
 |-------|-------|
-| **Certification** | **LEVEL 3 CERTIFIED** (architecture ratified CG-0C 2026-06-18; certified WITH FINDINGS CG-3 2026-06-19; promoted CG-6 2026-06-19) |
-| **Prior certification** | LEVEL 3 CERTIFIED WITH FINDINGS (CG-3) — superseded at promotion |
-| **Gates** | G1–G9 **25/27 (~93%)** — G1–G3, G5–G7 PASS |
-| **Open majors** | **0** |
-| **Open advisories** | **8** — tracked; do not block certification |
-| **Program status** | **ARCHIVED** — [CONTEXT_GRAPH_PROGRAM_ARCHIVE.md](../context-graph/CONTEXT_GRAPH_PROGRAM_ARCHIVE.md) |
+| **Certification** | **LEVEL 4 CERTIFIED WITH FINDINGS** (consumption amendment RD-CG-L4-001 2026-06-23) |
+| **Prior certification** | LEVEL 3 CERTIFIED (RD-CG-010, 2026-06-19) — federation substrate reaffirmed |
+| **Gates** | G1–G9 **26/27 (~96%)** — G1–G3, G5–G7 PASS; G4, G8, G9 PARTIAL (findings) |
+| **Open blocking** | **0** |
+| **Major on certificate** | **1** (L4-F01 — production soak gate) |
+| **Open advisories** | **7** (L4) + **8** (L3 carryover) |
+| **Program status** | L4 consumption track active; L3 program **ARCHIVED** — [CONTEXT_GRAPH_PROGRAM_ARCHIVE.md](../context-graph/CONTEXT_GRAPH_PROGRAM_ARCHIVE.md) |
 
 ### Platform capabilities
 
-| # | Capability | Designation | Primary audit |
-|---|------------|-------------|---------------|
-| **CG-1** | Federated Context Graph Read Model | **Reference Capability** | [CONTEXT_GRAPH_PROMOTION_REVIEW.md](../context-graph/CONTEXT_GRAPH_PROMOTION_REVIEW.md) |
-| **CG-2** | V_Link Cross-Module Association Substrate | **Reference Capability** | [CG_1A_ADAPTER_REGISTRY.md](../context-graph/CG_1A_ADAPTER_REGISTRY.md) |
-| **CG-3** | Context Bundle Descriptor / AI Grounding | **Reference Capability With Findings** | [CG_1D_AI_GROUNDING_CONTRACT.md](../context-graph/CG_1D_AI_GROUNDING_CONTRACT.md) |
+| # | Capability | Designation | Level | Primary audit |
+|---|------------|-------------|-------|---------------|
+| **CG-1** | Federated Context Graph Read Model | **Reference Capability** | 3 | [CONTEXT_GRAPH_PROMOTION_REVIEW.md](../context-graph/CONTEXT_GRAPH_PROMOTION_REVIEW.md) |
+| **CG-2** | V_Link Cross-Module Association Substrate | **Reference Capability** | 3 | [CG_1A_ADAPTER_REGISTRY.md](../context-graph/CG_1A_ADAPTER_REGISTRY.md) |
+| **CG-3** | Context Bundle Descriptor / AI Grounding | **Reference Capability With Findings** | 3 | [CG_1D_AI_GROUNDING_CONTRACT.md](../context-graph/CG_1D_AI_GROUNDING_CONTRACT.md) |
+| **CG-4** | Consumption Unification (Retrieval Bridge + Grounding Reconcile) | **Reference Capability With Findings** | **4** | [CONTEXT_GRAPH_L4_CERTIFICATION_REVIEW.md](../context-graph/CONTEXT_GRAPH_L4_CERTIFICATION_REVIEW.md) |
 
 ### Qualifying reference areas
 
@@ -169,6 +221,7 @@ UX reference slots live under `docs/ux/audits/` per [`REFERENCE_MODULE_PROGRAM.m
 | Federation read (#CG-1) | Read-only orchestrator; adapter registry; PE every hop; traversal caps | `contextGraphOrchestrator.ts`, `adapterRegistry.ts`, `bundleResolver.ts` |
 | V_Link substrate (#CG-2) | `*VlinkAccessService` PE; federation without parallel edge store | Module vlink services; `vlinkEntityResolverService` |
 | AI grounding bundle (#CG-3) | Constitutional provider → orchestrator; `graph_bundle` catalog | `contextGraphBundleProvider.ts`, `graphBundlePipelineContextService.ts` |
+| Consumption unification (#CG-4) | Retrieval bridge; grounding reconcile; inference provenance; pilot flags | `retrievalBundleInferenceBridge.ts`, `groundingReconcile.ts`, `projectAssistantPilotEnv.ts` |
 | Tag metadata index | Read-only federated tag lookup; tags as node metadata | `tagIndexService.ts`, `tagProviderRegistry.ts` |
 
 ### What this designation is NOT
@@ -179,7 +232,7 @@ UX reference slots live under `docs/ux/audits/` per [`REFERENCE_MODULE_PROGRAM.m
 - Not plain Reference Capability for #CG-3 (G9 partial; advisories remain)
 - Not authorization for Phase 1B-prime / 2B (program archived)
 
-**Governance records:** [CONTEXT_GRAPH_REFERENCE_STATUS_RECORD.md](../context-graph/CONTEXT_GRAPH_REFERENCE_STATUS_RECORD.md), [CONTEXT_GRAPH_CERTIFICATION_PROMOTION_RECORD.md](../context-graph/CONTEXT_GRAPH_CERTIFICATION_PROMOTION_RECORD.md), [CONTEXT_GRAPH_COUNCIL_RATIFICATION.md](../context-graph/CONTEXT_GRAPH_COUNCIL_RATIFICATION.md)
+**Governance records:** [CONTEXT_GRAPH_REFERENCE_STATUS_RECORD.md](../context-graph/CONTEXT_GRAPH_REFERENCE_STATUS_RECORD.md), [CONTEXT_GRAPH_CERTIFICATION_PROMOTION_RECORD.md](../context-graph/CONTEXT_GRAPH_CERTIFICATION_PROMOTION_RECORD.md), [CONTEXT_GRAPH_L4_CERTIFICATION_RECORD.md](../context-graph/CONTEXT_GRAPH_L4_CERTIFICATION_RECORD.md), [CONTEXT_GRAPH_COUNCIL_RATIFICATION.md](../context-graph/CONTEXT_GRAPH_COUNCIL_RATIFICATION.md)
 
 ---
 

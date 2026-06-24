@@ -312,6 +312,7 @@ export function buildBuiltInModuleManifest(moduleId: BuiltInModuleId): BuiltInMo
           ai: true,
           trash: true,
           notifications: true,
+          search: true,
           businessWorkspace: true,
         }),
         routes: [{ path: '/notebook', label: 'Notebook' }],
@@ -373,6 +374,7 @@ export function buildBuiltInModuleManifest(moduleId: BuiltInModuleId): BuiltInMo
         read: true,
         write: true,
         ai: true,
+        search: true,
         businessWorkspace: true,
       });
     case 'place':
@@ -470,6 +472,7 @@ export function buildBuiltInModuleManifest(moduleId: BuiltInModuleId): BuiltInMo
         read: true,
         ai: true,
         trash: true,
+        search: true,
         businessWorkspace: true,
       });
     case 'hr':

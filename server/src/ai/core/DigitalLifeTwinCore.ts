@@ -1579,6 +1579,9 @@ export class DigitalLifeTwinCore {
       if (boost.orchestrationSnapshot) {
         appendOrchestrationSnapshot(ctxRecord, boost.orchestrationSnapshot);
       }
+      if (boost.retrievalDiscovery) {
+        ctxRecord.aiRetrievalDiscovery = boost.retrievalDiscovery;
+      }
     }
 
     const recentConversationMemory = Array.isArray(ctxRecord.recentConversationMemory)

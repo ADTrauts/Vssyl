@@ -11,6 +11,7 @@ export type PolicyDenyReason =
 export type PolicyResourceType =
   | 'dashboard'
   | 'analytics'
+  | 'search'
   | 'folder'
   | 'file'
   | 'business'

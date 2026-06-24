@@ -1,205 +1,140 @@
 # Context Graph — Reality Assessment
 
-**Program:** Vssyl Context Graph Architecture  
-**Phase:** 0A — Discovery and reality assessment  
-**Date:** 2026-06-18  
-**Status:** Discovery artifact — no implementation
+**Program:** Context Graph Phase 0A — Relationship Discovery  
+**Date:** 2026-06-23  
+**Status:** Discovery artifact — no implementation  
+**Scope:** Determine whether Vssyl already contains the foundations of a Context Graph
 
 ---
 
 ## Executive finding
 
-**V_Link is not merely a linking feature.** It is already a **Tier 0 platform primitive** — a scoped, nestable **association container** with membership, polymorphic cross-module attachments, AI pipeline integration, domain events, and a permission model that separates container access from entity content access.
+**Vssyl already contains a partial Context Graph.** The platform is not at Level 0. Relationship infrastructure is decentralized across module schemas, V_Link (Tier 0 association), a certified Context Graph federation layer (L3), Unified Search, and AI Retrieval evidence — but these layers are **not yet unified** as a single relationship consumption path for all AI consumers.
 
-**However, V_Link is also not yet a full Context Graph.** It lacks:
+The central question for Phase 0A:
 
-- Federated read orchestration across all relationship classes
-- Graph projection / traversal API (constitutional docs exist; no runtime)
-- Context bundle composition beyond AI pipeline prepass
-- Realtime graph invalidation
-- Unified node identity across module SoRs
-- Cross-module tag index
+> What relationships already exist across Vssyl, and how should AI, Search, and Retrieval use them?
 
-The strategic question is therefore **evolution, not invention**: extend V_Link and the Relationship Framework into a **canonical Context Graph and Knowledge Layer** without violating module ownership or creating a universal entity table.
+**Answer:** Relationships exist in at least **six parallel systems** (module FKs, V_Link, operational links, activity/events, search indexes, retrieval evidence). Persisted cross-module truth is strongest in **V_Link** and module-owned edges. **Search and Retrieval repeatedly reconstruct** relationships that are implicit in co-occurrence, tags, or query context but not stored as graph edges.
 
 ---
 
-## Question 1 — What is V_Link today?
+## Graph maturity score
 
-| Dimension | Reality |
-|-----------|---------|
-| **Constitutional class** | Association (+ Membership on container) |
-| **Tier** | Tier 0 platform layer — not a marketplace module |
-| **Primary artifact** | `VLink` container + `VLinkEntity` attachments |
-| **User value** | Cross-module "project context" grouping for humans and AI |
-| **AI role** | First-class pipeline source `vlink`; `persistedVLinks` in entity linking |
-| **Access model** | Membership grants **container** visibility; entity content requires module PE |
-| **Maturity** | Production-shipped; ~18 entity types resolved; 6 advisories in relationship docs |
+| Level | Definition | Status |
+|-------|------------|--------|
+| **0** | No relationships | ❌ Superseded |
+| **1** | Ad hoc relationships | ✅ Historical — module FKs only |
+| **2** | V_Link foundations | ✅ Shipped (2025–2026) |
+| **3** | Relationship platform | ✅ **Current baseline** — taxonomy, read federation, PE, domain events |
+| **4** | Graph ready | ⚠️ **Partial** — Context Graph L3 certified; adapters + bundles; retrieval not federated |
+| **5** | Certified graph capability | ⚠️ Context Graph L3 CwF (RD-CG-010); not Level 5 on this 0–5 discovery scale |
 
-**Verdict:** V_Link is the **seed substrate** of the Context Graph — not the complete graph.
+### Determination
 
----
-
-## Question 2 — Graph candidate inventory
-
-See [CONTEXT_GRAPH_CURRENT_STATE_INVENTORY.md](./CONTEXT_GRAPH_CURRENT_STATE_INVENTORY.md) §12.
-
-| Metric | Count |
-|--------|------:|
-| `VLinkEntityType` enum values | 25 |
-| Production-active resolver types | ~18 |
-| Platform registry entity keys | 17 |
-| Additional relationship-relevant entity categories | ~29 |
-| **Distinct graph candidate node types** | **~45–50** |
+| Field | Value |
+|-------|-------|
+| **Current level** | **3.5** (between Relationship Platform and Graph Ready) |
+| **Target level** | **4** — unified read federation for AI + Search + Retrieval without new SoR |
+| **Blockers** | Retrieval evidence ephemeral; Search parallel paths; no retrieval→bundle bridge; tag index advisory-only; HR/scheduling adapters incomplete |
 
 ---
 
-## Question 3 — Canonical object architecture
+## Relationship-capable systems inventory
 
-### Options evaluated
-
-| Option | Description | Fit with Vssyl constitution |
-|--------|-------------|----------------------------|
-| **A** | V_Link is the graph node | ❌ Collapses module entities into container; loses module SoR |
-| **B** | V_Link becomes edge only | ❌ Destroys container semantics, nesting, membership, public code |
-| **C** | New ContextNode + V_Link as relationship | ⚠️ Correct **conceptually**; literal universal table **forbidden** |
-
-### Recommendation: **Conceptual Option C — Federated implementation**
-
-Adopt **Option C as the architecture model**, implemented via **federation** (not a new `ContextNode` Prisma table):
-
-| Graph role | Canonical identity | SoR |
-|------------|-------------------|-----|
-| **Entity node** | `(moduleId, entityType, entityId)` | Owning module Prisma model |
-| **Container node** | `vlink:{vlinkId}` | `VLink` table |
-| **Association edge** | `VLinkEntity` row | Platform vlink schema |
-| **Operational edge** | Module junction (NotebookLink, TaskFileLink, …) | Owning module |
-| **Hierarchy edge** | Org chart, approval hierarchy, folder tree | Owning module / BA platform |
-
-**V_Link evolves** from "linking UI" to **primary cross-module association edge registry** — while module entities remain the authoritative nodes.
-
-Do **not** demote V_Link to a simple pairwise edge (Option B). Do **not** treat V_Link containers as the only graph nodes (Option A).
+| System | Role | Persistence | Graph relevance |
+|--------|------|-------------|-----------------|
+| **V_Link** | Cross-module association container + attachments | `VLink`, `VLinkEntity`, `VLinkMember` | Primary **association edge** substrate |
+| **Platform Entities** | `(moduleId, entityType, entityId)` registry | Manifest + startup registry | **Node identity** contract |
+| **Module FKs** | Ownership, hierarchy, containment | Per-module Prisma | **Native edges** (file→folder, task→project) |
+| **Activity** | Immutable action log | `ModuleActivityEvent` envelope | **Temporal** relationship signal |
+| **Domain Events** | Cross-cutting fan-out | Event bus subscribers | **Invalidation / re-fetch** — not SoR |
+| **Unified Search** | Federated discovery | Provider indexes (derived) | **Ephemeral** relatedness at query time |
+| **AI Retrieval** | Pipeline evidence via Search | Ephemeral per request | **Strong graph candidate** — rediscovered edges |
+| **Context Graph** | Federation orchestrator | Derived bundles | **Projection layer** — L3 certified |
+| **NotebookLink / todo refs** | Operational references | Module tables | Module-local **reference** edges |
+| **Place connections** | Follow / community | Place module | **Follow** class edges |
+| **Business / household membership** | Tenant + roster | `BusinessMember`, `HouseholdMember` | **Membership** nodes |
+| **Dashboard ownership** | Workspace scope | `Dashboard` FKs | **Containment** anchor |
+| **File associations** | Shares, attachments | Drive + chat | **Access grant** + **attachment** |
+| **Calendar associations** | Event attendees, links | Calendar module | **Participation** + V_Link |
+| **Task associations** | Project, assignee, deps | Todo module | **Assignment**, **dependency** |
+| **Chat associations** | Conversations, files | Chat module | **Attachment**, **membership** |
 
 ---
 
-## Question 4 — Tags analysis
+## V_Link analysis
 
-| Option | Assessment |
-|--------|------------|
-| **A. Tags as graph node aliases** | ❌ Semantic collapse — tags have no target entity |
-| **B. Tags as metadata on graph nodes** | ✅ **Recommended** — aligns with [TAG_STRATEGY.md](../architecture/TAG_STRATEGY.md) |
-| **C. Tags as separate graph entity** | ❌ Over-engineered for v1; no global `Tag.id` exists |
-| **D. Tags should not exist** | ❌ Six modules already use `tags[]`; Place discovery depends on them |
+### Model: hybrid node + edge
 
-### Recommendation: **Option B**
+| Aspect | V_Link role |
+|--------|-------------|
+| **VLink container** | **Graph node** — scoped, nestable hub with membership |
+| **VLinkEntity** | **Graph edge** — directed attachment from container → module entity |
+| **VLinkMember** | **Membership edge** — user → container (not content access) |
+| **VLink.parentVLinkId** | **Hierarchy edge** — container nesting |
 
-- Tags remain **module-local SoR** on host entities
-- Graph hydration includes tags **with entity node** (Pattern A)
-- Future **Tag Index** (read-only federation mirror) enables cross-module facet search — not a graph node type
-- AI must **not** infer relationships from tag string collision
+V_Link is **not** a pure edge table nor a universal node store. It is an **association hub** that acts as both a first-class navigable object (node) and a source of cross-module edges (attachments).
 
----
+### Enforcement
 
-## Question 5 — AI architecture (analysis only)
-
-AI should consume the graph through **layered federation**, not raw traversal:
-
-```
-1. UserMemoryFact          — explicit durable facts
-2. Persisted V_Link        — confirmed cross-module associations
-3. Module AI providers     — entity-scoped context
-4. Operational links       — NotebookLink, task deps (intent-gated)
-5. Context bundles         — composed views (future logical API)
-6. Search hydrate          — PE re-check required
-7. Inference               — ephemeral; never SoR
-```
-
-| Consumption pattern | Mechanism | Status |
-|--------------------|-----------|--------|
-| Graph nodes | Module providers + resolver hydrate | ✅ Partial |
-| Graph relationships | `vlinkPipelineContextService`, adapters | ✅ Partial |
-| Context bundles | V_Link container ≈ proto-bundle | ⚠️ Implicit only |
-| Memory structures | `UserMemoryFact`, `UserAIContext` | ✅ Separate SoR |
-
-**No implementation in Phase 0A.** See [CONTEXT_GRAPH_AI_INTEGRATION_ANALYSIS.md](./CONTEXT_GRAPH_AI_INTEGRATION_ANALYSIS.md).
+- Link permission: Policy Engine + `vlinkPermissionService`
+- Attachment access: per-module `*VlinkAccessService` + `vlinkEntityResolverService`
+- **Membership ≠ attachment content access** (constitutional)
 
 ---
 
-## Question 6 — Permission architecture
+## Search + retrieval alignment (preview)
 
-| Scope | Graph rule |
-|-------|------------|
-| **Personal** | `dashboardId` scope; user membership on V_Link; module PE on attachments |
-| **Business** | `dashboardId` + `businessId`; business member checks on resolvers |
-| **Household** | `dashboardId` + `householdId` |
-| **Shared** | V_Link membership shares **container metadata only** — not entity content |
-| **Public** | No anonymous V_Link access in v1; Place listing tags are module-public |
-| **Membership-based** | `VLinkMember` roles; module participant tables for entity content |
+| Capability | Relationship role today | Future V_Graph role |
+|------------|-------------------------|---------------------|
+| **Unified Search** | Discovers entities; no edge persistence | **Discovery input** — candidate edges with provenance `inference` |
+| **AI Retrieval** | Maps search hits → `AIRetrievalEvidence` | **Evidence feed** for bundle composition |
+| **Platform Entities** | Node IDs for adapters | **Stable node keys** |
+| **Activity** | Audit trail of actions | **Temporal edge** signals (who linked what) |
+| **Domain Events** | Re-fetch triggers | **Invalidation** — not edge SoR |
+| **Context Graph** | Bundle resolution from anchors | **Orchestration** — merge SoR + ephemeral evidence |
 
-**Non-negotiable preserved:** V_Link membership ≠ entity access grant.
-
----
-
-## Question 7 — Platform scope classification
-
-| Option | Assessment |
-|--------|------------|
-| **A. Module feature** | ❌ V_Link is already Tier 0 — not marketplace module |
-| **B. Platform capability** | ✅ Primary classification |
-| **C. AI subsystem only** | ❌ Serves humans, search, automation — not AI-only |
-| **D. Core platform layer** | ✅ Co-classification with Tier 0 primitives |
-
-### Recommendation: **B + D**
-
-**Context Graph = Core Platform Capability (Tier 0)** — peer to V_Link, Policy Engine, Domain Events, Workspace Runtime. AI is a **primary consumer**, not the owner.
+**Principle:** None of these replace each other. V_Graph (if named distinctly from certified Context Graph) means **unified consumption**, not a new database.
 
 ---
 
-## Question 8 — Future capability mapping
+## Architectural risks
 
-| Capability | Belongs in graph? | Natural home |
-|------------|-------------------|--------------|
-| **Knowledge graph** | ✅ Yes | Federated read + V_Link associations |
-| **AI memory** | ⚠️ Adjacent | `UserMemoryFact` — not graph edge |
-| **Context bundles** | ✅ Yes | V_Link containers → formalized bundle contract |
-| **Workflow relationships** | ⚠️ Partial | Module operational links + approval hierarchy |
-| **Analytics correlation** | ✅ Yes | Derived views — not SoR |
-| **Cross-module intelligence** | ✅ Yes | Pipeline + federation orchestrator |
-| **Search enrichment** | ✅ Yes | Relationship-aware hydrate (Pattern C) |
-
----
-
-## Gap analysis
-
-| Gap | Severity | Notes |
-|-----|----------|-------|
-| No graph traversal API | Major | Constitutional docs exist ([GRAPH_TRAVERSAL_AND_HYDRATION_MODEL.md](../architecture/GRAPH_TRAVERSAL_AND_HYDRATION_MODEL.md)) |
-| No federation read orchestrator service | Major | Logical contract only |
-| NOTE resolver partial | Moderate | Inline Prisma; no dedicated access service |
-| No vlink realtime | Low | Acceptable for v1 |
-| No cross-module tag index | Moderate | Documented future in Tag Strategy |
-| Parallel association stores | Moderate | V_Link + NotebookLink + module links |
-| Activity not in module envelope | Low | Container-local only |
+| ID | Risk | Severity |
+|----|------|----------|
+| R-01 | Retrieval rediscovers same cross-module links every request | Major |
+| R-02 | Search indexes treated as relationship SoR | Major |
+| R-03 | V_Link membership confused with file/note access | Major (mitigated by framework) |
+| R-04 | Duplicate graph paths: `vlink` pipeline vs `graph_bundle` vs retrieval | Moderate |
+| R-05 | Ephemeral inference persisted without user accept | Major (constitutional violation) |
+| R-06 | Incomplete entity resolver coverage (NOTE, DASHBOARD enums) | Moderate |
+| R-07 | Place triple path (tool, provider, search) diverges | Moderate |
 
 ---
 
-## Implementation recommendation
+## Repeated reconstruction (summary)
 
-| Question | Answer |
-|----------|--------|
-| Should Context Graph proceed? | **Yes — phased** |
-| Start with runtime? | **No** — Phase 0B constitutional architecture first |
-| Rename V_Link? | **No** — evolve semantics; V_Link remains user-facing brand |
-| New universal table? | **No** — federation over existing SoRs |
+Relationships most often **rebuilt at query time** rather than stored:
+
+1. **Cross-module co-occurrence** — retrieval consumers find files + tasks + events in one answer
+2. **Tag overlap** — tag index exists but not as graph edges
+3. **Project context** — `project_assistant` infers project boundaries from search
+4. **Operational proximity** — same dashboard, same business, same time window
+5. **Place + business context** — `local_discovery` links listings to user/business scope
+6. **entityLinking inference** — ephemeral merge with persisted V_Link preference
+
+These are **strong graph candidates** for Phase 1 **projection** (not persistence without governance).
 
 ---
 
-## Related deliverables
+## References
 
-| Document | Purpose |
-|----------|---------|
-| [CONTEXT_GRAPH_PLATFORM_ARCHITECTURE.md](./CONTEXT_GRAPH_PLATFORM_ARCHITECTURE.md) | Target architecture |
-| [CONTEXT_GRAPH_ENTITY_RELATIONSHIP_MODEL.md](./CONTEXT_GRAPH_ENTITY_RELATIONSHIP_MODEL.md) | Node/edge model detail |
-| [CONTEXT_GRAPH_MODERNIZATION_ROADMAP.md](./CONTEXT_GRAPH_MODERNIZATION_ROADMAP.md) | Phase 0B+ scope |
+- [CONTEXT_GRAPH_CURRENT_STATE_INVENTORY.md](./CONTEXT_GRAPH_CURRENT_STATE_INVENTORY.md) (2026-06-18 baseline)
+- [CONTEXT_GRAPH_CERTIFICATION_PROMOTION_RECORD.md](./CONTEXT_GRAPH_CERTIFICATION_PROMOTION_RECORD.md)
+- [V_LINK.md](../architecture/V_LINK.md)
+- [RELATIONSHIP_TAXONOMY.md](../architecture/RELATIONSHIP_TAXONOMY.md)
+- [AI_RELATIONSHIP_RETRIEVAL_MODEL.md](../architecture/AI_RELATIONSHIP_RETRIEVAL_MODEL.md)
+- [AI_RETRIEVAL_PHASE_2B3_CLOSEOUT.md](../ai/retrieval/AI_RETRIEVAL_PHASE_2B3_CLOSEOUT.md)
 
-**Last updated:** 2026-06-18
+**Last updated:** 2026-06-23
