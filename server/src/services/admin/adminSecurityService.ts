@@ -172,18 +172,40 @@ export async function logSecurityEvent(eventData: SecurityEventData) {
 }
 
 export async function getAdminSecurityModuleMetrics() {
-  const totalModules = await prisma.module.count();
-  const approvedModules = await prisma.module.count({
-    where: { status: 'APPROVED' },
-  });
+  const [totalModules, approvedModules, unresolvedEvents, unresolvedCritical, unresolvedHigh] =
+    await Promise.all([
+      prisma.module.count(),
+      prisma.module.count({ where: { status: 'APPROVED' } }),
+      prisma.securityEvent.count({ where: { resolved: false } }).catch(() => null),
+      prisma.securityEvent
+        .count({ where: { resolved: false, severity: 'critical' } })
+        .catch(() => null),
+      prisma.securityEvent.count({ where: { resolved: false, severity: 'high' } }).catch(() => null),
+    ]);
+
+  const eventsAvailable =
+    unresolvedEvents !== null && unresolvedCritical !== null && unresolvedHigh !== null;
+
+  let threatLevel: 'low' | 'medium' | 'high' | 'unknown' = 'unknown';
+  if (eventsAvailable) {
+    if (unresolvedCritical > 0) {
+      threatLevel = 'high';
+    } else if (unresolvedHigh > 0) {
+      threatLevel = 'medium';
+    } else {
+      threatLevel = 'low';
+    }
+  }
 
   return {
     totalModules,
     monitoredModules: approvedModules,
-    securityViolations: Math.floor(Math.random() * 10),
-    criticalAlerts: Math.floor(Math.random() * 3),
-    complianceScore: Math.floor(Math.random() * 20) + 80,
-    threatLevel: Math.random() > 0.8 ? 'high' : Math.random() > 0.6 ? 'medium' : 'low',
+    securityViolations: eventsAvailable ? unresolvedEvents : null,
+    criticalAlerts: eventsAvailable ? unresolvedCritical : null,
+    complianceScore: null,
+    complianceScoreStatus: 'requires_instrumentation' as const,
+    threatLevel,
+    threatLevelStatus: eventsAvailable ? ('available' as const) : ('unavailable' as const),
   };
 }
 

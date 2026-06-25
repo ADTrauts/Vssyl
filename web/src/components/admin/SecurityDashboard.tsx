@@ -31,10 +31,12 @@ interface SecurityDashboardProps {
 interface SecurityMetrics {
   totalModules: number;
   monitoredModules: number;
-  securityViolations: number;
-  criticalAlerts: number;
-  complianceScore: number;
-  threatLevel: 'low' | 'medium' | 'high' | 'critical';
+  securityViolations: number | null;
+  criticalAlerts: number | null;
+  complianceScore: number | null;
+  complianceScoreStatus?: 'requires_instrumentation' | 'available';
+  threatLevel: 'low' | 'medium' | 'high' | 'unknown';
+  threatLevelStatus?: 'available' | 'unavailable';
 }
 
 interface SecurityAlert {
@@ -74,10 +76,10 @@ export default function SecurityDashboard({ moduleId, onClose }: SecurityDashboa
     setLoading(true);
     try {
       // Load security metrics
-      const metricsResponse = await fetch('/api/admin-portal/security/metrics');
+      const metricsResponse = await fetch('/api/admin-portal/security/module-metrics');
       if (metricsResponse.ok) {
         const metricsData = await metricsResponse.json();
-        setMetrics(metricsData.data);
+        setMetrics(metricsData.data ?? metricsData);
       }
 
       // Load security alerts
@@ -226,7 +228,10 @@ export default function SecurityDashboard({ moduleId, onClose }: SecurityDashboa
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Security Violations</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{metrics.securityViolations}</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                  {metrics.securityViolations ?? 'Unavailable'}
+                </p>
+                <p className="text-xs text-gray-500 dark:text-gray-400">Unresolved security events</p>
               </div>
               <AlertTriangle className="w-8 h-8 text-orange-600" />
             </div>
@@ -236,7 +241,11 @@ export default function SecurityDashboard({ moduleId, onClose }: SecurityDashboa
             <div className="flex items-center justify-between">
               <div>
                 <p className="text-sm font-medium text-gray-700 dark:text-gray-300">Compliance Score</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">{metrics.complianceScore}%</p>
+                <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
+                  {metrics.complianceScore !== null && metrics.complianceScore !== undefined
+                    ? `${metrics.complianceScore}%`
+                    : 'Requires instrumentation'}
+                </p>
               </div>
               <Shield className="w-8 h-8 text-purple-600" />
             </div>

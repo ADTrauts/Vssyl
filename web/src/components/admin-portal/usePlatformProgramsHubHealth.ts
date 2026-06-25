@@ -41,7 +41,7 @@ async function loadProgramHealth(
   switch (program.healthSource) {
     case 'dashboard': {
       if (!context.dashboard) {
-        return { healthStatus: 'unknown', healthSummary: 'Dashboard stats unavailable' };
+        return { healthStatus: 'unknown', healthSummary: 'Infrastructure signal unavailable' };
       }
       const label = formatDashboardSystemHealth(
         context.dashboard.systemHealth,
@@ -55,18 +55,18 @@ async function loadProgramHealth(
             : 'degraded';
       return {
         healthStatus: status,
-        healthSummary: `System health ${label}`,
+        healthSummary: `Infrastructure pressure: ${label} (host CPU/memory — not kernel SLO)`,
         readinessSummary: `${context.dashboard.totalUsers ?? 0} users · ${context.dashboard.totalBusinesses ?? 0} businesses`,
       };
     }
     case 'pipeline': {
       if (!context.pipeline) {
-        return { healthStatus: 'unknown', healthSummary: 'Pipeline stats unavailable' };
+        return { healthStatus: 'unknown', healthSummary: 'Pipeline quality signals unavailable' };
       }
       const atRisk = context.pipeline.atRiskPercent ?? 0;
       return {
         healthStatus: atRisk <= 15 ? 'healthy' : 'degraded',
-        healthSummary: `Retrieval trigger ${context.pipeline.retrievalTriggerPercent}% · ${context.pipeline.totalTraces} traces (7d)`,
+        healthSummary: `Pipeline quality (7d): retrieval trigger ${context.pipeline.retrievalTriggerPercent}% · ${context.pipeline.totalTraces} traces`,
         readinessSummary:
           atRisk > 0 ? `${context.pipeline.atRiskCount} at-risk traces` : 'No at-risk traces in window',
       };
@@ -78,18 +78,18 @@ async function loadProgramHealth(
       const sourceCount = context.catalog.contextSources?.length ?? 0;
       return {
         healthStatus: sourceCount > 0 ? 'healthy' : 'degraded',
-        healthSummary: `${sourceCount} context sources registered`,
+        healthSummary: `Registered sources: ${sourceCount} (catalog count — not graph engine health)`,
         readinessSummary: `${context.catalog.intents?.length ?? 0} intents · ${context.catalog.toolPolicies?.length ?? 0} tools`,
       };
     }
     case 'moduleStats': {
       if (!context.moduleStats) {
-        return { healthStatus: 'unknown', healthSummary: 'Module stats unavailable' };
+        return { healthStatus: 'unknown', healthSummary: 'Review queue unavailable' };
       }
       const pending = context.moduleStats.pendingReviews ?? 0;
       return {
         healthStatus: pending <= 5 ? 'healthy' : 'degraded',
-        healthSummary: `${pending} pending review${pending === 1 ? '' : 's'}`,
+        healthSummary: `Review queue: ${pending} pending submission${pending === 1 ? '' : 's'} (not partner runtime health)`,
         readinessSummary: `${context.moduleStats.totalSubmissions ?? 0} total submissions`,
       };
     }
@@ -143,6 +143,7 @@ export function usePlatformProgramsHubHealth() {
     if (pipelineRes.error) errors.push(pipelineRes.error);
     if (catalogRes.error) errors.push(catalogRes.error);
     if (moduleStatsRes.error) errors.push(moduleStatsRes.error);
+    if (readinessRes.error) errors.push(readinessRes.error);
 
     const context = {
       dashboard: (dashboardRes.data as DashboardStats | undefined) ?? null,

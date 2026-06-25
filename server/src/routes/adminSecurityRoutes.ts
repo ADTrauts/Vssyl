@@ -38,8 +38,8 @@ const securityService = new ModuleSecurityService(prisma);
 const monitoringService = new BehavioralMonitoringService(prisma);
 const policiesService = new SecurityPoliciesService(prisma);
 
-// Get security metrics
-router.get('/metrics', async (req, res) => {
+// Get module security metrics (real event aggregates — not platform event metrics)
+router.get('/module-metrics', async (req, res) => {
   try {
     logSrvDebug('adminsecurityroutes_loading_security_metrics', '📊 Loading security metrics...');
     
@@ -50,7 +50,9 @@ router.get('/metrics', async (req, res) => {
       securityViolations: metrics.securityViolations,
       criticalAlerts: metrics.criticalAlerts,
       complianceScore: metrics.complianceScore,
+      complianceScoreStatus: metrics.complianceScoreStatus,
       threatLevel: metrics.threatLevel,
+      threatLevelStatus: metrics.threatLevelStatus,
     };
 
     res.json({ success: true, data: responseMetrics });

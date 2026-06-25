@@ -20,6 +20,10 @@ import {
 } from 'lucide-react';
 import { adminApiService } from '../../../lib/adminApiService';
 import ProviderExpensesView from '../../../components/admin-portal/ProviderExpensesView';
+import {
+  formatSubscriptionAmountDisplay,
+  sumDisplayableSubscriptionAmounts,
+} from '../../../lib/subscriptionAmountDisplay';
 
 interface Subscription {
   id: string;
@@ -27,7 +31,8 @@ interface Subscription {
   userEmail: string;
   tier: 'free' | 'pro' | 'business_basic' | 'business_advanced' | 'enterprise' | string;
   status: 'active' | 'cancelled' | 'past_due' | 'unpaid';
-  amount: number;
+  amount: number | null;
+  amountStatus?: 'known' | 'free' | 'unknown';
   currentPeriodStart: string;
   currentPeriodEnd: string;
   cancelAtPeriodEnd: boolean;
@@ -170,10 +175,11 @@ export default function FinancialManagement() {
       }
 
       // Format subscriptions with user email
-      const formattedSubscriptions = subscriptionsData.map((sub: any) => ({
+      const formattedSubscriptions = subscriptionsData.map((sub: Subscription & { user?: { email?: string } }) => ({
         ...sub,
         userEmail: sub.user?.email || sub.userEmail || 'Unknown',
-        amount: sub.amount || 0
+        amount: sub.amount ?? null,
+        amountStatus: sub.amountStatus,
       }));
 
       setSubscriptions(formattedSubscriptions);
@@ -348,14 +354,27 @@ export default function FinancialManagement() {
               <DollarSign className="w-6 h-6 text-green-600" />
             </div>
             <div className="ml-4">
-              <p className="text-sm font-medium text-v-text-secondary">Monthly Revenue</p>
+              <p className="text-sm font-medium text-v-text-secondary">Monthly Revenue (known amounts)</p>
               <p className="text-2xl font-bold text-v-text-primary">
-                ${(
-                  (payoutSummary?.totalRevenue ?? 0) ||
-                  (subscriptionSummary?.estimatedMonthlyAmount ?? 0) ||
-                  subscriptions.reduce((sum, sub) => sum + sub.amount, 0)
-                ).toLocaleString()}
+                {(() => {
+                  const fromSummary = subscriptionSummary?.estimatedMonthlyAmount;
+                  const { total, hasUnknown } = sumDisplayableSubscriptionAmounts(subscriptions);
+                  const value =
+                    typeof fromSummary === 'number' && fromSummary > 0
+                      ? fromSummary
+                      : total;
+                  if (value === 0 && hasUnknown) {
+                    return 'Unavailable';
+                  }
+                  return `$${value.toLocaleString()}`;
+                })()}
               </p>
+              {(subscriptionSummary?.subscriptionsWithUnknownAmount ?? 0) > 0 && (
+                <p className="text-xs text-v-text-muted mt-1">
+                  {subscriptionSummary.subscriptionsWithUnknownAmount} subscription
+                  {subscriptionSummary.subscriptionsWithUnknownAmount === 1 ? '' : 's'} missing Stripe amount
+                </p>
+              )}
             </div>
           </div>
         </Card>
@@ -470,7 +489,11 @@ export default function FinancialManagement() {
                       {getStatusBadge(subscription.status)}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-v-text-primary">
-                      ${subscription.amount}
+                      {formatSubscriptionAmountDisplay(
+                        subscription.amount,
+                        subscription.amountStatus,
+                        subscription.tier,
+                      )}
                     </td>
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-v-text-muted">
                       {new Date(subscription.currentPeriodStart).toLocaleDateString()} - {new Date(subscription.currentPeriodEnd).toLocaleDateString()}

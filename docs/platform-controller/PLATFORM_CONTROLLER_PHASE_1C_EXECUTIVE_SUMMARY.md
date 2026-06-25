@@ -88,13 +88,9 @@ Platform Controller **Phase 1B consolidation is structurally sound**: navigation
 
 ---
 
-## Recommended next phase (1D — not started)
+## Recommended next phase (1E+ — not started)
 
-**P0 (small, truth-only):**
-
-- Remove random security metrics or return `unavailable`
-- Derive subscription display amount from `stripeMetadata`
-- Relabel Programs health summaries per [Programs audit](./PLATFORM_PROGRAMS_DATA_TRUTH_AUDIT.md)
+**Phase 1D (truth fixes) — COMPLETE.** See [Phase 1D truth fixes](./PLATFORM_CONTROLLER_PHASE_1D_TRUTH_FIXES.md).
 
 **P1 (financial ops):**
 
@@ -119,6 +115,7 @@ Platform Controller **Phase 1B consolidation is structurally sound**: navigation
 | [AI Workspace](./AI_WORKSPACE_FUNCTIONAL_AUDIT.md) | AI admin inventory |
 | [Programs Data Truth](./PLATFORM_PROGRAMS_DATA_TRUTH_AUDIT.md) | Hub card honesty |
 | [Gap Register](./PLATFORM_CONTROLLER_FUNCTIONAL_GAP_REGISTER.md) | Ranked backlog |
+| [Phase 1D Truth Fixes](./PLATFORM_CONTROLLER_PHASE_1D_TRUTH_FIXES.md) | Operational truth fixes closeout |
 | This summary | Executive readout |
 
 ---
@@ -131,6 +128,6 @@ Platform Controller **Phase 1B consolidation is structurally sound**: navigation
 
 ---
 
-**Phase 1C complete.** Phase 1B routes and naming unchanged. Implementation fixes deferred to Phase 1D unless explicitly authorized.
+**Phase 1C complete.** Phase 1D truth fixes shipped 2026-06-25. Phase 1B routes and naming unchanged.
 
-**Last updated:** 2026-06-24
+**Last updated:** 2026-06-25

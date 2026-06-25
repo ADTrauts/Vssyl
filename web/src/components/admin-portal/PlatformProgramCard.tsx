@@ -41,9 +41,9 @@ function healthBadgeColor(status: PlatformProgramHealthStatus): 'green' | 'yello
 function healthLabel(status: PlatformProgramHealthStatus): string {
   switch (status) {
     case 'healthy':
-      return 'Healthy';
+      return 'Within threshold';
     case 'degraded':
-      return 'Degraded';
+      return 'Needs attention';
     case 'loading':
       return 'Loading…';
     default:
@@ -160,7 +160,7 @@ export function PlatformProgramCard({
 
         {healthSummary ? (
           <p className="text-sm text-v-text-secondary">
-            <span className="font-medium text-v-text-primary">Health: </span>
+            <span className="font-medium text-v-text-primary">Operational signal: </span>
             {healthSummary}
           </p>
         ) : null}

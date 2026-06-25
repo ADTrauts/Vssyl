@@ -9,6 +9,7 @@ import * as adminSecurityService from '../../services/admin/adminSecurityService
 import * as adminBillingService from '../../services/admin/adminBillingService';
 import * as adminAnalyticsService from '../../services/admin/adminAnalyticsService';
 import * as adminSystemOpsService from '../../services/admin/adminSystemOpsService';
+import { resolveTierSubscriptionAmount } from '../../services/admin/subscriptionDisplayAmount';
 
 export function registerAdminPortalAnalyticsOpsRoutes(router: express.Router): void {
 // ============================================================================
@@ -158,13 +159,20 @@ router.get('/billing/subscriptions', authenticateJWT, requireAdmin, async (req: 
 
     // Add Stripe URLs and serialize dates
     const { StripeSyncService } = await import('../../services/stripeSyncService');
-    const subscriptionsWithUrls = result.subscriptions.map((sub: Record<string, unknown>) => ({
+    const subscriptionsWithUrls = result.subscriptions.map((sub: Record<string, unknown>) => {
+      const resolved = resolveTierSubscriptionAmount({
+        tier: sub.tier as string | undefined,
+        stripeMetadata: sub.stripeMetadata,
+      });
+
+      return {
       id: sub.id,
       userId: sub.userId,
       businessId: sub.businessId,
       tier: sub.tier,
       status: sub.status,
-      amount: typeof sub.amount === 'number' ? sub.amount : 0,
+      amount: resolved.amount,
+      amountStatus: resolved.status,
       currentPeriodStart: (sub.currentPeriodStart as Date).toISOString(),
       currentPeriodEnd: (sub.currentPeriodEnd as Date).toISOString(),
       cancelAtPeriodEnd: sub.cancelAtPeriodEnd,
@@ -183,7 +191,8 @@ router.get('/billing/subscriptions', authenticateJWT, requireAdmin, async (req: 
         subscription: StripeSyncService.getStripeSubscriptionUrl(sub.stripeSubscriptionId as string),
         customer: StripeSyncService.getStripeCustomerUrl(sub.stripeCustomerId as string)
       }
-    }));
+    };
+    });
 
     res.json({
       subscriptions: subscriptionsWithUrls,

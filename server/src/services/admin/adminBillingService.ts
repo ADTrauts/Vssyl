@@ -1,5 +1,9 @@
 import { prisma } from '../../lib/prisma';
 import { logger } from '../../lib/logger';
+import {
+  resolveTierSubscriptionAmount,
+  sumKnownSubscriptionAmounts,
+} from './subscriptionDisplayAmount';
 
 /** Detect Prisma errors from missing columns (production DB schema drift) */
 function isSchemaDriftError(error: unknown): boolean {
@@ -55,6 +59,14 @@ export async function getSubscriptions(params: {
         return acc;
       }, {});
 
+      const resolvedAmounts = subscriptions.map((sub) =>
+        resolveTierSubscriptionAmount({
+          tier: sub.tier,
+          stripeMetadata: sub.stripeMetadata,
+        }),
+      );
+      const { knownTotal, unknownCount } = sumKnownSubscriptionAmounts(resolvedAmounts);
+
       return {
         subscriptions,
         total,
@@ -66,8 +78,9 @@ export async function getSubscriptions(params: {
           pastDueCount: statusCounts.past_due || 0,
           cancelledCount: statusCounts.cancelled || 0,
           unpaidCount: statusCounts.unpaid || 0,
-          totalAmount: subscriptions.reduce((sum, sub) => sum + toSafeNumber(sub.additionalEmployeeCost), 0),
-          estimatedMonthlyAmount: toSafeNumber(aggregates._sum.additionalEmployeeCost),
+          totalAmount: knownTotal,
+          estimatedMonthlyAmount: knownTotal,
+          subscriptionsWithUnknownAmount: unknownCount,
           totalSubscriptions: toSafeNumber(aggregates._count.id),
         },
       };
@@ -90,6 +103,7 @@ export async function getSubscriptions(params: {
             unpaidCount: 0,
             totalAmount: 0,
             estimatedMonthlyAmount: 0,
+            subscriptionsWithUnknownAmount: 0,
             totalSubscriptions: 0,
           },
         };
