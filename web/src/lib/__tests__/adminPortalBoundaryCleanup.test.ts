@@ -13,9 +13,9 @@ describe('adminPortalBoundaryCleanup (0B-E)', () => {
       expect(existsSync(join(WEB_ROOT, 'components/admin-portal/AdminHeader.tsx'))).toBe(false);
     });
 
-    it('layout remains the single nav source', () => {
+    it('layout remains the single nav source via platform controller config', () => {
       const layoutSource = readFileSync(join(WEB_ROOT, 'app/admin-portal/layout.tsx'), 'utf8');
-      expect(layoutSource).toContain('adminNavigationSections');
+      expect(layoutSource).toContain('buildPlatformControllerNavigationSections');
       expect(layoutSource).not.toContain('AdminNavigation');
       expect(layoutSource).not.toContain('AdminHeader');
     });
@@ -44,36 +44,37 @@ describe('adminPortalBoundaryCleanup (0B-E)', () => {
       expect(middleware).toContain("pathname === '/admin/retention'");
     });
 
-    it('links governance and retention in admin-portal nav', () => {
-      const layoutSource = readFileSync(join(WEB_ROOT, 'app/admin-portal/layout.tsx'), 'utf8');
-      expect(layoutSource).toContain("path: '/admin-portal/governance'");
-      expect(layoutSource).toContain("path: '/admin-portal/retention'");
+    it('links governance and retention in Platform Controller nav', () => {
+      const navSource = readFileSync(
+        join(WEB_ROOT, 'config/platformControllerNavigation.ts'),
+        'utf8',
+      );
+      expect(navSource).toContain("path: '/admin-portal/governance'");
+      expect(navSource).toContain("path: '/admin-portal/retention'");
     });
   });
 
   describe('AP-F-019 impersonation debug surface', () => {
-    it('redirects duplicate test-impersonation page to canonical impersonation-test', () => {
-      const redirectPage = readFileSync(
+    it('redirects duplicate test-impersonation and impersonation-test to canonical impersonate', () => {
+      const testRedirect = readFileSync(
         join(WEB_ROOT, 'app/admin-portal/test-impersonation/page.tsx'),
+        'utf8',
+      );
+      const impersonationTest = readFileSync(
+        join(WEB_ROOT, 'app/admin-portal/impersonation-test/page.tsx'),
         'utf8',
       );
       const middleware = readFileSync(join(WEB_ROOT, 'middleware.ts'), 'utf8');
 
-      expect(redirectPage).toContain("redirect('/admin-portal/impersonation-test')");
-      expect(middleware).toContain("pathname === '/admin-portal/test-impersonation'");
+      expect(testRedirect).toContain("redirect('/admin-portal/impersonate')");
+      expect(impersonationTest).toContain("redirect('/admin-portal/impersonate')");
+      expect(middleware).toContain('/admin-portal/impersonate');
     });
 
-    it('keeps canonical impersonation-test debug gated', () => {
-      const canonical = readFileSync(
-        join(WEB_ROOT, 'app/admin-portal/impersonation-test/page.tsx'),
-        'utf8',
-      );
-      expect(canonical).toContain('AdminPortalDebugPageGate');
-    });
-
-    it('does not list test-impersonation in layout nav', () => {
+    it('does not list test-impersonation or impersonation-test in layout nav', () => {
       const layoutSource = readFileSync(join(WEB_ROOT, 'app/admin-portal/layout.tsx'), 'utf8');
       expect(layoutSource).not.toContain('test-impersonation');
+      expect(layoutSource).not.toContain('impersonation-test');
     });
   });
 });

@@ -1,6 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Card, Button, Badge, Alert, Spinner, Modal, Input, Tabs, ConfirmModal } from 'shared/components';
 import { adminApiService } from '../../../lib/adminApiService';
 import SecurityDashboard from '../../../components/admin/SecurityDashboard';
@@ -193,6 +194,7 @@ interface ProviderTestResult {
 }
 
 export default function AdminModulesPage() {
+  const searchParams = useSearchParams();
   const [activeTab, setActiveTab] = useState<'submissions' | 'ai-context'>('submissions');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -230,6 +232,13 @@ export default function AdminModulesPage() {
     version: string;
   } | null>(null);
   const [promoteLoading, setPromoteLoading] = useState(false);
+
+  useEffect(() => {
+    const tab = searchParams.get('tab');
+    if (tab === 'ai-context') {
+      setActiveTab('ai-context');
+    }
+  }, [searchParams]);
   
   // AI Context Status state
   const [aiContextLoading, setAiContextLoading] = useState(false);

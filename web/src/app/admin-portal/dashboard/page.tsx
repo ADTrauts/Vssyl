@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { useSession } from 'next-auth/react';
+import Link from 'next/link';
 import { Card, Button } from 'shared/components';
 import { 
   Users, 
@@ -183,7 +184,7 @@ export default function AdminDashboard() {
     return (
       <div className="space-y-6">
         <div>
-          <h1 className="text-3xl font-bold text-v-text-primary">Admin Dashboard</h1>
+          <h1 className="text-3xl font-bold text-v-text-primary">Platform Overview</h1>
           <p className="text-v-text-secondary mt-2">Platform overview and quick actions</p>
         </div>
         <div className="bg-red-50 border border-red-200 rounded-lg p-4">
@@ -209,8 +210,19 @@ export default function AdminDashboard() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-v-text-primary">Admin Dashboard</h1>
+        <h1 className="text-3xl font-bold text-v-text-primary">Platform Overview</h1>
         <p className="text-v-text-secondary mt-2">Platform overview and quick actions</p>
+        <div className="flex flex-wrap gap-3 mt-4">
+          <Link href="/admin-portal/platform-programs">
+            <Button variant="secondary" size="sm">Platform Programs</Button>
+          </Link>
+          <Link href="/admin-portal/modules">
+            <Button variant="secondary" size="sm">Marketplace</Button>
+          </Link>
+          <Link href="/admin-portal/analytics">
+            <Button variant="secondary" size="sm">Platform Analytics</Button>
+          </Link>
+        </div>
       </div>
 
       {/* Quick Stats */}

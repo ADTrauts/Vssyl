@@ -16,8 +16,8 @@ export default withAuth(
     if (pathname === '/admin/retention') {
       return NextResponse.redirect(new URL('/admin-portal/retention', req.url));
     }
-    if (pathname === '/admin-portal/test-impersonation') {
-      return NextResponse.redirect(new URL('/admin-portal/impersonation-test', req.url));
+    if (pathname === '/admin-portal/test-impersonation' || pathname === '/admin-portal/impersonation-test') {
+      return NextResponse.redirect(new URL('/admin-portal/impersonate', req.url));
     }
     if (pathname === '/admin-portal/ai-learning') {
       return NextResponse.redirect(new URL('/admin-portal/ai-pipeline', req.url));

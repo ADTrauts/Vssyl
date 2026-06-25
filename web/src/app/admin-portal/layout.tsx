@@ -1,31 +1,23 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
-import { Shield, Users, BarChart3, Code, Lock, Settings, Activity, Eye, Home, DollarSign, Package, Key, Brain, MessageSquare, FileText, Gauge, ChevronDown, ChevronRight, Layers, Scale, Archive } from 'lucide-react';
+import { Shield, Activity, ChevronDown, ChevronRight } from 'lucide-react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ImpersonationProvider } from '../../contexts/ImpersonationContext';
 import { ImpersonationBanner } from '../../components/admin-portal/ImpersonationBanner';
 import AvatarContextMenu from '../../components/AvatarContextMenu';
 import { isAdminPortalDebugEnabled } from '../../lib/adminPortalDebugGate';
+import {
+  buildPlatformControllerNavigationSections,
+  resolvePlatformControllerActiveNavId,
+  type PlatformControllerNavSection,
+} from '../../config/platformControllerNavigation';
 
 interface AdminPortalLayoutProps {
   children: React.ReactNode;
-}
-
-interface AdminNavItem {
-  id: string;
-  label: string;
-  icon: React.ComponentType<{ className?: string }>;
-  path: string;
-}
-
-interface AdminNavSection {
-  id: string;
-  label: string;
-  items: AdminNavItem[];
 }
 
 const AdminPortalLayout = ({ children }: AdminPortalLayoutProps) => {
@@ -33,29 +25,34 @@ const AdminPortalLayout = ({ children }: AdminPortalLayoutProps) => {
   const router = useRouter();
   const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
   const [pathname, setPathname] = useState<string>('/admin-portal/dashboard');
+  const [urlHash, setUrlHash] = useState('');
   const [collapsedSections, setCollapsedSections] = useState<Record<string, boolean>>({});
-  
-  // Get pathname from Next.js hook - may return null during SSR
+
   const nextPathname = usePathname();
-  
-  // Update pathname from window.location on client mount as fallback
+
   useEffect(() => {
     if (typeof window !== 'undefined') {
       setPathname(window.location.pathname);
+      setUrlHash(window.location.hash.replace('#', ''));
     }
   }, []);
 
-  // Update pathname when Next.js pathname changes (only if valid)
   useEffect(() => {
     if (nextPathname && typeof window !== 'undefined') {
       setPathname(nextPathname);
     }
   }, [nextPathname]);
 
-  // Handle redirects in useEffect to avoid issues during render
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    const onHashChange = () => setUrlHash(window.location.hash.replace('#', ''));
+    window.addEventListener('hashchange', onHashChange);
+    return () => window.removeEventListener('hashchange', onHashChange);
+  }, []);
+
   useEffect(() => {
     if (status === 'loading') {
-      return; // Still loading, wait
+      return;
     }
 
     if (!session) {
@@ -69,103 +66,31 @@ const AdminPortalLayout = ({ children }: AdminPortalLayoutProps) => {
     }
   }, [session, status, router]);
 
-  if (status === 'loading') {
-    return (
-      <div className="min-h-screen bg-v-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-2 text-v-text-secondary">Loading admin portal...</p>
-        </div>
-      </div>
-    );
-  }
+  const adminNavigationSections: PlatformControllerNavSection[] = useMemo(() => {
+    const debugEnabled = isAdminPortalDebugEnabled();
+    return buildPlatformControllerNavigationSections()
+      .map((section) => ({
+        ...section,
+        items: section.items.filter((item) => !item.debugGated || debugEnabled),
+      }))
+      .filter((section) => section.items.length > 0);
+  }, []);
 
-  // Don't render the layout if user is not authenticated or not admin
-  // (redirect will happen in useEffect)
-  if (!session || session.user.role !== 'ADMIN') {
-    return (
-      <div className="min-h-screen bg-v-background flex items-center justify-center">
-        <div className="text-center">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-2 text-v-text-secondary">Redirecting...</p>
-        </div>
-      </div>
-    );
-  }
+  const activeNavId = resolvePlatformControllerActiveNavId(pathname || '', urlHash);
 
-  const adminNavigationSections: AdminNavSection[] = [
-    {
-      id: 'operations',
-      label: 'Operations',
-      items: [
-        { id: 'dashboard', label: 'Overview', icon: Home, path: '/admin-portal/dashboard' },
-        { id: 'users', label: 'User Management', icon: Users, path: '/admin-portal/users' },
-        { id: 'moderation', label: 'Content Moderation', icon: Shield, path: '/admin-portal/moderation' },
-        { id: 'support', label: 'Support', icon: MessageSquare, path: '/admin-portal/support' },
-      ],
-    },
-    {
-      id: 'commercial',
-      label: 'Commercial',
-      items: [
-        { id: 'billing', label: 'Financial Management', icon: DollarSign, path: '/admin-portal/billing' },
-        { id: 'pricing', label: 'Pricing Management', icon: DollarSign, path: '/admin-portal/pricing' },
-      ],
-    },
-    {
-      id: 'ai',
-      label: 'AI',
-      items: [
-        { id: 'ai-system', label: 'AI System', icon: Brain, path: '/admin-portal/ai-system' },
-        { id: 'ai-pipeline', label: 'AI Pipeline', icon: Layers, path: '/admin-portal/ai-pipeline' },
-      ],
-    },
-    {
-      id: 'platform',
-      label: 'Platform',
-      items: [
-        { id: 'analytics', label: 'Platform Analytics', icon: BarChart3, path: '/admin-portal/analytics' },
-        { id: 'performance', label: 'Performance & Scalability', icon: Gauge, path: '/admin-portal/performance' },
-        { id: 'security', label: 'Security & Compliance', icon: Lock, path: '/admin-portal/security' },
-        { id: 'governance', label: 'Governance', icon: Scale, path: '/admin-portal/governance' },
-        { id: 'retention', label: 'Data Retention', icon: Archive, path: '/admin-portal/retention' },
-        { id: 'system-logs', label: 'System Logs', icon: FileText, path: '/admin-portal/system-logs' },
-        { id: 'system', label: 'System Administration', icon: Settings, path: '/admin-portal/system' },
-      ],
-    },
-    {
-      id: 'developer-modules',
-      label: 'Developer & Modules',
-      items: [
-        { id: 'developers', label: 'Developer Management', icon: Code, path: '/admin-portal/developers' },
-        { id: 'modules', label: 'Modules', icon: Package, path: '/admin-portal/modules' },
-      ],
-    },
-    {
-      id: 'admin-labs',
-      label: 'Admin Labs',
-      items: [
-        { id: 'overrides', label: 'Admin Overrides', icon: Key, path: '/admin-portal/overrides' },
-        ...(isAdminPortalDebugEnabled()
-          ? [{ id: 'testing', label: 'Testing & Debug', icon: Activity, path: '/admin-portal/testing' } as AdminNavItem]
-          : []),
-        { id: 'impersonate', label: 'Impersonation Lab', icon: Eye, path: '/admin-portal/impersonate' },
-      ],
-    },
-  ];
-
-  const currentSection = (pathname || '').split('/')[2] || 'dashboard';
-
-  const toggleSection = (sectionId: string) => {
-    setCollapsedSections((prev) => ({
-      ...prev,
-      [sectionId]: !prev[sectionId],
-    }));
-  };
+  useEffect(() => {
+    const initialCollapsed: Record<string, boolean> = {};
+    for (const section of adminNavigationSections) {
+      if (section.defaultCollapsed) {
+        initialCollapsed[section.id] = true;
+      }
+    }
+    setCollapsedSections((prev) => ({ ...initialCollapsed, ...prev }));
+  }, [adminNavigationSections]);
 
   useEffect(() => {
     const activeParentSection = adminNavigationSections.find((section) =>
-      section.items.some((item) => item.id === currentSection)
+      section.items.some((item) => item.id === activeNavId),
     );
 
     if (activeParentSection) {
@@ -180,7 +105,36 @@ const AdminPortalLayout = ({ children }: AdminPortalLayoutProps) => {
         };
       });
     }
-  }, [currentSection, adminNavigationSections]);
+  }, [activeNavId, adminNavigationSections]);
+
+  const toggleSection = (sectionId: string) => {
+    setCollapsedSections((prev) => ({
+      ...prev,
+      [sectionId]: !prev[sectionId],
+    }));
+  };
+
+  if (status === 'loading') {
+    return (
+      <div className="min-h-screen bg-v-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-2 text-v-text-secondary">Loading Platform Controller…</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!session || session.user.role !== 'ADMIN') {
+    return (
+      <div className="min-h-screen bg-v-background flex items-center justify-center">
+        <div className="text-center">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+          <p className="mt-2 text-v-text-secondary">Redirecting…</p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <ImpersonationProvider>
@@ -192,8 +146,8 @@ const AdminPortalLayout = ({ children }: AdminPortalLayoutProps) => {
               <div className="flex items-center space-x-3">
                 <Shield className="w-8 h-8 text-blue-400" />
                 <div>
-                  <h1 className="text-xl font-bold">Admin Portal</h1>
-                  <p className="text-sm text-v-text-muted">Platform Administration</p>
+                  <h1 className="text-xl font-bold">Platform Controller</h1>
+                  <p className="text-sm text-v-text-muted">Operational control plane</p>
                 </div>
               </div>
             </div>
@@ -207,7 +161,9 @@ const AdminPortalLayout = ({ children }: AdminPortalLayoutProps) => {
           </div>
         </header>
         <div className="flex">
-          <aside className={`bg-v-surface text-v-text-primary flex flex-col transition-all duration-200 ${sidebarCollapsed ? 'w-16' : 'w-64'}`}>
+          <aside
+            className={`bg-v-surface text-v-text-primary flex flex-col transition-all duration-200 ${sidebarCollapsed ? 'w-16' : 'w-64'}`}
+          >
             <nav className="flex-1 py-4 overflow-y-auto">
               {adminNavigationSections.map((section) => (
                 <div key={section.id} className="mb-4">
@@ -225,27 +181,31 @@ const AdminPortalLayout = ({ children }: AdminPortalLayoutProps) => {
                       )}
                     </button>
                   )}
-                  {!collapsedSections[section.id] && section.items.map((item) => {
-                    const Icon = item.icon;
-                    const isActive = currentSection === item.id;
-                    return (
-                      <Link
-                        key={item.id}
-                        href={item.path}
-                        className={`flex items-center px-4 py-3 text-sm font-medium transition-colors ${
-                          isActive ? 'bg-blue-600 text-white' : 'text-v-text-muted hover:bg-v-surface-muted hover:text-white'
-                        }`}
-                      >
-                        <Icon className="w-5 h-5 mr-3" />
-                        {!sidebarCollapsed && <span>{item.label}</span>}
-                      </Link>
-                    );
-                  })}
+                  {!collapsedSections[section.id] &&
+                    section.items.map((item) => {
+                      const Icon = item.icon;
+                      const isActive = activeNavId === item.id;
+                      return (
+                        <Link
+                          key={item.id}
+                          href={item.path}
+                          className={`flex items-center px-4 py-3 text-sm font-medium transition-colors ${
+                            isActive
+                              ? 'bg-blue-600 text-white'
+                              : 'text-v-text-muted hover:bg-v-surface-muted hover:text-white'
+                          }`}
+                        >
+                          <Icon className="w-5 h-5 mr-3" />
+                          {!sidebarCollapsed && <span>{item.label}</span>}
+                        </Link>
+                      );
+                    })}
                 </div>
               ))}
             </nav>
             <div className="p-4 border-t border-v-border">
               <button
+                type="button"
                 onClick={() => setSidebarCollapsed(!sidebarCollapsed)}
                 className="w-full flex items-center justify-center p-2 text-v-text-muted hover:text-white transition-colors"
               >
@@ -255,9 +215,7 @@ const AdminPortalLayout = ({ children }: AdminPortalLayoutProps) => {
             </div>
           </aside>
           <main className="flex-1 overflow-auto bg-v-background">
-            <div className="p-6">
-              {children}
-            </div>
+            <div className="p-6">{children}</div>
           </main>
         </div>
       </div>
@@ -265,4 +223,4 @@ const AdminPortalLayout = ({ children }: AdminPortalLayoutProps) => {
   );
 };
 
-export default AdminPortalLayout; 
+export default AdminPortalLayout;

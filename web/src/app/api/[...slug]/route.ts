@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { getToken } from 'next-auth/jwt';
 import { logger } from '@/lib/logger';
+import { resolvePlatformControllerApiAlias } from '@/lib/platformControllerApiAliases';
 
 // Force dynamic rendering to ensure route is always handled
 export const dynamic = 'force-dynamic';
@@ -36,7 +37,8 @@ function redactedHeaderSnapshot(headers: Headers): Record<string, string> {
 
 async function handler(req: NextRequest) {
   const { pathname, search } = req.nextUrl;
-  const url = `${backendUrl}${pathname}${search}`;
+  const resolvedPathname = resolvePlatformControllerApiAlias(pathname);
+  const url = `${backendUrl}${resolvedPathname}${search}`;
   
   void logger.debug('API proxy request', {
     operation: 'api_proxy',
