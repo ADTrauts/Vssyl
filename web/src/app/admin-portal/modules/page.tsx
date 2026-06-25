@@ -234,7 +234,7 @@ export default function AdminModulesPage() {
   const [promoteLoading, setPromoteLoading] = useState(false);
 
   useEffect(() => {
-    const tab = searchParams.get('tab');
+    const tab = searchParams?.get('tab');
     if (tab === 'ai-context') {
       setActiveTab('ai-context');
     }

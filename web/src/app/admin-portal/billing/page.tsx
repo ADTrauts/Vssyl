@@ -98,6 +98,7 @@ interface SubscriptionSummary {
   totalAmount: number;
   estimatedMonthlyAmount: number;
   totalSubscriptions: number;
+  subscriptionsWithUnknownAmount?: number;
 }
 
 interface PayoutSummary {
@@ -369,12 +370,16 @@ export default function FinancialManagement() {
                   return `$${value.toLocaleString()}`;
                 })()}
               </p>
-              {(subscriptionSummary?.subscriptionsWithUnknownAmount ?? 0) > 0 && (
-                <p className="text-xs text-v-text-muted mt-1">
-                  {subscriptionSummary.subscriptionsWithUnknownAmount} subscription
-                  {subscriptionSummary.subscriptionsWithUnknownAmount === 1 ? '' : 's'} missing Stripe amount
-                </p>
-              )}
+              {(() => {
+                const unknownAmountCount = subscriptionSummary?.subscriptionsWithUnknownAmount ?? 0;
+                if (unknownAmountCount <= 0) return null;
+                return (
+                  <p className="text-xs text-v-text-muted mt-1">
+                    {unknownAmountCount} subscription
+                    {unknownAmountCount === 1 ? '' : 's'} missing Stripe amount
+                  </p>
+                );
+              })()}
             </div>
           </div>
         </Card>
