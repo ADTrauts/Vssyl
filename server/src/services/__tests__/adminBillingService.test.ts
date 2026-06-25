@@ -16,6 +16,8 @@ describe('adminBillingService', () => {
       {
         id: 'sub-1',
         status: 'active',
+        tier: 'pro',
+        stripeMetadata: { items: [{ amount: 25, quantity: 1 }] },
         additionalEmployeeCost: 25,
         createdAt: new Date('2026-06-01'),
         user: { email: 'user@test.com', name: 'User' },
@@ -42,6 +44,7 @@ describe('adminBillingService', () => {
     expect(result.total).toBe(1);
     expect(result.summary.activeCount).toBe(1);
     expect(result.summary.totalAmount).toBe(25);
+    expect(result.summary.subscriptionsWithUnknownAmount).toBe(0);
     expect(result.schemaOutOfSync).toBe(false);
   });
 
