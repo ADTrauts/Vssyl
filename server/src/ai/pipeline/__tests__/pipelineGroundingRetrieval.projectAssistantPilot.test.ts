@@ -337,7 +337,7 @@ describe('project_assistant Context Graph pilot stack (Phase 1C)', () => {
     expect(result.moduleContextsPatch._grounding_reconcile).toBeUndefined();
   });
 
-  it('does not apply bridge or reconcile for planning intent', async () => {
+  it('applies bridge and reconcile for planning intent (Wave 3 wired consumer)', async () => {
     enableProjectAssistantPilotStack();
     const discovery = crossModuleRetrievalDiscovery();
     mockRunPipelineRetrievalDiscovery.mockResolvedValue({
@@ -354,7 +354,8 @@ describe('project_assistant Context Graph pilot stack (Phase 1C)', () => {
       dashboardId: 'dash-1',
     });
 
-    expect(result.sourcesUsed).not.toContain('retrieval_inference_bridge');
-    expect(result.groundingReconcileDiagnostics).toBeUndefined();
+    expect(result.sourcesUsed).toContain('retrieval_inference_bridge');
+    expect(result.groundingReconcileDiagnostics).toBeDefined();
+    expect(result.moduleContextsPatch._grounding_reconcile).toBeDefined();
   });
 });
