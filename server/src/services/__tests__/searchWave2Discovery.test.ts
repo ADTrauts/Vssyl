@@ -52,11 +52,15 @@ describe('executeGlobalSearch Wave 2 cross-module discovery', () => {
       {
         id: 'page-1',
         title: 'Ops notebook',
+        content: 'Weekly ops notes',
         tags: [],
         pinned: false,
         dashboardId: 'dash-1',
         businessId: 'biz-1',
+        folderId: null,
+        createdAt: new Date('2026-06-01'),
         updatedAt: new Date(),
+        isOwner: true,
       },
     ]);
   });
