@@ -70,6 +70,54 @@ describe('aiRetrievalCapabilityService', () => {
     );
   });
 
+  it('maps Wave 2 search modules into retrieval evidence via unified search', async () => {
+    vi.spyOn(searchCapabilityService, 'executeGlobalSearch').mockResolvedValue({
+      results: [
+        {
+          id: 'hr-1',
+          title: 'Alice',
+          moduleId: 'hr',
+          moduleName: 'HR',
+          url: '/business/biz-1/workspace/hr',
+          type: 'employee_profile',
+          metadata: { businessId: 'biz-1' },
+          permissions: [{ type: 'read' as const, granted: true }],
+          lastModified: new Date(),
+          relevanceScore: 0.9,
+        },
+        {
+          id: 'shift-1',
+          title: 'Tuesday opener',
+          moduleId: 'scheduling',
+          moduleName: 'Scheduling',
+          url: '/business/biz-1/workspace/scheduling',
+          type: 'shift',
+          metadata: { businessId: 'biz-1' },
+          permissions: [{ type: 'read' as const, granted: true }],
+          lastModified: new Date(),
+          relevanceScore: 0.8,
+        },
+      ],
+      meta: {
+        query: 'tuesday shift',
+        providerCount: 4,
+        resultCount: 2,
+        providersInvoked: ['hr', 'scheduling', 'workforce_comms', 'notebook'],
+      },
+    });
+
+    const result = await discover({
+      query: 'tuesday shift',
+      userId: 'user-1',
+      businessId: 'biz-1',
+      limit: 5,
+    });
+
+    expect(result.diagnostics.modulesContributingEvidence).toEqual(['hr', 'scheduling']);
+    expect(result.diagnostics.retrievalPathway).toBe('unified_search');
+    expect(result.evidence.every((e) => e.sourceType === 'search')).toBe(true);
+  });
+
   it('scopes business and household context in search filters', async () => {
     vi.spyOn(searchCapabilityService, 'executeGlobalSearch').mockResolvedValue({
       results: [],

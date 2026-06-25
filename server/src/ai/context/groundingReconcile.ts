@@ -51,15 +51,23 @@ export interface GroundingEntityRef {
   access?: 'full' | 'restricted';
 }
 
+import type { AIRetrievalConsumerIntent } from '../retrieval/aiRetrievalTypes.js';
+import { RETRIEVAL_BUNDLE_BRIDGE_CONSUMER_INTENTS } from '../../context-graph/retrievalBundleBridgeConfig.js';
+
 /**
  * Feature flag: CONTEXT_GRAPH_GROUNDING_RECONCILE_ENABLED=true
- * Pilot scope: project_assistant only (Phase 1B).
+ * Wave 3: all wired retrieval consumer intents when flag is on.
  */
 export function isGroundingReconcileEnabled(consumerIntent?: string): boolean {
   if (process.env.CONTEXT_GRAPH_GROUNDING_RECONCILE_ENABLED !== 'true') {
     return false;
   }
-  return consumerIntent === 'project_assistant';
+  if (!consumerIntent) {
+    return false;
+  }
+  return RETRIEVAL_BUNDLE_BRIDGE_CONSUMER_INTENTS.includes(
+    consumerIntent as AIRetrievalConsumerIntent
+  );
 }
 
 export function toGroundingEntityKey(

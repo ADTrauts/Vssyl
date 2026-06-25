@@ -122,5 +122,10 @@ export async function getSearchSuggestionsForUser(
     { text: `${trimmed} in calendar`, type: 'query', moduleId: 'calendar' },
     { text: `${trimmed} in todo`, type: 'query', moduleId: 'todo' },
     { text: `${trimmed} in notes`, type: 'query', moduleId: 'notes' },
+    { text: `${trimmed} in notebook`, type: 'query', moduleId: 'notebook' },
+    { text: `${trimmed} in hr`, type: 'query', moduleId: 'hr' },
+    { text: `${trimmed} in scheduling`, type: 'query', moduleId: 'scheduling' },
+    { text: `${trimmed} in workforce communications`, type: 'query', moduleId: 'workforce_comms' },
+    { text: `${trimmed} on dashboard`, type: 'query', moduleId: 'dashboard' },
   ];
 }

@@ -776,6 +776,18 @@ class AdminApiService {
     });
   }
 
+  async getPlatformAdoptionDashboard(): Promise<ApiResponse<unknown>> {
+    return this.makeRequest('/platform-adoption');
+  }
+
+  async getPlatformAdoptionModuleDetail(moduleId: string): Promise<ApiResponse<unknown>> {
+    return this.makeRequest(`/platform-adoption/${encodeURIComponent(moduleId)}`);
+  }
+
+  async getPlatformAdoptionValidation(): Promise<ApiResponse<unknown>> {
+    return this.makeRequest('/platform-adoption/validation');
+  }
+
   async getModuleAIStatus(): Promise<ApiResponse<any>> {
     try {
       const headers = await this.getAuthHeaders();

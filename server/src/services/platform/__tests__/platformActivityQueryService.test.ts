@@ -3,6 +3,7 @@ import { prisma } from '../../../lib/prisma';
 import {
   getFeedForUser,
   getModuleActivity,
+  getModuleActivityForUserIds,
   getRecentActivity,
   getActivityForEntity,
   parseModuleActivityLogRow,
@@ -182,6 +183,101 @@ describe('platformActivityQueryService', () => {
 
       expect(results).toHaveLength(1);
       expect(results[0]?.targetId).toBe('file-1');
+    });
+  });
+
+  describe('getFeedForUser tenant scoping', () => {
+    it('filters by businessId', async () => {
+      vi.spyOn(prisma.log, 'findMany').mockResolvedValue([
+        {
+          id: 'log-biz',
+          userId: 'u1',
+          timestamp: new Date('2026-06-22T12:00:00.000Z'),
+          module: 'hr',
+          metadata: sampleEnvelope({
+            context: { moduleId: 'hr', businessId: 'biz-1' },
+          }),
+        },
+        {
+          id: 'log-other',
+          userId: 'u1',
+          timestamp: new Date('2026-06-22T11:00:00.000Z'),
+          module: 'hr',
+          metadata: sampleEnvelope({
+            context: { moduleId: 'hr', businessId: 'biz-2' },
+          }),
+        },
+      ] as never);
+
+      const results = await getFeedForUser({
+        userId: 'u1',
+        businessId: 'biz-1',
+        limit: 10,
+      });
+
+      expect(results).toHaveLength(1);
+      expect(results[0]?.businessId).toBe('biz-1');
+    });
+
+    it('orders by timestamp descending with stable tie-break', async () => {
+      vi.spyOn(prisma.log, 'findMany').mockResolvedValue([
+        {
+          id: 'log-b',
+          userId: 'u1',
+          timestamp: new Date('2026-06-22T12:00:00.000Z'),
+          module: 'chat',
+          metadata: sampleEnvelope({ context: { moduleId: 'chat' } }),
+        },
+        {
+          id: 'log-a',
+          userId: 'u1',
+          timestamp: new Date('2026-06-22T12:00:00.000Z'),
+          module: 'todo',
+          metadata: sampleEnvelope({
+            action: 'complete',
+            target: { type: 'task', id: 't-1' },
+            context: { moduleId: 'todo' },
+          }),
+        },
+      ] as never);
+
+      const results = await getFeedForUser({ userId: 'u1', limit: 10 });
+      expect(results[0]?.logId).toBe('log-b');
+      expect(results[1]?.logId).toBe('log-a');
+    });
+  });
+
+  describe('getModuleActivityForUserIds', () => {
+    it('returns module-scoped records for multiple actors', async () => {
+      const findMany = vi.spyOn(prisma.log, 'findMany').mockResolvedValue([
+        {
+          id: 'log-p1',
+          userId: 'u1',
+          timestamp: new Date('2026-06-22T12:00:00.000Z'),
+          module: 'place',
+          metadata: sampleEnvelope({
+            context: { moduleId: 'place' },
+            target: { type: 'meeting', id: 'm-1' },
+            action: 'create',
+          }),
+        },
+      ] as never);
+
+      const results = await getModuleActivityForUserIds({
+        userIds: ['u1', 'u2'],
+        moduleId: 'place',
+        limit: 5,
+      });
+
+      expect(findMany).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: expect.objectContaining({
+            module: 'place',
+            userId: { in: ['u1', 'u2'] },
+          }),
+        })
+      );
+      expect(results[0]?.moduleId).toBe('place');
     });
   });
 });

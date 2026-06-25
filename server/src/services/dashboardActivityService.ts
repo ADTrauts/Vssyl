@@ -219,6 +219,62 @@ export async function recordWidgetRemoved(params: {
   });
 }
 
+export async function recordQuickNoteCreated(params: {
+  actorUserId: string;
+  widget: { id: string; dashboardId: string };
+  dashboard: DashboardActivityContext;
+  noteId: string;
+  titlePreview?: string;
+}): Promise<void> {
+  await emitModuleActivityEvent({
+    actorUserId: params.actorUserId,
+    moduleId: 'dashboard',
+    action: 'widget.quicknote.create',
+    targetType: 'quick_note',
+    targetId: params.noteId,
+    parentType: 'widget',
+    parentId: params.widget.id,
+    dashboardId: params.dashboard.dashboardId,
+    businessId: params.dashboard.businessId,
+    householdId: params.dashboard.householdId,
+    visibilityScope: resolveVisibilityScope(params.dashboard),
+    metadata: {
+      widgetId: params.widget.id,
+      dashboardId: params.widget.dashboardId,
+      titlePreview: params.titlePreview,
+    },
+  });
+}
+
+export async function recordBookmarkCreated(params: {
+  actorUserId: string;
+  widget: { id: string; dashboardId: string };
+  dashboard: DashboardActivityContext;
+  bookmarkId: string;
+  title: string;
+  url: string;
+}): Promise<void> {
+  await emitModuleActivityEvent({
+    actorUserId: params.actorUserId,
+    moduleId: 'dashboard',
+    action: 'widget.bookmark.create',
+    targetType: 'bookmark',
+    targetId: params.bookmarkId,
+    parentType: 'widget',
+    parentId: params.widget.id,
+    dashboardId: params.dashboard.dashboardId,
+    businessId: params.dashboard.businessId,
+    householdId: params.dashboard.householdId,
+    visibilityScope: resolveVisibilityScope(params.dashboard),
+    metadata: {
+      widgetId: params.widget.id,
+      dashboardId: params.widget.dashboardId,
+      title: params.title,
+      url: params.url,
+    },
+  });
+}
+
 export async function recordWidgetLayoutBatchUpdate(params: {
   actorUserId: string;
   dashboard: DashboardActivityContext & { id: string };

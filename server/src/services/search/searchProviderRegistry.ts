@@ -12,6 +12,10 @@ import { searchVLinksForUser } from '../vlinkService';
 import { searchEvents } from '../calendarVisibilityService';
 import { searchAccessibleTasks } from '../todoVisibilityService';
 import { searchAccessiblePages } from '../notes/notesVisibilityService';
+import { searchAccessibleHrEntities } from '../hrVisibilityService';
+import { searchAccessibleScheduling } from '../schedulingVisibilityService';
+import { searchAccessibleWorkforceComms } from '../workforceVisibilityService';
+import { searchAccessibleDashboardWidgets } from '../dashboardWidgetVisibilityService';
 import { buildMemberSearchVisibilityWhere } from './memberSearchVisibility';
 import { calculateRelevanceScore } from './searchRelevance';
 import { buildPersonalOrBusinessModuleUrl } from './searchUrlBuilder';
@@ -117,6 +121,41 @@ async function searchDashboard(query: string, userId: string, filters?: SearchFi
       permissions: [{ type: 'read', granted: true }],
       lastModified: dashboard.updatedAt,
       relevanceScore: calculateRelevanceScore(dashboard.name, query),
+    });
+  }
+
+  const widgetHits = await searchAccessibleDashboardWidgets({
+    userId,
+    query,
+    dashboardId: filters?.context?.dashboardId,
+    businessId: filters?.context?.businessId,
+    householdId: filters?.context?.householdId,
+    limit: 10,
+  });
+
+  for (const hit of widgetHits) {
+    const qs = new URLSearchParams({
+      widget: hit.widgetId,
+      ...(hit.entityType === 'quick_note' ? { noteId: hit.id } : { bookmarkId: hit.id }),
+    }).toString();
+    results.push({
+      id: `${hit.widgetId}:${hit.id}`,
+      title: hit.title,
+      description: hit.description,
+      moduleId: 'dashboard',
+      moduleName: 'Dashboard',
+      url: `/dashboard/${hit.dashboardId}?${qs}`,
+      type: hit.entityType,
+      metadata: {
+        widgetId: hit.widgetId,
+        widgetType: hit.widgetType,
+        dashboardId: hit.dashboardId,
+        businessId: hit.businessId,
+        entityId: hit.id,
+      },
+      permissions: [{ type: 'read', granted: true }],
+      lastModified: hit.updatedAt,
+      relevanceScore: calculateRelevanceScore(hit.title, query),
     });
   }
 
@@ -249,7 +288,7 @@ const dashboardSearchProvider: RegisteredSearchProvider = {
   moduleId: 'dashboard',
   moduleName: 'Dashboard',
   displayName: 'Dashboard',
-  entityTypes: ['dashboard'],
+  entityTypes: ['dashboard', 'quick_note', 'bookmark'],
   supportedContexts: ['personal', 'business', 'household'],
   requiredPermission: POLICY_ACTIONS.DASHBOARD_READ,
   searchMethod: 'prisma_filter',
@@ -362,6 +401,199 @@ const placeSearchProvider: RegisteredSearchProvider = {
   },
 };
 
+async function searchNotebook(query: string, userId: string, filters?: SearchFilters): Promise<SearchResult[]> {
+  const pages = await searchAccessiblePages({
+    userId,
+    query,
+    dashboardId: filters?.context?.dashboardId,
+    businessId: filters?.context?.businessId,
+    householdId: filters?.context?.householdId,
+    limit: 10,
+  });
+
+  return pages.map((page) => ({
+    id: page.id,
+    title: page.title,
+    description: page.tags?.length ? `Notebook page · ${page.tags.join(', ')}` : 'Notebook page',
+    moduleId: 'notebook',
+    moduleName: 'Notebook',
+    url: buildPersonalOrBusinessModuleUrl('notebook', { page: page.id }, filters),
+    type: 'page',
+    metadata: {
+      dashboardId: page.dashboardId,
+      businessId: page.businessId,
+      pinned: page.pinned,
+    },
+    permissions: [{ type: 'read', granted: true }],
+    lastModified: page.updatedAt,
+    relevanceScore: calculateRelevanceScore(page.title, query),
+  }));
+}
+
+function businessModuleUrl(
+  moduleSegment: string,
+  businessId: string,
+  queryParams: Record<string, string>
+): string {
+  const qs = new URLSearchParams(queryParams).toString();
+  return `/business/${businessId}/workspace/${moduleSegment}${qs ? `?${qs}` : ''}`;
+}
+
+async function searchHr(query: string, userId: string, filters?: SearchFilters): Promise<SearchResult[]> {
+  const hits = await searchAccessibleHrEntities({
+    userId,
+    query,
+    businessId: filters?.context?.businessId,
+    limit: 10,
+  });
+
+  return hits.map((hit) => ({
+    id: hit.id,
+    title: hit.title,
+    description: hit.description,
+    moduleId: 'hr',
+    moduleName: 'HR',
+    url: businessModuleUrl('hr', hit.businessId, {
+      entity: hit.entityType,
+      id: hit.id,
+    }),
+    type: hit.entityType,
+    metadata: { businessId: hit.businessId },
+    permissions: [{ type: 'read', granted: true }],
+    lastModified: hit.updatedAt,
+    relevanceScore: calculateRelevanceScore(hit.title, query),
+  }));
+}
+
+async function searchScheduling(
+  query: string,
+  userId: string,
+  filters?: SearchFilters
+): Promise<SearchResult[]> {
+  const hits = await searchAccessibleScheduling({
+    userId,
+    query,
+    businessId: filters?.context?.businessId,
+    limit: 10,
+  });
+
+  return hits.map((hit) => {
+    const queryParams: Record<string, string> =
+      hit.entityType === 'shift' && hit.scheduleId
+        ? { view: 'builder', scheduleId: hit.scheduleId, shiftId: hit.id }
+        : hit.entityType === 'schedule'
+          ? { view: 'builder', scheduleId: hit.id }
+          : { id: hit.id };
+
+    return {
+      id: hit.id,
+      title: hit.title,
+      description: hit.description,
+      moduleId: 'scheduling',
+      moduleName: 'Scheduling',
+      url: businessModuleUrl('scheduling', hit.businessId, queryParams),
+      type: hit.entityType,
+      metadata: {
+        businessId: hit.businessId,
+        scheduleId: hit.scheduleId,
+      },
+      permissions: [{ type: 'read', granted: true }],
+      lastModified: hit.updatedAt,
+      relevanceScore: calculateRelevanceScore(hit.title, query),
+    };
+  });
+}
+
+async function searchWorkforceComms(
+  query: string,
+  userId: string,
+  filters?: SearchFilters
+): Promise<SearchResult[]> {
+  const hits = await searchAccessibleWorkforceComms({
+    userId,
+    query,
+    businessId: filters?.context?.businessId,
+    limit: 10,
+  });
+
+  return hits.map((hit) => {
+    const queryParams: Record<string, string> =
+      hit.entityType === 'communication'
+        ? { communicationId: hit.id }
+        : { campaignId: hit.id };
+
+    return {
+      id: hit.id,
+      title: hit.title,
+      description: hit.description,
+      moduleId: 'workforce_comms',
+      moduleName: 'Workforce Communications',
+      url: businessModuleUrl('workforce-comms', hit.businessId, queryParams),
+      type: hit.entityType,
+      metadata: { businessId: hit.businessId },
+      permissions: [{ type: 'read', granted: true }],
+      lastModified: hit.updatedAt,
+      relevanceScore: calculateRelevanceScore(hit.title, query),
+    };
+  });
+}
+
+const notebookSearchProvider: RegisteredSearchProvider = {
+  providerId: 'notebook',
+  moduleId: 'notebook',
+  moduleName: 'Notebook',
+  displayName: 'Notebook',
+  entityTypes: ['page'],
+  supportedContexts: ['personal', 'business'],
+  requiredPermission: POLICY_ACTIONS.NOTES_PAGE_READ,
+  searchMethod: 'visibility_service',
+  readiness: 'ready',
+  manifestSearchClaim: true,
+  search: searchNotebook,
+};
+
+const hrSearchProvider: RegisteredSearchProvider = {
+  providerId: 'hr',
+  moduleId: 'hr',
+  moduleName: 'HR',
+  displayName: 'HR',
+  entityTypes: ['employee_profile', 'time_off_request', 'onboarding_journey'],
+  supportedContexts: ['business'],
+  requiredPermission: POLICY_ACTIONS.HR_EMPLOYEE_READ,
+  searchMethod: 'visibility_service',
+  readiness: 'ready',
+  manifestSearchClaim: true,
+  search: searchHr,
+};
+
+const schedulingSearchProvider: RegisteredSearchProvider = {
+  providerId: 'scheduling',
+  moduleId: 'scheduling',
+  moduleName: 'Scheduling',
+  displayName: 'Scheduling',
+  entityTypes: ['schedule', 'shift'],
+  supportedContexts: ['business'],
+  requiredPermission: POLICY_ACTIONS.SCHEDULING_SHIFT_READ,
+  searchMethod: 'visibility_service',
+  readiness: 'ready',
+  manifestSearchClaim: true,
+  search: searchScheduling,
+};
+
+const workforceCommsSearchProvider: RegisteredSearchProvider = {
+  providerId: 'workforce_comms',
+  moduleId: 'workforce_comms',
+  moduleName: 'Workforce Communications',
+  displayName: 'Workforce Communications',
+  entityTypes: ['communication', 'campaign'],
+  supportedContexts: ['business'],
+  requiredPermission: POLICY_ACTIONS.WORKFORCE_COMMUNICATION_READ,
+  searchMethod: 'visibility_service',
+  readiness: 'ready',
+  manifestSearchClaim: true,
+  search: searchWorkforceComms,
+};
+
 const vlinkSearchProvider: RegisteredSearchProvider = {
   providerId: 'vlink',
   moduleId: 'vlink',
@@ -397,6 +629,10 @@ const SEARCH_PROVIDERS: RegisteredSearchProvider[] = [
   calendarSearchProvider,
   todoSearchProvider,
   notesSearchProvider,
+  notebookSearchProvider,
+  hrSearchProvider,
+  schedulingSearchProvider,
+  workforceCommsSearchProvider,
   dashboardSearchProvider,
   memberSearchProvider,
   placeSearchProvider,
@@ -431,6 +667,11 @@ export const MANIFEST_SEARCH_MODULE_IDS = [
   'todo',
   'place',
   'notes',
+  'notebook',
+  'hr',
+  'scheduling',
+  'workforce_comms',
+  'dashboard',
 ] as const;
 
 export function assertManifestSearchProviderParity(): void {

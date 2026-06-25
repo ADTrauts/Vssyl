@@ -75,6 +75,10 @@ export interface AIRetrievalDiagnostics {
   consumerDomain?: string;
   /** Count of distinct modules contributing evidence (Phase 2B-2). */
   retrievalSourceDiversity?: number;
+  /** Wave 3 — how discovery was triggered. */
+  discoveryTrigger?: 'named_intent' | 'query_native' | 'research_intent';
+  /** Wave 3 — query signal tags when query-native. */
+  queryDiscoverySignals?: string[];
 }
 
 export interface AIRetrievalDiscoverResult {

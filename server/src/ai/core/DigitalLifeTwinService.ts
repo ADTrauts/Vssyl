@@ -16,7 +16,7 @@ import { hasExplicitRecallIntent, recallRelevantMessages } from '../../services/
 import { memoryRetrievalService } from '../memory/MemoryRetrievalService';
 import type { MemoryRetrievalReport } from '../memory/MemoryRetrievalService';
 import { maybePersistRememberThatFact } from '../../services/userMemoryFactService';
-import { getFeedForUser } from '../../services/platform/platformActivityQueryService';
+import { getUnifiedTimelineForUser } from '../../services/platform/platformTimelineReadService';
 import { toAiRecentActivityDebugRow } from '../../services/platform/platformActivityContextMapper';
 
 export interface AIRequest {
@@ -638,7 +638,7 @@ export class DigitalLifeTwinService {
   }
 
   private async getRecentActivity(userId: string): Promise<unknown[]> {
-    const records = await getFeedForUser({ userId, limit: 50 });
+    const records = await getUnifiedTimelineForUser({ userId, limit: 50 });
     return records.map(toAiRecentActivityDebugRow);
   }
 

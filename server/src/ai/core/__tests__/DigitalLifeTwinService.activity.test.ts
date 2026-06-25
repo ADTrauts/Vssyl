@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { DigitalLifeTwinService } from '../DigitalLifeTwinService';
-import * as queryService from '../../../services/platform/platformActivityQueryService';
+import * as timelineService from '../../../services/platform/platformTimelineReadService';
 
-vi.mock('../../../services/platform/platformActivityQueryService', () => ({
-  getFeedForUser: vi.fn(),
+vi.mock('../../../services/platform/platformTimelineReadService', () => ({
+  getUnifiedTimelineForUser: vi.fn(),
 }));
 
 vi.mock('../providers/OpenAIProvider', () => ({ OpenAIProvider: vi.fn() }));
@@ -23,7 +23,7 @@ describe('DigitalLifeTwinService activity reads (ACT-R1 P1)', () => {
   });
 
   it('loads recent activity via platformActivityQueryService', async () => {
-    vi.mocked(queryService.getFeedForUser).mockResolvedValue([
+    vi.mocked(timelineService.getUnifiedTimelineForUser).mockResolvedValue([
       {
         logId: 'log-1',
         eventId: 'evt-1',
@@ -42,7 +42,7 @@ describe('DigitalLifeTwinService activity reads (ACT-R1 P1)', () => {
       service as unknown as { getRecentActivity: (id: string) => Promise<unknown[]> }
     ).getRecentActivity('u1');
 
-    expect(queryService.getFeedForUser).toHaveBeenCalledWith({
+    expect(timelineService.getUnifiedTimelineForUser).toHaveBeenCalledWith({
       userId: 'u1',
       limit: 50,
     });

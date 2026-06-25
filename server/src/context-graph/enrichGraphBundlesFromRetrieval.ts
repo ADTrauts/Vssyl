@@ -31,6 +31,7 @@ export interface EnrichGraphBundlesFromRetrievalParams {
   retrievalDiscovery: AIRetrievalDiscoverResult;
   inferredIntents: PipelineIntentId[];
   tenantScope: TenantScope;
+  userMessage?: string;
 }
 
 export interface EnrichGraphBundlesFromRetrievalResult {
@@ -52,7 +53,10 @@ function buildTenantScopeFromParams(params: EnrichGraphBundlesFromRetrievalParam
 export function enrichGraphBundlesFromRetrieval(
   params: EnrichGraphBundlesFromRetrievalParams
 ): EnrichGraphBundlesFromRetrievalResult {
-  const consumerIntent = resolveRetrievalConsumerIntent(params.inferredIntents);
+  const consumerIntent = resolveRetrievalConsumerIntent(
+    params.inferredIntents,
+    params.userMessage
+  );
   if (!consumerIntent || !isRetrievalBundleBridgeEnabled(consumerIntent)) {
     return {
       graphBundleContext: params.graphBundleContext,

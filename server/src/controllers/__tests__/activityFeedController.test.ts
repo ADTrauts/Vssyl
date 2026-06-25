@@ -1,14 +1,20 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import type { Request, Response } from 'express';
-import { getActivityFeed } from '../../controllers/activityFeedController';
-import * as queryService from '../../services/platform/platformActivityQueryService';
+import { getActivityFeed } from '../activityFeedController';
+import * as timelineService from '../../services/platform/platformTimelineReadService';
 import { prisma } from '../../lib/prisma';
 
-vi.mock('../../services/platform/platformActivityQueryService', () => ({
-  getFeedForUser: vi.fn(),
-}));
+vi.mock('../../services/platform/platformTimelineReadService', async (importOriginal) => {
+  const actual = await importOriginal<
+    typeof import('../../services/platform/platformTimelineReadService')
+  >();
+  return {
+    ...actual,
+    getUnifiedTimelineForUser: vi.fn(),
+  };
+});
 
-describe('activityFeedController (ACT-R1 P0)', () => {
+describe('activityFeedController (ACT-R1 Wave 1)', () => {
   const json = vi.fn();
   const status = vi.fn(() => ({ json }));
   const res = { status, json } as unknown as Response;
@@ -25,8 +31,8 @@ describe('activityFeedController (ACT-R1 P0)', () => {
     expect(status).toHaveBeenCalledWith(401);
   });
 
-  it('delegates feed to platformActivityQueryService', async () => {
-    vi.mocked(queryService.getFeedForUser).mockResolvedValue([
+  it('delegates feed to platform timeline read service', async () => {
+    vi.mocked(timelineService.getUnifiedTimelineForUser).mockResolvedValue([
       {
         logId: 'log-1',
         eventId: 'evt-1',
@@ -52,9 +58,11 @@ describe('activityFeedController (ACT-R1 P0)', () => {
 
     await getActivityFeed(req, res);
 
-    expect(queryService.getFeedForUser).toHaveBeenCalledWith({
+    expect(timelineService.getUnifiedTimelineForUser).toHaveBeenCalledWith({
       userId: 'u1',
       dashboardId: undefined,
+      businessId: undefined,
+      householdId: undefined,
       limit: 10,
     });
     expect(json).toHaveBeenCalledWith({
@@ -66,5 +74,19 @@ describe('activityFeedController (ACT-R1 P0)', () => {
         }),
       ],
     });
+  });
+
+  it('returns 403 when businessId is not accessible', async () => {
+    vi.spyOn(prisma.businessMember, 'findFirst').mockResolvedValue(null);
+
+    const req = {
+      user: { id: 'u1' },
+      query: { businessId: 'biz-1' },
+    } as unknown as Request;
+
+    await getActivityFeed(req, res);
+
+    expect(status).toHaveBeenCalledWith(403);
+    expect(timelineService.getUnifiedTimelineForUser).not.toHaveBeenCalled();
   });
 });

@@ -12,7 +12,7 @@ import {
 } from './contextDensityReport';
 import { isSyntheticContextEnabled } from './syntheticContextPolicy';
 import { prisma } from '../../lib/prisma';
-import { getFeedForUser } from '../../services/platform/platformActivityQueryService';
+import { getUnifiedTimelineForUser } from '../../services/platform/platformTimelineReadService';
 import { toAiContextActivityRow } from '../../services/platform/platformActivityContextMapper';
 import {
   orchestrateContextRetrieval,
@@ -434,7 +434,7 @@ export class CrossModuleContextEngine {
    * Get recent activity context
    */
   private async getActivityContext(userId: string) {
-    const records = await getFeedForUser({ userId, limit: 100 });
+    const records = await getUnifiedTimelineForUser({ userId, limit: 100 });
     const activities: ActivityData[] = records.map(toAiContextActivityRow);
 
     return {

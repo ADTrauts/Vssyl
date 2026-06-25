@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, beforeEach, afterEach } from 'vitest';
 import {
   getRetrievalLimitForIntent,
   isRetrievalConsumerEnabled,
@@ -7,6 +7,12 @@ import {
 } from '../aiRetrievalConsumerContract';
 
 describe('aiRetrievalConsumerContract', () => {
+  const envBackup = { ...process.env };
+
+  afterEach(() => {
+    process.env = { ...envBackup };
+  });
+
   it('defines wired consumer intents in priority order', () => {
     expect(RETRIEVAL_ADAPTER_CONSUMER_INTENTS).toEqual([
       'workflow_action',
@@ -14,6 +20,7 @@ describe('aiRetrievalConsumerContract', () => {
       'project_assistant',
       'local_discovery',
       'planning',
+      'general_discovery',
     ]);
   });
 
@@ -27,23 +34,31 @@ describe('aiRetrievalConsumerContract', () => {
     );
   });
 
+  it('resolves general_discovery for research intent', () => {
+    expect(resolveRetrievalConsumerIntent(['research'])).toBe('general_discovery');
+  });
+
+  it('resolves general_discovery for query-native find patterns', () => {
+    expect(
+      resolveRetrievalConsumerIntent(['general_chat'], 'find my calendar meeting notes')
+    ).toBe('general_discovery');
+  });
+
   it('applies local_discovery retrieval limit of 12', () => {
     expect(getRetrievalLimitForIntent('local_discovery')).toBe(12);
   });
 
-  it('requires opt-in for local_discovery feature flag', () => {
+  it('enables project_assistant and local_discovery by default (Wave 3)', () => {
+    delete process.env.AI_RETRIEVAL_PROJECT_ASSISTANT_ENABLED;
     delete process.env.AI_RETRIEVAL_LOCAL_DISCOVERY_ENABLED;
-    expect(isRetrievalConsumerEnabled('local_discovery')).toBe(false);
-
-    process.env.AI_RETRIEVAL_LOCAL_DISCOVERY_ENABLED = 'true';
+    expect(isRetrievalConsumerEnabled('project_assistant')).toBe(true);
     expect(isRetrievalConsumerEnabled('local_discovery')).toBe(true);
   });
 
-  it('requires opt-in for project_assistant feature flag', () => {
-    delete process.env.AI_RETRIEVAL_PROJECT_ASSISTANT_ENABLED;
+  it('allows opt-out for project_assistant and local_discovery', () => {
+    process.env.AI_RETRIEVAL_PROJECT_ASSISTANT_ENABLED = 'false';
+    process.env.AI_RETRIEVAL_LOCAL_DISCOVERY_ENABLED = 'false';
     expect(isRetrievalConsumerEnabled('project_assistant')).toBe(false);
-
-    process.env.AI_RETRIEVAL_PROJECT_ASSISTANT_ENABLED = 'true';
-    expect(isRetrievalConsumerEnabled('project_assistant')).toBe(true);
+    expect(isRetrievalConsumerEnabled('local_discovery')).toBe(false);
   });
 });

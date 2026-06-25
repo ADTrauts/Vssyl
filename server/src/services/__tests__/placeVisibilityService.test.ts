@@ -173,11 +173,14 @@ describe('placeVisibilityService', () => {
       {
         id: 'log-1',
         userId: 'u1',
-        createdAt: new Date('2026-06-01T12:00:00Z'),
+        timestamp: new Date('2026-06-01T12:00:00Z'),
+        module: 'place',
         metadata: {
           eventId: 'evt-1',
+          timestamp: '2026-06-01T12:00:00.000Z',
           action: 'create',
           target: { type: 'node', id: 'node-1' },
+          context: { moduleId: 'place' },
           metadata: { nodeType: 'BUSINESS', entityId: 'biz-1' },
         },
       },

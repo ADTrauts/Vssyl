@@ -35,6 +35,10 @@ import { runPipelineRetrievalDiscovery } from '../retrieval/aiRetrievalPipelineH
 import { resolveRetrievalConsumerIntent } from '../retrieval/aiRetrievalConsumerContract';
 import type { AIRetrievalDiscoverResult } from '../retrieval/aiRetrievalTypes';
 import {
+  buildPipelineEvidenceSourceDiagnostics,
+  type PipelineEvidenceSourceDiagnostics,
+} from './pipelineEvidenceSourceDiagnostics';
+import {
   emptyGraphBundlePipelineContext,
   enrichGraphBundlesFromRetrieval,
 } from '../../context-graph/enrichGraphBundlesFromRetrieval.js';
@@ -90,6 +94,8 @@ export interface PipelineGroundingRetrievalResult {
   retrievalDiscovery?: AIRetrievalDiscoverResult;
   /** Phase 1B — grounding dedup diagnostics (project_assistant pilot). */
   groundingReconcileDiagnostics?: GroundingReconcileDiagnostics;
+  /** Wave 3 — operator breakdown of evidence sources. */
+  evidenceSourceDiagnostics?: PipelineEvidenceSourceDiagnostics;
 }
 
 function isToolEnabled(catalog: PipelineCatalog, toolId: PipelineToolPolicy['toolId']): boolean {
@@ -515,7 +521,10 @@ export async function runPipelineGroundingRetrieval(
       result.sourcesUsed.push(...retrievalHook.sourcesUsed);
     }
 
-    const bridgeConsumerIntent = resolveRetrievalConsumerIntent(inferredIntents);
+    const bridgeConsumerIntent = resolveRetrievalConsumerIntent(
+      inferredIntents,
+      input.userMessage
+    );
     if (
       bridgeConsumerIntent &&
       isRetrievalBundleBridgeEnabled(bridgeConsumerIntent) &&
@@ -534,6 +543,7 @@ export async function runPipelineGroundingRetrieval(
         retrievalDiscovery: retrievalHook.retrievalDiscovery,
         inferredIntents,
         tenantScope,
+        userMessage: input.userMessage,
       });
       result.graphBundlePipelineContext = bridgeResult.graphBundleContext;
       if (bridgeResult.enrichment?.enrichmentApplied) {
@@ -550,7 +560,10 @@ export async function runPipelineGroundingRetrieval(
     }
   }
 
-  const reconcileConsumerIntent = resolveRetrievalConsumerIntent(inferredIntents);
+  const reconcileConsumerIntent = resolveRetrievalConsumerIntent(
+    inferredIntents,
+    input.userMessage
+  );
   if (isGroundingReconcileEnabled(reconcileConsumerIntent)) {
     const reconciled = reconcileGroundingArtifacts({
       consumerIntent: reconcileConsumerIntent,
@@ -565,6 +578,11 @@ export async function runPipelineGroundingRetrieval(
     Object.assign(result.moduleContextsPatch, reconciled.moduleContextsPatch);
     result.groundingReconcileDiagnostics = reconciled.diagnostics;
   }
+
+  result.evidenceSourceDiagnostics = buildPipelineEvidenceSourceDiagnostics({
+    contextRetrieved: result.contextRetrieved,
+    retrievalDiscovery: result.retrievalDiscovery,
+  });
 
   return result;
 }

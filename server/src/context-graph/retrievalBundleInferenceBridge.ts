@@ -12,7 +12,7 @@ import {
   isEntityRef,
 } from './contextGraphTypes.js';
 import {
-  RETRIEVAL_BUNDLE_BRIDGE_PILOT_INTENT,
+  isRetrievalBundleBridgeEnabled,
   RETRIEVAL_INFERENCE_DEFAULT_CONFIDENCE,
   RETRIEVAL_INFERENCE_MIN_CONFIDENCE,
 } from './retrievalBundleBridgeConfig.js';
@@ -222,13 +222,13 @@ export function enrichBundlesWithRetrievalEvidence(params: {
   consumerIntent: AIRetrievalConsumerIntent;
   tenantScope: TenantScope;
 }): RetrievalBundleEnrichmentResult {
-  if (params.consumerIntent !== RETRIEVAL_BUNDLE_BRIDGE_PILOT_INTENT) {
+  if (!isRetrievalBundleBridgeEnabled(params.consumerIntent)) {
     return {
       bundles: params.bundles,
       enrichmentApplied: false,
       inferenceNodesAdded: 0,
       inferenceEdgesAdded: 0,
-      skippedReason: 'not_pilot_consumer',
+      skippedReason: 'bridge_disabled',
     };
   }
 

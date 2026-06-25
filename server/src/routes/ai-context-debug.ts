@@ -2,7 +2,7 @@ import express from 'express';
 import { authenticateJWT, requireRole } from '../middleware/auth';
 import { prisma } from '../lib/prisma';
 import { logger } from '../lib/logger';
-import { getFeedForUser } from '../services/platform/platformActivityQueryService';
+import { getUnifiedTimelineForUser } from '../services/platform/platformTimelineReadService';
 import { toAiRecentActivityDebugRow } from '../services/platform/platformActivityContextMapper';
 
 function logSrvErr(operation: string, message: string, err: unknown, context?: Record<string, unknown>): void {
@@ -101,7 +101,7 @@ router.get('/user/:userId', authenticateJWT, requireAdmin, async (req, res) => {
     });
 
     // Get user's recent activity across modules (canonical platform activity query)
-    const activityRecords = await getFeedForUser({ userId, limit: 20 });
+    const activityRecords = await getUnifiedTimelineForUser({ userId, limit: 20 });
     const recentActivity = activityRecords.map(toAiRecentActivityDebugRow);
 
     // Get user's business memberships

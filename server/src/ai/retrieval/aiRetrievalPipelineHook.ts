@@ -4,9 +4,11 @@ import { discover } from './aiRetrievalCapabilityService';
 import { buildRetrievalContextPatch } from './aiRetrievalContextPatch';
 import {
   getRetrievalLimitForIntent,
+  isQueryNativeDiscoveryIntent,
   isRetrievalConsumerEnabled,
   resolveRetrievalConsumerIntent,
 } from './aiRetrievalConsumerContract';
+import { detectQueryDiscoverySignals } from './queryDiscoverySignals';
 import type { AIRetrievalDiscoverResult } from './aiRetrievalTypes';
 
 export interface PipelineRetrievalHookInput {
@@ -31,7 +33,10 @@ export interface PipelineRetrievalHookResult {
 export async function runPipelineRetrievalDiscovery(
   input: PipelineRetrievalHookInput
 ): Promise<PipelineRetrievalHookResult | null> {
-  const consumerIntent = resolveRetrievalConsumerIntent(input.inferredIntents);
+  const consumerIntent = resolveRetrievalConsumerIntent(
+    input.inferredIntents,
+    input.userMessage
+  );
   if (!consumerIntent || !isRetrievalConsumerEnabled(consumerIntent)) {
     return null;
   }

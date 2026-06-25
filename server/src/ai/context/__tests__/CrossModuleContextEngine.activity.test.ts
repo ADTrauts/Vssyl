@@ -1,9 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { CrossModuleContextEngine } from '../CrossModuleContextEngine';
-import * as queryService from '../../../services/platform/platformActivityQueryService';
+import * as timelineService from '../../../services/platform/platformTimelineReadService';
 
-vi.mock('../../../services/platform/platformActivityQueryService', () => ({
-  getFeedForUser: vi.fn(),
+vi.mock('../../../services/platform/platformTimelineReadService', () => ({
+  getUnifiedTimelineForUser: vi.fn(),
 }));
 
 describe('CrossModuleContextEngine activity reads (ACT-R1 P1)', () => {
@@ -14,7 +14,7 @@ describe('CrossModuleContextEngine activity reads (ACT-R1 P1)', () => {
   });
 
   it('uses platformActivityQueryService for activity context', async () => {
-    vi.mocked(queryService.getFeedForUser).mockResolvedValue([
+    vi.mocked(timelineService.getUnifiedTimelineForUser).mockResolvedValue([
       {
         logId: 'log-1',
         eventId: 'evt-1',
@@ -31,7 +31,7 @@ describe('CrossModuleContextEngine activity reads (ACT-R1 P1)', () => {
     // getUserContext internally calls private getActivityContext
     const context = await engine.getUserContext('u1');
 
-    expect(queryService.getFeedForUser).toHaveBeenCalledWith({
+    expect(timelineService.getUnifiedTimelineForUser).toHaveBeenCalledWith({
       userId: 'u1',
       limit: 100,
     });

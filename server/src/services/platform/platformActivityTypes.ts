@@ -16,6 +16,13 @@ export interface ModuleActivityEnvelope {
   metadata?: Record<string, unknown>;
 }
 
+export type ActivityVisibilityScope =
+  | 'personal'
+  | 'business'
+  | 'household'
+  | 'direct-share'
+  | string;
+
 export interface PlatformActivityRecord {
   logId: string;
   eventId: string;
@@ -27,6 +34,7 @@ export interface PlatformActivityRecord {
   dashboardId?: string;
   businessId?: string;
   householdId?: string;
+  visibilityScope?: ActivityVisibilityScope;
   metadata: Record<string, unknown>;
   actorUserId: string;
 }

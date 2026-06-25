@@ -2,11 +2,17 @@ import { Prisma } from '@prisma/client';
 import { prisma } from '../lib/prisma';
 import {
   contextFromDashboard,
+  recordBookmarkCreated,
+  recordQuickNoteCreated,
   recordWidgetAdded,
   recordWidgetLayoutBatchUpdate,
   recordWidgetRemoved,
   recordWidgetUpdated,
 } from './dashboardActivityService';
+import {
+  listBookmarkIds,
+  listQuickNoteIds,
+} from './dashboardWidgetVisibilityService';
 import {
   recordDashboardWidgetAddedDomainEvent,
   recordDashboardWidgetRemovedDomainEvent,
@@ -19,6 +25,62 @@ async function loadDashboardContext(dashboardId: string, userId: string) {
   });
   if (!dashboard) return null;
   return contextFromDashboard(dashboard);
+}
+
+function parseBookmarkItems(config: unknown): Array<{ id: string; title: string; url: string }> {
+  if (!config || typeof config !== 'object') return [];
+  const bookmarks = (config as { bookmarks?: unknown }).bookmarks;
+  if (!Array.isArray(bookmarks)) return [];
+  return bookmarks
+    .filter((b): b is { id: string; title?: string; url?: string } => typeof b?.id === 'string')
+    .map((b) => ({ id: b.id, title: b.title ?? '', url: b.url ?? '' }));
+}
+
+function parseQuickNoteItems(config: unknown): Array<{ id: string; content: string }> {
+  if (!config || typeof config !== 'object') return [];
+  const notes = (config as { notes?: unknown }).notes;
+  if (!Array.isArray(notes)) return [];
+  return notes
+    .filter((n): n is { id: string; content?: string } => typeof n?.id === 'string')
+    .map((n) => ({ id: n.id, content: n.content ?? '' }));
+}
+
+async function emitWidgetContentCreates(params: {
+  actorUserId: string;
+  widget: { id: string; type: string; dashboardId: string };
+  dashboard: ReturnType<typeof contextFromDashboard>;
+  previousConfig: unknown;
+  nextConfig: unknown;
+}): Promise<void> {
+  if (params.widget.type === 'quicknotes' && params.nextConfig) {
+    const prevIds = new Set(listQuickNoteIds(params.previousConfig));
+    for (const note of parseQuickNoteItems(params.nextConfig)) {
+      if (prevIds.has(note.id)) continue;
+      const preview = note.content.trim().split('\n')[0]?.slice(0, 80);
+      await recordQuickNoteCreated({
+        actorUserId: params.actorUserId,
+        widget: { id: params.widget.id, dashboardId: params.widget.dashboardId },
+        dashboard: params.dashboard,
+        noteId: note.id,
+        titlePreview: preview || undefined,
+      });
+    }
+  }
+
+  if (params.widget.type === 'bookmarks' && params.nextConfig) {
+    const prevIds = new Set(listBookmarkIds(params.previousConfig));
+    for (const bookmark of parseBookmarkItems(params.nextConfig)) {
+      if (prevIds.has(bookmark.id)) continue;
+      await recordBookmarkCreated({
+        actorUserId: params.actorUserId,
+        widget: { id: params.widget.id, dashboardId: params.widget.dashboardId },
+        dashboard: params.dashboard,
+        bookmarkId: bookmark.id,
+        title: bookmark.title,
+        url: bookmark.url,
+      });
+    }
+  }
 }
 
 // Widget service stubs
@@ -73,13 +135,24 @@ export async function updateWidget(userId: string, widgetId: string, data: { typ
   });
 
   const configKeys = data.config ? Object.keys(data.config) : undefined;
+  const dashboardCtx = contextFromDashboard(widget.dashboard);
   await recordWidgetUpdated({
     actorUserId: userId,
     widget: { id: updated.id, type: updated.type, dashboardId: widget.dashboardId },
-    dashboard: contextFromDashboard(widget.dashboard),
+    dashboard: dashboardCtx,
     configKeys,
     positionChanged: data.position !== undefined,
   });
+
+  if (data.config !== undefined) {
+    await emitWidgetContentCreates({
+      actorUserId: userId,
+      widget: { id: updated.id, type: updated.type, dashboardId: widget.dashboardId },
+      dashboard: dashboardCtx,
+      previousConfig: widget.config,
+      nextConfig: data.config,
+    });
+  }
 
   return updated;
 }

@@ -111,6 +111,10 @@ describe('retrievalBundleInferenceBridge (Phase 1A)', () => {
   });
 
   describe('enrichBundlesWithRetrievalEvidence', () => {
+    beforeEach(() => {
+      process.env.CONTEXT_GRAPH_RETRIEVAL_BRIDGE_ENABLED = 'true';
+    });
+
     it('adds inference nodes and edges to existing bundle', () => {
       const result = enrichBundlesWithRetrievalEvidence({
         bundles: [sampleBundle()],
@@ -173,7 +177,8 @@ describe('retrievalBundleInferenceBridge (Phase 1A)', () => {
       expect(result.bundles[0].nodes[0].metadata?.inference).toBeDefined();
     });
 
-    it('skips non-pilot consumers', () => {
+    it('skips when bridge flag is disabled', () => {
+      delete process.env.CONTEXT_GRAPH_RETRIEVAL_BRIDGE_ENABLED;
       const result = enrichBundlesWithRetrievalEvidence({
         bundles: [sampleBundle()],
         evidence: [sampleEvidence()],
@@ -181,8 +186,20 @@ describe('retrievalBundleInferenceBridge (Phase 1A)', () => {
         tenantScope: { dashboardId: 'd1', scope: 'PERSONAL' },
       });
 
-      expect(result.skippedReason).toBe('not_pilot_consumer');
+      expect(result.skippedReason).toBe('bridge_disabled');
       expect(result.enrichmentApplied).toBe(false);
+    });
+
+    it('enriches planning consumer when bridge flag enabled (Wave 3)', () => {
+      process.env.CONTEXT_GRAPH_RETRIEVAL_BRIDGE_ENABLED = 'true';
+      const result = enrichBundlesWithRetrievalEvidence({
+        bundles: [sampleBundle()],
+        evidence: [sampleEvidence()],
+        consumerIntent: 'planning',
+        tenantScope: { dashboardId: 'd1', scope: 'PERSONAL' },
+      });
+
+      expect(result.enrichmentApplied).toBe(true);
     });
 
     it('does not mutate input bundles', () => {
@@ -204,10 +221,11 @@ describe('retrievalBundleInferenceBridge (Phase 1A)', () => {
       expect(isRetrievalBundleBridgeEnabled('project_assistant')).toBe(false);
     });
 
-    it('is true for project_assistant when flag enabled', () => {
+    it('is true for wired consumers when flag enabled (Wave 3)', () => {
       process.env.CONTEXT_GRAPH_RETRIEVAL_BRIDGE_ENABLED = 'true';
       expect(isRetrievalBundleBridgeEnabled('project_assistant')).toBe(true);
-      expect(isRetrievalBundleBridgeEnabled('planning')).toBe(false);
+      expect(isRetrievalBundleBridgeEnabled('planning')).toBe(true);
+      expect(isRetrievalBundleBridgeEnabled('general_discovery')).toBe(true);
     });
   });
 

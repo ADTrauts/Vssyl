@@ -1,5 +1,6 @@
 import type { PipelineIntentId } from '../types/pipelineDiagnostics';
 import type { AIRetrievalConsumerIntent, AIRetrievalPathway } from './aiRetrievalTypes';
+import { detectQueryDiscoverySignals } from './queryDiscoverySignals';
 
 /** Canonical retrieval pathway (Phase 1B). */
 export const AI_RETRIEVAL_PATHWAY: AIRetrievalPathway = 'unified_search';
@@ -7,6 +8,7 @@ export const AI_RETRIEVAL_PATHWAY: AIRetrievalPathway = 'unified_search';
 /**
  * Intents that consume the Retrieval Adapter in pipeline grounding (priority order).
  * First match wins when multiple consumer intents are detected.
+ * `general_discovery` is query-native fallback (Wave 3).
  */
 export const RETRIEVAL_ADAPTER_CONSUMER_INTENTS: readonly AIRetrievalConsumerIntent[] = [
   'workflow_action',
@@ -14,9 +16,10 @@ export const RETRIEVAL_ADAPTER_CONSUMER_INTENTS: readonly AIRetrievalConsumerInt
   'project_assistant',
   'local_discovery',
   'planning',
+  'general_discovery',
 ] as const;
 
-/** Future consumers documented in AI_RETRIEVAL_CONSUMER_STANDARD.md — not yet wired. */
+/** Documented future consumers — not yet first-class pipeline intents. */
 export const RETRIEVAL_ADAPTER_PLANNED_INTENTS: readonly AIRetrievalConsumerIntent[] = [
   'scheduling',
 ] as const;
@@ -28,18 +31,36 @@ const CONSUMER_LIMITS: Record<AIRetrievalConsumerIntent, number> = {
   scheduling: 8,
   local_discovery: 12,
   project_assistant: 10,
-  general_discovery: 10,
+  general_discovery: 12,
 };
 
 export function resolveRetrievalConsumerIntent(
-  inferredIntents: PipelineIntentId[]
+  inferredIntents: PipelineIntentId[],
+  userMessage?: string
 ): AIRetrievalConsumerIntent | undefined {
   for (const consumerIntent of RETRIEVAL_ADAPTER_CONSUMER_INTENTS) {
+    if (consumerIntent === 'general_discovery') {
+      continue;
+    }
     if (inferredIntents.includes(consumerIntent)) {
       return consumerIntent;
     }
   }
+
+  if (inferredIntents.includes('research')) {
+    return 'general_discovery';
+  }
+
+  const querySignals = detectQueryDiscoverySignals(userMessage ?? '');
+  if (querySignals.eligible) {
+    return 'general_discovery';
+  }
+
   return undefined;
+}
+
+export function isQueryNativeDiscoveryIntent(intent: AIRetrievalConsumerIntent): boolean {
+  return intent === 'general_discovery';
 }
 
 export function getRetrievalLimitForIntent(intent: AIRetrievalConsumerIntent): number {
@@ -62,11 +83,14 @@ export function isRetrievalConsumerEnabled(intent: AIRetrievalConsumerIntent): b
   ) {
     return false;
   }
-  if (intent === 'project_assistant') {
-    return process.env.AI_RETRIEVAL_PROJECT_ASSISTANT_ENABLED === 'true';
+  if (intent === 'project_assistant' && process.env.AI_RETRIEVAL_PROJECT_ASSISTANT_ENABLED === 'false') {
+    return false;
   }
-  if (intent === 'local_discovery') {
-    return process.env.AI_RETRIEVAL_LOCAL_DISCOVERY_ENABLED === 'true';
+  if (intent === 'local_discovery' && process.env.AI_RETRIEVAL_LOCAL_DISCOVERY_ENABLED === 'false') {
+    return false;
+  }
+  if (intent === 'general_discovery' && process.env.AI_RETRIEVAL_GENERAL_DISCOVERY_ENABLED === 'false') {
+    return false;
   }
   return true;
 }

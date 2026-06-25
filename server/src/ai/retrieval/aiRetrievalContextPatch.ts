@@ -79,5 +79,22 @@ export function buildRetrievalContextPatch(
     };
   }
 
+  if (consumerIntent === 'general_discovery') {
+    return {
+      _ai_retrieval_discovery: {
+        ...base,
+        queryNativeProfile: {
+          domain: 'general_discovery',
+          discoveryTrigger: diagnostics.discoveryTrigger ?? 'query_native',
+          queryDiscoverySignals: diagnostics.queryDiscoverySignals ?? [],
+          modulesContributing: diagnostics.modulesContributingEvidence ?? [],
+          retrievalSourceDiversity: diagnostics.retrievalSourceDiversity ?? 0,
+          contextScope: diagnostics.searchContext,
+          retrievalDurationMs: diagnostics.retrievalDurationMs,
+        },
+      },
+    };
+  }
+
   return { _ai_retrieval_discovery: base };
 }

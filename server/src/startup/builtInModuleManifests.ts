@@ -353,6 +353,7 @@ export function buildBuiltInModuleManifest(moduleId: BuiltInModuleId): BuiltInMo
             read: true,
             write: true,
             ai: true,
+            search: true,
             businessWorkspace: true,
             operationalLinks: true,
           }
@@ -468,13 +469,45 @@ export function buildBuiltInModuleManifest(moduleId: BuiltInModuleId): BuiltInMo
         ],
       };
     case 'dashboard':
-      return base(['dashboard:read'], {
-        read: true,
-        ai: true,
-        trash: true,
-        search: true,
-        businessWorkspace: true,
-      });
+      return {
+        ...base(['dashboard:read'], {
+          read: true,
+          ai: true,
+          trash: true,
+          search: true,
+          businessWorkspace: true,
+        }),
+        entities: [
+          {
+            type: 'dashboard',
+            displayName: 'Dashboard',
+            pluralName: 'Dashboards',
+            supportsTrash: true,
+            supportsSearch: true,
+          },
+          {
+            type: 'quick_note',
+            displayName: 'Quick note',
+            pluralName: 'Quick notes',
+            supportsTrash: false,
+            supportsSearch: true,
+          },
+          {
+            type: 'bookmark',
+            displayName: 'Bookmark',
+            pluralName: 'Bookmarks',
+            supportsTrash: false,
+            supportsSearch: true,
+          },
+          {
+            type: 'widget',
+            displayName: 'Widget',
+            pluralName: 'Widgets',
+            supportsTrash: false,
+            supportsSearch: false,
+          },
+        ],
+      };
     case 'hr':
       return {
         ...base(['hr:read', 'hr:write', 'hr:admin'], {
@@ -484,6 +517,7 @@ export function buildBuiltInModuleManifest(moduleId: BuiltInModuleId): BuiltInMo
           vlink: true,
           trash: true,
           notifications: true,
+          search: true,
           businessWorkspace: true,
         }),
         routes: [{ path: '/hr', label: 'HR' }],
@@ -494,7 +528,7 @@ export function buildBuiltInModuleManifest(moduleId: BuiltInModuleId): BuiltInMo
             pluralName: 'Employee profiles',
             vlinkEntityType: 'HR_EMPLOYEE_PROFILE',
             supportsTrash: true,
-            supportsSearch: false,
+            supportsSearch: true,
           },
           {
             type: 'time_off_request',
@@ -502,7 +536,7 @@ export function buildBuiltInModuleManifest(moduleId: BuiltInModuleId): BuiltInMo
             pluralName: 'Time-off requests',
             vlinkEntityType: 'HR_TIME_OFF_REQUEST',
             supportsTrash: false,
-            supportsSearch: false,
+            supportsSearch: true,
           },
           {
             type: 'attendance_exception',
@@ -518,7 +552,7 @@ export function buildBuiltInModuleManifest(moduleId: BuiltInModuleId): BuiltInMo
             pluralName: 'Onboarding journeys',
             vlinkEntityType: 'HR_ONBOARDING_JOURNEY',
             supportsTrash: false,
-            supportsSearch: false,
+            supportsSearch: true,
           },
         ],
         notifications: [
@@ -662,6 +696,7 @@ export function buildBuiltInModuleManifest(moduleId: BuiltInModuleId): BuiltInMo
           trash: true,
           notifications: true,
           globalActivity: true,
+          search: true,
           businessWorkspace: true,
         }),
         routes: [{ path: '/scheduling', label: 'Scheduling' }],
@@ -672,7 +707,7 @@ export function buildBuiltInModuleManifest(moduleId: BuiltInModuleId): BuiltInMo
             pluralName: 'Schedules',
             vlinkEntityType: 'SCHEDULE',
             supportsTrash: true,
-            supportsSearch: false,
+            supportsSearch: true,
           },
           {
             type: 'shift',
@@ -680,7 +715,7 @@ export function buildBuiltInModuleManifest(moduleId: BuiltInModuleId): BuiltInMo
             pluralName: 'Shifts',
             vlinkEntityType: 'SCHEDULE_SHIFT',
             supportsTrash: true,
-            supportsSearch: false,
+            supportsSearch: true,
           },
           {
             type: 'swap_request',
@@ -758,6 +793,7 @@ export function buildBuiltInModuleManifest(moduleId: BuiltInModuleId): BuiltInMo
           trash: true,
           notifications: true,
           globalActivity: true,
+          search: true,
           businessWorkspace: true,
         }),
         routes: [{ path: '/workforce-comms', label: 'Workforce Communications' }],
@@ -768,7 +804,7 @@ export function buildBuiltInModuleManifest(moduleId: BuiltInModuleId): BuiltInMo
             pluralName: 'Communications',
             vlinkEntityType: 'WORKFORCE_COMMUNICATION',
             supportsTrash: true,
-            supportsSearch: false,
+            supportsSearch: true,
           },
           {
             type: 'campaign',
@@ -776,7 +812,7 @@ export function buildBuiltInModuleManifest(moduleId: BuiltInModuleId): BuiltInMo
             pluralName: 'Campaigns',
             vlinkEntityType: 'WORKFORCE_CAMPAIGN',
             supportsTrash: true,
-            supportsSearch: false,
+            supportsSearch: true,
           },
         ],
         notifications: [

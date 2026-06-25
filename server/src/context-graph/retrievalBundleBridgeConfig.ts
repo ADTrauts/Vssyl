@@ -6,12 +6,19 @@ export const RETRIEVAL_INFERENCE_MIN_CONFIDENCE = 0.2;
 /** Default confidence when search score is absent but permissions are verified. */
 export const RETRIEVAL_INFERENCE_DEFAULT_CONFIDENCE = 0.5;
 
-/** Phase 1A pilot consumer — highest cross-module relationship density. */
-export const RETRIEVAL_BUNDLE_BRIDGE_PILOT_INTENT: AIRetrievalConsumerIntent = 'project_assistant';
+/** Wave 3 — all wired retrieval consumers may use the bridge when enabled. */
+export const RETRIEVAL_BUNDLE_BRIDGE_CONSUMER_INTENTS: readonly AIRetrievalConsumerIntent[] = [
+  'workflow_action',
+  'business_operations',
+  'project_assistant',
+  'local_discovery',
+  'planning',
+  'general_discovery',
+] as const;
 
 /**
  * Feature flag: CONTEXT_GRAPH_RETRIEVAL_BRIDGE_ENABLED=true
- * Pilot scope: project_assistant only (Phase 1A).
+ * Wave 3: all wired consumer intents (not project_assistant pilot only).
  */
 export function isRetrievalBundleBridgeEnabled(
   consumerIntent?: AIRetrievalConsumerIntent
@@ -19,5 +26,8 @@ export function isRetrievalBundleBridgeEnabled(
   if (process.env.CONTEXT_GRAPH_RETRIEVAL_BRIDGE_ENABLED !== 'true') {
     return false;
   }
-  return consumerIntent === RETRIEVAL_BUNDLE_BRIDGE_PILOT_INTENT;
+  if (!consumerIntent) {
+    return false;
+  }
+  return RETRIEVAL_BUNDLE_BRIDGE_CONSUMER_INTENTS.includes(consumerIntent);
 }

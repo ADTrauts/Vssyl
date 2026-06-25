@@ -17,6 +17,7 @@ import {
 import { assertPlacePolicyAllowed } from './placePolicyDual';
 import * as placeService from './placeService';
 import type { PlaceGraphSnapshot } from './placeTypes';
+import { getModuleActivityForUserIds } from '../platform/platformActivityQueryService';
 
 interface SuggestionItem {
   listing: Record<string, unknown>;
@@ -546,17 +547,13 @@ async function fetchPlatformActivityFeedItems(
   viewerUserId: string,
   typeFilter?: string
 ): Promise<FeedItemShape[]> {
-  const logs = await prisma.log.findMany({
-    where: {
-      operation: 'module_activity_event',
-      module: 'place',
-      userId: { in: visibleUserIds },
-    },
-    orderBy: { createdAt: 'desc' },
-    take: 200,
+  const records = await getModuleActivityForUserIds({
+    userIds: visibleUserIds,
+    moduleId: 'place',
+    limit: 200,
   });
 
-  const actorIds = [...new Set(logs.map((l) => l.userId).filter(Boolean))] as string[];
+  const actorIds = [...new Set(records.map((r) => r.actorUserId).filter(Boolean))];
   const users = actorIds.length
     ? await prisma.user.findMany({
         where: { id: { in: actorIds } },
@@ -567,19 +564,16 @@ async function fetchPlatformActivityFeedItems(
 
   const items: FeedItemShape[] = [];
 
-  for (const log of logs) {
-    const actorUserId = log.userId ?? '';
+  for (const record of records) {
+    const actorUserId = record.actorUserId;
     if (actorUserId !== viewerUserId && !visibleUserIds.includes(actorUserId)) {
       continue;
     }
 
-    const envelope = log.metadata as ModuleActivityEnvelope | null;
-    if (!envelope?.action || !envelope.target?.type) continue;
-
-    const metadata = (envelope.metadata ?? {}) as Record<string, unknown>;
+    const metadata = record.metadata;
     const feedType = mapModuleActivityToFeedType(
-      envelope.action,
-      envelope.target.type,
+      record.action,
+      record.targetType,
       metadata
     );
     if (!feedType) continue;
@@ -588,13 +582,13 @@ async function fetchPlatformActivityFeedItems(
     const actor = userMap[actorUserId] ?? { id: actorUserId, name: null, image: null };
 
     items.push({
-      id: envelope.eventId ?? log.id,
+      id: record.eventId,
       userId: actorUserId,
       type: feedType,
       title: feedTitleForType(feedType),
       description: null,
       businessId:
-        envelope.target.type === 'node' && metadata.nodeType === 'BUSINESS'
+        record.targetType === 'node' && metadata.nodeType === 'BUSINESS'
           ? typeof metadata.entityId === 'string'
             ? metadata.entityId
             : null
@@ -606,14 +600,14 @@ async function fetchPlatformActivityFeedItems(
           ? metadata.targetUserId
           : typeof metadata.withUserId === 'string'
             ? metadata.withUserId
-            : envelope.target.type === 'node' && metadata.nodeType === 'USER'
+            : record.targetType === 'node' && metadata.nodeType === 'USER'
               ? typeof metadata.entityId === 'string'
                 ? metadata.entityId
                 : null
               : null,
-      meetingId: envelope.target.type === 'meeting' ? (envelope.target.id ?? null) : null,
+      meetingId: record.targetType === 'meeting' ? record.targetId : null,
       isPrivate: actorUserId === viewerUserId,
-      createdAt: log.createdAt,
+      createdAt: record.timestamp,
       user: actor,
     });
   }

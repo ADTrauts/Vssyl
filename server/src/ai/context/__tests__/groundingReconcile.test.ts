@@ -188,10 +188,12 @@ describe('groundingReconcile (Phase 1B)', () => {
     expect(isGroundingReconcileEnabled('project_assistant')).toBe(false);
   });
 
-  it('enables only for project_assistant when flag on', () => {
+  it('enables for wired retrieval consumers when flag on (Wave 3)', () => {
     process.env.CONTEXT_GRAPH_GROUNDING_RECONCILE_ENABLED = 'true';
     expect(isGroundingReconcileEnabled('project_assistant')).toBe(true);
-    expect(isGroundingReconcileEnabled('planning')).toBe(false);
+    expect(isGroundingReconcileEnabled('planning')).toBe(true);
+    expect(isGroundingReconcileEnabled('general_discovery')).toBe(true);
+    expect(isGroundingReconcileEnabled('unknown_intent')).toBe(false);
   });
 
   it('removes duplicate retrieval evidence when V_Link has explicit entity', () => {
@@ -276,10 +278,10 @@ describe('groundingReconcile (Phase 1B)', () => {
     expect(diag.preReconcileCount).toBeGreaterThan(diag.postReconcileCount);
   });
 
-  it('does not run for non-pilot intents', () => {
+  it('does not run for non-wired consumer intents', () => {
     process.env.CONTEXT_GRAPH_GROUNDING_RECONCILE_ENABLED = 'true';
     const result = reconcileGroundingArtifacts({
-      consumerIntent: 'planning',
+      consumerIntent: 'scheduling',
       vlinkPipelineContext: sampleVLinkContext(),
       retrievalDiscovery: sampleRetrievalDiscovery(),
     });

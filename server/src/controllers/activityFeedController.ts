@@ -7,11 +7,7 @@
 import { Request, Response } from 'express';
 import { prisma } from '../lib/prisma';
 import { logger } from '../lib/logger';
-import { getFeedForUser } from '../services/platform/platformActivityQueryService';
-import {
-  toActivityFeedItem,
-  type ActivityFeedItem,
-} from '../services/platform/platformActivityFeedMapper';
+import { getUnifiedTimelineForUser, toActivityFeedItem, type ActivityFeedItem } from '../services/platform/platformTimelineReadService';
 
 export type { ActivityFeedItem };
 
@@ -30,6 +26,8 @@ export async function getActivityFeed(req: Request, res: Response): Promise<void
 
     const limit = Math.min(parseInt((req.query.limit as string) || '20', 10) || 20, 50);
     const dashboardId = typeof req.query.dashboardId === 'string' ? req.query.dashboardId : undefined;
+    const businessId = typeof req.query.businessId === 'string' ? req.query.businessId : undefined;
+    const householdId = typeof req.query.householdId === 'string' ? req.query.householdId : undefined;
 
     if (dashboardId) {
       const owned = await prisma.dashboard.findFirst({
@@ -42,9 +40,33 @@ export async function getActivityFeed(req: Request, res: Response): Promise<void
       }
     }
 
-    const records = await getFeedForUser({
+    if (businessId) {
+      const membership = await prisma.businessMember.findFirst({
+        where: { businessId, userId, isActive: true },
+        select: { id: true },
+      });
+      if (!membership) {
+        res.status(403).json({ error: 'Business access denied' });
+        return;
+      }
+    }
+
+    if (householdId) {
+      const membership = await prisma.householdMember.findFirst({
+        where: { householdId, userId },
+        select: { id: true },
+      });
+      if (!membership) {
+        res.status(403).json({ error: 'Household access denied' });
+        return;
+      }
+    }
+
+    const records = await getUnifiedTimelineForUser({
       userId,
       dashboardId,
+      businessId,
+      householdId,
       limit,
     });
 

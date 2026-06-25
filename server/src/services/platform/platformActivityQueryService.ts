@@ -44,6 +44,9 @@ export function parseModuleActivityLogRow(log: {
     return null;
   }
 
+  const visibilityScope =
+    typeof envelope.visibility?.scope === 'string' ? envelope.visibility.scope : undefined;
+
   return {
     logId: log.id,
     eventId: envelope.eventId ?? log.id,
@@ -55,6 +58,7 @@ export function parseModuleActivityLogRow(log: {
     dashboardId: typeof context.dashboardId === 'string' ? context.dashboardId : undefined,
     businessId: typeof context.businessId === 'string' ? context.businessId : undefined,
     householdId: typeof context.householdId === 'string' ? context.householdId : undefined,
+    visibilityScope,
     metadata: (envelope.metadata ?? {}) as Record<string, unknown>,
     actorUserId: envelope.actor?.userId ?? log.userId ?? '',
   };
@@ -66,6 +70,46 @@ function matchesDashboardScope(
 ): boolean {
   if (!dashboardId) return true;
   return record.dashboardId === dashboardId;
+}
+
+function matchesBusinessScope(
+  record: PlatformActivityRecord,
+  businessId: string | undefined
+): boolean {
+  if (!businessId) return true;
+  return record.businessId === businessId;
+}
+
+function matchesHouseholdScope(
+  record: PlatformActivityRecord,
+  householdId: string | undefined
+): boolean {
+  if (!householdId) return true;
+  return record.householdId === householdId;
+}
+
+function sortRecordsNewestFirst(records: PlatformActivityRecord[]): PlatformActivityRecord[] {
+  return [...records].sort((a, b) => {
+    const delta = b.timestamp.getTime() - a.timestamp.getTime();
+    if (delta !== 0) return delta;
+    return b.logId.localeCompare(a.logId);
+  });
+}
+
+function applyScopeFilters(
+  records: PlatformActivityRecord[],
+  scope: {
+    dashboardId?: string;
+    businessId?: string;
+    householdId?: string;
+  }
+): PlatformActivityRecord[] {
+  return records.filter(
+    (r) =>
+      matchesDashboardScope(r, scope.dashboardId) &&
+      matchesBusinessScope(r, scope.businessId) &&
+      matchesHouseholdScope(r, scope.householdId)
+  );
 }
 
 function matchesTimeRange(
@@ -128,10 +172,12 @@ async function fetchNormalizedLogs(params: {
   return records;
 }
 
-/** Federated activity feed for a user (optional dashboard scope). */
+/** Federated activity feed for a user (optional tenant scope). */
 export async function getFeedForUser(params: {
   userId: string;
   dashboardId?: string;
+  businessId?: string;
+  householdId?: string;
   limit?: number;
 }): Promise<PlatformActivityRecord[]> {
   const limit = clampLimit(params.limit);
@@ -142,10 +188,65 @@ export async function getFeedForUser(params: {
     take: fetchTake,
   });
 
-  return records
-    .filter((r) => matchesDashboardScope(r, params.dashboardId))
-    .sort((a, b) => b.timestamp.getTime() - a.timestamp.getTime())
-    .slice(0, limit);
+  return sortRecordsNewestFirst(
+    applyScopeFilters(records, {
+      dashboardId: params.dashboardId,
+      businessId: params.businessId,
+      householdId: params.householdId,
+    })
+  ).slice(0, limit);
+}
+
+/**
+ * Module-scoped activity for one or more actor user ids (e.g. Place social feed).
+ * Does not apply dashboard/business/household filters — callers enforce visibility.
+ */
+export async function getModuleActivityForUserIds(params: {
+  userIds: string[];
+  moduleId: string;
+  limit?: number;
+  since?: Date;
+  until?: Date;
+}): Promise<PlatformActivityRecord[]> {
+  const uniqueIds = [...new Set(params.userIds.filter(Boolean))];
+  if (uniqueIds.length === 0) return [];
+
+  const limit = clampLimit(params.limit);
+  const fetchTake = Math.min(limit * FETCH_BUFFER_MULTIPLIER, 500);
+
+  const where: Prisma.LogWhereInput = {
+    operation: MODULE_ACTIVITY_OPERATION,
+    module: params.moduleId,
+    userId: { in: uniqueIds },
+  };
+
+  if (params.since || params.until) {
+    where.timestamp = {
+      ...(params.since ? { gte: params.since } : {}),
+      ...(params.until ? { lte: params.until } : {}),
+    };
+  }
+
+  const logs = await prisma.log.findMany({
+    where,
+    orderBy: { timestamp: 'desc' },
+    take: fetchTake,
+    select: {
+      id: true,
+      userId: true,
+      timestamp: true,
+      module: true,
+      metadata: true,
+    },
+  });
+
+  const records: PlatformActivityRecord[] = [];
+  for (const log of logs) {
+    const parsed = parseModuleActivityLogRow(log);
+    if (parsed) records.push(parsed);
+  }
+
+  return sortRecordsNewestFirst(records).slice(0, limit);
 }
 
 /** Recent normalized activity for analytics / AI context (time-bounded). */
@@ -165,9 +266,9 @@ export async function getRecentActivity(params: {
     take: limit,
   });
 
-  return records
-    .filter((r) => matchesTimeRange(r, params.since, params.until))
-    .slice(0, limit);
+  return sortRecordsNewestFirst(
+    records.filter((r) => matchesTimeRange(r, params.since, params.until))
+  ).slice(0, limit);
 }
 
 /** Activity history for a specific entity (module + target type/id). */

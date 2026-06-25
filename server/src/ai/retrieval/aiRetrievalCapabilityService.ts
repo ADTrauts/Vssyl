@@ -4,12 +4,13 @@ import {
   executeGlobalSearch,
 } from '../../services/searchCapabilityService';
 import type { SearchFilters } from 'vssyl-shared/types/search';
-import { AI_RETRIEVAL_PATHWAY } from './aiRetrievalConsumerContract';
+import { AI_RETRIEVAL_PATHWAY, isQueryNativeDiscoveryIntent } from './aiRetrievalConsumerContract';
 import {
   countEvidenceByProvider,
   countEvidenceBySourceModule,
   mapSearchResultsToEvidence,
 } from './aiRetrievalEvidenceMapper';
+import { detectQueryDiscoverySignals } from './queryDiscoverySignals';
 import type {
   AIRetrievalDiscoverInput,
   AIRetrievalDiscoverResult,
@@ -57,13 +58,29 @@ function buildDiagnosticsBase(
 
 function enrichOperationalDiagnostics(
   diagnostics: AIRetrievalDiagnostics,
-  intent?: string
+  intent?: string,
+  inputQuery?: string
 ): AIRetrievalDiagnostics {
   const modulesContributingEvidence = Object.keys(diagnostics.retrievalSourceCounts);
   const enriched: AIRetrievalDiagnostics = {
     ...diagnostics,
     modulesContributingEvidence,
   };
+
+  if (intent && isQueryNativeDiscoveryIntent(intent as import('./aiRetrievalTypes').AIRetrievalConsumerIntent)) {
+    enriched.consumerDomain = 'general_discovery';
+    enriched.retrievalSourceDiversity = modulesContributingEvidence.length;
+    const queryText = inputQuery ?? diagnostics.query;
+    if (/\b(latest|look\s+up|search\s+for|verify|fact\s+check|find\s+out)\b/i.test(queryText)) {
+      enriched.discoveryTrigger = 'research_intent';
+    } else {
+      enriched.discoveryTrigger = 'query_native';
+      enriched.queryDiscoverySignals = detectQueryDiscoverySignals(queryText).signals;
+    }
+  } else if (intent) {
+    enriched.discoveryTrigger = 'named_intent';
+  }
+
   if (intent === 'business_operations') {
     enriched.consumerDomain = 'business_operations';
   }
@@ -73,6 +90,9 @@ function enrichOperationalDiagnostics(
   }
   if (intent === 'local_discovery') {
     enriched.consumerDomain = 'local_discovery';
+    enriched.retrievalSourceDiversity = modulesContributingEvidence.length;
+  }
+  if (intent === 'planning' || intent === 'workflow_action') {
     enriched.retrievalSourceDiversity = modulesContributingEvidence.length;
   }
   return enriched;
@@ -138,7 +158,8 @@ export async function discover(
         retrievalDurationMs,
         permissionEnforcementStatus: 'enforced',
       },
-      input.intent
+      input.intent,
+      input.query
     );
 
     await logger.info('AI retrieval discovery completed', {

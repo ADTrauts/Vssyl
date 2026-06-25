@@ -97,7 +97,11 @@ export default function PlatformProgramsPage() {
 
       <section className="mt-v-6">
         <p className="text-sm text-v-text-muted">
-          Marketplace certification and delegate probes remain on{' '}
+          Per-module platform adoption health:{' '}
+          <Link href="/admin-portal/platform-adoption" className="text-blue-600 dark:text-blue-400 underline">
+            Platform Adoption
+          </Link>
+          . Marketplace certification and delegate probes remain on{' '}
           <Link href="/admin-portal/modules" className="text-blue-600 dark:text-blue-400 underline">
             Marketplace → Modules
           </Link>{' '}

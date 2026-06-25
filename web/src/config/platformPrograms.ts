@@ -88,6 +88,11 @@ export const PLATFORM_PROGRAM_DEFINITIONS: PlatformProgramDefinition[] = [
     ],
     operatorLinks: [
       {
+        label: 'Platform Adoption',
+        href: '/admin-portal/platform-adoption',
+        description: 'Fleet-wide search participation metrics',
+      },
+      {
         label: 'Search delegate probe',
         href: '/admin-portal/modules',
         description: 'Run on submission detail readiness card',

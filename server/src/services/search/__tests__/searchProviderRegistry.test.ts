@@ -38,9 +38,16 @@ describe('searchProviderRegistry', () => {
     }
   });
 
-  it('does not claim global search for scheduling', () => {
+  it('registers Wave 2 business and notebook providers', () => {
+    expect(getSearchProviderById('notebook')?.readiness).toBe('ready');
+    expect(getSearchProviderById('hr')?.readiness).toBe('ready');
+    expect(getSearchProviderById('scheduling')?.readiness).toBe('ready');
+    expect(getSearchProviderById('workforce_comms')?.readiness).toBe('ready');
+  });
+
+  it('claims global search for scheduling via manifest parity', () => {
     const manifest = buildBuiltInModuleManifest('scheduling');
-    expect(manifest.capabilities?.search).toBeFalsy();
-    expect(getSearchProviderById('scheduling')).toBeUndefined();
+    expect(manifest.capabilities?.search).toBe(true);
+    expect(getSearchProviderById('scheduling')?.manifestSearchClaim).toBe(true);
   });
 });

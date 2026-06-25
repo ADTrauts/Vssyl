@@ -61,6 +61,12 @@ export function buildPlatformControllerNavigationSections(): PlatformControllerN
           icon: Layers,
           path: '/admin-portal/platform-programs',
         },
+        {
+          id: 'platform-adoption',
+          label: 'Platform Adoption',
+          icon: Gauge,
+          path: '/admin-portal/platform-adoption',
+        },
       ],
     },
     {
@@ -186,6 +192,7 @@ export function resolvePlatformControllerActiveNavId(
 ): string {
   const normalized = pathname.replace(/\/$/, '') || '/admin-portal/dashboard';
 
+  if (normalized.includes('/platform-adoption')) return 'platform-adoption';
   if (normalized.includes('/platform-programs')) return 'platform-programs';
   if (hash === '#provider-governance' || hash === 'provider-governance') return 'providers';
   if (normalized.includes('/ai-pipeline/diagnostics')) return 'diagnostics';

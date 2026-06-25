@@ -191,6 +191,29 @@ describe('aiRetrievalPipelineHook', () => {
     });
   });
 
+  it('runs discovery for query-native general_discovery when find pattern matches', async () => {
+    mockDiscover.mockResolvedValue({
+      evidence: [],
+      diagnostics: {
+        query: 'find my budget file',
+        intent: 'general_discovery',
+        retrievalPathway: 'unified_search',
+        evidenceCount: 0,
+        discoveryTrigger: 'query_native',
+      },
+    });
+
+    await runPipelineRetrievalDiscovery({
+      userId: 'u1',
+      userMessage: 'find my budget file',
+      inferredIntents: ['general_chat'],
+    });
+
+    expect(mockDiscover).toHaveBeenCalledWith(
+      expect.objectContaining({ intent: 'general_discovery' })
+    );
+  });
+
   it('runs discovery for workflow_action intent', async () => {
     const result = await runPipelineRetrievalDiscovery({
       userId: 'user-1',
