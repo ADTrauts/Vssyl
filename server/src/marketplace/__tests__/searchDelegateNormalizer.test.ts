@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { normalizePartnerSearchResults } from '../searchDelegateNormalizer';
-import type { PartnerSearchDelegateRegistration } from 'shared/types/search-delegate';
+import type { PartnerSearchDelegateRegistration } from 'vssyl-shared/types/search-delegate';
 
 const registration: PartnerSearchDelegateRegistration = {
   moduleId: 'vssyl-pilot-assets',
@@ -30,7 +30,7 @@ describe('searchDelegateNormalizer', () => {
           url: '/business/biz/workspace/vssyl-pilot-assets?entity=ast_1',
           permissions: [{ type: 'read', granted: true }],
           moduleId: 'wrong-id',
-        } as unknown as import('shared/types/search-delegate').PartnerSearchResultItem,
+        } as unknown as import('vssyl-shared/types/search-delegate').PartnerSearchResultItem,
       ],
     });
 

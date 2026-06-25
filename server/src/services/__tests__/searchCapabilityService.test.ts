@@ -5,7 +5,7 @@ import {
   executeGlobalSearch,
 } from '../searchCapabilityService';
 import * as searchProviderRegistry from '../search/searchProviderRegistry';
-import type { RegisteredSearchProvider } from 'shared/types/search';
+import type { RegisteredSearchProvider } from 'vssyl-shared/types/search';
 
 describe('searchCapabilityService', () => {
   beforeEach(() => {

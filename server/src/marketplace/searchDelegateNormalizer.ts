@@ -1,8 +1,8 @@
-import type { SearchResult } from 'shared/types/search';
+import type { SearchResult } from 'vssyl-shared/types/search';
 import type {
   PartnerSearchResultItem,
   PartnerSearchDelegateRegistration,
-} from 'shared/types/search-delegate';
+} from 'vssyl-shared/types/search-delegate';
 
 const MAX_TITLE = 512;
 const MAX_DESCRIPTION = 1024;

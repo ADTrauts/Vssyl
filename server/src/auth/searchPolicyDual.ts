@@ -3,7 +3,7 @@ import { authorize } from './policyEngine';
 import { POLICY_ACTIONS } from './policyActions';
 import type { PolicyAction } from './policyActions';
 import type { PolicyDenyReason } from './policyTypes';
-import type { SearchContextScope } from 'shared/types/search';
+import type { SearchContextScope } from 'vssyl-shared/types/search';
 
 const SECURITY_DENY_REASONS: PolicyDenyReason[] = [
   'INSUFFICIENT_ROLE',

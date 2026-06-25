@@ -8,7 +8,7 @@ import {
 import {
   WORKSPACE_BRIDGE_CONTRACT_VERSION,
   SANDBOX_PILOT_WORKSPACE_MODULE_ID,
-} from 'shared/types/workspace-bridge';
+} from 'vssyl-shared/types/workspace-bridge';
 import { verifyWorkspaceBridgeJwt } from '../workspaceBridgeJwt';
 
 describe('workspaceBridgeProbe', () => {

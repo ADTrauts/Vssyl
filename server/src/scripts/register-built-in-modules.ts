@@ -15,7 +15,7 @@
  */
 
 import { PrismaClient } from '@prisma/client';
-import type { ModuleAIContext } from 'shared/types/module-ai-context';
+import type { ModuleAIContext } from 'vssyl-shared/types/module-ai-context';
 import { logger } from '../lib/logger';
 
 const prisma = new PrismaClient();

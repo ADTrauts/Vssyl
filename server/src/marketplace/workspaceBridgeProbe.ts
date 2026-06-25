@@ -1,6 +1,6 @@
 import { randomUUID } from 'crypto';
-import type { PartnerWorkspaceParticipationRegistration } from 'shared/types/workspace-bridge';
-import { WORKSPACE_BRIDGE_CONTRACT_VERSION } from 'shared/types/workspace-bridge';
+import type { PartnerWorkspaceParticipationRegistration } from 'vssyl-shared/types/workspace-bridge';
+import { WORKSPACE_BRIDGE_CONTRACT_VERSION } from 'vssyl-shared/types/workspace-bridge';
 import { parseWorkspaceParticipationFromManifest } from './workspaceParticipationManifest.js';
 import {
   issueWorkspaceBridgeJwt,

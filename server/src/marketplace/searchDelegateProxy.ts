@@ -6,8 +6,8 @@ import {
   type PartnerSearchDelegateRequest,
   type PartnerSearchDelegateResponse,
   type SearchDelegateProxyDiagnostics,
-} from 'shared/types/search-delegate';
-import type { SearchFilters, SearchTenantContext } from 'shared/types/search';
+} from 'vssyl-shared/types/search-delegate';
+import type { SearchFilters, SearchTenantContext } from 'vssyl-shared/types/search';
 import { logger } from '../lib/logger.js';
 import { issueSearchDelegateJwt } from './searchDelegateJwt.js';
 import {
@@ -151,7 +151,7 @@ export interface ProxyPartnerSearchParams {
 }
 
 export interface ProxyPartnerSearchResult {
-  results: import('shared/types/search').SearchResult[];
+  results: import('vssyl-shared/types/search').SearchResult[];
   diagnostics: SearchDelegateProxyDiagnostics;
 }
 

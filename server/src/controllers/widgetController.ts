@@ -2,7 +2,7 @@ import { Request, Response, NextFunction } from 'express';
 import * as widgetService from '../services/widgetService';
 import { evaluateDashboardPolicyDual } from '../auth/dashboardPolicyDual';
 import { POLICY_ACTIONS } from '../auth/policyActions';
-import { CreateWidgetRequest, UpdateWidgetRequest } from 'shared/types';
+import { CreateWidgetRequest, UpdateWidgetRequest } from 'vssyl-shared/types';
 import { prisma } from '../lib/prisma';
 
 function hasUserId(user: unknown): user is { id: string } {

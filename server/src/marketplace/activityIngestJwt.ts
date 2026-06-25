@@ -5,7 +5,7 @@ import {
   ACTIVITY_INGEST_JWT_ISSUER,
   type ActivityIngestJwtClaims,
   type ActivityIngestTenantScope,
-} from 'shared/types/activity-ingest';
+} from 'vssyl-shared/types/activity-ingest';
 import { getActivityIngestJwtTtlSeconds } from './activityIngestConfig.js';
 
 const consumedJti = new Map<string, number>();

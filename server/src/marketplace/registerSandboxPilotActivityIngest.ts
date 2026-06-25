@@ -1,5 +1,5 @@
-import { ACTIVITY_INGEST_CONTRACT_VERSION } from 'shared/types/activity-ingest';
-import { SANDBOX_PILOT_ASSETS_MODULE_ID } from 'shared/types/search-delegate';
+import { ACTIVITY_INGEST_CONTRACT_VERSION } from 'vssyl-shared/types/activity-ingest';
+import { SANDBOX_PILOT_ASSETS_MODULE_ID } from 'vssyl-shared/types/search-delegate';
 import { registerPartnerActivityIngest } from './activityIngestRegistry.js';
 import {
   isModuleAllowedForActivityIngest,

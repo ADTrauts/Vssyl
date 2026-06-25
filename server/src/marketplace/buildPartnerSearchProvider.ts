@@ -1,6 +1,6 @@
 import { POLICY_ACTIONS } from '../auth/policyActions.js';
-import type { RegisteredSearchProvider, SearchFilters } from 'shared/types/search';
-import type { PartnerSearchDelegateRegistration } from 'shared/types/search-delegate';
+import type { RegisteredSearchProvider, SearchFilters } from 'vssyl-shared/types/search';
+import type { PartnerSearchDelegateRegistration } from 'vssyl-shared/types/search-delegate';
 import { proxyPartnerSearch } from './searchDelegateProxy.js';
 
 export function buildPartnerSearchProvider(

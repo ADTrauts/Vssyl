@@ -1,4 +1,4 @@
-import type { PartnerSearchDelegateRegistration } from 'shared/types/search-delegate';
+import type { PartnerSearchDelegateRegistration } from 'vssyl-shared/types/search-delegate';
 import { proxyPartnerSearch } from './searchDelegateProxy.js';
 import { parseSearchDelegateFromManifest } from './searchDelegateManifest.js';
 

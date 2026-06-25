@@ -1,5 +1,5 @@
 import { Request, Response } from 'express';
-import { SearchFilters } from 'shared/types/search';
+import { SearchFilters } from 'vssyl-shared/types/search';
 import { logger } from '../lib/logger';
 import { AuthenticatedRequest } from '../middleware/auth';
 import {

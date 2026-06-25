@@ -3,7 +3,7 @@ import {
   VSSYL_INTERNAL_SEARCH_DELEGATE_PREFIX,
   type SearchDelegateManifestCapability,
   type SearchTenantContext,
-} from 'shared/types/search-delegate';
+} from 'vssyl-shared/types/search-delegate';
 
 export const SEARCH_DELEGATE_PLATFORM_MAX_TIMEOUT_MS = 3000;
 export const SEARCH_DELEGATE_DEFAULT_TIMEOUT_MS = 2500;

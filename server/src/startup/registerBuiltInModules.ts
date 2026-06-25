@@ -15,7 +15,7 @@
 
 import { prisma } from '../lib/prisma';
 import { logger } from '../lib/logger';
-import type { ModuleAIContext } from 'shared/types/module-ai-context';
+import type { ModuleAIContext } from 'vssyl-shared/types/module-ai-context';
 import type { BuiltInModuleId } from '../constants/builtInModuleIds';
 import { reconcileBuiltInManifest } from './builtInModuleManifests';
 import { Prisma } from '@prisma/client';

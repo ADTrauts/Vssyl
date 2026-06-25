@@ -2,7 +2,7 @@ import {
   SANDBOX_PILOT_ASSETS_MODULE_ID,
   SANDBOX_PILOT_INTERNAL_DELEGATE_URL,
   SEARCH_DELEGATE_CONTRACT_VERSION,
-} from 'shared/types/search-delegate';
+} from 'vssyl-shared/types/search-delegate';
 import { registerPartnerSearchDelegate } from './searchDelegateRegistry.js';
 import { isModuleAllowedForSearchDelegate, isPartnerSearchDelegateEnabled } from './searchDelegateConfig.js';
 

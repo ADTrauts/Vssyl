@@ -8,7 +8,7 @@ import {
   SANDBOX_PILOT_INTERNAL_DELEGATE_URL,
   SEARCH_DELEGATE_CONTRACT_VERSION,
   type PartnerSearchDelegateRegistration,
-} from 'shared/types/search-delegate';
+} from 'vssyl-shared/types/search-delegate';
 
 const registration: PartnerSearchDelegateRegistration = {
   moduleId: 'vssyl-pilot-assets',

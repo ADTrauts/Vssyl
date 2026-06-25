@@ -1304,7 +1304,7 @@ router.get('/modules/:moduleId/search-delegate-probe', async (req, res) => {
       '../../marketplace/registerSandboxPilotSearchDelegate.js'
     );
     const { getPublishedModuleManifest } = await import('../../marketplace/marketplaceReadinessService.js');
-    const { SANDBOX_PILOT_ASSETS_MODULE_ID } = await import('shared/types/search-delegate');
+    const { SANDBOX_PILOT_ASSETS_MODULE_ID } = await import('vssyl-shared/types/search-delegate');
 
     const manifest =
       moduleId === SANDBOX_PILOT_ASSETS_MODULE_ID
@@ -1361,7 +1361,7 @@ router.get('/modules/:moduleId/workspace-bridge-probe', async (req, res) => {
       '../../marketplace/registerSandboxPilotWorkspaceParticipation.js'
     );
     const { getPublishedModuleManifest } = await import('../../marketplace/marketplaceReadinessService.js');
-    const { SANDBOX_PILOT_WORKSPACE_MODULE_ID } = await import('shared/types/workspace-bridge');
+    const { SANDBOX_PILOT_WORKSPACE_MODULE_ID } = await import('vssyl-shared/types/workspace-bridge');
 
     const manifest =
       moduleId === SANDBOX_PILOT_WORKSPACE_MODULE_ID
@@ -1449,7 +1449,7 @@ router.get('/modules/:moduleId/activity-ingest-probe', async (req, res) => {
       '../../marketplace/registerSandboxPilotSearchDelegate.js'
     );
     const { getPublishedModuleManifest } = await import('../../marketplace/marketplaceReadinessService.js');
-    const { SANDBOX_PILOT_ASSETS_MODULE_ID } = await import('shared/types/search-delegate');
+    const { SANDBOX_PILOT_ASSETS_MODULE_ID } = await import('vssyl-shared/types/search-delegate');
 
     const manifest =
       moduleId === SANDBOX_PILOT_ASSETS_MODULE_ID

@@ -10,7 +10,7 @@ import {
 import {
   SANDBOX_PILOT_INTERNAL_DELEGATE_URL,
   SEARCH_DELEGATE_CONTRACT_VERSION,
-} from 'shared/types/search-delegate';
+} from 'vssyl-shared/types/search-delegate';
 
 describe('search delegate unified search integration', () => {
   const envBackup = { ...process.env };

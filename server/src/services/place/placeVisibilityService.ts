@@ -2,7 +2,7 @@ import type { PlaceCategory, Prisma } from '@prisma/client';
 import { prisma } from '../../lib/prisma';
 import { POLICY_ACTIONS } from '../../auth/policyActions';
 import { geolocationService } from '../geolocationService';
-import type { SearchResult } from 'shared/types/search';
+import type { SearchResult } from 'vssyl-shared/types/search';
 import { PlaceServiceError } from './placeErrors';
 import { PLACE_GRAPH_INCLUDE } from './placeIncludes';
 import {

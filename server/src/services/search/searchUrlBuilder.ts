@@ -1,4 +1,4 @@
-import type { SearchFilters } from 'shared/types/search';
+import type { SearchFilters } from 'vssyl-shared/types/search';
 
 export function buildPersonalOrBusinessModuleUrl(
   moduleSegment: string,

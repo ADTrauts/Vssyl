@@ -5,7 +5,7 @@ import {
   getEnabledPartnerWorkspaceParticipations,
   loadWorkspaceParticipationFromPublishedVersion,
 } from '../workspaceParticipationRegistry';
-import { WORKSPACE_BRIDGE_CONTRACT_VERSION } from 'shared/types/workspace-bridge';
+import { WORKSPACE_BRIDGE_CONTRACT_VERSION } from 'vssyl-shared/types/workspace-bridge';
 
 describe('workspaceParticipationRegistry', () => {
   const envBackup = { ...process.env };

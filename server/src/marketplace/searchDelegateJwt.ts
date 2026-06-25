@@ -4,8 +4,8 @@ import {
   SEARCH_DELEGATE_JWT_AUDIENCE,
   SEARCH_DELEGATE_JWT_ISSUER,
   type SearchDelegateJwtClaims,
-} from 'shared/types/search-delegate';
-import type { SearchContextScope } from 'shared/types/search';
+} from 'vssyl-shared/types/search-delegate';
+import type { SearchContextScope } from 'vssyl-shared/types/search';
 
 const SEARCH_DELEGATE_JWT_TTL_SECONDS = 60;
 

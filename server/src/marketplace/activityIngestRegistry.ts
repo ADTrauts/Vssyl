@@ -1,5 +1,5 @@
 import { createHash } from 'crypto';
-import type { PartnerActivityIngestRegistration } from 'shared/types/activity-ingest';
+import type { PartnerActivityIngestRegistration } from 'vssyl-shared/types/activity-ingest';
 import { logger } from '../lib/logger.js';
 import {
   isModuleAllowedForActivityIngest,

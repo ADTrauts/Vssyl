@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { parseWorkspaceParticipationFromManifest } from '../workspaceParticipationManifest';
-import { WORKSPACE_BRIDGE_CONTRACT_VERSION } from 'shared/types/workspace-bridge';
+import { WORKSPACE_BRIDGE_CONTRACT_VERSION } from 'vssyl-shared/types/workspace-bridge';
 
 describe('workspaceParticipationManifest', () => {
   it('parses valid workspace participation manifest', () => {

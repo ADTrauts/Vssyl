@@ -4,7 +4,7 @@ import type {
   GlobalSearchResponseMeta,
   SearchFilters,
   SearchResult,
-} from 'shared/types/search';
+} from 'vssyl-shared/types/search';
 import {
   getReadySearchProviders,
   getSearchProviderById,

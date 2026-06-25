@@ -1,7 +1,7 @@
 import { Request, Response, NextFunction } from 'express';
 import * as dashboardService from '../services/dashboardService';
 import * as fileMigrationService from '../services/fileMigrationService';
-import { CreateDashboardRequest, UpdateDashboardRequest } from 'shared/types';
+import { CreateDashboardRequest, UpdateDashboardRequest } from 'vssyl-shared/types';
 import { evaluateDashboardPolicyDual } from '../auth/dashboardPolicyDual';
 import { POLICY_ACTIONS } from '../auth/policyActions';
 import type { FileHandlingAction } from '../services/fileMigrationService';

@@ -1,4 +1,4 @@
-import type { ModuleScopeClassification } from 'shared/types/module-scope';
+import type { ModuleScopeClassification } from 'vssyl-shared/types/module-scope';
 import { type BuiltInModuleId, BUILT_IN_MODULE_IDS } from './builtInModuleIds';
 
 /** Authoritative scope for first-party built-in modules. */

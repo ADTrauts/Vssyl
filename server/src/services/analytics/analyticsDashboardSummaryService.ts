@@ -11,7 +11,7 @@ import type {
   AnalyticsSourceStatus,
   DashboardAnalyticsSummary,
   EnterpriseAnalyticsProjection,
-} from 'shared/types';
+} from 'vssyl-shared/types';
 
 const DEFAULT_STORAGE_LIMIT_BYTES = 10_737_418_240; // 10GB
 

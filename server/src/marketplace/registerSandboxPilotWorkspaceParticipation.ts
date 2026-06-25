@@ -1,7 +1,7 @@
 import {
   SANDBOX_PILOT_WORKSPACE_MODULE_ID,
   WORKSPACE_BRIDGE_CONTRACT_VERSION,
-} from 'shared/types/workspace-bridge';
+} from 'vssyl-shared/types/workspace-bridge';
 import { registerPartnerWorkspaceParticipation } from './workspaceParticipationRegistry.js';
 import {
   isModuleAllowedForWorkspaceBridge,

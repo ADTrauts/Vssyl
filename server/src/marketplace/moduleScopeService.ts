@@ -3,11 +3,11 @@ import type {
   ModuleScopeClassification,
   ModuleTenantContext,
   ResolvedModuleScope,
-} from 'shared/types/module-scope';
+} from 'vssyl-shared/types/module-scope';
 import {
   MODULE_SCOPE_CLASSIFICATIONS,
   MODULE_TENANT_CONTEXTS,
-} from 'shared/types/module-scope';
+} from 'vssyl-shared/types/module-scope';
 import { asRecordJson } from '../controllers/module/moduleShared.js';
 import { getBuiltInModuleScope } from '../constants/builtInModuleScopes.js';
 

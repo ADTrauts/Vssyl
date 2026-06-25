@@ -1,4 +1,4 @@
-import type { SearchResult } from 'shared/types/search';
+import type { SearchResult } from 'vssyl-shared/types/search';
 import type { AIRetrievalEvidence } from './aiRetrievalTypes';
 
 export function normalizeEvidenceConfidence(score?: number): number | undefined {

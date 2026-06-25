@@ -4,7 +4,7 @@ import {
   validateSearchDelegateHttpsUrl,
   isInternalSearchDelegateUrl,
 } from '../searchDelegateManifest';
-import { SEARCH_DELEGATE_CONTRACT_VERSION, SANDBOX_PILOT_INTERNAL_DELEGATE_URL } from 'shared/types/search-delegate';
+import { SEARCH_DELEGATE_CONTRACT_VERSION, SANDBOX_PILOT_INTERNAL_DELEGATE_URL } from 'vssyl-shared/types/search-delegate';
 
 describe('searchDelegateManifest', () => {
   it('parses valid search delegate manifest', () => {

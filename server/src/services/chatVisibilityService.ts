@@ -1,6 +1,6 @@
 import { Prisma } from '@prisma/client';
 import { prisma } from '../lib/prisma';
-import { SearchFilters, SearchResult } from 'shared/types/search';
+import { SearchFilters, SearchResult } from 'vssyl-shared/types/search';
 import { POLICY_ACTIONS } from '../auth/policyActions';
 import { evaluateChatPolicyDual } from '../auth/chatPolicyDual';
 import { ChatServiceError } from './chat/chatErrors';

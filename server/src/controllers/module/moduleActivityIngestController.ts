@@ -9,7 +9,7 @@ import {
 } from '../../marketplace/activityIngestRegistry.js';
 import { issueActivityIngestJwt, verifyActivityIngestJwt } from '../../marketplace/activityIngestJwt.js';
 import { ingestPartnerActivity } from '../../marketplace/partnerActivityIngestService.js';
-import type { ActivityIngestTenantScope } from 'shared/types/activity-ingest';
+import type { ActivityIngestTenantScope } from 'vssyl-shared/types/activity-ingest';
 
 function parseActivityIngestToken(req: Request): string {
   if (typeof req.headers.authorization === 'string') {

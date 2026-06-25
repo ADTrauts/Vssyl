@@ -5,7 +5,7 @@ import {
   WORKSPACE_BRIDGE_JWT_ISSUER,
   type WorkspaceBridgeJwtClaims,
   type WorkspaceBridgeTenantContext,
-} from 'shared/types/workspace-bridge';
+} from 'vssyl-shared/types/workspace-bridge';
 import { getWorkspaceBridgeJwtTtlSeconds } from './workspaceBridgeConfig.js';
 
 const consumedJti = new Map<string, number>();

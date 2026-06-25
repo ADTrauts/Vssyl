@@ -3,8 +3,8 @@ import {
   type WorkspaceEmbedMode,
   type WorkspaceLifecycleEvent,
   type WorkspaceParticipationManifestCapability,
-} from 'shared/types/workspace-bridge';
-import type { SearchTenantContext } from 'shared/types/search';
+} from 'vssyl-shared/types/workspace-bridge';
+import type { SearchTenantContext } from 'vssyl-shared/types/search';
 
 const MODULE_ID_PATTERN = /^[a-z][a-z0-9-]{1,62}$/;
 

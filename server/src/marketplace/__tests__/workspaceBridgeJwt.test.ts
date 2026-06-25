@@ -9,7 +9,7 @@ import {
 import {
   WORKSPACE_BRIDGE_JWT_AUDIENCE,
   WORKSPACE_BRIDGE_JWT_ISSUER,
-} from 'shared/types/workspace-bridge';
+} from 'vssyl-shared/types/workspace-bridge';
 
 describe('workspaceBridgeJwt', () => {
   beforeEach(() => {

@@ -3,7 +3,7 @@ import jwt from 'jsonwebtoken';
 import {
   ACTIVITY_INGEST_JWT_AUDIENCE,
   ACTIVITY_INGEST_JWT_ISSUER,
-} from 'shared/types/activity-ingest';
+} from 'vssyl-shared/types/activity-ingest';
 import {
   issueActivityIngestJwt,
   verifyActivityIngestJwt,

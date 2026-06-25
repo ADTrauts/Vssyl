@@ -1,8 +1,8 @@
 import {
   ACTIVITY_INGEST_CONTRACT_VERSION,
   type ActivityIngestManifestCapability,
-} from 'shared/types/activity-ingest';
-import type { SearchTenantContext } from 'shared/types/search';
+} from 'vssyl-shared/types/activity-ingest';
+import type { SearchTenantContext } from 'vssyl-shared/types/search';
 import { ACTIVITY_INGEST_DEFAULT_MAX_METADATA_BYTES } from './activityIngestConfig.js';
 
 const MODULE_ID_PATTERN = /^[a-z][a-z0-9-]{1,62}$/;

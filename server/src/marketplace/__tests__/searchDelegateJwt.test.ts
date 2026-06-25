@@ -7,7 +7,7 @@ import {
 import {
   SEARCH_DELEGATE_JWT_AUDIENCE,
   SEARCH_DELEGATE_JWT_ISSUER,
-} from 'shared/types/search-delegate';
+} from 'vssyl-shared/types/search-delegate';
 
 describe('searchDelegateJwt', () => {
   beforeEach(() => {

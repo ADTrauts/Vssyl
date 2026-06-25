@@ -3,7 +3,7 @@ import {
   SearchAccessError,
   executeGlobalSearch,
 } from '../../services/searchCapabilityService';
-import type { SearchFilters } from 'shared/types/search';
+import type { SearchFilters } from 'vssyl-shared/types/search';
 import { AI_RETRIEVAL_PATHWAY } from './aiRetrievalConsumerContract';
 import {
   countEvidenceByProvider,

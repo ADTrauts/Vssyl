@@ -1,4 +1,4 @@
-import type { PartnerWorkspaceParticipationRegistration } from 'shared/types/workspace-bridge';
+import type { PartnerWorkspaceParticipationRegistration } from 'vssyl-shared/types/workspace-bridge';
 import { logger } from '../lib/logger.js';
 import {
   isModuleAllowedForWorkspaceBridge,

@@ -1,6 +1,6 @@
 import { prisma } from '../../lib/prisma';
 import { POLICY_ACTIONS } from '../../auth/policyActions';
-import type { RegisteredSearchProvider, SearchFilters, SearchResult } from 'shared/types/search';
+import type { RegisteredSearchProvider, SearchFilters, SearchResult } from 'vssyl-shared/types/search';
 import {
   searchAccessibleDriveFiles,
   searchAccessibleDriveFolders,

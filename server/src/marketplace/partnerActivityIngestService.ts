@@ -6,8 +6,8 @@ import type {
   PartnerActivityIngestRequest,
   PartnerActivityIngestResponse,
   PartnerActivityIngestRegistration,
-} from 'shared/types/activity-ingest';
-import { ACTIVITY_INGEST_CONTRACT_VERSION } from 'shared/types/activity-ingest';
+} from 'vssyl-shared/types/activity-ingest';
+import { ACTIVITY_INGEST_CONTRACT_VERSION } from 'vssyl-shared/types/activity-ingest';
 import { prisma } from '../lib/prisma.js';
 import { logger } from '../lib/logger.js';
 import { emitModuleActivityEvent, type ActivityScope } from '../services/moduleActivityService.js';

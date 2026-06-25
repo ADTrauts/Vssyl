@@ -1,4 +1,4 @@
-import type { SearchContextScope } from 'shared/types/search';
+import type { SearchContextScope } from 'vssyl-shared/types/search';
 
 /** Canonical discovery pathway (Phase 1B). */
 export type AIRetrievalPathway = 'unified_search';

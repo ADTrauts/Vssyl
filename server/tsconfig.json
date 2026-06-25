@@ -14,7 +14,9 @@
     "forceConsistentCasingInFileNames": true,
     "baseUrl": ".",
     "paths": {
-      "shared/*": ["../shared/src/*"]
+      "shared/*": ["../shared/src/*"],
+      "vssyl-shared": ["../shared/src/index.ts"],
+      "vssyl-shared/*": ["../shared/src/*"]
     },
     "composite": true,
     "noEmit": false

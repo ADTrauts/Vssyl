@@ -1,5 +1,5 @@
 import { describe, expect, it, vi, beforeEach } from 'vitest';
-import { ACTIVITY_INGEST_CONTRACT_VERSION, type PartnerActivityIngestRegistration } from 'shared/types/activity-ingest';
+import { ACTIVITY_INGEST_CONTRACT_VERSION, type PartnerActivityIngestRegistration } from 'vssyl-shared/types/activity-ingest';
 import {
   validatePartnerActivityIngestRequest,
   ingestPartnerActivity,

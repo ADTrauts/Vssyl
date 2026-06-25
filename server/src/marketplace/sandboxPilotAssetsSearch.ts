@@ -4,7 +4,7 @@ import {
   type PartnerSearchDelegateRequest,
   type PartnerSearchDelegateSuccessResponse,
   type PartnerSearchResultItem,
-} from 'shared/types/search-delegate';
+} from 'vssyl-shared/types/search-delegate';
 
 export interface SandboxPilotAsset {
   id: string;

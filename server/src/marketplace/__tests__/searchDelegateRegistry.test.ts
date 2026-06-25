@@ -5,7 +5,7 @@ import {
   getEnabledPartnerSearchDelegates,
   loadSearchDelegateFromPublishedVersion,
 } from '../searchDelegateRegistry';
-import { SANDBOX_PILOT_INTERNAL_DELEGATE_URL, SEARCH_DELEGATE_CONTRACT_VERSION } from 'shared/types/search-delegate';
+import { SANDBOX_PILOT_INTERNAL_DELEGATE_URL, SEARCH_DELEGATE_CONTRACT_VERSION } from 'vssyl-shared/types/search-delegate';
 
 describe('searchDelegateRegistry', () => {
   const envBackup = { ...process.env };
