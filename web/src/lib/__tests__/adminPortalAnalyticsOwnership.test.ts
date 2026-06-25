@@ -9,6 +9,7 @@ import {
   isCanonicalAnalyticsPath,
   resolveAnalyticsTab,
 } from '../adminAnalyticsOwnership';
+import { buildPlatformControllerNavigationSections } from '../../config/platformControllerNavigation';
 
 const WEB_ROOT = join(__dirname, '../..');
 const REPO_ROOT = join(__dirname, '../../../..');
@@ -31,9 +32,14 @@ describe('adminPortalAnalyticsOwnership (0C)', () => {
   });
 
   it('sidebar has one platform analytics entry and no BI nav item', () => {
+    const sections = buildPlatformControllerNavigationSections();
+    const navPaths = sections.flatMap((section) => section.items.map((item) => item.path));
+    const analyticsEntries = navPaths.filter((path) => path === ADMIN_CANONICAL_ANALYTICS_PATH);
+    expect(analyticsEntries).toHaveLength(1);
+    expect(navPaths).not.toContain('/admin-portal/business-intelligence');
+
     const layout = readFileSync(join(WEB_ROOT, 'app/admin-portal/layout.tsx'), 'utf8');
-    const platformSection = layout.slice(layout.indexOf("id: 'platform'"));
-    expect(platformSection).toContain("path: '/admin-portal/analytics'");
+    expect(layout).toContain('buildPlatformControllerNavigationSections');
     expect(layout).not.toMatch(/business-intelligence/);
   });
 

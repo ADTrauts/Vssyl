@@ -13,9 +13,14 @@ const DEBUG_TEST_PAGES = [
   'app/admin-portal/debug-session/page.tsx',
   'app/admin-portal/test-auth/page.tsx',
   'app/admin-portal/test-api/page.tsx',
-  'app/admin-portal/impersonation-test/page.tsx',
   'app/admin-portal/seed-modules/page.tsx',
   'app/admin-portal/testing/page.tsx',
+];
+
+/** Phase 1B: legacy impersonation debug routes redirect to Impersonation Lab (not gated pages). */
+const DEBUG_REDIRECT_PAGES = [
+  'app/admin-portal/impersonation-test/page.tsx',
+  'app/admin-portal/test-impersonation/page.tsx',
 ];
 
 describe('adminPortalDebugGate', () => {
@@ -49,15 +54,20 @@ describe('adminPortalDebugGate', () => {
 });
 
 describe('adminPortalDebugSurfaceGating', () => {
-  it('layout hides testing nav unless debug gate is enabled', () => {
+  it('layout and navigation config hide testing nav unless debug gate is enabled', () => {
     const layoutSource = readFileSync(
       join(WEB_ROOT, 'app/admin-portal/layout.tsx'),
       'utf8',
     );
+    const navSource = readFileSync(
+      join(WEB_ROOT, 'config/platformControllerNavigation.ts'),
+      'utf8',
+    );
 
     expect(layoutSource).toContain('isAdminPortalDebugEnabled');
-    expect(layoutSource).toContain("id: 'testing'");
     expect(layoutSource).toContain('isAdminPortalDebugEnabled()');
+    expect(navSource).toContain("id: 'testing'");
+    expect(navSource).toContain('debugGated: true');
   });
 
   it('debug page gate component renders unavailable state when disabled', () => {
@@ -74,6 +84,14 @@ describe('adminPortalDebugSurfaceGating', () => {
     it(`${relativePath} is wrapped by AdminPortalDebugPageGate`, () => {
       const source = readFileSync(join(WEB_ROOT, relativePath), 'utf8');
       expect(source).toContain('AdminPortalDebugPageGate');
+    });
+  }
+
+  for (const relativePath of DEBUG_REDIRECT_PAGES) {
+    it(`${relativePath} redirects to canonical impersonation lab`, () => {
+      const source = readFileSync(join(WEB_ROOT, relativePath), 'utf8');
+      expect(source).toContain("redirect('/admin-portal/impersonate')");
+      expect(source).not.toContain('AdminPortalDebugPageGate');
     });
   }
 });

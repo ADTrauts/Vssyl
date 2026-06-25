@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { buildPlatformControllerNavigationSections } from '../../config/platformControllerNavigation';
 
 const WEB_ROOT = join(__dirname, '../..');
 
@@ -42,11 +43,24 @@ describe('adminPortalProviderGovernance (0D-C)', () => {
     expect(api).toContain('getAIProviderExpensesCombined');
   });
 
-  it('layout nav has single AI Pipeline entry (no duplicate provider nav)', () => {
-    const layout = readFileSync(join(WEB_ROOT, 'app/admin-portal/layout.tsx'), 'utf8');
-    const pipelineMatches = layout.match(/ai-pipeline/g) ?? [];
-    expect(pipelineMatches.length).toBeGreaterThanOrEqual(1);
-    expect(layout).not.toMatch(/ai-providers/);
-    expect(layout).not.toMatch(/Provider Governance/);
+  it('navigation config has single AI Pipeline entry and hash-based provider governance', () => {
+    const sections = buildPlatformControllerNavigationSections();
+    const pipelineItems = sections.flatMap((section) =>
+      section.items.filter((item) => item.id === 'ai-pipeline'),
+    );
+    expect(pipelineItems).toHaveLength(1);
+
+    const providerItems = sections.flatMap((section) =>
+      section.items.filter((item) => item.path.includes('provider-governance')),
+    );
+    expect(providerItems).toHaveLength(1);
+    expect(providerItems[0]?.path).toBe('/admin-portal/ai-pipeline#provider-governance');
+
+    const navSource = readFileSync(
+      join(WEB_ROOT, 'config/platformControllerNavigation.ts'),
+      'utf8',
+    );
+    expect(navSource).not.toMatch(/\/admin-portal\/ai-providers/);
+    expect(navSource).not.toMatch(/\/api\/admin\/ai-providers/);
   });
 });

@@ -1,16 +1,21 @@
 import { describe, expect, it } from 'vitest';
 import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
+import { buildPlatformControllerNavigationSections } from '../../config/platformControllerNavigation';
 
 const WEB_ROOT = join(__dirname, '../..');
 const REPO_ROOT = join(__dirname, '../../../..');
 
 describe('adminPortalAiPipelineConsolidation (0D-D)', () => {
-  it('layout has single canonical AI Pipeline nav entry', () => {
+  it('navigation config has single canonical AI Pipeline nav entry', () => {
+    const pipelineItems = buildPlatformControllerNavigationSections().flatMap((section) =>
+      section.items.filter((item) => item.id === 'ai-pipeline'),
+    );
+    expect(pipelineItems).toHaveLength(1);
+    expect(pipelineItems[0]?.path).toBe('/admin-portal/ai-pipeline');
+
     const layout = readFileSync(join(WEB_ROOT, 'app/admin-portal/layout.tsx'), 'utf8');
-    const pipelineNav = (layout.match(/id: 'ai-pipeline'/g) ?? []).length;
-    expect(pipelineNav).toBe(1);
-    expect(layout).toContain("path: '/admin-portal/ai-pipeline'");
+    expect(layout).toContain('buildPlatformControllerNavigationSections');
   });
 
   it('ai-system launcher has canonical destinations only (0D-F)', () => {
