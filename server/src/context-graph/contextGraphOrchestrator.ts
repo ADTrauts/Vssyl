@@ -1,5 +1,11 @@
 import { resolveBundle, type BundleResolveInput } from './bundleResolver.js';
 import {
+  composeKnowledgeFromContextBundles,
+  orchestrateKnowledgeBundle,
+  type OrchestrateKnowledgeBundleParams,
+  type OrchestrateKnowledgeBundleResult,
+} from '../knowledge/knowledgeCompositionOrchestrator.js';
+import {
   ContextGraphForbiddenError,
   ContextGraphNotFoundError,
   resolveVLinkContainer,
@@ -15,6 +21,13 @@ import type {
 } from './contextGraphTypes.js';
 
 export { ContextGraphForbiddenError, ContextGraphNotFoundError };
+
+export {
+  composeKnowledgeFromContextBundles,
+  orchestrateKnowledgeBundle,
+  type OrchestrateKnowledgeBundleParams,
+  type OrchestrateKnowledgeBundleResult,
+};
 
 export interface ResolveVLinkBundleParams {
   userId: string;

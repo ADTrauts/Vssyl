@@ -9,6 +9,12 @@ import { normalizePublicCodeInput } from '../../services/vlinkPublicCodeService.
 import type { ContextBundleDescriptor } from '../../context-graph/contextGraphTypes.js';
 import type { ContextBundleAiGroundingPayload } from '../../context-graph/contextBundleAiContract.js';
 import { resolveVLinkBundlesForAi } from '../../context-graph/contextGraphBundleProvider.js';
+import type {
+  KnowledgeBundle,
+  KnowledgeCompositionDiagnosticsAggregate,
+  KnowledgeConvergenceDiagnosticsAggregate,
+  KnowledgeNeighborhood,
+} from '../../knowledge/knowledgeTypes.js';
 import type { PipelineContextRetrievedRecord } from '../types/pipelineDiagnostics';
 import {
   detectVLinkQuerySignals,
@@ -25,6 +31,14 @@ export type GraphBundlePipelineSkipReason =
 export interface GraphBundlePipelineContextResult {
   bundles: ContextBundleDescriptor[];
   groundingPayloads: ContextBundleAiGroundingPayload[];
+  /** Phase 1A — governed Knowledge Bundles when composition enabled. */
+  knowledgeBundles?: KnowledgeBundle[];
+  knowledgeCompositionDiagnostics?: KnowledgeCompositionDiagnosticsAggregate;
+  knowledgeCompositionApplied?: boolean;
+  /** Phase 1B — converged Knowledge Neighborhoods when convergence enabled. */
+  knowledgeNeighborhoods?: KnowledgeNeighborhood[];
+  knowledgeConvergenceDiagnostics?: KnowledgeConvergenceDiagnosticsAggregate;
+  knowledgeConvergenceApplied?: boolean;
   bundlesConsidered: number;
   bundlesUsed: number;
   totalNodes: number;

@@ -34,6 +34,15 @@ import {
 import { prepareMemoryFactsForAssembly } from '../memory/memoryContextInjection';
 import type { VLinkPipelineContextResult } from './vlinkPipelineContextService';
 import type { GraphBundlePipelineContextResult } from './graphBundlePipelineContextService';
+import {
+  buildNeighborhoodAssemblyContent,
+  neighborhoodsFromGraphContext,
+  resolvePipelineConsumerIntent,
+} from '../../knowledge/knowledgeNeighborhoodService.js';
+import {
+  resolveNeighborhoodConsumer,
+  shouldConsumeNeighborhoodsDirectly,
+} from '../../knowledge/projectAssistantNeighborhoodConsumer.js';
 
 /** Mirrors fields used from `LifeTwinQuery` without importing core (avoids circular deps). */
 export interface AIContextAssemblyQuery {
@@ -1032,7 +1041,40 @@ export function assembleAIContext(input: AIContextAssemblyInput): AIAssembledCon
     missingContext.push('V_Link context source disabled in pipeline catalog');
   }
 
-  if (graphBundlePipelineContext && graphBundlePipelineContext.bundlesUsed > 0) {
+  const pipelineConsumerIntent = resolvePipelineConsumerIntent(rawModuleContexts);
+  const neighborhoodConsumer = resolveNeighborhoodConsumer(pipelineConsumerIntent);
+  const graphNeighborhoods = neighborhoodsFromGraphContext(
+    graphBundlePipelineContext,
+    neighborhoodConsumer
+  );
+  const useNeighborhoodBlock = shouldConsumeNeighborhoodsDirectly(
+    pipelineConsumerIntent,
+    graphBundlePipelineContext
+  );
+
+  if (useNeighborhoodBlock && graphNeighborhoods.length > 0) {
+    const neighborhoodContent = buildNeighborhoodAssemblyContent(
+      graphNeighborhoods,
+      neighborhoodConsumer,
+      graphBundlePipelineContext?.knowledgeBundles
+    );
+    contextBlocks.push({
+      title: 'Knowledge Neighborhood (connected understanding)',
+      sourceType: 'graph_bundle',
+      content: neighborhoodContent,
+      priority: 'high',
+      tier: 'tier4_cross_module',
+      inclusionReason:
+        'canonical Knowledge Neighborhood read model — summary, facts, relationships, activity, history, confidence, provenance (no manual bundle reconstruction)',
+    });
+    evidence.push({
+      label: 'Knowledge Neighborhood',
+      sourceType: 'graph_bundle',
+      sourceId: 'knowledge_neighborhood',
+      detail: `${neighborhoodContent.cards.length} neighborhood card(s); ${neighborhoodContent.serviceDiagnostics.relationshipCount} relationship(s); ${neighborhoodContent.serviceDiagnostics.factCount} fact(s)`,
+      confidence: 'high',
+    });
+  } else if (graphBundlePipelineContext && graphBundlePipelineContext.bundlesUsed > 0) {
     contextBlocks.push({
       title: 'Context Graph Bundles (formal)',
       sourceType: 'graph_bundle',

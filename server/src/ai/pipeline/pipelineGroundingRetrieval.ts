@@ -44,6 +44,10 @@ import {
 } from '../../context-graph/enrichGraphBundlesFromRetrieval.js';
 import { isRetrievalBundleBridgeEnabled } from '../../context-graph/retrievalBundleBridgeConfig.js';
 import type { TenantScope } from '../../context-graph/contextGraphTypes.js';
+import { composePipelineKnowledgeBundles } from '../../knowledge/knowledgeCompositionOrchestrator.js';
+import { isKnowledgeCompositionEnabled } from '../../knowledge/knowledgeCompositionConfig.js';
+import { buildNeighborhoodModuleContextPatch } from '../../knowledge/projectAssistantNeighborhoodConsumer.js';
+import { memoryRetrievalService } from '../memory/MemoryRetrievalService.js';
 import {
   isGroundingReconcileEnabled,
   reconcileGroundingArtifacts,
@@ -173,6 +177,58 @@ function mergeModuleContextPatch(
     ...prior,
     ...fetched,
     pipelineGroundingBoost: true,
+  };
+}
+
+async function ensureKnowledgeCompositionOnGraphContext(
+  graphContext: import('../context/graphBundlePipelineContextService.js').GraphBundlePipelineContextResult | undefined,
+  consumerIntent: ReturnType<typeof resolveRetrievalConsumerIntent>,
+  input: { userId: string; userMessage: string; businessId?: string }
+): Promise<import('../context/graphBundlePipelineContextService.js').GraphBundlePipelineContextResult | undefined> {
+  if (!graphContext || graphContext.bundles.length === 0 || graphContext.knowledgeCompositionApplied) {
+    return graphContext;
+  }
+
+  const knowledgeConsumer =
+    consumerIntent && isKnowledgeCompositionEnabled(consumerIntent as import('../../knowledge/knowledgeTypes.js').KnowledgeConsumerId)
+      ? consumerIntent
+      : undefined;
+
+  let memoryFacts: import('../../services/userMemoryFactService.js').RetrievedMemoryFact[] | undefined;
+  if (knowledgeConsumer) {
+    try {
+      const memoryResult = await memoryRetrievalService.retrieve({
+        userId: input.userId,
+        query: input.userMessage,
+        businessId: input.businessId,
+      });
+      memoryFacts = memoryResult.facts;
+    } catch (error: unknown) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      void logger.warn('Knowledge pipeline memory retrieval failed', {
+        operation: 'knowledge_memory_compose',
+        error: { message: err.message },
+      });
+    }
+  }
+
+  const composed = composePipelineKnowledgeBundles({
+    contextBundles: graphContext.bundles,
+    consumerIntent,
+    userId: input.userId,
+    memoryFacts,
+  });
+  if (!composed.compositionApplied || !composed.knowledgeBundles) {
+    return graphContext;
+  }
+  return {
+    ...graphContext,
+    knowledgeBundles: composed.knowledgeBundles,
+    knowledgeCompositionDiagnostics: composed.compositionDiagnostics,
+    knowledgeCompositionApplied: true,
+    knowledgeNeighborhoods: composed.knowledgeNeighborhoods,
+    knowledgeConvergenceDiagnostics: composed.convergenceDiagnostics,
+    knowledgeConvergenceApplied: composed.convergenceApplied,
   };
 }
 
@@ -538,14 +594,35 @@ export async function runPipelineGroundingRetrieval(
       };
       const baseGraphContext =
         result.graphBundlePipelineContext ?? emptyGraphBundlePipelineContext();
+      const memoryForBridge = await memoryRetrievalService
+        .retrieve({
+          userId: input.userId,
+          query: input.userMessage,
+          businessId: input.businessId,
+        })
+        .then((r) => r.facts)
+        .catch(() => undefined);
+
       const bridgeResult = enrichGraphBundlesFromRetrieval({
         graphBundleContext: baseGraphContext,
         retrievalDiscovery: retrievalHook.retrievalDiscovery,
         inferredIntents,
         tenantScope,
         userMessage: input.userMessage,
+        userId: input.userId,
+        memoryFacts: memoryForBridge,
       });
       result.graphBundlePipelineContext = bridgeResult.graphBundleContext;
+      if (bridgeResult.graphBundleContext.knowledgeConvergenceApplied) {
+        result.contextRetrieved.push({
+          source: 'knowledge_neighborhood',
+          provider: 'knowledge_convergence_engine',
+          itemCount: bridgeResult.graphBundleContext.knowledgeNeighborhoods?.length ?? 0,
+        });
+        if (!result.sourcesUsed.includes('knowledge_neighborhood')) {
+          result.sourcesUsed.push('knowledge_neighborhood');
+        }
+      }
       if (bridgeResult.enrichment?.enrichmentApplied) {
         result.contextRetrieved.push({
           source: 'graph_bundle',
@@ -583,6 +660,57 @@ export async function runPipelineGroundingRetrieval(
     contextRetrieved: result.contextRetrieved,
     retrievalDiscovery: result.retrievalDiscovery,
   });
+
+  const compositionConsumerIntent = resolveRetrievalConsumerIntent(
+    inferredIntents,
+    input.userMessage
+  );
+  const composedGraphContext = await ensureKnowledgeCompositionOnGraphContext(
+    result.graphBundlePipelineContext,
+    compositionConsumerIntent,
+    {
+      userId: input.userId,
+      userMessage: input.userMessage,
+      businessId: input.businessId,
+    }
+  );
+  if (
+    composedGraphContext?.knowledgeCompositionApplied &&
+    composedGraphContext !== result.graphBundlePipelineContext
+  ) {
+    result.graphBundlePipelineContext = composedGraphContext;
+    result.contextRetrieved.push({
+      source: 'knowledge_bundle',
+      provider: 'knowledge_composition_engine',
+      itemCount: composedGraphContext.knowledgeBundles?.length ?? 0,
+    });
+    if (!result.sourcesUsed.includes('knowledge_bundle')) {
+      result.sourcesUsed.push('knowledge_bundle');
+    }
+  }
+
+  if (composedGraphContext?.knowledgeConvergenceApplied) {
+    result.contextRetrieved.push({
+      source: 'knowledge_neighborhood',
+      provider: 'knowledge_convergence_engine',
+      itemCount: composedGraphContext.knowledgeNeighborhoods?.length ?? 0,
+    });
+    if (!result.sourcesUsed.includes('knowledge_neighborhood')) {
+      result.sourcesUsed.push('knowledge_neighborhood');
+    }
+  }
+
+  const neighborhoodConsumerIntent = resolveRetrievalConsumerIntent(
+    inferredIntents,
+    input.userMessage
+  );
+  const neighborhoodPatch = buildNeighborhoodModuleContextPatch(
+    neighborhoodConsumerIntent,
+    result.graphBundlePipelineContext
+  );
+  if (neighborhoodPatch) {
+    Object.assign(result.moduleContextsPatch, neighborhoodPatch);
+  }
 
   return result;
 }

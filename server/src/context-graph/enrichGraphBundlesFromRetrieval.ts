@@ -7,6 +7,8 @@ import { enrichBundlesWithRetrievalEvidence } from './retrievalBundleInferenceBr
 import { isRetrievalBundleBridgeEnabled } from './retrievalBundleBridgeConfig.js';
 import type { RetrievalBundleEnrichmentResult } from './retrievalInferenceTypes.js';
 import type { GraphBundlePipelineContextResult } from '../ai/context/graphBundlePipelineContextService.js';
+import { composePipelineKnowledgeBundles } from '../knowledge/knowledgeCompositionOrchestrator.js';
+import type { AIRetrievalConsumerIntent } from '../ai/retrieval/aiRetrievalTypes.js';
 
 export function emptyGraphBundlePipelineContext(): GraphBundlePipelineContextResult {
   return {
@@ -32,11 +34,41 @@ export interface EnrichGraphBundlesFromRetrievalParams {
   inferredIntents: PipelineIntentId[];
   tenantScope: TenantScope;
   userMessage?: string;
+  userId?: string;
+  memoryFacts?: import('../services/userMemoryFactService.js').RetrievedMemoryFact[];
 }
 
 export interface EnrichGraphBundlesFromRetrievalResult {
   graphBundleContext: GraphBundlePipelineContextResult;
   enrichment?: RetrievalBundleEnrichmentResult;
+}
+
+function applyKnowledgeComposition(
+  graphBundleContext: GraphBundlePipelineContextResult,
+  consumerIntent?: AIRetrievalConsumerIntent,
+  options?: {
+    userId?: string;
+    memoryFacts?: import('../services/userMemoryFactService.js').RetrievedMemoryFact[];
+  }
+): GraphBundlePipelineContextResult {
+  const composed = composePipelineKnowledgeBundles({
+    contextBundles: graphBundleContext.bundles,
+    consumerIntent,
+    userId: options?.userId,
+    memoryFacts: options?.memoryFacts,
+  });
+  if (!composed.compositionApplied || !composed.knowledgeBundles) {
+    return graphBundleContext;
+  }
+  return {
+    ...graphBundleContext,
+    knowledgeBundles: composed.knowledgeBundles,
+    knowledgeCompositionDiagnostics: composed.compositionDiagnostics,
+    knowledgeCompositionApplied: true,
+    knowledgeNeighborhoods: composed.knowledgeNeighborhoods,
+    knowledgeConvergenceDiagnostics: composed.convergenceDiagnostics,
+    knowledgeConvergenceApplied: composed.convergenceApplied,
+  };
 }
 
 function buildTenantScopeFromParams(params: EnrichGraphBundlesFromRetrievalParams): TenantScope {
@@ -57,9 +89,15 @@ export function enrichGraphBundlesFromRetrieval(
     params.inferredIntents,
     params.userMessage
   );
+  const composeOptions = { userId: params.userId, memoryFacts: params.memoryFacts };
+
   if (!consumerIntent || !isRetrievalBundleBridgeEnabled(consumerIntent)) {
     return {
-      graphBundleContext: params.graphBundleContext,
+      graphBundleContext: applyKnowledgeComposition(
+        params.graphBundleContext,
+        consumerIntent,
+        composeOptions
+      ),
       enrichment: {
         bundles: params.graphBundleContext.bundles,
         enrichmentApplied: false,
@@ -79,7 +117,14 @@ export function enrichGraphBundlesFromRetrieval(
   });
 
   if (!enrichment.enrichmentApplied) {
-    return { graphBundleContext: params.graphBundleContext, enrichment };
+    return {
+      graphBundleContext: applyKnowledgeComposition(
+        params.graphBundleContext,
+        consumerIntent,
+        composeOptions
+      ),
+      enrichment,
+    };
   }
 
   const groundingPayloads = enrichment.bundles.map((b) => bundleToAiGroundingPayload(b));
@@ -95,16 +140,20 @@ export function enrichGraphBundlesFromRetrieval(
   }
 
   return {
-    graphBundleContext: {
-      ...params.graphBundleContext,
-      bundles: enrichment.bundles,
-      groundingPayloads,
-      bundlesUsed: enrichment.bundles.length,
-      totalNodes,
-      totalRestrictedNodes,
-      totalOmittedNodes,
-      estimatedTokens,
-    },
+    graphBundleContext: applyKnowledgeComposition(
+      {
+        ...params.graphBundleContext,
+        bundles: enrichment.bundles,
+        groundingPayloads,
+        bundlesUsed: enrichment.bundles.length,
+        totalNodes,
+        totalRestrictedNodes,
+        totalOmittedNodes,
+        estimatedTokens,
+      },
+      consumerIntent,
+      composeOptions
+    ),
     enrichment,
   };
 }

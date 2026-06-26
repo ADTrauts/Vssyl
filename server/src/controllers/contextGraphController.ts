@@ -15,6 +15,14 @@ import {
   bundleToAiGroundingPayload,
 } from '../context-graph/contextBundleAiContract.js';
 import { resolveVLinkBundlesForAi } from '../context-graph/contextGraphBundleProvider.js';
+import {
+  composeKnowledgeFromContextBundles,
+  orchestrateKnowledgeBundle,
+} from '../knowledge/knowledgeCompositionOrchestrator.js';
+import { toOperatorDiagnosticsView } from '../knowledge/knowledgeCompositionDiagnostics.js';
+import { toOperatorConvergenceView } from '../knowledge/knowledgeConvergenceDiagnostics.js';
+import { retrieveNeighborhoods } from '../knowledge/knowledgeNeighborhoodService.js';
+import type { KnowledgeConsumerId } from '../knowledge/knowledgeTypes.js';
 
 function getUserId(req: Request): string | null {
   return (req as AuthenticatedRequest).user?.id ?? null;
@@ -247,6 +255,192 @@ export async function postAiGroundingBundleHandler(req: Request, res: Response):
         totalNodes: bundle.nodes.length,
         totalRestrictedNodes: bundle.summaries.stats.restrictedNodeCount,
         totalOmittedNodes: bundle.composition.nodesOmitted,
+      },
+    });
+  } catch (error: unknown) {
+    handleContextGraphError(res, error);
+  }
+}
+
+function parseKnowledgeConsumer(value: unknown): KnowledgeConsumerId {
+  const allowed: KnowledgeConsumerId[] = [
+    'project_assistant',
+    'planning',
+    'business_operations',
+    'local_discovery',
+    'ai_pipeline',
+    'hub_ui',
+    'api_client',
+    'admin_diagnostic',
+  ];
+  if (typeof value === 'string' && allowed.includes(value as KnowledgeConsumerId)) {
+    return value as KnowledgeConsumerId;
+  }
+  return 'api_client';
+}
+
+export async function postKnowledgeComposeHandler(req: Request, res: Response): Promise<void> {
+  try {
+    const userId = getUserId(req);
+    if (!userId) {
+      res.status(401).json({ success: false, error: { code: 'CG_UNAUTHORIZED', message: 'Authentication required' } });
+      return;
+    }
+
+    const bodyRecord =
+      req.body && typeof req.body === 'object' ? (req.body as Record<string, unknown>) : {};
+    const consumer = parseKnowledgeConsumer(bodyRecord.consumer);
+    const tenantScope = parseTenantScope(req.body);
+    const containerRoot = parseContainerRoot(req.body);
+    const entityRoot = parseEntityRoot(req.body);
+    const vlinkIdOrCode =
+      typeof bodyRecord.vlinkIdOrCode === 'string' ? bodyRecord.vlinkIdOrCode : undefined;
+
+    const orchestrated = await orchestrateKnowledgeBundle({
+      userId,
+      vlinkIdOrCode,
+      root: containerRoot ?? entityRoot ?? undefined,
+      tenantScope: tenantScope ?? undefined,
+      consumer,
+      converge: true,
+      options: {
+        depth: parseDepth(bodyRecord.depth),
+        nodeBudget: parseBudget(bodyRecord.nodeBudget, 50),
+        edgeBudget: parseBudget(bodyRecord.edgeBudget, 50),
+        consumer: consumer === 'ai_pipeline' ? 'ai_pipeline' : 'api_client',
+      },
+    });
+
+    if (orchestrated.knowledgeBundles.length === 0) {
+      res.status(404).json({
+        success: false,
+        error: { code: 'KB_EMPTY', message: 'No context bundles resolved for composition' },
+      });
+      return;
+    }
+
+    res.setHeader('X-Knowledge-Bundle-Contract-Version', '1.0');
+    res.setHeader('X-Knowledge-Neighborhood-Contract-Version', '1.0');
+    res.json({
+      success: true,
+      data: {
+        bundles: orchestrated.knowledgeBundles,
+        neighborhoods: orchestrated.knowledgeNeighborhoods,
+        contextBundles: orchestrated.contextBundles,
+        diagnostics: orchestrated.composition.diagnostics,
+        convergenceDiagnostics: orchestrated.convergenceDiagnostics,
+      },
+      meta: {
+        bundlesComposed: orchestrated.knowledgeBundles.length,
+        compositionDurationMs: orchestrated.composition.compositionDurationMs,
+        consumer,
+      },
+    });
+  } catch (error: unknown) {
+    handleContextGraphError(res, error);
+  }
+}
+
+export async function postKnowledgeDiagnosticsHandler(req: Request, res: Response): Promise<void> {
+  try {
+    const userId = getUserId(req);
+    if (!userId) {
+      res.status(401).json({ success: false, error: { code: 'CG_UNAUTHORIZED', message: 'Authentication required' } });
+      return;
+    }
+
+    const bodyRecord =
+      req.body && typeof req.body === 'object' ? (req.body as Record<string, unknown>) : {};
+    const contextBundlesRaw = bodyRecord.contextBundles;
+    const consumer = parseKnowledgeConsumer(bodyRecord.consumer);
+
+    if (!Array.isArray(contextBundlesRaw) || contextBundlesRaw.length === 0) {
+      res.status(400).json({
+        success: false,
+        error: { code: 'KB_INVALID_INPUT', message: 'contextBundles[] required' },
+      });
+      return;
+    }
+
+    const composition = composeKnowledgeFromContextBundles({
+      contextBundles: contextBundlesRaw as import('../context-graph/contextGraphTypes.js').ContextBundleDescriptor[],
+      consumer,
+    });
+
+    res.setHeader('X-Knowledge-Bundle-Contract-Version', '1.0');
+    res.json({
+      success: true,
+      data: {
+        aggregate: composition.diagnostics,
+        bundles: composition.bundles.map((b) => toOperatorDiagnosticsView(b)),
+      },
+    });
+  } catch (error: unknown) {
+    handleContextGraphError(res, error);
+  }
+}
+
+export async function postKnowledgeNeighborhoodHandler(req: Request, res: Response): Promise<void> {
+  try {
+    const userId = getUserId(req);
+    if (!userId) {
+      res.status(401).json({ success: false, error: { code: 'CG_UNAUTHORIZED', message: 'Authentication required' } });
+      return;
+    }
+
+    const bodyRecord =
+      req.body && typeof req.body === 'object' ? (req.body as Record<string, unknown>) : {};
+    const consumer = parseKnowledgeConsumer(bodyRecord.consumer);
+    const tenantScope = parseTenantScope(req.body);
+    const containerRoot = parseContainerRoot(req.body);
+    const entityRoot = parseEntityRoot(req.body);
+    const vlinkIdOrCode =
+      typeof bodyRecord.vlinkIdOrCode === 'string' ? bodyRecord.vlinkIdOrCode : undefined;
+
+    const orchestrated = await retrieveNeighborhoods({
+      userId,
+      consumer,
+      vlinkIdOrCode,
+      root: containerRoot ?? entityRoot ?? undefined,
+      tenantScope: tenantScope ?? undefined,
+      options: {
+        depth: parseDepth(bodyRecord.depth),
+        nodeBudget: parseBudget(bodyRecord.nodeBudget, 50),
+        edgeBudget: parseBudget(bodyRecord.edgeBudget, 50),
+        consumer: consumer === 'ai_pipeline' ? 'ai_pipeline' : 'api_client',
+      },
+    });
+
+    if (orchestrated.neighborhoods.length === 0) {
+      if (orchestrated.bundles.length === 0) {
+        res.status(404).json({
+          success: false,
+          error: { code: 'KN_EMPTY', message: 'No knowledge resolved for neighborhood' },
+        });
+        return;
+      }
+      res.status(503).json({
+        success: false,
+        error: {
+          code: 'KN_CONVERGENCE_DISABLED',
+          message: 'Knowledge convergence not enabled — set KNOWLEDGE_CONVERGENCE_ENABLED=true',
+        },
+        data: { bundles: orchestrated.bundles },
+      });
+      return;
+    }
+
+    res.setHeader('X-Knowledge-Neighborhood-Contract-Version', '1.0');
+    res.setHeader('X-Knowledge-Card-Contract-Version', '1.0');
+    res.json({
+      success: true,
+      data: {
+        neighborhoods: orchestrated.neighborhoods,
+        knowledgeCards: orchestrated.knowledgeCards,
+        bundles: orchestrated.bundles,
+        serviceDiagnostics: orchestrated.diagnostics,
+        operatorViews: orchestrated.neighborhoods.map((n) => toOperatorConvergenceView(n)),
+        source: orchestrated.source,
       },
     });
   } catch (error: unknown) {

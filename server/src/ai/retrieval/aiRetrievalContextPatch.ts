@@ -54,6 +54,11 @@ export function buildRetrievalContextPatch(
             evidenceCount: diagnostics.evidenceCount,
             providerCount: diagnostics.providerCount,
           },
+          knowledgeConsumption: {
+            readModel: 'knowledge_neighborhood',
+            presentationContract: 'knowledge_card',
+            note: 'Neighborhood payload attached via _knowledge_neighborhood when convergence enabled',
+          },
         },
       },
     };

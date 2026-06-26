@@ -56,6 +56,10 @@ describe('aiRetrievalContextPatch', () => {
         modulesContributing: ['drive', 'todo'],
         retrievalSourceDiversity: 2,
         evidenceUtilization: { evidenceCount: 2, providerCount: 3 },
+        knowledgeConsumption: {
+          readModel: 'knowledge_neighborhood',
+          presentationContract: 'knowledge_card',
+        },
       },
     });
   });

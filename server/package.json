@@ -36,7 +36,8 @@
     "stripe:sync-per-employee": "ts-node src/scripts/syncPerEmployeeStripePrices.ts",
     "stripe:setup-query-packs": "ts-node src/scripts/setupQueryPackProducts.ts",
     "stripe:sync-query-pack-prices": "ts-node src/scripts/syncQueryPackPrices.ts",
-    "validate:platform-adoption": "vitest run src/platform-adoption/__tests__/platformAdoptionCiValidation.test.ts"
+    "validate:platform-adoption": "vitest run src/platform-adoption/__tests__/platformAdoptionCiValidation.test.ts",
+    "validate:connected-knowledge": "vitest run src/knowledge/__tests__"
   },
   "keywords": [],
   "author": "",
