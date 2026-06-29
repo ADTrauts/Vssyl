@@ -18,6 +18,11 @@ import { Button, Card, Modal } from 'shared/components';
 import { Module, getInstalledModules } from '../api/modules';
 import { useSession } from 'next-auth/react';
 import {
+  filterAssignableModulesForTabPicker,
+  filterModulesForDashboardPicker,
+} from '../lib/applicationLifecycle';
+import { isPlatformModuleId } from 'shared/types';
+import {
   DASHBOARD_TAB_CORE_MODULE_IDS,
   isLockedTabModuleId,
   normalizeSelectedModuleIds,
@@ -239,27 +244,13 @@ export default function DashboardBuildOutModal({
           if (modules.length === 0) {
             modules = fallbackPersonalModules();
           }
-        } else {
+          modules = filterModulesForDashboardPicker(modules, 'personal') as Module[];
+        } else if (businessId) {
           try {
-            const params = new URLSearchParams();
-            params.append('scope', 'business');
-            if (businessId) {
-              params.append('businessId', businessId);
-              params.append('pricingTier', 'enterprise');
-            }
-
-            const response = await fetch(`/api/modules/marketplace?${params.toString()}`, {
-              headers: {
-                Authorization: `Bearer ${session.accessToken}`,
-              },
-            });
-
-            if (response.ok) {
-              const data = await response.json();
-              modules = data.data || [];
-            }
+            modules = await getInstalledModules({ scope: 'business', businessId });
+            modules = filterModulesForDashboardPicker(modules, 'business') as Module[];
           } catch (apiError: unknown) {
-            console.warn('Failed to load business marketplace modules', apiError);
+            console.warn('Failed to load installed business modules for assignment', apiError);
           }
         }
 
@@ -276,9 +267,11 @@ export default function DashboardBuildOutModal({
   }, [isOpen, session?.accessToken, isPersonalScope, businessId]);
 
   const handleQuickSetup = (option: QuickSetupOption) => {
-    const moduleIds = option.modules.filter((moduleId) =>
-      availableModules.some((module) => module.id === moduleId)
-    );
+    const moduleIds = option.modules
+      .filter((moduleId) => !isPlatformModuleId(moduleId))
+      .filter((moduleId) =>
+        availableModules.some((module) => module.id === moduleId)
+      );
     onComplete(moduleIds);
   };
 
@@ -298,8 +291,9 @@ export default function DashboardBuildOutModal({
     setSelectedModules(newSelected);
   };
 
-  const additionalModules = availableModules.filter(
-    (module) => !isPersonalScope || !isLockedTabModuleId(module.id)
+  const additionalModules = filterAssignableModulesForTabPicker(
+    availableModules,
+    isPersonalScope ? 'personal' : 'business'
   );
 
   const filteredModules = additionalModules.filter(
@@ -350,12 +344,12 @@ export default function DashboardBuildOutModal({
     <div>
       <div className="mb-6">
         <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
-          {isPersonalScope ? 'Choose modules for this tab' : 'Select Modules'}
+          {isPersonalScope ? 'Assign applications to this tab' : 'Assign installed applications'}
         </h3>
         <p className="text-gray-600 dark:text-gray-400 text-sm mb-4">
           {isPersonalScope
-            ? 'Drive, Chat, and Calendar are included on every tab. Pick any additional installed modules below.'
-            : 'Choose the modules you want to include in your dashboard'}
+            ? 'Choose which installed applications appear on this tab. Install new apps from the Application Manager — this picker only assigns membership.'
+            : 'Choose installed applications for this workspace. Install apps from the business Application Manager first.'}
         </p>
 
         {isPersonalScope && coreModulesForDisplay.length > 0 && (
@@ -402,11 +396,11 @@ export default function DashboardBuildOutModal({
               Additional installed modules
             </h4>
             <Link
-              href="/modules?tab=marketplace"
+              href={isPersonalScope ? '/modules?tab=marketplace' : `/business/${businessId}/modules?tab=marketplace`}
               className="inline-flex items-center gap-2 text-sm font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
             >
               <Store className="w-4 h-4" />
-              Browse marketplace to add modules
+              Browse marketplace to install applications
             </Link>
           </div>
         )}
@@ -490,16 +484,24 @@ export default function DashboardBuildOutModal({
           <Puzzle className="w-12 h-12 mx-auto text-gray-400 mb-4" />
           <p className="text-gray-600 dark:text-gray-400 mb-4">
             {searchQuery
-              ? 'No installed modules match your search'
-              : 'No additional modules installed yet'}
+              ? 'No installed applications match your search'
+              : 'No additional applications installed yet'}
           </p>
-          {isPersonalScope && !searchQuery && (
-            <Link href="/modules?tab=marketplace">
-              <Button variant="secondary">
-                <Store className="w-4 h-4 mr-2 inline" />
-                Open marketplace
+          {!searchQuery && (
+            <div className="flex flex-col sm:flex-row items-center justify-center gap-3">
+              <Link href={isPersonalScope ? '/modules?tab=marketplace' : `/business/${businessId}/modules?tab=marketplace`}>
+                <Button variant="primary">
+                  <Store className="w-4 h-4 mr-2 inline" />
+                  Browse Marketplace
+                </Button>
+              </Link>
+              <Link href={isPersonalScope ? '/modules' : `/business/${businessId}/modules`}>
+                <Button variant="secondary">Install Application</Button>
+              </Link>
+              <Button variant="secondary" onClick={onClose}>
+                Return to Dashboard
               </Button>
-            </Link>
+            </div>
           )}
         </div>
       )}

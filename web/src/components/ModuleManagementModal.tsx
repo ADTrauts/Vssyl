@@ -207,11 +207,12 @@ export default function ModuleManagementModal({
     <Modal
       open={isOpen}
       onClose={onClose}
-      title="Manage Dashboard Modules"
+      title="Manage Dashboard Assignment"
       size="xlarge"
     >
       <p className="text-sm text-gray-600 dark:text-gray-400 -mt-v-2 mb-v-4">
-        Add or remove modules for &quot;{dashboard.name}&quot;
+        Add or remove applications on &quot;{dashboard.name}&quot;. Installation is managed in
+        Application Manager — this dialog only controls tab membership.
       </p>
 
       <div className="overflow-y-auto max-h-[min(60vh,32rem)] -mx-v-6 px-v-6">

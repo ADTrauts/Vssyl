@@ -20,6 +20,7 @@ Complement (not replace) `memory-bank/systemPatterns.md` for product-level archi
 | Policy Engine (v1) | [POLICY_ENGINE.md](./POLICY_ENGINE.md) | `policy-engine.mdc` |
 | Domain event bus | [DOMAIN_EVENTS.md](./DOMAIN_EVENTS.md) | `domain-events.mdc` |
 | Workspace runtime + module contracts | [WORKSPACE_RUNTIME_AND_MODULE_CONTRACTS.md](./WORKSPACE_RUNTIME_AND_MODULE_CONTRACTS.md) | `workspace-runtime.mdc`, `runtime-state-boundaries.mdc` |
+| **Application lifecycle** | [APPLICATION_LIFECYCLE.md](./APPLICATION_LIFECYCLE.md) | `module-development.mdc`, `moduleClassification` |
 | **Reference Workspace Program** | [audits/REFERENCE_WORKSPACE_CHARTER_REVIEW.md](./audits/REFERENCE_WORKSPACE_CHARTER_REVIEW.md) | `module-development.mdc` (hub pattern) |
 | **AI platform overview (diagram hub)** | [AI_PLATFORM_OVERVIEW.md](./AI_PLATFORM_OVERVIEW.md) | — |
 | Digital Life Twin prompt path | [AI_TWIN_PROMPT_PIPELINE.md](./AI_TWIN_PROMPT_PIPELINE.md) | — |

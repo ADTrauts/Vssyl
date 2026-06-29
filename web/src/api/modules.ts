@@ -1,4 +1,4 @@
-import { authenticatedApiCall } from '../lib/apiUtils';
+import type { ApplicationLifecycleMetadata } from 'shared/types';
 import {
   subscribeModule as billingSubscribeModule,
   type ModuleSubscription,
@@ -92,6 +92,8 @@ export interface Module {
   subscriptionAmount?: number;
   // Built-in module indicator
   isBuiltIn?: boolean;
+  /** Future-ready lifecycle metadata (versioning, enablement, updates). */
+  lifecycle?: ApplicationLifecycleMetadata;
 }
 
 export interface ModuleInstallation {

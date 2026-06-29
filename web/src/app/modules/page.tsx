@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
+import { useSession } from 'next-auth/react';
 import { Card, Button, Badge, Spinner, Alert } from 'shared/components';
 import {
   getInstalledModules,
@@ -18,6 +19,10 @@ import {
   PersonalInstalledModulesView,
   MarketplaceModuleGrid,
 } from '../../components/modules/PersonalModuleManagerView';
+import { ManageDashboardAssignmentModal } from '../../components/modules/ManageDashboardAssignmentModal';
+import { getDashboards } from '../../api/dashboard';
+import { findPersonalDashboardAssignments } from '../../lib/dashboardAssignment';
+import type { Dashboard } from 'shared/types';
 
 type TabType = 'installed' | 'marketplace' | 'submit';
 
@@ -31,6 +36,7 @@ function getModuleScope(module: ApiModule): ModuleScopeClassification | null {
 export default function ModulesPage() {
   const searchParams = useSearchParams();
   const router = useRouter();
+  const { data: session } = useSession();
   const [activeTab, setActiveTab] = useState<TabType>('installed');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -39,10 +45,19 @@ export default function ModulesPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [selectedCategory, setSelectedCategory] = useState('all');
   const [selectedPricingTier, setSelectedPricingTier] = useState('all');
+  const [personalDashboards, setPersonalDashboards] = useState<Dashboard[]>([]);
+  const [manageModuleId, setManageModuleId] = useState<string | null>(null);
 
   useEffect(() => {
     migrateLegacyModuleManagerPreferences();
   }, []);
+
+  useEffect(() => {
+    if (!session?.accessToken) return;
+    getDashboards(session.accessToken)
+      .then((all) => setPersonalDashboards(all.personal ?? []))
+      .catch(() => setPersonalDashboards([]));
+  }, [session?.accessToken]);
 
   useEffect(() => {
     const tab = searchParams?.get('tab') as TabType;
@@ -138,7 +153,7 @@ export default function ModulesPage() {
         <div>
           <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100">Marketplace</h2>
           <p className="text-gray-600 dark:text-gray-400">
-            Discover and install applications for your personal workspace
+            Discover applications to install — assignment to dashboard tabs happens separately
           </p>
         </div>
         <div className="flex items-center gap-3">
@@ -196,6 +211,7 @@ export default function ModulesPage() {
         loading={loading}
         onInstall={handleInstallModule}
         actionLoadingId={actionLoading}
+        showFutureSections
       />
     </div>
   );
@@ -228,6 +244,10 @@ export default function ModulesPage() {
       </Card>
     </div>
   );
+
+  const managedModule = manageModuleId
+    ? modules.find((m) => m.id === manageModuleId)
+    : null;
 
   return (
     <div className="bg-gray-50 dark:bg-slate-800 min-h-screen">
@@ -272,7 +292,9 @@ export default function ModulesPage() {
             onBrowseMarketplace={() => handleTabChange('marketplace')}
             actions={{
               onOpen: (moduleId) => router.push(`/modules/run/${moduleId}?scope=personal`),
-              onConfigure: (moduleId) => router.push(`/modules/run/${moduleId}?scope=personal&configure=1`),
+              onConfigure: (moduleId) =>
+                router.push(`/modules/run/${moduleId}?scope=personal&configure=1`),
+              onManageDashboards: (moduleId) => setManageModuleId(moduleId),
               onUninstall: handleUninstallModule,
               actionLoadingId: actionLoading,
             }}
@@ -281,6 +303,15 @@ export default function ModulesPage() {
         {activeTab === 'marketplace' && renderMarketplaceTab()}
         {activeTab === 'submit' && renderSubmitTab()}
       </div>
+
+      {managedModule && (
+        <ManageDashboardAssignmentModal
+          isOpen={Boolean(manageModuleId)}
+          onClose={() => setManageModuleId(null)}
+          moduleName={managedModule.name}
+          assignments={findPersonalDashboardAssignments(personalDashboards, managedModule.id)}
+        />
+      )}
     </div>
   );
 }

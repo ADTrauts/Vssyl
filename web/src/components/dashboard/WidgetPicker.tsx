@@ -1,7 +1,9 @@
 'use client';
 
 import React, { useState, useEffect, useMemo } from 'react';
-import { X, Search, Plus, Package } from 'lucide-react';
+import Link from 'next/link';
+import { X, Search, Plus, Package, Store } from 'lucide-react';
+import { Button } from 'shared/components';
 import { useSession } from 'next-auth/react';
 import { getInstalledModules } from '../../api/modules';
 import {
@@ -14,6 +16,7 @@ import {
   type WidgetCategory,
 } from './widgetRegistry';
 import { getWidgetPickerAvailableEntries } from '../../runtime/modules/adapters/widgetPickerAdapter';
+import { filterModulesForDashboardPicker } from '../../lib/applicationLifecycle';
 
 type DashboardType = 'personal' | 'business' | 'educational' | 'household';
 
@@ -55,7 +58,11 @@ export default function WidgetPicker({
 
     getInstalledModules(opts)
       .then((modules) => {
-        let ids = modules.map((m) => m.id || m.name);
+        const installedOnly = filterModulesForDashboardPicker(
+          modules,
+          dashboardType === 'business' ? 'business' : 'personal'
+        );
+        let ids = installedOnly.map((m) => m.id || m.name);
         if (
           dashboardType === 'personal' &&
           selectedModuleIds &&
@@ -214,6 +221,8 @@ export default function WidgetPicker({
             <EmptyState
               hasSearch={!!searchQuery.trim()}
               hasCategory={activeCategory !== 'all'}
+              dashboardType={dashboardType}
+              businessId={businessId}
             />
           ) : activeCategory === 'all' ? (
             nonEmptyCategories.map((cat) => (
@@ -340,23 +349,51 @@ function WidgetCard({
 function EmptyState({
   hasSearch,
   hasCategory,
+  dashboardType,
+  businessId,
 }: {
   hasSearch: boolean;
   hasCategory: boolean;
+  dashboardType: DashboardType;
+  businessId?: string | null;
 }) {
+  const marketplaceHref =
+    dashboardType === 'business' && businessId
+      ? `/business/${businessId}/modules?tab=marketplace`
+      : '/modules?tab=marketplace';
+  const managerHref =
+    dashboardType === 'business' && businessId
+      ? `/business/${businessId}/modules`
+      : '/modules';
+
   return (
-    <div className="flex flex-col items-center justify-center py-12 text-center">
+    <div className="flex flex-col items-center justify-center py-12 text-center px-4">
       <Package className="w-10 h-10 text-gray-600 mb-3" />
       <p className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-1">
         {hasSearch ? 'No widgets found' : 'No widgets available'}
       </p>
-      <p className="text-xs text-gray-600 dark:text-gray-400">
+      <p className="text-xs text-gray-600 dark:text-gray-400 mb-4">
         {hasSearch
           ? 'Try a different search term'
           : hasCategory
             ? 'No widgets in this category'
-            : 'Install modules to unlock more widgets'}
+            : 'Install applications first, then assign them to this dashboard tab'}
       </p>
+      {!hasSearch && !hasCategory && (
+        <div className="flex flex-col sm:flex-row gap-2">
+          <Link href={marketplaceHref}>
+            <Button variant="primary" size="sm">
+              <Store className="w-4 h-4 mr-1" />
+              Browse Marketplace
+            </Button>
+          </Link>
+          <Link href={managerHref}>
+            <Button variant="secondary" size="sm">
+              Install Application
+            </Button>
+          </Link>
+        </div>
+      )}
     </div>
   );
 }

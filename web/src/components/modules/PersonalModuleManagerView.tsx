@@ -4,12 +4,16 @@ import React from 'react';
 import { useRouter } from 'next/navigation';
 import { Card, Button, Badge, Spinner } from 'shared/components';
 import {
-  isCoreAppModuleId,
   partitionModuleCatalog,
   type ModuleScopeClassification,
 } from 'shared/types';
 import type { Module as ApiModule } from '../../api/modules';
-import { Lock, Puzzle, Settings, Download } from 'lucide-react';
+import {
+  moduleSupportsConfiguration,
+  resolveApplicationLifecycleCapabilities,
+  resolveApplicationLifecycleMetadata,
+} from '../../lib/applicationLifecycle';
+import { Lock, Puzzle, Settings, Download, LayoutDashboard, ExternalLink } from 'lucide-react';
 
 function getModuleScope(module: ApiModule): ModuleScopeClassification | null {
   const scope = (module as ApiModule & { moduleScope?: ModuleScopeClassification | null }).moduleScope;
@@ -24,11 +28,18 @@ function ModuleIcon({ module }: { module: ApiModule }) {
 interface ModuleCardActions {
   onOpen?: (moduleId: string) => void;
   onConfigure?: (moduleId: string) => void;
+  onManageDashboards?: (moduleId: string) => void;
   onUninstall?: (moduleId: string) => void;
   actionLoadingId?: string | null;
 }
 
-function CoreAppCard({ module }: { module: ApiModule }) {
+function CoreAppCard({
+  module,
+  onOpen,
+}: {
+  module: ApiModule;
+  onOpen?: (moduleId: string) => void;
+}) {
   return (
     <Card className="p-5 border border-gray-200 dark:border-slate-600 bg-gray-50 dark:bg-slate-800/80">
       <div className="flex items-start justify-between gap-3">
@@ -48,6 +59,12 @@ function CoreAppCard({ module }: { module: ApiModule }) {
         <Lock className="w-3.5 h-3.5" />
         <span>Always available on every personal tab</span>
       </div>
+      {onOpen && (
+        <Button variant="secondary" size="sm" className="mt-4 w-full" onClick={() => onOpen(module.id)}>
+          <ExternalLink className="w-4 h-4 mr-2" />
+          Open
+        </Button>
+      )}
     </Card>
   );
 }
@@ -59,6 +76,10 @@ function InstalledAppCard({
   module: ApiModule;
   actions: ModuleCardActions;
 }) {
+  const capabilities = resolveApplicationLifecycleCapabilities(module, 'personal');
+  const metadata = resolveApplicationLifecycleMetadata(module);
+  const showConfigure = capabilities.canConfigure && moduleSupportsConfiguration(module);
+
   return (
     <Card className="p-5">
       <div className="flex items-start justify-between gap-3 mb-3">
@@ -71,26 +92,46 @@ function InstalledAppCard({
             <p className="text-sm text-gray-600 dark:text-gray-400">{module.developer}</p>
           </div>
         </div>
-        <Badge color="blue">Installed</Badge>
+        <div className="flex flex-col items-end gap-1">
+          <Badge color="blue">Installed</Badge>
+          {metadata.hasUpdate && (
+            <Badge color="yellow">Update available</Badge>
+          )}
+        </div>
       </div>
       <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">{module.description}</p>
-      <div className="flex gap-2">
-        <Button
-          variant="primary"
-          size="sm"
-          className="flex-1"
-          onClick={() => actions.onOpen?.(module.id)}
-        >
-          Open
-        </Button>
-        <Button
-          variant="secondary"
-          size="sm"
-          onClick={() => actions.onConfigure?.(module.id)}
-        >
-          <Settings className="w-4 h-4" />
-        </Button>
-        {!module.isBuiltIn && !isCoreAppModuleId(module.id) && (
+      <div className="flex flex-wrap gap-2">
+        {capabilities.canOpen && (
+          <Button
+            variant="primary"
+            size="sm"
+            onClick={() => actions.onOpen?.(module.id)}
+          >
+            Open
+          </Button>
+        )}
+        {showConfigure && (
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => actions.onConfigure?.(module.id)}
+            title="Configure"
+          >
+            <Settings className="w-4 h-4 mr-1" />
+            Configure
+          </Button>
+        )}
+        {capabilities.canAssignToDashboard && (
+          <Button
+            variant="secondary"
+            size="sm"
+            onClick={() => actions.onManageDashboards?.(module.id)}
+          >
+            <LayoutDashboard className="w-4 h-4 mr-1" />
+            Manage Dashboards
+          </Button>
+        )}
+        {capabilities.canUninstall && (
           <Button
             variant="secondary"
             size="sm"
@@ -150,7 +191,7 @@ export function PersonalInstalledModulesView({
         </h3>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
           {coreApps.map((module) => (
-            <CoreAppCard key={module.id} module={module} />
+            <CoreAppCard key={module.id} module={module} onOpen={actions.onOpen} />
           ))}
         </div>
       </section>
@@ -187,6 +228,7 @@ interface MarketplaceModuleGridProps {
   loading: boolean;
   onInstall: (moduleId: string) => void;
   actionLoadingId?: string | null;
+  showFutureSections?: boolean;
 }
 
 export function MarketplaceModuleGrid({
@@ -194,6 +236,7 @@ export function MarketplaceModuleGrid({
   loading,
   onInstall,
   actionLoadingId,
+  showFutureSections = false,
 }: MarketplaceModuleGridProps) {
   const router = useRouter();
 
@@ -216,7 +259,24 @@ export function MarketplaceModuleGrid({
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div className="space-y-6">
+      {showFutureSections && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <Card className="p-4 border-dashed border-gray-200 dark:border-slate-600 opacity-75">
+            <p className="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400 mb-1">
+              Recently Updated
+            </p>
+            <p className="text-sm text-gray-600 dark:text-gray-400">Coming soon</p>
+          </Card>
+          <Card className="p-4 border-dashed border-gray-200 dark:border-slate-600 opacity-75">
+            <p className="text-xs font-semibold uppercase text-gray-500 dark:text-gray-400 mb-1">
+              Recommended
+            </p>
+            <p className="text-sm text-gray-600 dark:text-gray-400">Coming soon</p>
+          </Card>
+        </div>
+      )}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
       {modules.map((module) => (
         <Card key={module.id} className="p-6">
           <div className="flex items-start justify-between mb-4">
@@ -260,6 +320,7 @@ export function MarketplaceModuleGrid({
           </div>
         </Card>
       ))}
+      </div>
     </div>
   );
 }
