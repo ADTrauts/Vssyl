@@ -3,6 +3,8 @@ import {
   assertModuleInstallScopeAllowed,
   builtInModuleAvailableForPersonalScope,
   inferModuleScopeFromContexts,
+  isMarketplaceCatalogVisible,
+  isModuleManagerVisible,
   moduleScopeSupportsInstall,
   moduleScopeVisibleInMarketplace,
   validateModuleScopeManifest,
@@ -87,6 +89,37 @@ describe('moduleScopeService', () => {
     expect(builtInModuleAvailableForPersonalScope('drive')).toBe(true);
     const result = validateModuleScopeManifest({}, { moduleId: 'hr' });
     expect(result.moduleScope).toBe('business');
+  });
+
+  it('hides platform modules from module manager catalog', () => {
+    expect(
+      isModuleManagerVisible(
+        'dashboard',
+        { moduleScope: 'internal', supportedContexts: [] },
+        'personal'
+      )
+    ).toBe(false);
+    expect(
+      isModuleManagerVisible(
+        'drive',
+        { moduleScope: 'both', supportedContexts: ['personal', 'business'] },
+        'personal'
+      )
+    ).toBe(true);
+    expect(
+      isMarketplaceCatalogVisible(
+        'drive',
+        { moduleScope: 'both', supportedContexts: ['personal', 'business'] },
+        'personal'
+      )
+    ).toBe(false);
+    expect(
+      isMarketplaceCatalogVisible(
+        'todo',
+        { moduleScope: 'both', supportedContexts: ['personal', 'business'] },
+        'personal'
+      )
+    ).toBe(true);
   });
 
   it('validates sub-capability contexts are subset of manifest contexts', () => {

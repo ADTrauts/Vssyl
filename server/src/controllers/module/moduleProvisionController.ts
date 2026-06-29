@@ -27,6 +27,8 @@ import { asRecordJson } from './moduleShared';
 import {
   assertModuleInstallScopeAllowed,
   builtInModuleAvailableForPersonalScope,
+  isMarketplaceCatalogVisible,
+  isModuleManagerVisible,
   moduleScopeVisibleInMarketplace,
   resolveEffectiveModuleScope,
 } from '../../marketplace/moduleScopeService';
@@ -74,8 +76,7 @@ export const getInstalledModules = async (req: Request, res: Response) => {
         .filter((installation: Record<string, unknown>) => {
           const mod = installation.module as { id: string; manifest: unknown };
           const manifest = asRecordJson(mod.manifest);
-          const resolved = resolveEffectiveModuleScope(manifest, mod.id);
-          return resolved ? moduleScopeVisibleInMarketplace(resolved.moduleScope, 'business') : false;
+          return isModuleManagerVisible(mod.id, manifest, 'business');
         })
         .map((installation: Record<string, any>) => ({
         id: installation.module.id,
@@ -142,8 +143,7 @@ export const getInstalledModules = async (req: Request, res: Response) => {
     const installedModules = installations
       .filter((installation) => {
         const manifest = asRecordJson(installation.module.manifest);
-        const resolved = resolveEffectiveModuleScope(manifest, installation.module.id);
-        return resolved ? moduleScopeVisibleInMarketplace(resolved.moduleScope, 'personal') : false;
+        return isModuleManagerVisible(installation.module.id, manifest, 'personal');
       })
       .map((installation: {
       module: {
@@ -335,9 +335,7 @@ export const getMarketplaceModules = async (req: Request, res: Response) => {
 
     const scopeVisibleModules = modules.filter((module: { id: string; manifest: unknown }) => {
       const manifest = asRecordJson(module.manifest);
-      const resolved = resolveEffectiveModuleScope(manifest, module.id);
-      if (!resolved) return false;
-      return moduleScopeVisibleInMarketplace(resolved.moduleScope, scope);
+      return isMarketplaceCatalogVisible(module.id, manifest, scope);
     });
 
     // eslint-disable-next-line @typescript-eslint/no-explicit-any

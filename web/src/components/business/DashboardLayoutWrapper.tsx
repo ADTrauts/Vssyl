@@ -435,8 +435,14 @@ function DashboardLayoutWrapper({ business, children }: DashboardLayoutWrapperPr
 
             <PlatformRightRailModuleButton
               isActive={false}
-              onClick={() => router.push('/modules')}
-              title="Module Management"
+              onClick={() =>
+                router.push(
+                  effectiveBusiness?.id
+                    ? `/business/${effectiveBusiness.id}/modules`
+                    : '/modules'
+                )
+              }
+              title="Application Manager"
             >
               <Package size={22} />
             </PlatformRightRailModuleButton>

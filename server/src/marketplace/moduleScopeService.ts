@@ -10,6 +10,10 @@ import {
 } from 'vssyl-shared/types/module-scope';
 import { asRecordJson } from '../controllers/module/moduleShared.js';
 import { getBuiltInModuleScope } from '../constants/builtInModuleScopes.js';
+import {
+  isVisibleInMarketplace as isVisibleInMarketplaceCatalog,
+  isVisibleInModuleManager as isVisibleInModuleManagerCatalog,
+} from 'vssyl-shared/types/moduleClassification';
 
 function asStringArray(value: unknown): string[] {
   if (!Array.isArray(value)) return [];
@@ -274,4 +278,26 @@ export function builtInModuleAvailableForPersonalScope(moduleId: string): boolea
   const scope = getBuiltInModuleScope(moduleId);
   if (!scope) return false;
   return moduleScopeSupportsInstall(scope, 'personal');
+}
+
+export function isModuleManagerVisible(
+  moduleId: string,
+  manifest: Record<string, unknown>,
+  browseScope: ModuleInstallScope
+): boolean {
+  const resolved = resolveEffectiveModuleScope(manifest, moduleId);
+  if (!resolved) return false;
+  if (!moduleScopeVisibleInMarketplace(resolved.moduleScope, browseScope)) return false;
+  return isVisibleInModuleManagerCatalog(moduleId, resolved.moduleScope, browseScope);
+}
+
+export function isMarketplaceCatalogVisible(
+  moduleId: string,
+  manifest: Record<string, unknown>,
+  browseScope: ModuleInstallScope
+): boolean {
+  const resolved = resolveEffectiveModuleScope(manifest, moduleId);
+  if (!resolved) return false;
+  if (!moduleScopeVisibleInMarketplace(resolved.moduleScope, browseScope)) return false;
+  return isVisibleInMarketplaceCatalog(moduleId, resolved.moduleScope, browseScope);
 }

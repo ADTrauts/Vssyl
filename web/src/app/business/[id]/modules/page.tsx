@@ -22,8 +22,19 @@ import {
 import { toast } from 'react-hot-toast';
 import { useConfirm } from 'shared/hooks/useConfirm';
 import { BusinessAdminEmptyState } from '@/components/business/BusinessAdminEmptyState';
-import { getInstalledModules, getMarketplaceModules, installModule, uninstallModule } from '@/api/modules';
+import {
+  getInstalledModules,
+  getMarketplaceModules,
+  installModule,
+  uninstallModule,
+  type Module as ApiModule,
+} from '@/api/modules';
 import { businessAPI } from '@/api/business';
+import {
+  isCoreAppModuleId,
+  partitionModuleCatalog,
+  type ModuleScopeClassification,
+} from 'shared/types';
 
 interface Module {
   id: string;
@@ -70,8 +81,10 @@ export default function BusinessModulesPage() {
   const [activeTab, setActiveTab] = useState<'installed' | 'marketplace'>('installed');
   const [installingModuleId, setInstallingModuleId] = useState<string | null>(null);
 
-  // Core modules that are auto-installed
-  const coreModuleIds = ['drive', 'chat', 'calendar'];
+  function getModuleScope(module: Module): ModuleScopeClassification | null {
+    const scope = (module as Module & { moduleScope?: ModuleScopeClassification | null }).moduleScope;
+    return scope ?? null;
+  }
 
   // Get active tab from URL params (defaults to 'installed')
   useEffect(() => {
@@ -85,8 +98,13 @@ export default function BusinessModulesPage() {
   }, [searchParams]);
 
   useEffect(() => {
-    if (businessId && session?.accessToken) {
-      loadData();
+    if (!businessId) {
+      setError('Business workspace is required to manage applications.');
+      setLoading(false);
+      return;
+    }
+    if (session?.accessToken) {
+      void loadData();
     }
   }, [businessId, session?.accessToken]);
 
@@ -102,21 +120,17 @@ export default function BusinessModulesPage() {
       }
 
       // Load installed modules
-      const installed = await getInstalledModules({ 
-        scope: 'business', 
-        businessId 
+      const installed = await getInstalledModules({
+        scope: 'business',
+        businessId,
       });
-      console.log('[Module Manager] Installed modules:', installed);
-      console.log('[Module Manager] Scheduling module found:', installed.find(m => m.id === 'scheduling' || m.id.includes('scheduling')));
       setInstalledModules(installed);
 
       // Load marketplace modules (with business scope to properly determine installed status)
       const marketplace = await getMarketplaceModules({
         scope: 'business',
-        businessId
+        businessId,
       });
-      console.log('[Module Manager] Marketplace modules:', marketplace);
-      console.log('[Module Manager] Scheduling in marketplace:', marketplace.find(m => m.id === 'scheduling' || m.id.includes('scheduling')));
       setMarketplaceModules(marketplace);
 
     } catch (err) {
@@ -228,8 +242,8 @@ export default function BusinessModulesPage() {
 
   const handleUninstallModule = async (moduleId: string) => {
     // Prevent uninstalling core modules
-    if (coreModuleIds.includes(moduleId)) {
-      toast.error('Cannot uninstall core modules (Drive, Chat, Calendar)');
+    if (isCoreAppModuleId(moduleId)) {
+      toast.error('Cannot uninstall core applications (Drive, Chat, Calendar)');
       return;
     }
 
@@ -319,6 +333,11 @@ export default function BusinessModulesPage() {
   const filteredInstalled = filterModules(installedModules);
   const filteredAvailable = filterModules(getAvailableModules());
   const categories = getCategories();
+  const { coreApps, installedApps } = partitionModuleCatalog(
+    filteredInstalled,
+    'business',
+    getModuleScope
+  );
 
   return (
     <div className="min-h-screen bg-v-background">
@@ -337,7 +356,7 @@ export default function BusinessModulesPage() {
               </Button>
               <div className="h-6 w-px bg-gray-300" />
               <div>
-                <h1 className="text-2xl font-bold text-v-text-primary">Module Management</h1>
+                <h1 className="text-2xl font-bold text-v-text-primary">Application Manager</h1>
                 <p className="text-sm text-v-text-secondary">{business.name}</p>
               </div>
             </div>
@@ -400,7 +419,7 @@ export default function BusinessModulesPage() {
                 : 'bg-v-surface text-gray-700 hover:bg-v-surface'
             }`}
           >
-            Installed Modules ({filteredInstalled.length})
+            Installed Apps ({coreApps.length + installedApps.length})
           </button>
           <button
             onClick={() => {
@@ -419,8 +438,40 @@ export default function BusinessModulesPage() {
 
         {/* Module Grid */}
         {activeTab === 'installed' ? (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredInstalled.length === 0 ? (
+          <div className="space-y-8">
+            {coreApps.length > 0 && (
+              <section>
+                <h2 className="text-sm font-semibold uppercase tracking-wide text-v-text-muted mb-3">
+                  Core Apps
+                </h2>
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                  {coreApps.map((module) => (
+                    <Card key={module.id} className="p-6 border border-v-border bg-v-surface">
+                      <div className="flex items-start justify-between mb-4">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-12 h-12 bg-blue-100 rounded-lg flex items-center justify-center">
+                            <Package className="w-6 h-6 text-blue-600" />
+                          </div>
+                          <div>
+                            <h3 className="font-semibold text-v-text-primary">{module.name}</h3>
+                            <p className="text-sm text-v-text-secondary">{module.version}</p>
+                          </div>
+                        </div>
+                        <Badge color="green">Included with Vssyl</Badge>
+                      </div>
+                      <p className="text-sm text-v-text-secondary line-clamp-2">{module.description}</p>
+                    </Card>
+                  ))}
+                </div>
+              </section>
+            )}
+
+            <section>
+              <h2 className="text-sm font-semibold uppercase tracking-wide text-v-text-muted mb-3">
+                Installed Applications
+              </h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {installedApps.length === 0 ? (
               <div className="col-span-full">
                 <BusinessAdminEmptyState
                   icon={<Package className="w-16 h-16" />}
@@ -433,8 +484,8 @@ export default function BusinessModulesPage() {
                 />
               </div>
             ) : (
-              filteredInstalled.map(module => {
-                const isCoreModule = coreModuleIds.includes(module.id);
+              installedApps.map(module => {
+                const isCoreModule = isCoreAppModuleId(module.id);
                 return (
                   <Card key={module.id} className="p-6 hover:shadow-lg transition-shadow">
                     <div className="flex items-start justify-between mb-4">
@@ -504,6 +555,8 @@ export default function BusinessModulesPage() {
                 );
               })
             )}
+              </div>
+            </section>
           </div>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">

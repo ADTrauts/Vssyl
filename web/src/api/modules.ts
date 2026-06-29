@@ -157,10 +157,14 @@ export interface ModuleRuntimeConfig {
 
 // Get installed modules for current user
 export const getInstalledModules = async (opts?: { scope?: 'personal' | 'business'; businessId?: string }): Promise<Module[]> => {
+  const scope = opts?.scope ?? 'personal';
+  if (scope === 'business' && !opts?.businessId) {
+    throw new Error('Select a business workspace to manage business modules.');
+  }
   const params = new URLSearchParams();
-  if (opts?.scope) params.append('scope', opts.scope);
+  params.append('scope', scope);
   if (opts?.businessId) params.append('businessId', opts.businessId);
-  const url = `/api/modules/installed${params.toString() ? `?${params.toString()}` : ''}`;
+  const url = `/api/modules/installed?${params.toString()}`;
   const response = await authenticatedApiCall<{ success: boolean; data: Module[] }>(url, { method: 'GET' });
   return response.data;
 };
@@ -174,6 +178,10 @@ export const getMarketplaceModules = async (params?: {
   scope?: 'personal' | 'business';
   businessId?: string;
 }): Promise<Module[]> => {
+  const scope = params?.scope ?? 'personal';
+  if (scope === 'business' && !params?.businessId) {
+    throw new Error('Select a business workspace to manage business modules.');
+  }
   const searchParams = new URLSearchParams();
   if (params?.search) searchParams.append('search', params.search);
   if (params?.category) searchParams.append('category', params.category);
@@ -239,8 +247,12 @@ export const getWorkspaceBridgeInit = async (
 
 // Install a module
 export const installModule = async (moduleId: string, opts?: { scope?: 'personal' | 'business'; businessId?: string }): Promise<{ message: string; installation: ModuleInstallation }> => {
+  const scope = opts?.scope ?? 'personal';
+  if (scope === 'business' && !opts?.businessId) {
+    throw new Error('Select a business workspace to manage business modules.');
+  }
   const params = new URLSearchParams();
-  if (opts?.scope) params.append('scope', opts.scope);
+  params.append('scope', scope);
   if (opts?.businessId) params.append('businessId', opts.businessId);
   const url = `/api/modules/${moduleId}/install${params.toString() ? `?${params.toString()}` : ''}`;
   const response = await authenticatedApiCall<{ success: boolean; data: { message: string; installation: ModuleInstallation } }>(url, { method: 'POST' });
@@ -249,8 +261,12 @@ export const installModule = async (moduleId: string, opts?: { scope?: 'personal
 
 // Uninstall a module
 export const uninstallModule = async (moduleId: string, opts?: { scope?: 'personal' | 'business'; businessId?: string }): Promise<{ message: string }> => {
+  const scope = opts?.scope ?? 'personal';
+  if (scope === 'business' && !opts?.businessId) {
+    throw new Error('Select a business workspace to manage business modules.');
+  }
   const params = new URLSearchParams();
-  if (opts?.scope) params.append('scope', opts.scope);
+  params.append('scope', scope);
   if (opts?.businessId) params.append('businessId', opts.businessId);
   const url = `/api/modules/${moduleId}/uninstall${params.toString() ? `?${params.toString()}` : ''}`;
   const response = await authenticatedApiCall<{ success: boolean; data: { message: string } }>(url, { method: 'DELETE' });

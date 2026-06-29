@@ -4,12 +4,17 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Trash2, Settings, Search, Check } from 'lucide-react';
 import { Button, Card, Modal, ConfirmModal } from 'shared/components';
 import { Module } from '../api/modules';
-import { getInstalledModules, getMarketplaceModules } from '../api/modules';
+import { getInstalledModules } from '../api/modules';
 import { createWidget, deleteWidget } from '../api/widget';
 import { calendarAPI } from '../api/calendar';
 import { useSession } from 'next-auth/react';
 import { Dashboard } from 'shared/types';
 import { resolveSelectedModuleIds } from '../lib/dashboardTabModules';
+import {
+  isCoreAppModuleId,
+  isVisibleInModuleManager,
+  type ModuleScopeClassification,
+} from 'shared/types';
 
 interface ModuleManagementModalProps {
   isOpen: boolean;
@@ -21,16 +26,25 @@ interface ModuleManagementModalProps {
 interface ModuleWithStatus extends Module {
   isInstalled: boolean;
   widgetId?: string;
+  isCore?: boolean;
 }
 
-function isPersonalDashboardTab(dashboard: Dashboard): boolean {
-  const d = dashboard as Dashboard & {
-    businessId?: string | null;
-    householdId?: string | null;
-    institutionId?: string | null;
-  };
-  return !d.businessId && !d.householdId && !d.institutionId;
+function getModuleScope(module: Module): ModuleScopeClassification | null {
+  const scope = (module as Module & { moduleScope?: ModuleScopeClassification | null }).moduleScope;
+  return scope ?? null;
 }
+
+function resolveDashboardModuleScope(dashboard: Dashboard): {
+  scope: 'personal' | 'business';
+  businessId?: string;
+} {
+  const d = dashboard as Dashboard & { businessId?: string | null };
+  if (d.businessId) {
+    return { scope: 'business', businessId: d.businessId };
+  }
+  return { scope: 'personal' };
+}
+
 
 const getModuleIcon = (moduleName: string) => {
   const iconMap: Record<string, string> = {
@@ -69,211 +83,31 @@ export default function ModuleManagementModal({
       setError(null);
       
       try {
-        // For now, use mock data
-        const mockModules: Module[] = [
-          {
-            id: 'drive',
-            name: 'File Hub',
-            description: 'File storage and management system',
-            version: '1.0.0',
-            category: 'Core',
-            developer: 'Vssyl',
-            rating: 5,
-            reviewCount: 0,
-            downloads: 0,
-            status: 'available',
-            manifest: {
-              name: 'File Hub',
-              version: '1.0.0',
-              description: 'File storage and management system',
-              author: 'Vssyl',
-              license: 'MIT',
-              entryPoint: '/api/drive',
-              permissions: ['files:read', 'files:write'],
-              dependencies: [],
-              runtime: { apiVersion: '1.0' },
-              frontend: { entryUrl: '/modules/drive' },
-              settings: {}
-            },
-            configured: {
-              enabled: true,
-              settings: {},
-              permissions: ['files:read', 'files:write']
-            }
-          },
-          {
-            id: 'chat',
-            name: 'Chat',
-            description: 'Real-time messaging and collaboration',
-            version: '1.0.0',
-            category: 'Core',
-            developer: 'Vssyl',
-            rating: 5,
-            reviewCount: 0,
-            downloads: 0,
-            status: 'available',
-            manifest: {
-              name: 'Chat',
-              version: '1.0.0',
-              description: 'Real-time messaging and collaboration',
-              author: 'Vssyl',
-              license: 'MIT',
-              entryPoint: '/api/chat',
-              permissions: ['messages:read', 'messages:write'],
-              dependencies: [],
-              runtime: { apiVersion: '1.0' },
-              frontend: { entryUrl: '/modules/chat' },
-              settings: {}
-            },
-            configured: {
-              enabled: true,
-              settings: {},
-              permissions: ['messages:read', 'messages:write']
-            }
-          },
-          {
-            id: 'analytics',
-            name: 'Analytics',
-            description: 'Dashboard analytics and insights',
-            version: '1.0.0',
-            category: 'Core',
-            developer: 'Vssyl',
-            rating: 5,
-            reviewCount: 0,
-            downloads: 0,
-            status: 'available',
-            manifest: {
-              name: 'Analytics',
-              version: '1.0.0',
-              description: 'Dashboard analytics and insights',
-              author: 'Vssyl',
-              license: 'MIT',
-              entryPoint: '/api/analytics',
-              permissions: ['data:read'],
-              dependencies: [],
-              runtime: { apiVersion: '1.0' },
-              frontend: { entryUrl: '/modules/analytics' },
-              settings: {}
-            },
-            configured: {
-              enabled: true,
-              settings: {},
-              permissions: ['data:read']
-            }
-          },
-          {
-            id: 'calendar',
-            name: 'Calendar',
-            description: 'Schedule and event management',
-            version: '1.0.0',
-            category: 'Productivity',
-            developer: 'Vssyl',
-            rating: 4.5,
-            reviewCount: 12,
-            downloads: 150,
-            status: 'available',
-            manifest: {
-              name: 'Calendar',
-              version: '1.0.0',
-              description: 'Schedule and event management',
-              author: 'Vssyl',
-              license: 'MIT',
-              entryPoint: '/api/calendar',
-              permissions: ['events:read', 'events:write'],
-              dependencies: [],
-              runtime: { apiVersion: '1.0' },
-              frontend: { entryUrl: '/modules/calendar' },
-              settings: {}
-            },
-            configured: {
-              enabled: true,
-              settings: {},
-              permissions: ['events:read', 'events:write']
-            }
-          },
-          {
-            id: 'tasks',
-            name: 'Tasks',
-            description: 'Task and project management',
-            version: '1.0.0',
-            category: 'Productivity',
-            developer: 'Vssyl',
-            rating: 4.3,
-            reviewCount: 8,
-            downloads: 120,
-            status: 'available',
-            manifest: {
-              name: 'Tasks',
-              version: '1.0.0',
-              description: 'Task and project management',
-              author: 'Vssyl',
-              license: 'MIT',
-              entryPoint: '/api/tasks',
-              permissions: ['tasks:read', 'tasks:write'],
-              dependencies: [],
-              runtime: { apiVersion: '1.0' },
-              frontend: { entryUrl: '/modules/tasks' },
-              settings: {}
-            },
-            configured: {
-              enabled: true,
-              settings: {},
-              permissions: ['tasks:read', 'tasks:write']
-            }
-          },
-          {
-            id: 'notes',
-            name: 'Notes',
-            description: 'Quick notes and documentation',
-            version: '1.0.0',
-            category: 'Productivity',
-            developer: 'Vssyl',
-            rating: 4.7,
-            reviewCount: 25,
-            downloads: 200,
-            status: 'available',
-            manifest: {
-              name: 'Notes',
-              version: '1.0.0',
-              description: 'Quick notes and documentation',
-              author: 'Vssyl',
-              license: 'MIT',
-              entryPoint: '/api/notes',
-              permissions: ['notes:read', 'notes:write'],
-              dependencies: [],
-              runtime: { apiVersion: '1.0' },
-              frontend: { entryUrl: '/modules/notes' },
-              settings: {}
-            },
-            configured: {
-              enabled: true,
-              settings: {},
-              permissions: ['notes:read', 'notes:write']
-            }
-          }
-        ];
-        
-        // Add installation status based on current dashboard widgets
-        const modulesWithStatus: ModuleWithStatus[] = mockModules.map(module => {
-          const widget = dashboard.widgets.find(w => w.type === module.id);
+        const { scope, businessId } = resolveDashboardModuleScope(dashboard);
+        const installedModules = await getInstalledModules({ scope, businessId });
+
+        const visibleModules = installedModules.filter((module) =>
+          isVisibleInModuleManager(module.id, getModuleScope(module), scope)
+        );
+
+        const tabModuleIds = new Set(
+          resolveSelectedModuleIds(dashboard, {
+            widgetTypes: dashboard.widgets.map((w) => w.type),
+          })
+        );
+
+        const modulesWithStatus: ModuleWithStatus[] = visibleModules.map((module) => {
+          const widget = dashboard.widgets.find((w) => w.type === module.id);
+          const onTab = tabModuleIds.has(module.id) || isCoreAppModuleId(module.id);
           return {
             ...module,
-            isInstalled: !!widget,
-            widgetId: widget?.id
+            isInstalled: Boolean(widget) || onTab,
+            widgetId: widget?.id,
+            isCore: isCoreAppModuleId(module.id),
           };
         });
-        
-        let visibleModules = modulesWithStatus;
-        if (isPersonalDashboardTab(dashboard)) {
-          const allowed = new Set(
-            resolveSelectedModuleIds(dashboard, {
-              widgetTypes: dashboard.widgets.map((w) => w.type),
-            })
-          );
-          visibleModules = modulesWithStatus.filter((m) => allowed.has(m.id));
-        }
 
-        setModules(visibleModules);
+        setModules(modulesWithStatus);
       } catch (err) {
         console.error('Error loading modules:', err);
         setError('Failed to load available modules');
@@ -327,7 +161,7 @@ export default function ModuleManagementModal({
   };
 
   const handleUninstallModule = (module: ModuleWithStatus) => {
-    if (!session?.accessToken || !module.widgetId) return;
+    if (!session?.accessToken || !module.widgetId || module.isCore) return;
     setModuleToRemove(module);
   };
 
@@ -441,13 +275,18 @@ export default function ModuleManagementModal({
                         </p>
                         
                         <div className="flex space-x-2">
-                          <Button
-                            variant="secondary"
-                            size="sm"
-                            onClick={() => handleUninstallModule(module)}
-                            disabled={actionLoading === module.id}
-                            className="flex-1 text-red-600 border-red-200 hover:bg-red-50"
-                          >
+                          {module.isCore ? (
+                            <div className="flex-1 text-center text-xs text-gray-500 dark:text-gray-400 py-2">
+                              Included with Vssyl
+                            </div>
+                          ) : (
+                            <Button
+                              variant="secondary"
+                              size="sm"
+                              onClick={() => handleUninstallModule(module)}
+                              disabled={actionLoading === module.id || !module.widgetId}
+                              className="flex-1 text-red-600 border-red-200 hover:bg-red-50"
+                            >
                             {actionLoading === module.id ? (
                               <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-red-600"></div>
                             ) : (
@@ -457,6 +296,7 @@ export default function ModuleManagementModal({
                               </>
                             )}
                           </Button>
+                          )}
                           <Button variant="secondary" size="sm">
                             <Settings className="w-4 h-4" />
                           </Button>
