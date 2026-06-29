@@ -4,15 +4,21 @@ import { join } from 'node:path';
 import type { Dashboard } from 'shared/types';
 import {
   buildDefaultLeftSidebarFromSelected,
+  buildDashboardRenameRequest,
   DEFAULT_MAIN_PERSONAL_TAB_MODULE_IDS,
   DASHBOARD_TAB_CORE_MODULE_IDS,
   DASHBOARD_TAB_IMPLICIT_MODULE_ID,
   extractModuleIdsFromSidebarConfig,
   filterModulesForTab,
   getMainPersonalDashboardId,
+  mergeSelectedModuleIds,
   normalizeSelectedModuleIds,
+  pruneDashboardTabStateToSelectedModules,
+  pruneLeftSidebarConfigToSelectedModules,
+  pruneSidebarCustomizationToSelectedModules,
   resolveSelectedModuleIds,
 } from '../dashboardTabModules';
+import type { SidebarCustomization } from '../../types/sidebar';
 
 function makeDashboard(overrides: Partial<Dashboard> = {}): Dashboard {
   return {
@@ -135,6 +141,107 @@ describe('dashboardTabModules', () => {
       expect(id).toBe('a');
     });
   });
+
+  describe('non-main tab fallback does not include all installed modules', () => {
+    it('core-only legacy tab excludes unrelated installed modules', () => {
+      const dashboard = makeDashboard({ id: 'minimal-tab', widgets: [] });
+      const resolved = resolveSelectedModuleIds(dashboard, { isMainPersonalTab: false });
+      expect(resolved.sort()).toEqual(
+        normalizeSelectedModuleIds([]).sort()
+      );
+      expect(resolved).not.toContain('todo');
+      expect(resolved).not.toContain('notebook');
+      expect(resolved).not.toContain('connections');
+    });
+  });
+
+  describe('prune helpers', () => {
+    it('prunes sidebar config referencing unselected modules', () => {
+      const config = buildDefaultLeftSidebarFromSelected(
+        normalizeSelectedModuleIds(['notebook']),
+        'personal'
+      );
+      config.looseModules.push({ id: 'todo', order: 99 });
+      const pruned = pruneLeftSidebarConfigToSelectedModules(
+        config,
+        normalizeSelectedModuleIds(['notebook'])
+      );
+      const ids = extractModuleIdsFromSidebarConfig(pruned);
+      expect(ids).not.toContain('todo');
+      expect(ids).toContain('notebook');
+    });
+
+    it('pruneSidebarCustomizationToSelectedModules removes stray pinned modules', () => {
+      const customization: SidebarCustomization = {
+        leftSidebar: {
+          'tab-1': buildDefaultLeftSidebarFromSelected(
+            normalizeSelectedModuleIds([]),
+            'personal'
+          ),
+        },
+        rightSidebar: {
+          personal: {
+            context: 'personal',
+            pinnedModules: [
+              { id: 'drive', order: 0 },
+              { id: 'todo', order: 1 },
+            ],
+          },
+        },
+      };
+      const pruned = pruneSidebarCustomizationToSelectedModules(
+        customization,
+        normalizeSelectedModuleIds([])
+      );
+      expect(pruned.rightSidebar.personal.pinnedModules.map((m) => m.id)).toEqual([
+        'drive',
+      ]);
+    });
+
+    it('pruneDashboardTabStateToSelectedModules preserves locked core modules', () => {
+      const result = pruneDashboardTabStateToSelectedModules({
+        selectedModuleIds: ['drive'],
+        widgetTypes: ['drive', 'todo', 'notebook'],
+        sidebarCustomization: {
+          leftSidebar: {},
+          rightSidebar: {},
+        },
+      });
+      expect(result.selectedModuleIds).toEqual(normalizeSelectedModuleIds(['drive']));
+      expect(result.widgetTypes).toEqual(['drive']);
+    });
+
+    it('mergeSelectedModuleIds cannot remove locked core modules', () => {
+      const merged = mergeSelectedModuleIds(
+        normalizeSelectedModuleIds(['todo', 'notebook']),
+        [],
+        ['drive', 'chat', 'calendar', 'dashboard', 'todo']
+      );
+      expect(merged).toContain('drive');
+      expect(merged).toContain('chat');
+      expect(merged).toContain('calendar');
+      expect(merged).toContain('dashboard');
+      expect(merged).toContain('notebook');
+      expect(merged).not.toContain('todo');
+    });
+  });
+
+  describe('rename safety', () => {
+    it('buildDashboardRenameRequest only includes name', () => {
+      const req = buildDashboardRenameRequest('  Health Tab  ');
+      expect(req).toEqual({ name: 'Health Tab' });
+      expect('preferences' in req).toBe(false);
+    });
+  });
+});
+
+describe('WidgetPicker integration', () => {
+  it('WidgetPicker accepts selectedModuleIds for tab-scoped filtering', () => {
+    const path = join(__dirname, '../../components/dashboard/WidgetPicker.tsx');
+    const content = readFileSync(path, 'utf8');
+    expect(content).toContain('selectedModuleIds');
+    expect(content).toContain('allowed.has(id)');
+  });
 });
 
 describe('DashboardLayoutInner integration', () => {
@@ -144,5 +251,6 @@ describe('DashboardLayoutInner integration', () => {
     expect(content).toContain('resolveSelectedModuleIds');
     expect(content).toContain('filterModulesForTab');
     expect(content).toContain('buildDefaultLeftSidebarFromSelected');
+    expect(content).toContain('normalizeSelectedModuleIds');
   });
 });

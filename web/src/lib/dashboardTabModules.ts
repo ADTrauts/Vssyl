@@ -4,7 +4,7 @@
  */
 
 import type { Dashboard } from 'shared/types';
-import type { LeftSidebarConfig, SidebarFolder } from '../types/sidebar';
+import type { LeftSidebarConfig, SidebarCustomization, SidebarFolder } from '../types/sidebar';
 
 /** Platform core apps — always on every personal dashboard tab. */
 export const DASHBOARD_TAB_CORE_MODULE_IDS = ['drive', 'chat', 'calendar'] as const;
@@ -270,4 +270,109 @@ export function getAdditionalSelectableModuleIds(
   return normalizeSelectedModuleIds(selectedModuleIds).filter(
     (id) => !isLockedTabModuleId(id)
   );
+}
+
+/** Prune a left sidebar layout to modules allowed on the tab. */
+export function pruneLeftSidebarConfigToSelectedModules(
+  config: LeftSidebarConfig,
+  selectedModuleIds: string[]
+): LeftSidebarConfig {
+  const allowed = new Set(normalizeSelectedModuleIds(selectedModuleIds));
+
+  const folders = config.folders
+    .map((folder) => ({
+      ...folder,
+      modules: folder.modules
+        .filter((m) => allowed.has(m.id))
+        .map((m, idx) => ({ ...m, order: idx })),
+    }))
+    .filter((folder) => folder.modules.length > 0 || folder.id);
+
+  const looseModules = config.looseModules
+    .filter((m) => allowed.has(m.id))
+    .map((m, idx) => ({ ...m, order: idx }));
+
+  return { folders, looseModules };
+}
+
+/** Prune full sidebar customization (all tabs) to allowed module ids per tab. */
+export function pruneSidebarCustomizationToSelectedModules(
+  customization: SidebarCustomization,
+  selectedModuleIds: string[]
+): SidebarCustomization {
+  const allowed = normalizeSelectedModuleIds(selectedModuleIds);
+
+  const leftSidebar: SidebarCustomization['leftSidebar'] = {};
+  for (const [tabId, tabConfig] of Object.entries(customization.leftSidebar)) {
+    leftSidebar[tabId] = pruneLeftSidebarConfigToSelectedModules(tabConfig, allowed);
+  }
+
+  const allowedSet = new Set(allowed);
+  const rightSidebar: SidebarCustomization['rightSidebar'] = {};
+  for (const [context, rightConfig] of Object.entries(customization.rightSidebar)) {
+    const pinnedModules = rightConfig.pinnedModules
+      .filter((m) => allowedSet.has(m.id))
+      .map((m, idx) => ({ ...m, order: idx }));
+    rightSidebar[context] = { ...rightConfig, pinnedModules };
+  }
+
+  return { leftSidebar, rightSidebar };
+}
+
+/** Drop widget types that are not on the tab membership list. */
+export function pruneWidgetTypesToSelectedModules(
+  widgetTypes: string[],
+  selectedModuleIds: string[]
+): string[] {
+  const allowed = new Set(normalizeSelectedModuleIds(selectedModuleIds));
+  return widgetTypes.filter((type) => allowed.has(type));
+}
+
+export interface PruneDashboardTabStateInput {
+  selectedModuleIds?: string[];
+  sidebarCustomization?: SidebarCustomization | null;
+  widgetTypes?: string[];
+}
+
+export interface PruneDashboardTabStateResult {
+  selectedModuleIds: string[];
+  sidebarCustomization: SidebarCustomization | null;
+  widgetTypes: string[];
+}
+
+/** Future-safe prune when tab membership shrinks (edit-tab-modules, uninstall, etc.). */
+export function pruneDashboardTabStateToSelectedModules(
+  input: PruneDashboardTabStateInput
+): PruneDashboardTabStateResult {
+  const selectedModuleIds = normalizeSelectedModuleIds(input.selectedModuleIds ?? []);
+  const sidebarCustomization = input.sidebarCustomization
+    ? pruneSidebarCustomizationToSelectedModules(input.sidebarCustomization, selectedModuleIds)
+    : null;
+  const widgetTypes = pruneWidgetTypesToSelectedModules(
+    input.widgetTypes ?? [],
+    selectedModuleIds
+  );
+  return { selectedModuleIds, sidebarCustomization, widgetTypes };
+}
+
+/** Merge additions/removals; locked core modules cannot be removed. */
+export function mergeSelectedModuleIds(
+  current: string[] | undefined,
+  additions: string[] = [],
+  removals: string[] = []
+): string[] {
+  const base = normalizeSelectedModuleIds(current ?? []);
+  const removalSet = new Set(removals);
+  const withoutRemovals = base.filter(
+    (id) => !removalSet.has(id) || isLockedTabModuleId(id)
+  );
+  return normalizeSelectedModuleIds([...withoutRemovals, ...additions]);
+}
+
+/**
+ * Rename updates must only change display metadata.
+ * Callers must not attach preferences/widgets when renaming a tab.
+ */
+export function buildDashboardRenameRequest(newName: string): { name: string } {
+  return { name: newName.trim() };
 }

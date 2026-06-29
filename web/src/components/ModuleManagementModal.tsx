@@ -9,6 +9,7 @@ import { createWidget, deleteWidget } from '../api/widget';
 import { calendarAPI } from '../api/calendar';
 import { useSession } from 'next-auth/react';
 import { Dashboard } from 'shared/types';
+import { resolveSelectedModuleIds } from '../lib/dashboardTabModules';
 
 interface ModuleManagementModalProps {
   isOpen: boolean;
@@ -20,6 +21,15 @@ interface ModuleManagementModalProps {
 interface ModuleWithStatus extends Module {
   isInstalled: boolean;
   widgetId?: string;
+}
+
+function isPersonalDashboardTab(dashboard: Dashboard): boolean {
+  const d = dashboard as Dashboard & {
+    businessId?: string | null;
+    householdId?: string | null;
+    institutionId?: string | null;
+  };
+  return !d.businessId && !d.householdId && !d.institutionId;
 }
 
 const getModuleIcon = (moduleName: string) => {
@@ -253,7 +263,17 @@ export default function ModuleManagementModal({
           };
         });
         
-        setModules(modulesWithStatus);
+        let visibleModules = modulesWithStatus;
+        if (isPersonalDashboardTab(dashboard)) {
+          const allowed = new Set(
+            resolveSelectedModuleIds(dashboard, {
+              widgetTypes: dashboard.widgets.map((w) => w.type),
+            })
+          );
+          visibleModules = modulesWithStatus.filter((m) => allowed.has(m.id));
+        }
+
+        setModules(visibleModules);
       } catch (err) {
         console.error('Error loading modules:', err);
         setError('Failed to load available modules');

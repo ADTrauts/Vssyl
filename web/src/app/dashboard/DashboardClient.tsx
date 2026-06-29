@@ -44,6 +44,8 @@ import { isHouseholdRosterManager } from '../../lib/householdPermissions';
 import { isRegisteredWidgetType } from '../../lib/personalDashboardNavigation';
 import {
   buildDefaultLeftSidebarFromSelected,
+  getMainPersonalDashboardId,
+  mergeSelectedModuleIds,
   normalizeSelectedModuleIds,
   resolveSelectedModuleIds,
 } from '../../lib/dashboardTabModules';
@@ -633,13 +635,44 @@ export default function DashboardClient({ dashboardId }: DashboardClientProps) {
         createWidget(session.accessToken!, currentDashboard.id, { type: widgetType })
       );
       const newWidgets = await Promise.all(widgetPromises);
-      setCurrentDashboard((prev) =>
-        prev ? { ...prev, widgets: [...prev.widgets, ...newWidgets] } : null
-      );
+
+      const isPersonalTab = getDashboardType(currentDashboard) === 'personal';
+      let mergedSelected: string[] | undefined;
+
+      if (isPersonalTab) {
+        const mainId = getMainPersonalDashboardId(dashboards);
+        mergedSelected = mergeSelectedModuleIds(
+          resolveSelectedModuleIds(currentDashboard, {
+            isMainPersonalTab: currentDashboard.id === mainId,
+            widgetTypes: currentDashboard.widgets?.map((w) => w.type),
+          }),
+          template.widgets
+        );
+        const existingPrefs =
+          currentDashboard.preferences && typeof currentDashboard.preferences === 'object'
+            ? currentDashboard.preferences
+            : {};
+        await updateDashboard(session.accessToken, currentDashboard.id, {
+          preferences: {
+            ...existingPrefs,
+            selectedModuleIds: mergedSelected,
+          },
+        });
+      }
+
+      const updatedDashboard = {
+        ...currentDashboard,
+        widgets: [...currentDashboard.widgets, ...newWidgets],
+        preferences: isPersonalTab
+          ? {
+              ...(currentDashboard.preferences ?? {}),
+              selectedModuleIds: mergedSelected,
+            }
+          : currentDashboard.preferences,
+      };
+      setCurrentDashboard(updatedDashboard);
       setDashboards((prev) =>
-        prev.map((d) =>
-          d.id === currentDashboard.id ? { ...d, widgets: [...d.widgets, ...newWidgets] } : d
-        )
+        prev.map((d) => (d.id === currentDashboard.id ? updatedDashboard : d))
       );
       toast.success(`Applied "${template.name}" template`);
       enterEditMode();
@@ -649,7 +682,7 @@ export default function DashboardClient({ dashboardId }: DashboardClientProps) {
     } finally {
       setWidgetLoading(false);
     }
-  }, [currentDashboard?.id, session?.accessToken, enterEditMode]);
+  }, [currentDashboard, session?.accessToken, enterEditMode, dashboards]);
 
   // Keyboard shortcuts
   useEffect(() => {

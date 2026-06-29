@@ -25,6 +25,7 @@ import { ModuleItem } from './ModuleItem';
 import { useSidebarCustomization } from '../../contexts/SidebarCustomizationContext';
 import type { LeftSidebarConfig, SidebarFolder } from '../../types/sidebar';
 import type { ModuleConfig } from '../../config/modules';
+import { buildDefaultLeftSidebarFromSelected } from '../../lib/dashboardTabModules';
 
 // Module icons mapping (same as DashboardLayout)
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -75,56 +76,11 @@ export function LeftSidebarCustomizer({
     const existing = getConfigForTab(dashboardTabId);
     if (existing) return existing;
 
-    // Create default config
-    const defaultFolders: SidebarFolder[] = context === 'personal'
-      ? [
-          {
-            id: 'core-apps',
-            name: 'Core Apps',
-            icon: 'grid',
-            modules: [
-              { id: 'drive', order: 0 },
-              { id: 'chat', order: 1 },
-              { id: 'calendar', order: 2 },
-            ],
-            collapsed: false,
-            order: 0,
-          },
-        ]
-      : [
-          {
-            id: 'communication',
-            name: 'Communication',
-            icon: 'message-square',
-            modules: [
-              { id: 'chat', order: 0 },
-              { id: 'calendar', order: 1 },
-            ],
-            collapsed: false,
-            order: 0,
-          },
-        ];
-
-    // Get modules not in folders, ensuring dashboard is first
-    const modulesNotInFolders = availableModules.filter(m => !defaultFolders.some(f => f.modules.some(fm => fm.id === m.id)));
-    
-    // Separate dashboard and other modules
-    const dashboardModule = modulesNotInFolders.find(m => m.id === 'dashboard');
-    const otherModules = modulesNotInFolders.filter(m => m.id !== 'dashboard');
-    
-    // Build loose modules with dashboard first
-    const looseModules = [];
-    if (dashboardModule) {
-      looseModules.push({ id: dashboardModule.id, order: 0 });
-    }
-    otherModules.forEach((m, idx) => {
-      looseModules.push({ id: m.id, order: idx + 1 });
-    });
-
-    return {
-      folders: defaultFolders,
-      looseModules,
-    };
+    const selectedIds = availableModules.map((m) => m.id);
+    return buildDefaultLeftSidebarFromSelected(
+      selectedIds,
+      context === 'personal' ? 'personal' : 'business'
+    );
   }, [dashboardTabId, getConfigForTab, context, availableModules]);
 
   const handleDragStart = (event: DragStartEvent) => {

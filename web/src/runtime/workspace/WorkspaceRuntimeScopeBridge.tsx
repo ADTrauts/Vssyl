@@ -19,6 +19,11 @@ import {
 } from './permissionSnapshotBridge';
 import type { PermissionSnapshot } from './types';
 import { PERSONAL_DEFAULT_MODULE_PERMISSIONS } from '../../lib/personalDashboardContracts';
+import {
+  filterModulesForTab,
+  getMainPersonalDashboardId,
+  resolveSelectedModuleIds,
+} from '../../lib/dashboardTabModules';
 
 const PERSONAL_DEFAULT_MODULES: ModulePermissionSource[] = PERSONAL_DEFAULT_MODULE_PERMISSIONS.map(
   (entry) => ({
@@ -62,7 +67,7 @@ export function WorkspaceRuntimeScopeBridge({
 }: WorkspaceRuntimeScopeBridgeProps) {
   const pathname = usePathname();
   const { data: session } = useSession();
-  const { currentDashboard, getDashboardType, loading: dashboardLoading } = useDashboard();
+  const { currentDashboard, getDashboardType, loading: dashboardLoading, dashboards } = useDashboard();
   const {
     configuration,
     loading: businessLoading,
@@ -128,7 +133,19 @@ export function WorkspaceRuntimeScopeBridge({
     }
 
     if (positionAware) {
-      const modules = positionAware.getFilteredModules();
+      let modules = positionAware.getFilteredModules();
+      if (
+        activeContextType === 'personal' &&
+        currentDashboard &&
+        getDashboardType(currentDashboard) === 'personal'
+      ) {
+        const mainId = getMainPersonalDashboardId(dashboards.personal);
+        const selected = resolveSelectedModuleIds(currentDashboard, {
+          isMainPersonalTab: currentDashboard.id === mainId,
+          widgetTypes: currentDashboard.widgets?.map((w) => w.type),
+        });
+        modules = filterModulesForTab(modules, selected);
+      }
       const ids = modules.map((m) => normalizeModuleId(m.id));
       return {
         installedModuleIds: ids,
@@ -149,6 +166,9 @@ export function WorkspaceRuntimeScopeBridge({
     getModulesForUser,
     getEnabledModules,
     positionAware,
+    currentDashboard,
+    getDashboardType,
+    dashboards.personal,
   ]);
 
   const permissionsLoading = businessLoading || dashboardLoading;

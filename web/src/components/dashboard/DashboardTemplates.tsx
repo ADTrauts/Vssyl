@@ -29,6 +29,8 @@ export interface DashboardTemplate {
 }
 
 export const DASHBOARD_TEMPLATES: DashboardTemplate[] = [
+  // TODO(dashboard-tabs): Template apply/export must serialize selectedModuleIds +
+  // widgets + sidebarCustomization together (see handleApplyTemplate).
   {
     id: 'personal-productivity',
     name: 'Personal Productivity',

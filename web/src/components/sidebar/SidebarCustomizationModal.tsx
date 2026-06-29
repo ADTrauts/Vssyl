@@ -12,6 +12,7 @@ import { RightSidebarCustomizer } from './RightSidebarCustomizer';
 import {
   filterModulesForTab,
   getMainPersonalDashboardId,
+  normalizeSelectedModuleIds,
   resolveSelectedModuleIds,
 } from '../../lib/dashboardTabModules';
 
@@ -61,9 +62,18 @@ export function SidebarCustomizationModal({
 
   const availableModules = useMemo(() => {
     const all = getFilteredModules();
-    if (tabSelectedModuleIds.length === 0) return all;
-    return filterModulesForTab(all, tabSelectedModuleIds);
-  }, [getFilteredModules, tabSelectedModuleIds]);
+    if (tabForModules && getDashboardType(tabForModules) === 'personal') {
+      const ids =
+        tabSelectedModuleIds.length > 0
+          ? tabSelectedModuleIds
+          : normalizeSelectedModuleIds([]);
+      return filterModulesForTab(all, ids);
+    }
+    if (tabSelectedModuleIds.length > 0) {
+      return filterModulesForTab(all, tabSelectedModuleIds);
+    }
+    return all;
+  }, [getFilteredModules, tabSelectedModuleIds, tabForModules, getDashboardType]);
 
   const context = isWorkAuthenticated ? 'business' : 'personal';
 

@@ -16,66 +16,19 @@ import type {
 import type { ModuleConfig } from '../config/modules';
 import {
   getMainPersonalDashboardId,
+  pruneSidebarCustomizationToSelectedModules,
   resolveSelectedModuleIds,
 } from '../lib/dashboardTabModules';
 
 /**
- * Clean up sidebar config by removing modules outside tab membership
+ * Clean up sidebar config by removing modules outside tab membership.
+ * @deprecated Prefer pruneSidebarCustomizationToSelectedModules from dashboardTabModules.
  */
 function cleanupSidebarConfig(
   config: SidebarCustomization,
   allowedModuleIds: string[]
 ): SidebarCustomization {
-  const allowedSet = new Set(allowedModuleIds);
-
-  const cleanedConfig: SidebarCustomization = {
-    leftSidebar: {},
-    rightSidebar: {},
-  };
-
-  Object.entries(config.leftSidebar).forEach(([tabId, tabConfig]) => {
-    const cleanedFolders = tabConfig.folders
-      .map((folder) => ({
-        ...folder,
-        modules: folder.modules.filter((m) => allowedSet.has(m.id)),
-      }))
-      .filter((folder) => folder.modules.length > 0 || folder.id);
-
-    const cleanedLooseModules = tabConfig.looseModules.filter((m) =>
-      allowedSet.has(m.id)
-    );
-
-    cleanedFolders.forEach((folder) => {
-      folder.modules.forEach((m, idx) => {
-        m.order = idx;
-      });
-    });
-    cleanedLooseModules.forEach((m, idx) => {
-      m.order = idx;
-    });
-
-    cleanedConfig.leftSidebar[tabId] = {
-      folders: cleanedFolders,
-      looseModules: cleanedLooseModules,
-    };
-  });
-
-  Object.entries(config.rightSidebar).forEach(([context, rightConfig]) => {
-    const cleanedPinnedModules = rightConfig.pinnedModules.filter((m) =>
-      allowedSet.has(m.id)
-    );
-
-    cleanedPinnedModules.forEach((m, idx) => {
-      m.order = idx;
-    });
-
-    cleanedConfig.rightSidebar[context] = {
-      ...rightConfig,
-      pinnedModules: cleanedPinnedModules,
-    };
-  });
-
-  return cleanedConfig;
+  return pruneSidebarCustomizationToSelectedModules(config, allowedModuleIds);
 }
 
 interface SidebarCustomizationContextType {

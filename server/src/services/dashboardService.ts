@@ -373,6 +373,7 @@ export async function updateDashboard(userId: string, dashboardId: string, data:
   if (data.name !== undefined) {
     updateData.name = data.name;
   }
+  // Rename-only updates must not touch preferences (selectedModuleIds / sidebarCustomization).
   if (data.layout !== undefined) {
     // Use proper Prisma JSON type with validation
     updateData.layout = data.layout as Prisma.InputJsonValue;

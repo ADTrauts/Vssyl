@@ -55,6 +55,7 @@ import {
   buildDefaultLeftSidebarFromSelected,
   filterModulesForTab,
   getMainPersonalDashboardId,
+  normalizeSelectedModuleIds,
   resolveSelectedModuleIds,
 } from '../../lib/dashboardTabModules';
 
@@ -298,9 +299,13 @@ export function DashboardLayoutInner({ children }: { children: React.ReactNode }
     };
   }, [modules, rightSidebarConfig]);
 
-  // Get available modules scoped to active tab membership
+  // Get available modules scoped to active tab membership (personal tabs never use global list)
   const getAvailableModules = (): ModuleConfig[] => {
     const allAvailable = getFilteredModules();
+    if (currentDashboard && getDashboardType(currentDashboard) === 'personal') {
+      const ids = tabSelectedModuleIds ?? normalizeSelectedModuleIds([]);
+      return filterModulesForTab(allAvailable, ids);
+    }
     if (tabSelectedModuleIds) {
       return filterModulesForTab(allAvailable, tabSelectedModuleIds);
     }
@@ -348,6 +353,8 @@ export function DashboardLayoutInner({ children }: { children: React.ReactNode }
   };
 
   const handleCreateDashboard = async (name?: string, tabType?: 'blank' | 'home') => {
+    // TODO(dashboard-tabs): When duplicate-tab ships, copy preferences.selectedModuleIds,
+    // widgets/layout, and sidebarCustomization.leftSidebar[sourceTabId] together.
     if (!session?.accessToken) return;
     try {
       if (tabType === 'home') {
