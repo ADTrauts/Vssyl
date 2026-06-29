@@ -19,7 +19,7 @@ export function BusinessWorkspaceHubPanel({ businessName }: BusinessWorkspaceHub
           {businessName ? `${businessName} Workspace` : 'Business Workspace'}
         </h1>
         <p className="mt-2 text-v-text-secondary">
-          Select a module from the sidebar to get started.
+          Select an application from the sidebar to get started.
         </p>
       </div>
     </div>

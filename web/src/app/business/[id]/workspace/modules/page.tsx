@@ -171,10 +171,10 @@ export default function BusinessModulesPage() {
       setSelectedModuleForSettings(prev =>
         prev ? { ...prev, config } : prev
       );
-      toast.success('Module settings updated successfully');
+      toast.success('Application settings updated successfully');
       setShowModuleSettings(false);
     } catch {
-      toast.error('Failed to update module settings');
+      toast.error('Failed to update application settings');
     }
   };
 
@@ -272,7 +272,7 @@ export default function BusinessModulesPage() {
                   <Search className="w-4 h-4 absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400" />
                   <input
                     type="text"
-                    placeholder="Search modules..."
+                    placeholder="Search applications..."
                     className="pl-10 pr-4 py-2 border border-v-border rounded-md focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                   />
                 </div>
@@ -365,13 +365,13 @@ export default function BusinessModulesPage() {
             ) : (
               <div className="text-center py-12">
                 <Package className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-v-text-primary mb-2">No Modules Installed</h3>
+                <h3 className="text-lg font-medium text-v-text-primary mb-2">No Applications Installed</h3>
                 <p className="text-v-text-secondary mb-6">
-                  Get started by browsing and installing enterprise modules for your business.
+                  Get started by browsing and installing enterprise applications for your business.
                 </p>
                 <Button onClick={() => setShowModuleSelection(true)}>
                   <Plus className="w-4 h-4 mr-2" />
-                  Browse Enterprise Modules
+                  Browse Enterprise Applications
                 </Button>
               </div>
             )}
@@ -379,7 +379,7 @@ export default function BusinessModulesPage() {
 
           {/* Module Categories */}
           <Card className="p-6">
-            <h2 className="text-xl font-semibold text-v-text-primary mb-4">Module Categories</h2>
+            <h2 className="text-xl font-semibold text-v-text-primary mb-4">Application Categories</h2>
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
               {[
                 { name: 'Analytics', icon: '📊', count: 3, color: 'bg-blue-50 text-blue-600' },
@@ -390,7 +390,7 @@ export default function BusinessModulesPage() {
                 <div key={category.name} className={`p-4 rounded-lg ${category.color}`}>
                   <div className="text-2xl mb-2">{category.icon}</div>
                   <h3 className="font-medium text-sm">{category.name}</h3>
-                  <p className="text-xs opacity-75">{category.count} modules available</p>
+                  <p className="text-xs opacity-75">{category.count} applications available</p>
                 </div>
               ))}
             </div>
@@ -410,9 +410,9 @@ export default function BusinessModulesPage() {
             for (const id of selectedModuleIds) {
               await updateModuleStatus(id, 'enabled');
             }
-            toast.success('Selected enterprise modules installed');
+            toast.success('Selected enterprise applications installed');
           } catch {
-            toast.error('Failed to install one or more modules');
+            toast.error('Failed to install one or more applications');
           } finally {
             setInstalling(false);
           }

@@ -111,7 +111,7 @@ const getModuleDescription = (moduleName: string) => {
     case 'settings':
       return 'Dashboard configuration and preferences';
     default:
-      return 'Module functionality';
+      return 'Application functionality';
   }
 };
 
@@ -257,7 +257,7 @@ export default function DashboardBuildOutModal({
         setAvailableModules(modules);
       } catch (err: unknown) {
         console.error('Error loading modules:', err);
-        setError('Failed to load available modules');
+        setError('Failed to load available applications');
       } finally {
         setLoading(false);
       }
@@ -393,7 +393,7 @@ export default function DashboardBuildOutModal({
         {isPersonalScope && (
           <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
             <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300">
-              Additional installed modules
+              Additional installed applications
             </h4>
             <Link
               href={isPersonalScope ? '/modules?tab=marketplace' : `/business/${businessId}/modules?tab=marketplace`}
@@ -407,7 +407,7 @@ export default function DashboardBuildOutModal({
 
         {!isPersonalScope && (
           <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-            Available modules
+            Available applications
           </h4>
         )}
 
@@ -415,7 +415,7 @@ export default function DashboardBuildOutModal({
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
           <input
             type="text"
-            placeholder="Search modules..."
+            placeholder="Search applications..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -426,7 +426,7 @@ export default function DashboardBuildOutModal({
       {loading ? (
         <div className="flex items-center justify-center py-12">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
-          <span className="ml-3 text-gray-600 dark:text-gray-400">Loading modules...</span>
+          <span className="ml-3 text-gray-600 dark:text-gray-400">Loading applications...</span>
         </div>
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-6">
@@ -517,8 +517,8 @@ export default function DashboardBuildOutModal({
     >
       <p className="text-sm text-gray-600 dark:text-gray-400 -mt-v-2 mb-v-4">
         {isPersonalScope
-          ? `Choose which modules appear on "${dashboardName}".`
-          : `Choose modules for "${dashboardName}"`}
+          ? `Choose which applications appear on "${dashboardName}".`
+          : `Choose applications for "${dashboardName}"`}
       </p>
 
       <div className="overflow-y-auto max-h-[min(60vh,32rem)] -mx-v-6 px-v-6">
@@ -566,7 +566,7 @@ export default function DashboardBuildOutModal({
                     Choose a Quick Setup
                   </h3>
                   <p className="text-gray-600 dark:text-gray-400 text-sm">
-                    Get started quickly with pre-configured module combinations
+                    Get started quickly with pre-configured application combinations
                   </p>
                 </div>
 
@@ -611,7 +611,7 @@ export default function DashboardBuildOutModal({
 
                 <div className="text-center">
                   <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                    Or choose your own modules with custom selection
+                    Or choose your own applications with custom selection
                   </p>
                   <Button variant="secondary" onClick={() => setView('custom')}>
                     Custom Selection
@@ -629,13 +629,13 @@ export default function DashboardBuildOutModal({
         <div className="text-sm text-gray-600 dark:text-gray-400">
           {view === 'custom' && isPersonalScope && (
             <span>
-              {selectedModules.size} additional module
+              {selectedModules.size} additional application
               {selectedModules.size !== 1 ? 's' : ''} selected
             </span>
           )}
           {view === 'custom' && !isPersonalScope && selectedModules.size > 0 && (
             <span>
-              {selectedModules.size} module{selectedModules.size !== 1 ? 's' : ''} selected
+              {selectedModules.size} application{selectedModules.size !== 1 ? 's' : ''} selected
             </span>
           )}
         </div>
@@ -645,11 +645,11 @@ export default function DashboardBuildOutModal({
           </Button>
           {(isPersonalScope || view === 'custom') && (
             <Button onClick={handleModuleSelectionComplete}>
-              {isPersonalScope ? 'Create tab' : 'Continue with Selected Modules'}
+              {isPersonalScope ? 'Create tab' : 'Continue with Selected Applications'}
             </Button>
           )}
           {!isPersonalScope && view === 'quick-setup' && (
-            <Button onClick={() => onComplete([])}>Skip Module Selection</Button>
+            <Button onClick={() => onComplete([])}>Skip Application Selection</Button>
           )}
         </div>
       </div>

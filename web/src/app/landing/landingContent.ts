@@ -71,8 +71,8 @@ const business: LandingAudienceContent = {
     {
       title: 'Modular Platform',
       description:
-        'Extensible architecture with a marketplace of modules. Add only what you need, when you need it.',
-      bullets: ['Third-party integrations', 'Custom modules', 'Developer marketplace'],
+        'Extensible architecture with a marketplace of applications. Add only what you need, when you need it.',
+      bullets: ['Third-party integrations', 'Custom applications', 'Developer marketplace'],
     },
     {
       title: 'Team Collaboration',
@@ -99,9 +99,9 @@ const business: LandingAudienceContent = {
       bullets: ['Global CDN', 'Multi-region deployment', '24/7 monitoring'],
     },
   ],
-  modulesSectionTitle: 'Essential Productivity Modules',
+  modulesSectionTitle: 'Essential Productivity Applications',
   modulesSectionSubtitle:
-    'Core modules that power your daily workflow, with more available in our marketplace.',
+    'Core applications that power your daily workflow, with more available in our marketplace.',
   moduleCards: [
     {
       title: 'Chat & Messaging',
@@ -131,7 +131,7 @@ const business: LandingAudienceContent = {
       fallbackYearlyLabel: '$499.99/yr',
       subtitle: 'Solid team tools, AI, and collaboration for growing organizations.',
       features: [
-        'Core business modules',
+        'Core business applications',
         'Team management',
         'Generous storage',
         'Business-grade security',
@@ -200,7 +200,7 @@ const personal: LandingAudienceContent = {
     {
       title: 'Modular Platform',
       description:
-        'Turn on the modules you want—chat, drive, calendar, and more—so your hub stays uncluttered.',
+        'Turn on the applications you want—chat, drive, calendar, and more—so your hub stays uncluttered.',
       bullets: ['Pick what you use', 'Expand anytime', 'Marketplace add-ons'],
     },
     {
@@ -258,8 +258,8 @@ const personal: LandingAudienceContent = {
       name: 'Free',
       fallbackPriceLabel: '$0/mo',
       fallbackYearlyLabel: '$0/yr',
-      subtitle: 'Get your hub set up with core modules and AI.',
-      features: ['Core AI assistant', 'Core modules included', '5GB storage', 'Basic insights'],
+      subtitle: 'Get your hub set up with core applications and AI.',
+      features: ['Core AI assistant', 'Core applications included', '5GB storage', 'Basic insights'],
       ctaLabel: 'Get started free',
       ctaHref: '/auth/register',
     },
@@ -271,7 +271,7 @@ const personal: LandingAudienceContent = {
       subtitle: 'Full personal experience—more AI, storage, and priority support.',
       features: [
         'Advanced AI features',
-        'All core modules + premium',
+        'All core applications + premium',
         '100GB storage',
         'Deeper insights',
         'Priority support',

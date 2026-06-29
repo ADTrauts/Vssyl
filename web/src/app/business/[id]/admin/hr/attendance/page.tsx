@@ -341,7 +341,7 @@ export default function HRAttendancePage() {
     return (
       <HRPageLayout businessId={businessId} currentView="attendance">
         <div className="p-6">
-          <Alert type="warning" title="HR Module Not Installed">
+          <Alert type="warning" title="HR Application Not Installed">
             The HR module must be installed and the business tier upgraded to Business Advanced or
             Enterprise to access attendance settings.
           </Alert>
@@ -354,7 +354,7 @@ export default function HRAttendancePage() {
     return (
       <HRPageLayout businessId={businessId} currentView="attendance">
         <div className="p-6">
-          <Alert type="warning" title="Attendance Module Not Available">
+          <Alert type="warning" title="Attendance Application Not Available">
             Attendance features are not included with the current subscription tier. Upgrade to
             Business Advanced or Enterprise to enable attendance tracking.
           </Alert>

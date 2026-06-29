@@ -236,7 +236,7 @@ export default function NotificationSettingsPage() {
 
           {preferences.length === 0 ? (
             <div className="p-6 text-center text-gray-600 dark:text-gray-400">
-              <p>No notification preferences available. Install modules to configure notifications.</p>
+              <p>No notification preferences available. Install applications to configure notifications.</p>
             </div>
           ) : (
             <div className="divide-y divide-gray-200 dark:divide-slate-700">

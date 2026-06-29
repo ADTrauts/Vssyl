@@ -27,7 +27,7 @@ export default function RunModulePage() {
         const cfg = await getModuleRuntime(moduleId, { scope: scopeParam, businessId });
         setConfig(cfg);
       } catch (err: any) {
-        setError(err?.message || 'Failed to load module');
+        setError(err?.message || 'Failed to load application');
       } finally {
         setLoading(false);
       }
@@ -40,7 +40,7 @@ export default function RunModulePage() {
       <div className="min-h-screen bg-gray-50 dark:bg-slate-800 flex items-center justify-center">
         <div className="flex items-center space-x-2 text-gray-600 dark:text-gray-400">
           <Spinner size={24} />
-          <span>Loading module...</span>
+          <span>Loading application...</span>
         </div>
       </div>
     );
@@ -51,9 +51,9 @@ export default function RunModulePage() {
       <div className="min-h-screen bg-gray-50 dark:bg-slate-800">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-10">
           <Alert type="error" title="Error" className="mb-4">
-            {error || 'Module not available'}
+            {error || 'Application not available'}
           </Alert>
-          <Button variant="secondary" onClick={() => router.push('/modules?tab=installed')}>Back to Modules</Button>
+          <Button variant="secondary" onClick={() => router.push('/modules?tab=installed')}>Back to Applications</Button>
         </div>
       </div>
     );

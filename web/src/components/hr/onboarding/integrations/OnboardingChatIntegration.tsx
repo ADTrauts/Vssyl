@@ -78,7 +78,7 @@ export default function OnboardingChatIntegration({
 
   if (!hasChat) {
     return (
-      <Alert type="info" title="Chat module not installed" className={className}>
+      <Alert type="info" title="Chat application not installed" className={className}>
         <p className="text-sm text-v-text-secondary">
           Install the Chat module to start conversations with HR about onboarding questions.
         </p>

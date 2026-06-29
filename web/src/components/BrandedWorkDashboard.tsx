@@ -285,7 +285,7 @@ export default function BrandedWorkDashboard({
                         Enter Workspace
                       </h3>
                       <p className="text-gray-700 dark:text-gray-300 mb-4">
-                        Access your complete business dashboard with all modules and tools
+                        Access your complete business dashboard with all applications and tools
                       </p>
                       <div className="inline-flex items-center text-blue-600 font-medium group-hover:text-blue-700">
                         <span>Open Dashboard</span>
@@ -339,7 +339,7 @@ export default function BrandedWorkDashboard({
             <div className="max-w-6xl mx-auto mt-12">
               <div className="text-center mb-8">
                 <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">More Tools</h3>
-                <p className="text-gray-700 dark:text-gray-300">Additional modules available for your business</p>
+                <p className="text-gray-700 dark:text-gray-300">Additional applications available for your business</p>
               </div>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                 {availableModules.filter(m => !['dashboard', 'drive', 'chat', 'calendar'].includes(m.id)).map((module) => (
@@ -379,13 +379,13 @@ export default function BrandedWorkDashboard({
                     <Briefcase className="w-16 h-16 mx-auto" />
                   </div>
                   <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
-                    No modules available
+                    No applications available
                   </h3>
                   <p className="text-gray-700 dark:text-gray-300 mb-6">
-                    Your business administrator hasn't enabled any modules yet. Core modules (Drive, Chat, Calendar) should be automatically installed.
+                    Your business administrator hasn&apos;t enabled any applications yet. Core applications (Drive, Chat, Calendar) should be automatically installed.
                   </p>
                   <Alert type="info" title="For Administrators">
-                    Visit the Module Management page to install core modules and additional tools for your team.
+                    Visit the Application Manager to install core applications and additional tools for your team.
                   </Alert>
                 </Card>
               </div>
@@ -395,11 +395,11 @@ export default function BrandedWorkDashboard({
             {configuration && (
               <div className="bg-white dark:bg-slate-800 rounded-lg border dark:border-slate-600 p-4">
                 <h4 className="text-sm font-medium text-gray-900 dark:text-gray-100 mb-2">
-                  Module Status
+                  Application Status
                 </h4>
                 <div className="text-sm text-gray-700 dark:text-gray-300">
-                  <p>Enabled: {getEnabledModules().length} modules</p>
-                  <p>Total: {configuration.enabledModules.length} modules</p>
+                  <p>Enabled: {getEnabledModules().length} applications</p>
+                  <p>Total: {configuration.enabledModules.length} applications</p>
                   <p>Auto-sync: {configuration.settings.autoSync ? 'Enabled' : 'Disabled'}</p>
                 </div>
               </div>

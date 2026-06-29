@@ -906,8 +906,8 @@ export default function BusinessSettingsPage() {
                         <CheckCircle className="w-4 h-4 text-green-600" />
                       </div>
                       <div>
-                        <p className="font-medium text-v-text-primary">Enterprise Modules</p>
-                        <p className="text-sm text-v-text-secondary">Access to all business-grade modules</p>
+                        <p className="font-medium text-v-text-primary">Enterprise Applications</p>
+                        <p className="text-sm text-v-text-secondary">Access to all business-grade applications</p>
                       </div>
                     </div>
                   </div>

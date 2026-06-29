@@ -134,7 +134,7 @@ export default function BusinessModulesPage() {
       setMarketplaceModules(marketplace);
 
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load modules');
+      setError(err instanceof Error ? err.message : 'Failed to load applications');
     } finally {
       setLoading(false);
     }
@@ -149,7 +149,7 @@ export default function BusinessModulesPage() {
         businessId
       });
 
-      toast.success('Module installed successfully');
+      toast.success('Application installed successfully');
       
       // Reload modules
       await loadData();
@@ -220,7 +220,7 @@ export default function BusinessModulesPage() {
         });
       } else {
         // Generic error - show the actual error message with details if available
-        let message = err instanceof Error ? err.message : 'Failed to install module';
+        let message = err instanceof Error ? err.message : 'Failed to install application';
         
         // Include error details if available (for 500 errors)
         if (error.errorData?.details) {
@@ -248,8 +248,8 @@ export default function BusinessModulesPage() {
     }
 
     const ok = await confirm({
-      title: 'Uninstall module?',
-      description: 'This will remove the module for all employees in your business.',
+      title: 'Uninstall application?',
+      description: 'This will remove the application for all employees in your business.',
       variant: 'destructive',
       confirmLabel: 'Uninstall',
     });
@@ -265,12 +265,12 @@ export default function BusinessModulesPage() {
         businessId
       });
 
-      toast.success('Module uninstalled successfully');
+      toast.success('Application uninstalled successfully');
       
       // Reload modules
       await loadData();
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : 'Failed to uninstall module');
+      toast.error(err instanceof Error ? err.message : 'Failed to uninstall application');
     } finally {
       setInstallingModuleId(null);
     }
@@ -313,7 +313,7 @@ export default function BusinessModulesPage() {
   if (error || !business) {
     return (
       <div className="container mx-auto p-6">
-        <Alert type="error" title="Error Loading Modules">
+        <Alert type="error" title="Error Loading Applications">
           {error || 'Business not found'}
         </Alert>
       </div>
@@ -324,7 +324,7 @@ export default function BusinessModulesPage() {
     return (
       <div className="container mx-auto p-6">
         <Alert type="warning" title="Access Denied">
-          Only business administrators can manage modules.
+          Only business administrators can manage applications.
         </Alert>
       </div>
     );
@@ -381,7 +381,7 @@ export default function BusinessModulesPage() {
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-gray-400" />
               <input
                 type="text"
-                placeholder="Search modules..."
+                placeholder="Search applications..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 border border-v-border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -475,11 +475,11 @@ export default function BusinessModulesPage() {
               <div className="col-span-full">
                 <BusinessAdminEmptyState
                   icon={<Package className="w-16 h-16" />}
-                  title="No modules found"
+                  title="No applications found"
                   description={
                     searchQuery || selectedCategory !== 'all'
                       ? 'Try adjusting your search or filters.'
-                      : 'Install modules from the marketplace to get started.'
+                      : 'Install applications from the marketplace to get started.'
                   }
                 />
               </div>
@@ -548,7 +548,7 @@ export default function BusinessModulesPage() {
 
                     {isCoreModule && (
                       <p className="text-xs text-v-text-muted mt-2 text-center">
-                        Core module - cannot be uninstalled
+                        Core application — cannot be uninstalled
                       </p>
                     )}
                   </Card>
@@ -564,11 +564,11 @@ export default function BusinessModulesPage() {
               <div className="col-span-full">
                 <BusinessAdminEmptyState
                   icon={<Package className="w-16 h-16" />}
-                  title="No modules found"
+                  title="No applications found"
                   description={
                     searchQuery || selectedCategory !== 'all'
                       ? 'Try adjusting your search or filters.'
-                      : 'All available modules are already installed.'
+                      : 'All available applications are already installed.'
                   }
                 />
               </div>
@@ -625,7 +625,7 @@ export default function BusinessModulesPage() {
                     ) : (
                       <>
                         <Plus className="w-4 h-4 mr-2" />
-                        Install Module
+                        Install Application
                       </>
                     )}
                   </Button>
@@ -643,12 +643,12 @@ export default function BusinessModulesPage() {
 
         {/* Info Alert */}
         <div className="mt-8">
-          <Alert type="info" title="Module Management">
+          <Alert type="info" title="Application Manager">
             <ul className="list-disc list-inside space-y-1 text-sm">
-              <li>Core modules (Drive, Chat, Calendar) are automatically installed and cannot be removed</li>
-              <li>Installing a module makes it available to all employees in your business</li>
-              <li>Changes sync in real-time - employees will see new modules immediately</li>
-              <li>You can configure module permissions from the module settings</li>
+              <li>Core applications (Drive, Chat, Calendar) are automatically installed and cannot be removed</li>
+              <li>Installing an application makes it available to all employees in your business</li>
+              <li>Changes sync in real-time — employees will see new applications immediately</li>
+              <li>You can configure application permissions from application settings</li>
             </ul>
           </Alert>
         </div>

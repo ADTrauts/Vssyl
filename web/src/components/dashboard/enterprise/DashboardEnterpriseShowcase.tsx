@@ -83,7 +83,7 @@ const ENTERPRISE_FEATURES: FeatureShowcase[] = [
   },
   {
     id: 'cross_module_analytics',
-    title: 'Cross-Module Analytics',
+    title: 'Cross-Application Analytics',
     description: 'Unified insights across Drive, Chat, Calendar, and Dashboard modules with correlation analysis.',
     category: 'intelligence',
     icon: <Layers className="w-6 h-6" />,

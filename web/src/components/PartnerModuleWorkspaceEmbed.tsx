@@ -61,7 +61,7 @@ export default function PartnerModuleWorkspaceEmbed({
     return (
       <div className={`flex items-center justify-center gap-2 py-16 ${className}`}>
         <Spinner size={24} />
-        <span className="text-gray-600 dark:text-gray-400">Loading module workspace…</span>
+        <span className="text-gray-600 dark:text-gray-400">Loading application workspace…</span>
       </div>
     );
   }
@@ -70,7 +70,7 @@ export default function PartnerModuleWorkspaceEmbed({
     return (
       <div className={`p-6 ${className}`}>
         <Alert type="error" title="Module unavailable">
-          {error ?? 'This module is not available in the business workspace.'}
+          {error ?? 'This application is not available in the business workspace.'}
         </Alert>
       </div>
     );

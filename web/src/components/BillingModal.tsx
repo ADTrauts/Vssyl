@@ -206,7 +206,7 @@ export default function BillingModal({ isOpen, onClose, businessId }: BillingMod
 
   const tabs = [
     { label: 'Overview', key: 'overview' },
-    { label: 'Modules', key: 'modules' },
+    { label: 'Applications', key: 'modules' },
     { label: 'Usage', key: 'usage' },
     { label: 'Invoices', key: 'invoices' },
   ];
@@ -230,7 +230,7 @@ export default function BillingModal({ isOpen, onClose, businessId }: BillingMod
             <Tabs.Trigger value="plans">Plans</Tabs.Trigger>
             <Tabs.Trigger value="payment-methods">Payment Methods</Tabs.Trigger>
             <Tabs.Trigger value="queries">Query Packs</Tabs.Trigger>
-            <Tabs.Trigger value="modules">Modules</Tabs.Trigger>
+            <Tabs.Trigger value="modules">Applications</Tabs.Trigger>
             <Tabs.Trigger value="usage">Usage</Tabs.Trigger>
             <Tabs.Trigger value="invoices">Invoices</Tabs.Trigger>
           </Tabs.List>
@@ -472,10 +472,10 @@ export default function BillingModal({ isOpen, onClose, businessId }: BillingMod
                 <div className="p-6">
                   <div className="flex items-center gap-2 mb-4">
                     <Settings className="h-5 w-5" />
-                    <h3 className="text-lg font-semibold">Module Subscriptions</h3>
+                    <h3 className="text-lg font-semibold">Application Subscriptions</h3>
                   </div>
                   <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                    Manage your module subscriptions and billing
+                    Manage your application subscriptions and billing
                   </p>
                   
                   {moduleSubscriptions.length > 0 ? (
@@ -516,8 +516,8 @@ export default function BillingModal({ isOpen, onClose, businessId }: BillingMod
                   ) : (
                     <div className="text-center py-8">
                       <Package className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                      <p className="text-gray-600 dark:text-gray-400">No module subscriptions</p>
-                      <Button className="mt-2">Browse Modules</Button>
+                      <p className="text-gray-600 dark:text-gray-400">No application subscriptions</p>
+                      <Button className="mt-2">Browse Applications</Button>
                     </div>
                   )}
                 </div>
@@ -534,7 +534,7 @@ export default function BillingModal({ isOpen, onClose, businessId }: BillingMod
                     <h3 className="text-lg font-semibold">Usage Analytics</h3>
                   </div>
                   <p className="text-sm text-gray-600 dark:text-gray-400 mb-4">
-                    Monitor your usage across all modules
+                    Monitor your usage across all applications
                   </p>
                   
                   {usage ? (

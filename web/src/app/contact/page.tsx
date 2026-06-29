@@ -263,7 +263,7 @@ const ContactPage = () => {
                 How does the free trial work?
               </h3>
               <p className="text-gray-600 dark:text-gray-400">
-                Start with our free plan that includes basic AI features and core modules. 
+                Start with our free plan that includes basic AI features and core applications. 
                 Upgrade anytime to unlock advanced features and increased storage.
               </p>
             </div>
@@ -318,7 +318,7 @@ const ContactPage = () => {
               <ul className="space-y-2">
                 <li><Link href="/#features" className="text-gray-400 hover:text-white">Features</Link></li>
                 <li><Link href="/#pricing" className="text-gray-400 hover:text-white">Pricing</Link></li>
-                <li><Link href="/modules" className="text-gray-400 hover:text-white">Modules</Link></li>
+                <li><Link href="/modules" className="text-gray-400 hover:text-white">Applications</Link></li>
                 <li><Link href="/integrations" className="text-gray-400 hover:text-white">Integrations</Link></li>
               </ul>
             </div>

@@ -33,7 +33,7 @@ export function assertModuleApiScope(
   if (scope === 'business') {
     if (!opts?.businessId) {
       throw new ModuleManagerContextError(
-        'Select a business workspace to manage business modules.'
+        'Select a business workspace to manage business applications.'
       );
     }
     return { scope: 'business', businessId: opts.businessId };

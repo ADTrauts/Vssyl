@@ -719,7 +719,7 @@ export function LeftSidebarCustomizer({
           {/* Available Modules Section */}
           {availableModulesList.length > 0 && (
             <div className="mt-4 space-y-2">
-              <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 px-2 py-1">Available Modules</div>
+              <div className="text-xs font-semibold text-gray-500 dark:text-gray-400 px-2 py-1">Available Applications</div>
               <div className="p-2 border-2 border-dashed border-gray-200 dark:border-slate-700 rounded-lg bg-gray-50 dark:bg-slate-800">
                 <SortableContext
                   items={availableModulesList.map(m => `available-module-${m.id}`)}

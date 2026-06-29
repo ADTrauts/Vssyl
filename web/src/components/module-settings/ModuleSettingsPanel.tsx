@@ -99,7 +99,7 @@ export default function ModuleSettingsPanel({
                 {moduleName} Settings
               </h2>
               <p className="text-sm text-gray-600 dark:text-gray-400">
-                Configure {moduleName.toLowerCase()} module settings
+                Configure {moduleName.toLowerCase()} application settings
               </p>
             </div>
           </div>

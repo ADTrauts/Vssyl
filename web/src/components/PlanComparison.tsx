@@ -60,7 +60,7 @@ const TIER_FEATURES: TierFeature[] = [
     },
   },
   {
-    name: 'Core Modules',
+    name: 'Core Applications',
     tiers: {
       free: true,
       pro: true,

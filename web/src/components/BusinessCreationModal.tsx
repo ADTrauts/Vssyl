@@ -144,11 +144,11 @@ export default function BusinessCreationModal({
     <div className="text-center">
       <Building2 className="w-16 h-16 text-blue-600 mx-auto mb-4" />
       <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">
-        {moduleName ? `Great! "${moduleName}" is ready for review.` : 'Module Submitted Successfully!'}
+        {moduleName ? `Great! "${moduleName}" is ready for review.` : 'Application Submitted Successfully!'}
       </h2>
       <p className="text-gray-600 dark:text-gray-400 mb-6">
-        To access analytics and manage your module, you'll need a business profile. 
-        You can create a new business or link this module to an existing business where you are an active member.
+        To access analytics and manage your application, you&apos;ll need a business profile.
+        You can create a new business or link this application to an existing business where you are an active member.
       </p>
       
       <div className="space-y-4">
@@ -188,7 +188,7 @@ export default function BusinessCreationModal({
         <Building2 className="w-16 h-16 text-blue-600 mx-auto mb-4" />
         <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">Create Your Business</h2>
         <p className="text-gray-600 dark:text-gray-400">
-          Set up your business profile to manage your module and access analytics
+          Set up your business profile to manage your application and access analytics
         </p>
       </div>
 
@@ -330,7 +330,7 @@ export default function BusinessCreationModal({
         <Link className="w-16 h-16 text-blue-600 mx-auto mb-4" />
         <h2 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">Link to Existing Business</h2>
         <p className="text-gray-600 dark:text-gray-400">
-          Choose an existing business where you are an active member to link this module for analytics and management.
+          Choose an existing business where you are an active member to link this application for analytics and management.
         </p>
       </div>
 
@@ -398,7 +398,7 @@ export default function BusinessCreationModal({
                     router.push(`/business/${selectedBusinessId}/workspace`);
                     onClose();
                   } catch (e: unknown) {
-                    const errorMessage = e instanceof Error ? e.message : 'Failed to link module to business';
+                    const errorMessage = e instanceof Error ? e.message : 'Failed to link application to business';
                     setError(errorMessage);
                   } finally {
                     setLoading(false);

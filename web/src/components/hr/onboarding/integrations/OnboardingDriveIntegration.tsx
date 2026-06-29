@@ -96,7 +96,7 @@ export default function OnboardingDriveIntegration({
 
   if (!hasDrive) {
     return (
-      <Alert type="info" title="Drive module not installed">
+      <Alert type="info" title="Drive application not installed">
         <p className="text-sm text-v-text-secondary">
           Install the Drive module to upload documents for onboarding tasks.
         </p>

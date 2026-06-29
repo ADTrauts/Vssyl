@@ -44,7 +44,7 @@ export default function ModuleDetailsPage() {
         setModule(details);
       } catch (err) {
         console.error('Error loading module details:', err);
-        setError('Failed to load module details');
+        setError('Failed to load application details');
       } finally {
         setLoading(false);
       }
@@ -71,7 +71,7 @@ export default function ModuleDetailsPage() {
       router.push('/modules?tab=installed');
     } catch (err) {
       console.error('Error installing module:', err);
-      setError('Failed to install module');
+      setError('Failed to install application');
     } finally {
       setActionLoading(false);
     }
@@ -85,7 +85,7 @@ export default function ModuleDetailsPage() {
       router.push('/modules?tab=installed');
     } catch (err) {
       console.error('Error installing module after payment:', err);
-      setError('Payment successful but failed to install module');
+      setError('Payment successful but failed to install application');
     } finally {
       setActionLoading(false);
     }
@@ -98,7 +98,7 @@ export default function ModuleDetailsPage() {
       router.push('/modules?tab=installed');
     } catch (err) {
       console.error('Error uninstalling module:', err);
-      setError('Failed to uninstall module');
+      setError('Failed to uninstall application');
     } finally {
       setActionLoading(false);
     }
@@ -126,7 +126,7 @@ export default function ModuleDetailsPage() {
     return (
       <div className="flex items-center justify-center py-12">
         <Spinner size={32} />
-        <span className="ml-2">Loading module details...</span>
+        <span className="ml-2">Loading application details...</span>
       </div>
     );
   }
@@ -135,7 +135,7 @@ export default function ModuleDetailsPage() {
     return (
       <div className="max-w-4xl mx-auto p-6">
         <Alert type="error" title="Error">
-          {error || 'Module not found'}
+          {error || 'Application not found'}
         </Alert>
       </div>
     );
@@ -257,7 +257,7 @@ export default function ModuleDetailsPage() {
             {/* Module Info */}
             <Card>
               <div className="p-6">
-                <h3 className="font-semibold mb-4">Module Information</h3>
+                <h3 className="font-semibold mb-4">Application Information</h3>
                 <div className="space-y-3 text-sm">
                   <div className="flex justify-between">
                     <span className="text-gray-600 dark:text-gray-400">Version:</span>
@@ -291,7 +291,7 @@ export default function ModuleDetailsPage() {
                   <div className="space-y-4">
                     <div className="flex items-center text-green-600">
                       <CheckCircle className="w-5 h-5 mr-2" />
-                      <span>Module is installed</span>
+                      <span>Application is installed</span>
                     </div>
                     <Button 
                       variant="secondary" 
@@ -299,7 +299,7 @@ export default function ModuleDetailsPage() {
                       disabled={actionLoading}
                       className="w-full"
                     >
-                      {actionLoading ? <Spinner size={16} /> : 'Uninstall Module'}
+                      {actionLoading ? <Spinner size={16} /> : 'Uninstall Application'}
                     </Button>
                   </div>
                 ) : (
@@ -313,7 +313,7 @@ export default function ModuleDetailsPage() {
                         {actionLoading ? <Spinner size={16} /> : (
                           <>
                             <Download className="w-4 h-4 mr-2" />
-                            Install Module
+                            Install Application
                           </>
                         )}
                       </Button>

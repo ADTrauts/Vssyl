@@ -161,7 +161,7 @@ export interface ModuleRuntimeConfig {
 export const getInstalledModules = async (opts?: { scope?: 'personal' | 'business'; businessId?: string }): Promise<Module[]> => {
   const scope = opts?.scope ?? 'personal';
   if (scope === 'business' && !opts?.businessId) {
-    throw new Error('Select a business workspace to manage business modules.');
+    throw new Error('Select a business workspace to manage business applications.');
   }
   const params = new URLSearchParams();
   params.append('scope', scope);
@@ -182,7 +182,7 @@ export const getMarketplaceModules = async (params?: {
 }): Promise<Module[]> => {
   const scope = params?.scope ?? 'personal';
   if (scope === 'business' && !params?.businessId) {
-    throw new Error('Select a business workspace to manage business modules.');
+    throw new Error('Select a business workspace to manage business applications.');
   }
   const searchParams = new URLSearchParams();
   if (params?.search) searchParams.append('search', params.search);
@@ -251,7 +251,7 @@ export const getWorkspaceBridgeInit = async (
 export const installModule = async (moduleId: string, opts?: { scope?: 'personal' | 'business'; businessId?: string }): Promise<{ message: string; installation: ModuleInstallation }> => {
   const scope = opts?.scope ?? 'personal';
   if (scope === 'business' && !opts?.businessId) {
-    throw new Error('Select a business workspace to manage business modules.');
+    throw new Error('Select a business workspace to manage business applications.');
   }
   const params = new URLSearchParams();
   params.append('scope', scope);
@@ -265,7 +265,7 @@ export const installModule = async (moduleId: string, opts?: { scope?: 'personal
 export const uninstallModule = async (moduleId: string, opts?: { scope?: 'personal' | 'business'; businessId?: string }): Promise<{ message: string }> => {
   const scope = opts?.scope ?? 'personal';
   if (scope === 'business' && !opts?.businessId) {
-    throw new Error('Select a business workspace to manage business modules.');
+    throw new Error('Select a business workspace to manage business applications.');
   }
   const params = new URLSearchParams();
   params.append('scope', scope);

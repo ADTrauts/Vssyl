@@ -68,7 +68,7 @@ export default function ModuleHost({
       return;
     }
     if (!artifactSignedUrl) {
-      setBundleError('Module bundle URL is missing. Reinstall the module or try again later.');
+      setBundleError('Application bundle URL is missing. Reinstall the application or try again later.');
       setBundleLoading(false);
       return;
     }
@@ -81,7 +81,7 @@ export default function ModuleHost({
       try {
         const res = await fetch(artifactSignedUrl, { credentials: 'omit', mode: 'cors' });
         if (!res.ok) {
-          throw new Error(`Failed to download module bundle (${res.status})`);
+          throw new Error(`Failed to download application bundle (${res.status})`);
         }
         const buf = await res.arrayBuffer();
         if (cancelled) return;
@@ -89,7 +89,7 @@ export default function ModuleHost({
         revokeRef.current = revoke;
         setBundleSrc(entryBlobUrl);
       } catch (e: unknown) {
-        const msg = e instanceof Error ? e.message : 'Failed to load module bundle';
+        const msg = e instanceof Error ? e.message : 'Failed to load application bundle';
         if (!cancelled) setBundleError(msg);
       } finally {
         if (!cancelled) setBundleLoading(false);
@@ -201,7 +201,7 @@ export default function ModuleHost({
   if (bundleRuntime && bundleError) {
     return (
       <div className="p-4">
-        <Alert type="error" title="Could not load module bundle">
+        <Alert type="error" title="Could not load application bundle">
           <p className="text-gray-700 dark:text-gray-300 text-sm">{bundleError}</p>
           <p className="text-gray-700 dark:text-gray-300 text-sm mt-2">
             If this persists, the storage bucket may need CORS allowing GET from this app origin, or the bundle may be
@@ -216,7 +216,7 @@ export default function ModuleHost({
     return (
       <div className="flex items-center justify-center gap-2 py-16 text-gray-700 dark:text-gray-300">
         <Spinner size={24} />
-        <span>Unpacking module…</span>
+        <span>Unpacking application…</span>
       </div>
     );
   }

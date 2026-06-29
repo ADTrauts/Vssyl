@@ -157,7 +157,7 @@ export default function BusinessAdminPage() {
 
 const truncateDescription = (value?: string) => {
   if (!value) {
-    return 'Installed module';
+    return 'Installed application';
   }
 
   if (value.length <= 120) {
@@ -201,7 +201,7 @@ const truncateDescription = (value?: string) => {
   const sidebarSections: SidebarSection[] = useMemo(() => {
     const sections: SidebarSection[] = [
       { id: 'overview', label: 'Overview', icon: Layout },
-      { id: 'modules', label: 'Modules', icon: Package },
+      { id: 'modules', label: 'Applications', icon: Package },
       { id: 'people', label: 'People & Access', icon: Users },
       { id: 'branding', label: 'Branding', icon: Palette },
       { id: 'place', label: 'Vssyl Place', icon: MapPin },
@@ -503,7 +503,7 @@ const truncateDescription = (value?: string) => {
                         <Package className="h-6 w-6 text-green-600" />
                       </div>
                       <div className="ml-4">
-                        <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Active Modules</p>
+                        <p className="text-sm font-medium text-gray-600 dark:text-gray-400">Active Applications</p>
                         <p className="text-2xl font-bold text-gray-900 dark:text-gray-100">
                           {installedModules.length}
                         </p>
@@ -542,7 +542,7 @@ const truncateDescription = (value?: string) => {
               <section id="modules" className="scroll-mt-24 space-y-6">
                 <div className="flex flex-wrap items-center justify-between gap-4">
                   <div>
-                    <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">Modules</h2>
+                    <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100">Applications</h2>
                     <p className="text-sm text-gray-600 dark:text-gray-400">
                       Install and configure the tools powering your workspace experience.
                     </p>
@@ -553,7 +553,7 @@ const truncateDescription = (value?: string) => {
                     onClick={() => router.push(`/business/${businessId}/modules`)}
                   >
                     <Package className="h-4 w-4" />
-                    Manage Modules
+                    Manage Applications
                   </Button>
                 </div>
 
@@ -577,7 +577,7 @@ const truncateDescription = (value?: string) => {
                             <div>
                               <h3 className="text-base font-semibold text-gray-900 dark:text-gray-100">{module.name}</h3>
                               <p className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                                {module.category || 'Core Module'}
+                                {module.category || 'Core Application'}
                               </p>
                             </div>
                           </div>
@@ -606,10 +606,10 @@ const truncateDescription = (value?: string) => {
                       <div className="rounded-full bg-amber-100 p-2">
                         <Package className="h-5 w-5 text-amber-600" />
                       </div>
-                      <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">No modules installed yet</h3>
+                      <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">No applications installed yet</h3>
                     </div>
                     <p className="text-sm text-gray-600 dark:text-gray-400">
-                      Install modules to unlock collaboration, automation, and analytics for your team.
+                      Install applications to unlock collaboration, automation, and analytics for your team.
                     </p>
                   </Card>
                 )}
@@ -621,9 +621,9 @@ const truncateDescription = (value?: string) => {
                         <Package className="h-6 w-6 text-green-600" />
                       </div>
                       <div>
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Module Readiness</h3>
+                        <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Application Readiness</h3>
                         <p className="text-sm text-gray-600 dark:text-gray-400">
-                          Keep modules aligned across personal and business contexts.
+                          Keep applications aligned across personal and business contexts.
                         </p>
                       </div>
                     </div>
@@ -633,7 +633,7 @@ const truncateDescription = (value?: string) => {
                   </div>
                   <div className="mt-4 grid gap-3 sm:grid-cols-2">
                     <div className="flex items-center justify-between rounded-lg bg-gray-50 dark:bg-slate-800 p-3 text-sm text-gray-700 dark:text-gray-300">
-                      <span>Installed Modules</span>
+                      <span>Installed Applications</span>
                       <Badge color={installedModules.length > 0 ? 'green' : 'gray'} size="sm">
                         {installedModules.length}
                       </Badge>

@@ -102,7 +102,7 @@ export default function ModuleSettingsPage() {
           try {
             moduleDetails = (await getModuleDetails(moduleId)) as InstalledModule;
           } catch {
-            setError('Module not found or not installed for this business.');
+            setError('Application not found or not installed for this business.');
             return;
           }
         }
@@ -115,7 +115,7 @@ export default function ModuleSettingsPage() {
         setConfig(derivedConfig);
         setInitialConfig(derivedConfig);
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load module settings');
+        setError(err instanceof Error ? err.message : 'Failed to load application settings');
       } finally {
         setLoading(false);
       }
@@ -187,13 +187,13 @@ export default function ModuleSettingsPage() {
   if (error || !moduleData || !config) {
     return (
       <div className="container mx-auto p-6">
-        <Alert type="error" title="Unable to load module settings">
-          {error || 'Module configuration could not be retrieved.'}
+        <Alert type="error" title="Unable to load application settings">
+          {error || 'Application configuration could not be retrieved.'}
         </Alert>
         <div className="mt-4">
           <Button variant="secondary" onClick={() => router.push(`/business/${businessId}/modules`)}>
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Modules
+            Back to Applications
           </Button>
         </div>
       </div>
@@ -212,7 +212,7 @@ export default function ModuleSettingsPage() {
                 className="flex items-center space-x-2"
               >
                 <ArrowLeft className="h-4 w-4" />
-                <span>Back to Modules</span>
+                <span>Back to Applications</span>
               </Button>
               <div className="h-6 w-px bg-gray-200" />
               <div>
@@ -242,7 +242,7 @@ export default function ModuleSettingsPage() {
               <div>
                 <h2 className="text-xl font-semibold text-v-text-primary">{moduleData.name}</h2>
                 <p className="text-sm text-v-text-secondary">
-                  {moduleData.description || 'This module powers key workflows inside your business workspace.'}
+                  {moduleData.description || 'This application powers key workflows inside your business workspace.'}
                 </p>
               </div>
             </div>
@@ -253,7 +253,7 @@ export default function ModuleSettingsPage() {
               </Badge>
               <Badge color="gray" className="flex items-center space-x-1">
                 <Shield className="h-4 w-4" />
-                <span>{moduleType.charAt(0).toUpperCase() + moduleType.slice(1)} Module</span>
+                <span>{moduleType.charAt(0).toUpperCase() + moduleType.slice(1)} Application</span>
               </Badge>
             </div>
           </div>

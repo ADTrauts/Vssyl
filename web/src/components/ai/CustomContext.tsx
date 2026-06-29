@@ -265,7 +265,7 @@ export default function CustomContext() {
     const suggestions: Record<string, { title: string; content: string; action?: string }> = {
       personal: {
         title: 'Add Personal Context',
-        content: 'Tell your AI about your preferences, work style, and how you like things done. This helps it understand you better across all modules.',
+        content: 'Tell your AI about your preferences, work style, and how you like things done. This helps it understand you better across all applications.',
         action: 'Add personal context'
       },
       business: {
@@ -274,14 +274,14 @@ export default function CustomContext() {
         action: 'Add business context'
       },
       personalModules: {
-        title: 'Module-Specific Instructions',
-        content: 'Give your AI specific instructions for how to work with your personal modules. For example, "Always organize File Hub files by project name."',
-        action: 'Add module context'
+        title: 'Application-Specific Instructions',
+        content: 'Give your AI specific instructions for how to work with your personal applications. For example, "Always organize File Hub files by project name."',
+        action: 'Add application context'
       },
       businessModules: {
-        title: 'Business Module Context',
-        content: 'Add context for how your AI should handle business modules. Great for team workflows and business-specific processes.',
-        action: 'Add business module context'
+        title: 'Business Application Context',
+        content: 'Add context for how your AI should handle business applications. Great for team workflows and business-specific processes.',
+        action: 'Add business application context'
       }
     };
     return suggestions[section];
@@ -480,9 +480,9 @@ export default function CustomContext() {
         <Card className="p-6 relative">
           {shouldShowSuggestions && !dismissedSuggestions.has('personalModules') && expandedSections.has('personal-modules') && (
             <SuggestionBubble
-              title="Module-Specific Instructions"
-              content="Give your AI specific instructions for how to work with your personal modules. For example, 'Always organize File Hub files by project name.'"
-              action="Add module context"
+              title="Application-Specific Instructions"
+              content="Give your AI specific instructions for how to work with your personal applications. For example, 'Always organize File Hub files by project name.'"
+              action="Add application context"
               onDismiss={() => dismissSuggestion('personalModules')}
               onAction={() => {
                 setEditingContext(null);
@@ -505,7 +505,7 @@ export default function CustomContext() {
                 <ChevronRight className="w-5 h-5 text-gray-500 dark:text-gray-400" />
               )}
               <Puzzle className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Personal Module Context</h3>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Personal Application Context</h3>
               <Badge color="blue" size="sm">
                 {getContextsByScope('module').filter(ctx => 
                   personalModules.some(m => m.id === ctx.moduleId)
@@ -545,7 +545,7 @@ export default function CustomContext() {
                       </div>
                     </div>
                     {moduleContexts.length === 0 ? (
-                      <p className="text-sm text-gray-500 dark:text-gray-400">No context entries for this module.</p>
+                      <p className="text-sm text-gray-500 dark:text-gray-400">No context entries for this application.</p>
                     ) : (
                       <div className="space-y-2">
                         {moduleContexts.map(context => (
@@ -585,7 +585,7 @@ export default function CustomContext() {
                 <ChevronRight className="w-5 h-5 text-gray-500 dark:text-gray-400" />
               )}
               <Puzzle className="w-5 h-5 text-gray-600 dark:text-gray-400" />
-              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Business Module Context</h3>
+              <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Business Application Context</h3>
               <Badge color="blue" size="sm">
                 {getContextsByScope('module').filter(ctx => 
                   ctx.scopeId && businesses.some(b => b.id === ctx.scopeId)
@@ -645,7 +645,7 @@ export default function CustomContext() {
                               </div>
                             </div>
                             {moduleContexts.length === 0 ? (
-                              <p className="text-sm text-gray-500 dark:text-gray-400">No context entries for this module.</p>
+                              <p className="text-sm text-gray-500 dark:text-gray-400">No context entries for this application.</p>
                             ) : (
                               <div className="space-y-2">
                                 {moduleContexts.map(context => (
@@ -880,7 +880,7 @@ function AddContextModal({
               >
                 <option value="personal">Personal</option>
                 <option value="business">Business</option>
-                <option value="module">Module</option>
+                <option value="module">Application</option>
                 <option value="folder">Folder</option>
               </select>
             </div>
@@ -911,7 +911,7 @@ function AddContextModal({
             {selectedScope === 'module' && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Business (Optional - leave empty for personal module context)
+                  Business (Optional — leave empty for personal application context)
                 </label>
                 <select
                   value={selectedBusinessId || ''}
@@ -935,7 +935,7 @@ function AddContextModal({
             {selectedScope === 'module' && (
               <div>
                 <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-                  Module
+                  Application
                 </label>
                 <select
                   value={selectedModuleId || ''}
@@ -947,9 +947,9 @@ function AddContextModal({
                   <option value="">
                     {availableModules.length === 0 
                       ? selectedBusinessId 
-                        ? 'No modules installed for this business' 
-                        : 'No personal modules installed'
-                      : 'Select a module'}
+                        ? 'No applications installed for this business' 
+                        : 'No personal applications installed'
+                      : 'Select an application'}
                   </option>
                   {availableModules.map(module => (
                     <option key={module.id} value={module.id}>
@@ -960,8 +960,8 @@ function AddContextModal({
                 {availableModules.length === 0 && (
                   <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                     {selectedBusinessId 
-                      ? 'This business has no modules installed. Install modules from the Modules page.'
-                      : 'You have no personal modules installed. Install modules from the Modules page.'}
+                      ? 'This business has no applications installed. Install applications from Application Manager.'
+                      : 'You have no personal applications installed. Install applications from Application Manager.'}
                   </p>
                 )}
               </div>

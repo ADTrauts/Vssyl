@@ -636,7 +636,7 @@ export function BusinessConfigurationProvider({ children, businessId }: Business
       toast.success(`Module ${moduleName} installed successfully`);
       return true;
     } catch (error) {
-      toast.error(`Failed to install module ${moduleName}`);
+      toast.error(`Failed to install application ${moduleName}`);
       console.error('Module installation failed:', error);
       return false;
     }

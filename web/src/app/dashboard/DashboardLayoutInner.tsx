@@ -1157,7 +1157,7 @@ export function DashboardLayoutInner({ children }: { children: React.ReactNode }
           <PlatformRightRailModuleButton
             isActive={pathname?.startsWith('/modules') ?? false}
             onClick={() => router.push('/modules')}
-            title="Module Management"
+            title="Application Manager"
           >
             <Puzzle size={22} />
           </PlatformRightRailModuleButton>

@@ -32,7 +32,7 @@ export default function OnboardingSchedulingIntegration({
 
   if (!hasScheduling) {
     return (
-      <Alert type="info" title="Scheduling module not installed" className={className}>
+      <Alert type="info" title="Scheduling application not installed" className={className}>
         <p className="text-sm text-v-text-secondary">
           Install the Scheduling module to sync time-off requests and check employee availability during onboarding.
         </p>

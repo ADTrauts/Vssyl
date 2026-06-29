@@ -312,10 +312,10 @@ export default function CalendarListSidebar({
 
         {!loading && calendars.length === 0 && overlayMode === 'CURRENT_TAB' && currentDashboard && !currentDashboard.widgets?.some((w: DashboardWidget) => w.type === 'calendar') && (
           <div className="text-xs text-gray-500 dark:text-gray-400 p-4 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800">
-            Calendar module is not enabled for this tab.
+            Calendar is not enabled for this tab.
             <div className="mt-2">
               <a href={`/dashboard/${currentDashboard.id}`} className="underline hover:text-gray-700 dark:hover:text-gray-200">
-                Add module
+                Add application
               </a>
             </div>
           </div>

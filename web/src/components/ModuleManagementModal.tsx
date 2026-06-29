@@ -110,7 +110,7 @@ export default function ModuleManagementModal({
         setModules(modulesWithStatus);
       } catch (err) {
         console.error('Error loading modules:', err);
-        setError('Failed to load available modules');
+        setError('Failed to load available applications');
       } finally {
         setLoading(false);
       }
@@ -154,7 +154,7 @@ export default function ModuleManagementModal({
       
     } catch (err) {
       console.error('Error installing module:', err);
-      setError(`Failed to install ${module.name} module`);
+      setError(`Failed to add ${module.name} to this dashboard`);
     } finally {
       setActionLoading(null);
     }
@@ -187,7 +187,7 @@ export default function ModuleManagementModal({
       setModuleToRemove(null);
     } catch (err) {
       console.error('Error uninstalling module:', err);
-      setError(`Failed to remove ${module.name} module`);
+      setError(`Failed to remove ${module.name} from this dashboard`);
     } finally {
       setActionLoading(null);
     }
@@ -222,7 +222,7 @@ export default function ModuleManagementModal({
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
               <input
                 type="text"
-                placeholder="Search modules..."
+                placeholder="Search applications..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-slate-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
@@ -239,7 +239,7 @@ export default function ModuleManagementModal({
           {loading ? (
             <div className="flex items-center justify-center py-12">
               <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600"></div>
-              <span className="ml-3 text-gray-600 dark:text-gray-400">Loading modules...</span>
+              <span className="ml-3 text-gray-600 dark:text-gray-400">Loading applications...</span>
             </div>
           ) : (
             <div className="space-y-8">
@@ -247,12 +247,12 @@ export default function ModuleManagementModal({
               <div>
                 <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4 flex items-center">
                   <Check className="w-5 h-5 text-green-500 mr-2" />
-                  Installed Modules ({installedModules.length})
+                  On This Tab ({installedModules.length})
                 </h3>
                 
                 {installedModules.length === 0 ? (
                   <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                    <p>No modules installed on this dashboard</p>
+                    <p>No applications on this dashboard tab yet</p>
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -312,12 +312,12 @@ export default function ModuleManagementModal({
               <div>
                 <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-4 flex items-center">
                   <Plus className="w-5 h-5 text-blue-500 mr-2" />
-                  Available Modules ({availableModules.length})
+                  Available to Add ({availableModules.length})
                 </h3>
                 
                 {availableModules.length === 0 ? (
                   <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-                    <p>All available modules are already installed</p>
+                    <p>All installed applications are already on this tab</p>
                   </div>
                 ) : (
                   <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -372,7 +372,7 @@ export default function ModuleManagementModal({
 
       <div className="flex items-center justify-between border-t border-gray-200 dark:border-slate-700 -mx-v-6 px-v-6 py-v-4 mt-v-4 -mb-v-6">
         <div className="text-sm text-gray-600 dark:text-gray-400">
-          {installedModules.length} module{installedModules.length !== 1 ? 's' : ''} installed
+          {installedModules.length} application{installedModules.length !== 1 ? 's' : ''} on this tab
         </div>
         <Button onClick={onClose}>
           Done
@@ -384,10 +384,10 @@ export default function ModuleManagementModal({
       open={moduleToRemove !== null}
       onClose={() => setModuleToRemove(null)}
       onConfirm={executeUninstallModule}
-      title="Remove module?"
+      title="Remove application from tab?"
       description={
         moduleToRemove
-          ? `Are you sure you want to remove the ${moduleToRemove.name} module from this dashboard?`
+          ? `Are you sure you want to remove ${moduleToRemove.name} from this dashboard tab?`
           : undefined
       }
       variant="destructive"

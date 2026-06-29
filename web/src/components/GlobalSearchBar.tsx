@@ -341,7 +341,7 @@ export default function GlobalSearchBar({ className = '' }: GlobalSearchBarProps
             onChange={handleInputChange}
             onKeyDown={handleKeyDown}
             onFocus={() => setIsOpen(true)}
-            placeholder="Search across all modules..."
+            placeholder="Search across all applications..."
             className="flex-1 py-2 px-2 text-sm text-gray-900 dark:text-gray-100 placeholder-gray-500 focus:outline-none"
           />
           

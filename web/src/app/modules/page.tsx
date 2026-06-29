@@ -163,7 +163,7 @@ export default function ModulesPage() {
           </Button>
           <Button variant="secondary" onClick={() => router.push('/admin-portal/modules')}>
             <Settings className="w-4 h-4 mr-2" />
-            Module Governance
+            Developer Governance
           </Button>
         </div>
       </div>

@@ -143,7 +143,7 @@ export const CrossModuleAnalyticsPanel: React.FC<CrossModuleAnalyticsPanelProps>
       );
     } catch (error) {
       console.error('Failed to load cross-module data:', error);
-      toast.error('Failed to load cross-module analytics');
+      toast.error('Failed to load cross-application analytics');
     } finally {
       setLoading(false);
     }
@@ -207,7 +207,7 @@ export const CrossModuleAnalyticsPanel: React.FC<CrossModuleAnalyticsPanelProps>
       <Card className={`p-6 ${className}`}>
         <div className="text-center">
           <div className="animate-spin w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full mx-auto mb-4"></div>
-          <p className="text-gray-600 dark:text-gray-400">Loading cross-module analytics...</p>
+          <p className="text-gray-600 dark:text-gray-400">Loading cross-application analytics...</p>
         </div>
       </Card>
     );
@@ -224,7 +224,7 @@ export const CrossModuleAnalyticsPanel: React.FC<CrossModuleAnalyticsPanelProps>
                 <BarChart3 className="w-6 h-6 text-indigo-600" />
               </div>
               <div>
-                <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">Cross-Module Analytics</h2>
+                <h2 className="text-xl font-bold text-gray-900 dark:text-gray-100">Cross-Application Analytics</h2>
                 <p className="text-gray-600 dark:text-gray-400">Unified insights across Drive, Chat, Calendar, and Dashboard</p>
               </div>
             </div>
@@ -260,8 +260,8 @@ export const CrossModuleAnalyticsPanel: React.FC<CrossModuleAnalyticsPanelProps>
           {/* View Tabs */}
           <div className="flex space-x-1 mt-6">
             {[
-              { id: 'overview', label: 'Module Overview', icon: BarChart3 },
-              { id: 'insights', label: 'Cross-Module Insights', icon: Zap },
+              { id: 'overview', label: 'Application Overview', icon: BarChart3 },
+              { id: 'insights', label: 'Cross-Application Insights', icon: Zap },
               { id: 'journeys', label: 'User Journeys', icon: Users },
               { id: 'compliance', label: 'Compliance Overview', icon: Shield }
             ].map(view => (
@@ -287,7 +287,7 @@ export const CrossModuleAnalyticsPanel: React.FC<CrossModuleAnalyticsPanelProps>
             {moduleMetrics.length === 0 && (
               <Card className="p-6 md:col-span-2">
                 <p className="text-sm text-gray-600 dark:text-gray-400 text-center">
-                  Cross-module metrics are unavailable. Analytics data may be degraded for this workspace.
+                  Cross-application metrics are unavailable. Analytics data may be degraded for this workspace.
                 </p>
               </Card>
             )}
@@ -321,7 +321,7 @@ export const CrossModuleAnalyticsPanel: React.FC<CrossModuleAnalyticsPanelProps>
             {crossModuleInsights.length === 0 && (
               <Card className="p-6">
                 <p className="text-sm text-gray-600 dark:text-gray-400 text-center">
-                  Cross-module insights require historical analytics (Phase 3). No mock data is shown.
+                  Cross-application insights require historical analytics (Phase 3). No mock data is shown.
                 </p>
               </Card>
             )}
@@ -361,7 +361,7 @@ export const CrossModuleAnalyticsPanel: React.FC<CrossModuleAnalyticsPanelProps>
                     </div>
                     
                     <div className="flex items-center gap-2 mb-3">
-                      <span className="text-sm text-gray-600 dark:text-gray-400">Affected Modules:</span>
+                      <span className="text-sm text-gray-600 dark:text-gray-400">Affected Applications:</span>
                       {insight.modules.map(moduleId => {
                         const config = MODULE_CONFIGS[moduleId as keyof typeof MODULE_CONFIGS];
                         return (
@@ -488,12 +488,12 @@ export const CrossModuleAnalyticsPanel: React.FC<CrossModuleAnalyticsPanelProps>
               <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-4">Overall Compliance Score</h3>
               <div className="text-center">
                 <div className="text-4xl font-bold text-green-600 mb-2">{complianceOverview.overallScore}%</div>
-                <div className="text-sm text-gray-600 dark:text-gray-400">Cross-module compliance average</div>
+                <div className="text-sm text-gray-600 dark:text-gray-400">Cross-application compliance average</div>
               </div>
             </Card>
             
             <Card className="p-4">
-              <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-4">Module Compliance Breakdown</h3>
+              <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-4">Application Compliance Breakdown</h3>
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                 {complianceOverview.moduleCompliance.map(module => {
                   const config = MODULE_CONFIGS[module.module as keyof typeof MODULE_CONFIGS];
@@ -544,7 +544,7 @@ export const CrossModuleAnalyticsPanel: React.FC<CrossModuleAnalyticsPanelProps>
                     </div>
                     <p className="text-sm text-gray-600 dark:text-gray-400 mb-2">{risk.recommendation}</p>
                     <div className="flex items-center gap-2">
-                      <span className="text-sm text-gray-500 dark:text-gray-400">Affected modules:</span>
+                      <span className="text-sm text-gray-500 dark:text-gray-400">Affected applications:</span>
                       {risk.affectedModules.map(moduleId => {
                         const config = MODULE_CONFIGS[moduleId as keyof typeof MODULE_CONFIGS];
                         return (

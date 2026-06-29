@@ -441,7 +441,7 @@ const LandingPage = () => {
                 </li>
                 <li>
                   <Link href="/modules" className="text-gray-300 hover:text-white">
-                    Modules
+                    Applications
                   </Link>
                 </li>
                 <li>

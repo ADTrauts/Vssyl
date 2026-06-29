@@ -81,7 +81,7 @@ export default function PaymentModal({ open, onClose, module, onSuccess }: Payme
   if (!module) return null;
 
   return (
-    <Modal open={open} onClose={onClose} title="Subscribe to Module" size="large">
+    <Modal open={open} onClose={onClose} title="Subscribe to Application" size="large">
       <div className="space-y-6">
         {/* Module Info */}
         <Card>
@@ -182,7 +182,7 @@ export default function PaymentModal({ open, onClose, module, onSuccess }: Payme
 
             <div className="space-y-3">
               <div className="flex justify-between">
-                <span>Module Subscription</span>
+                <span>Application Subscription</span>
                 <span>{getFormattedPrice()}</span>
               </div>
 

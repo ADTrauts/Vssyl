@@ -217,7 +217,7 @@ export function ModuleSettingsProvider({ children, businessId }: ModuleSettingsP
           : undefined
       );
 
-      toast.success('Module settings updated successfully');
+      toast.success('Application settings updated successfully');
     } catch (err) {
       // Rollback on error
       setSettings(prev => ({
@@ -225,8 +225,8 @@ export function ModuleSettingsProvider({ children, businessId }: ModuleSettingsP
         [moduleId]: prev[moduleId] || {}
       }));
       
-      setError(err instanceof Error ? err.message : 'Failed to update module settings');
-      toast.error('Failed to update module settings');
+      setError(err instanceof Error ? err.message : 'Failed to update application settings');
+      toast.error('Failed to update application settings');
       throw err;
     } finally {
       setLoading(false);
@@ -245,7 +245,7 @@ export function ModuleSettingsProvider({ children, businessId }: ModuleSettingsP
       delete newSettings[moduleId];
       return newSettings;
     });
-    toast.success('Module settings reset');
+    toast.success('Application settings reset');
   }, []);
 
   const value: ModuleSettingsContextType = {

@@ -83,7 +83,7 @@ interface RecentAlert {
 const DASHBOARD_VIEWS = [
   { id: 'overview', label: 'Executive Overview', icon: <BarChart3 className="w-4 h-4" /> },
   { id: 'analytics', label: 'Advanced Analytics', icon: <TrendingUp className="w-4 h-4" /> },
-  { id: 'cross-module', label: 'Cross-Module Insights', icon: <Layers className="w-4 h-4" /> },
+  { id: 'cross-module', label: 'Cross-Application Insights', icon: <Layers className="w-4 h-4" /> },
   { id: 'collaboration', label: 'Team Collaboration', icon: <Users className="w-4 h-4" /> },
   { id: 'compliance', label: 'Compliance & Security', icon: <Shield className="w-4 h-4" /> }
 ];
@@ -368,7 +368,7 @@ export const EnhancedDashboardModule: React.FC<EnhancedDashboardModuleProps> = (
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Module Usage Overview */}
             <Card className="p-4">
-              <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-4">Module Usage Today</h3>
+              <h3 className="font-medium text-gray-900 dark:text-gray-100 mb-4">Application Usage Today</h3>
               <div className="space-y-4">
                 {[
                   { name: 'Drive', usage: 87, icon: <FolderOpen className="w-4 h-4 text-blue-600" />, sessions: 234 },
@@ -466,7 +466,7 @@ export const EnhancedDashboardModule: React.FC<EnhancedDashboardModuleProps> = (
                 <Shield className="w-12 h-12 text-gray-400 mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">Compliance & Security Dashboard</h3>
                 <p className="text-gray-600 dark:text-gray-400 mb-4">
-                  Monitor compliance across all modules, track audit trails, and manage security policies.
+                  Monitor compliance across all applications, track audit trails, and manage security policies.
                 </p>
                 <Button>
                   <Shield className="w-4 h-4 mr-2" />

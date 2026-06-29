@@ -181,14 +181,14 @@ export function RightSidebarCustomizer({
         <div className="space-y-2">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 text-xs text-gray-500 dark:text-gray-400">
-              <span>Pinned Modules (Customizable)</span>
+              <span>Pinned Applications (Customizable)</span>
             </div>
           </div>
           <SortableContext items={pinnedModuleSortableIds} strategy={verticalListSortingStrategy}>
             <div className="space-y-2 p-3 border-2 border-dashed border-gray-200 dark:border-slate-700 rounded-lg min-h-[200px]">
               {sortedPinnedModules.length === 0 ? (
                 <div className="text-center py-8 text-gray-400 text-sm">
-                  No pinned modules. Pin modules from the left sidebar customizer.
+                  No pinned applications. Pin applications from the left sidebar customizer.
                 </div>
               ) : (
                 sortedPinnedModules.map((moduleRef) => {
@@ -221,7 +221,7 @@ export function RightSidebarCustomizer({
             </div>
             <div className="flex items-center gap-2">
               <Puzzle size={18} className="text-gray-600 dark:text-gray-400" />
-              <span className="text-sm text-gray-700 dark:text-gray-300">Modules</span>
+              <span className="text-sm text-gray-700 dark:text-gray-300">Applications</span>
             </div>
             <div className="flex items-center gap-2">
               <Trash2 size={18} className="text-gray-600 dark:text-gray-400" />
@@ -303,7 +303,7 @@ function PinnedModuleItem({
           onRemove();
         }}
         className="text-red-500 hover:text-red-700 text-xs px-2"
-        aria-label="Remove module"
+        aria-label="Remove application"
       >
         ×
       </button>

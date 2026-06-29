@@ -532,7 +532,7 @@ export function PermissionManager({ orgChartData, businessId, onUpdate }: Permis
           >
             <div className="flex items-center space-x-3">
               <Building2 className="w-5 h-5 text-gray-400" />
-              <h3 className="text-lg font-medium text-v-text-primary">Department Module Access</h3>
+              <h3 className="text-lg font-medium text-v-text-primary">Department Application Access</h3>
               <Badge color="blue">{orgChartData.departments.length}</Badge>
             </div>
             {expandedSections.has('department-modules') ? (
@@ -545,7 +545,7 @@ export function PermissionManager({ orgChartData, businessId, onUpdate }: Permis
           {expandedSections.has('department-modules') && (
             <div className="mt-6 space-y-4">
               <p className="text-sm text-v-text-secondary">
-                Assign specific modules to departments. Employees in each department will only see modules assigned to their department.
+                Assign specific applications to departments. Employees in each department will only see applications assigned to their department.
               </p>
               
               {orgChartData.departments.length === 0 ? (
@@ -564,7 +564,7 @@ export function PermissionManager({ orgChartData, businessId, onUpdate }: Permis
                       
                       <div className="space-y-2">
                         <label className="block text-sm font-medium text-v-text-secondary">
-                          Available Modules
+                          Available Applications
                         </label>
                         <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
                           {Object.keys(modulePermissions).map((moduleId) => (

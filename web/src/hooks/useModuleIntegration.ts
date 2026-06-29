@@ -52,7 +52,7 @@ export function useModuleIntegration(businessId?: string): UseModuleIntegrationR
         }
       } catch (err) {
         console.error('Failed to load installed modules:', err);
-        setError(err instanceof Error ? err.message : 'Failed to load modules');
+        setError(err instanceof Error ? err.message : 'Failed to load applications');
         setModules([]);
       } finally {
         setLoading(false);
