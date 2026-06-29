@@ -9,6 +9,7 @@ import {
   recordDashboardTrashed,
 } from './dashboardActivityService';
 import { finalizeDashboardTabHardDeletePrereqs } from './dashboardService';
+import { recordDashboardTabDeletedDomainEvent } from './dashboardDomainEventService';
 
 async function enforceDashboardPolicy(
   res: Response,
