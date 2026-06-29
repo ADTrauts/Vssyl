@@ -51,6 +51,8 @@ export interface DashboardPreferences {
   defaultView?: 'grid' | 'list';
   refreshInterval?: number;
   notifications?: boolean;
+  /** Module membership for this dashboard tab (sidebar source of truth). */
+  selectedModuleIds?: string[];
   sidebarCustomization?: SidebarCustomization;
   [key: string]: unknown;
 }

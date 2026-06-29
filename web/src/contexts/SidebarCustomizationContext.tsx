@@ -14,34 +14,38 @@ import type {
   RightSidebarConfig,
 } from '../types/sidebar';
 import type { ModuleConfig } from '../config/modules';
+import {
+  getMainPersonalDashboardId,
+  resolveSelectedModuleIds,
+} from '../lib/dashboardTabModules';
 
 /**
- * Clean up sidebar config by removing modules that aren't available
+ * Clean up sidebar config by removing modules outside tab membership
  */
 function cleanupSidebarConfig(
   config: SidebarCustomization,
-  availableModuleIds: string[]
+  allowedModuleIds: string[]
 ): SidebarCustomization {
-  const availableSet = new Set(availableModuleIds);
-  
+  const allowedSet = new Set(allowedModuleIds);
+
   const cleanedConfig: SidebarCustomization = {
     leftSidebar: {},
     rightSidebar: {},
   };
-  
-  // Clean left sidebar configs
+
   Object.entries(config.leftSidebar).forEach(([tabId, tabConfig]) => {
-    // Clean folders
-    const cleanedFolders = tabConfig.folders.map(folder => ({
-      ...folder,
-      modules: folder.modules.filter(m => availableSet.has(m.id)),
-    })).filter(folder => folder.modules.length > 0 || folder.id);
-    
-    // Clean loose modules
-    const cleanedLooseModules = tabConfig.looseModules.filter(m => availableSet.has(m.id));
-    
-    // Reorder modules after cleanup
-    cleanedFolders.forEach(folder => {
+    const cleanedFolders = tabConfig.folders
+      .map((folder) => ({
+        ...folder,
+        modules: folder.modules.filter((m) => allowedSet.has(m.id)),
+      }))
+      .filter((folder) => folder.modules.length > 0 || folder.id);
+
+    const cleanedLooseModules = tabConfig.looseModules.filter((m) =>
+      allowedSet.has(m.id)
+    );
+
+    cleanedFolders.forEach((folder) => {
       folder.modules.forEach((m, idx) => {
         m.order = idx;
       });
@@ -49,26 +53,28 @@ function cleanupSidebarConfig(
     cleanedLooseModules.forEach((m, idx) => {
       m.order = idx;
     });
-    
+
     cleanedConfig.leftSidebar[tabId] = {
       folders: cleanedFolders,
       looseModules: cleanedLooseModules,
     };
   });
-  
-  // Clean right sidebar configs
+
   Object.entries(config.rightSidebar).forEach(([context, rightConfig]) => {
-    const cleanedPinnedModules = rightConfig.pinnedModules.filter(m => availableSet.has(m.id));
-    
+    const cleanedPinnedModules = rightConfig.pinnedModules.filter((m) =>
+      allowedSet.has(m.id)
+    );
+
     cleanedPinnedModules.forEach((m, idx) => {
       m.order = idx;
     });
-    
+
     cleanedConfig.rightSidebar[context] = {
       ...rightConfig,
       pinnedModules: cleanedPinnedModules,
     };
   });
+
   return cleanedConfig;
 }
 
@@ -101,7 +107,32 @@ interface SidebarCustomizationProviderProps {
 
 export function SidebarCustomizationProvider({ children, availableModules = [] }: SidebarCustomizationProviderProps) {
   const { data: session } = useSession();
-  const { currentDashboardId } = useDashboard();
+  const {
+    currentDashboardId,
+    currentDashboard,
+    dashboards,
+    getDashboardType,
+  } = useDashboard();
+
+  const mainPersonalDashboardId = React.useMemo(
+    () => getMainPersonalDashboardId(dashboards.personal),
+    [dashboards.personal]
+  );
+
+  const tabSelectedModuleIds = React.useMemo(() => {
+    if (!currentDashboard || getDashboardType(currentDashboard) !== 'personal') {
+      return availableModules.map((m) => m.id);
+    }
+    return resolveSelectedModuleIds(currentDashboard, {
+      isMainPersonalTab: currentDashboard.id === mainPersonalDashboardId,
+      widgetTypes: currentDashboard.widgets?.map((w) => w.type),
+    });
+  }, [
+    currentDashboard,
+    mainPersonalDashboardId,
+    getDashboardType,
+    availableModules,
+  ]);
   
   const [config, setConfig] = useState<SidebarCustomization | null>(null);
   const [loading, setLoading] = useState(true); // Start as true to prevent flash of old content
@@ -230,39 +261,32 @@ export function SidebarCustomizationProvider({ children, availableModules = [] }
     }
   }, [currentDashboardId, session?.accessToken, loadConfig]);
 
-  // Clean config once after modules are confirmed loaded
-  // Only clean if we have more than just defaults (installed modules have loaded)
-  // And only clean once per dashboard to avoid repeated cleanings
+  // Prune sidebar config to tab membership (never all installed modules)
   React.useEffect(() => {
-    if (!config || !currentDashboardId) {
+    if (!config || !currentDashboardId || tabSelectedModuleIds.length === 0) {
       return;
     }
-    
-    // Only clean if:
-    // 1. We have more than just default modules (installed modules loaded)
-    // 2. We haven't already cleaned for this dashboard
-    // 3. We have a stable module list (wait a bit to ensure modules are fully loaded)
-    if (availableModules.length > 5 && hasCleanedRef.current !== currentDashboardId) {
-      // Use a small delay to ensure modules are stable
-      const timeoutId = setTimeout(() => {
-        const availableModuleIds = availableModules.map(m => m.id);
-        const cleanedConfig = cleanupSidebarConfig(config, availableModuleIds);
-        const wasCleaned = JSON.stringify(cleanedConfig) !== JSON.stringify(config);
-        
-        if (wasCleaned) {
-          setConfig(cleanedConfig);
-          setIsDirty(true); // Mark as dirty so user can save the cleaned version
-        }
-        
-        // Mark as cleaned for this dashboard
-        hasCleanedRef.current = currentDashboardId;
-      }, 500); // Wait 500ms to ensure modules are stable
-      
-      return () => {
-        clearTimeout(timeoutId);
-      };
+
+    if (hasCleanedRef.current === currentDashboardId) {
+      return;
     }
-  }, [config, currentDashboardId, availableModules.length, availableModules]);
+
+    const timeoutId = setTimeout(() => {
+      const cleanedConfig = cleanupSidebarConfig(config, tabSelectedModuleIds);
+      const wasCleaned = JSON.stringify(cleanedConfig) !== JSON.stringify(config);
+
+      if (wasCleaned) {
+        setConfig(cleanedConfig);
+        setIsDirty(true);
+      }
+
+      hasCleanedRef.current = currentDashboardId;
+    }, 300);
+
+    return () => {
+      clearTimeout(timeoutId);
+    };
+  }, [config, currentDashboardId, tabSelectedModuleIds]);
 
   const value: SidebarCustomizationContextType = {
     config,

@@ -23,6 +23,8 @@ export interface DashboardPreferences {
   refreshInterval?: number;
   notifications?: boolean;
   defaultView?: 'grid' | 'list';
+  /** Module membership for this dashboard tab (sidebar source of truth). */
+  selectedModuleIds?: string[];
   [key: string]: unknown;
 }
 

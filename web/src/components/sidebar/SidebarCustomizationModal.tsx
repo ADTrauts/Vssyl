@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { Modal, Button, Tabs, Spinner, Alert, ConfirmModal } from 'shared/components';
 import { useSession } from 'next-auth/react';
 import { useDashboard } from '../../contexts/DashboardContext';
@@ -9,6 +9,11 @@ import { usePositionAwareModules } from '../PositionAwareModuleProvider';
 import { useWorkAuth } from '../../contexts/WorkAuthContext';
 import { LeftSidebarCustomizer } from './LeftSidebarCustomizer';
 import { RightSidebarCustomizer } from './RightSidebarCustomizer';
+import {
+  filterModulesForTab,
+  getMainPersonalDashboardId,
+  resolveSelectedModuleIds,
+} from '../../lib/dashboardTabModules';
 
 interface SidebarCustomizationModalProps {
   open: boolean;
@@ -20,7 +25,7 @@ export function SidebarCustomizationModal({
   onClose,
 }: SidebarCustomizationModalProps) {
   const { data: session } = useSession();
-  const { currentDashboardId, allDashboards, getDashboardType } = useDashboard();
+  const { currentDashboardId, allDashboards, getDashboardType, dashboards } = useDashboard();
   const { config, loading, error, isDirty, saveConfig, loadConfig, resetConfig } = useSidebarCustomization();
   const { getFilteredModules } = usePositionAwareModules();
   const { isWorkAuthenticated, currentBusinessId } = useWorkAuth();
@@ -33,7 +38,33 @@ export function SidebarCustomizationModal({
   const [pendingCloseAction, setPendingCloseAction] = useState(false);
   const [pendingResetAction, setPendingResetAction] = useState<'tab' | 'sidebar' | 'global' | null>(null);
 
-  const availableModules = getFilteredModules();
+  const mainPersonalDashboardId = useMemo(
+    () => getMainPersonalDashboardId(dashboards.personal),
+    [dashboards.personal]
+  );
+
+  const tabForModules = useMemo(() => {
+    const tabId = selectedDashboardTab || currentDashboardId;
+    if (!tabId) return null;
+    return allDashboards.find((d) => d.id === tabId) ?? null;
+  }, [selectedDashboardTab, currentDashboardId, allDashboards]);
+
+  const tabSelectedModuleIds = useMemo(() => {
+    if (!tabForModules || getDashboardType(tabForModules) !== 'personal') {
+      return [];
+    }
+    return resolveSelectedModuleIds(tabForModules, {
+      isMainPersonalTab: tabForModules.id === mainPersonalDashboardId,
+      widgetTypes: tabForModules.widgets?.map((w) => w.type),
+    });
+  }, [tabForModules, mainPersonalDashboardId, getDashboardType]);
+
+  const availableModules = useMemo(() => {
+    const all = getFilteredModules();
+    if (tabSelectedModuleIds.length === 0) return all;
+    return filterModulesForTab(all, tabSelectedModuleIds);
+  }, [getFilteredModules, tabSelectedModuleIds]);
+
   const context = isWorkAuthenticated ? 'business' : 'personal';
 
   // Set selected dashboard tab to current dashboard on open

@@ -14,6 +14,10 @@ import {
   buildPersonalModuleHref,
   resolvePersonalDashboardModule,
 } from '../lib/personalDashboardNavigation';
+import {
+  getMainPersonalDashboardId,
+  resolveSelectedModuleIds,
+} from '../lib/dashboardTabModules';
 
 interface BusinessDashboard extends Dashboard {
   business?: {
@@ -129,6 +133,11 @@ export function DashboardProvider({ children }: DashboardProviderProps) {
   const filteredPersonalDashboards = useMemo(() => dashboards.personal.filter(
     d => !businessNames.has(d.name)
   ), [dashboards.personal, businessNames]);
+
+  const mainPersonalDashboardId = useMemo(
+    () => getMainPersonalDashboardId(dashboards.personal),
+    [dashboards.personal]
+  );
 
   // Flat list for URL resolution, getDashboardById, and context switching. Tab UIs filter to
   // personal-only where needed (e.g. GlobalHeaderTabs); business must be included so
@@ -318,33 +327,44 @@ export function DashboardProvider({ children }: DashboardProviderProps) {
     }
   };
 
-  // Module availability utilities
+  // Module availability utilities (personal tabs: selectedModuleIds; others: widgets)
   const isModuleActiveOnDashboard = (moduleType: string, dashboardId?: string): boolean => {
     const targetDashboardId = dashboardId || currentDashboard?.id;
     if (!targetDashboardId) return false;
-    
+
     const dashboard = getDashboardById(targetDashboardId);
-    if (!dashboard || !dashboard.widgets) return false;
-    
-    return dashboard.widgets.some(widget => widget.type === moduleType);
+    if (!dashboard) return false;
+
+    if (getDashboardType(dashboard) !== 'personal') {
+      return dashboard.widgets?.some((widget) => widget.type === moduleType) ?? false;
+    }
+
+    const selected = resolveSelectedModuleIds(dashboard, {
+      isMainPersonalTab: dashboard.id === mainPersonalDashboardId,
+      widgetTypes: dashboard.widgets?.map((w) => w.type),
+    });
+    return selected.includes(moduleType);
   };
 
   const getActiveModulesForDashboard = (dashboardId?: string): string[] => {
     const targetDashboardId = dashboardId || currentDashboard?.id;
     if (!targetDashboardId) return [];
-    
+
     const dashboard = getDashboardById(targetDashboardId);
-    if (!dashboard || !dashboard.widgets) return [];
-    
-    return dashboard.widgets.map(widget => widget.type);
+    if (!dashboard) return [];
+
+    if (getDashboardType(dashboard) !== 'personal') {
+      return dashboard.widgets?.map((widget) => widget.type) ?? [];
+    }
+
+    return resolveSelectedModuleIds(dashboard, {
+      isMainPersonalTab: dashboard.id === mainPersonalDashboardId,
+      widgetTypes: dashboard.widgets?.map((w) => w.type),
+    });
   };
 
   const hasAnyModules = (dashboardId?: string): boolean => {
-    const targetDashboardId = dashboardId || currentDashboard?.id;
-    if (!targetDashboardId) return false;
-    
-    const dashboard = getDashboardById(targetDashboardId);
-    return Boolean(dashboard?.widgets && dashboard.widgets.length > 0);
+    return getActiveModulesForDashboard(dashboardId).length > 0;
   };
 
   const value: DashboardContextType = {

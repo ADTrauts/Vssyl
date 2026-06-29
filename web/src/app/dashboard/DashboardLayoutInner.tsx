@@ -51,6 +51,12 @@ import {
   buildPersonalDashboardHubHref,
   resolvePersonalDashboardModule,
 } from '../../lib/personalDashboardNavigation';
+import {
+  buildDefaultLeftSidebarFromSelected,
+  filterModulesForTab,
+  getMainPersonalDashboardId,
+  resolveSelectedModuleIds,
+} from '../../lib/dashboardTabModules';
 
 // Add CSS styles for enhanced drag and drop UX
 const dragStyles = `
@@ -207,6 +213,7 @@ export function DashboardLayoutInner({ children }: { children: React.ReactNode }
     currentDashboard,
     currentDashboardId,
     allDashboards,
+    dashboards,
     loading,
     error,
     navigateToDashboard,
@@ -234,6 +241,21 @@ export function DashboardLayoutInner({ children }: { children: React.ReactNode }
   const rightSidebarContext = isWorkAuthenticated && currentBusinessId ? currentBusinessId : 'personal';
   const rightSidebarConfig = getConfigForContext(rightSidebarContext);
   
+  const mainPersonalDashboardId = useMemo(
+    () => getMainPersonalDashboardId(dashboards.personal),
+    [dashboards.personal]
+  );
+
+  const tabSelectedModuleIds = useMemo(() => {
+    if (!currentDashboard || getDashboardType(currentDashboard) !== 'personal') {
+      return null;
+    }
+    return resolveSelectedModuleIds(currentDashboard, {
+      isMainPersonalTab: currentDashboard.id === mainPersonalDashboardId,
+      widgetTypes: currentDashboard.widgets?.map((w) => w.type),
+    });
+  }, [currentDashboard, mainPersonalDashboardId, getDashboardType]);
+
   // Get left sidebar config for current dashboard
   const dashboardTabId = currentDashboardId || '';
   const leftSidebarConfig = getConfigForTab(dashboardTabId);
@@ -249,30 +271,11 @@ export function DashboardLayoutInner({ children }: { children: React.ReactNode }
     }
   }, [dashboardTabId, leftSidebarConfig, getConfigForTab]);
 
-  // Default left sidebar config when none is saved (so home/new tabs use same folder-based sidebar as Place/main)
+  // Default left sidebar from tab membership (never all installed modules)
   const defaultLeftSidebarConfig: LeftSidebarConfig | null = useMemo(() => {
-    const defaultFolders = [
-      {
-        id: 'core-apps',
-        name: 'Core Apps',
-        icon: 'grid',
-        modules: [
-          { id: 'drive', order: 0 },
-          { id: 'chat', order: 1 },
-          { id: 'calendar', order: 2 },
-        ],
-        collapsed: false,
-        order: 0,
-      },
-    ];
-    const modulesNotInFolders = modules.filter(m => !defaultFolders.some(f => f.modules.some(fm => fm.id === m.id)));
-    const dashboardModule = modulesNotInFolders.find(m => m.id === 'dashboard');
-    const otherModules = modulesNotInFolders.filter(m => m.id !== 'dashboard');
-    const looseModules: Array<{ id: string; order: number }> = [];
-    if (dashboardModule) looseModules.push({ id: dashboardModule.id, order: 0 });
-    otherModules.forEach((m, idx) => looseModules.push({ id: m.id, order: idx + 1 }));
-    return { folders: defaultFolders, looseModules };
-  }, [modules]);
+    if (!tabSelectedModuleIds || tabSelectedModuleIds.length === 0) return null;
+    return buildDefaultLeftSidebarFromSelected(tabSelectedModuleIds, 'personal');
+  }, [tabSelectedModuleIds]);
 
   // Use saved config when available, otherwise default (ensures all tabs get folder-based sidebar)
   const effectiveLeftSidebarConfig = leftSidebarConfig ?? defaultLeftSidebarConfig;
@@ -295,16 +298,20 @@ export function DashboardLayoutInner({ children }: { children: React.ReactNode }
     };
   }, [modules, rightSidebarConfig]);
 
-  // Get available modules using position-aware filtering
+  // Get available modules scoped to active tab membership
   const getAvailableModules = (): ModuleConfig[] => {
-    return getFilteredModules();
+    const allAvailable = getFilteredModules();
+    if (tabSelectedModuleIds) {
+      return filterModulesForTab(allAvailable, tabSelectedModuleIds);
+    }
+    return allAvailable;
   };
 
   useEffect(() => {
     const availableModules = getAvailableModules();
     setModules(availableModules);
     setHydrated(true);
-  }, [currentDashboard, getDashboardType, getFilteredModules]);
+  }, [currentDashboard, getDashboardType, getFilteredModules, tabSelectedModuleIds]);
 
   useEffect(() => {
     if (!hydrated || !pathname) return;

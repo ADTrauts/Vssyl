@@ -12,6 +12,7 @@ export interface DashboardPreferences {
     refreshInterval?: number;
     notifications?: boolean;
     defaultView?: 'grid' | 'list';
+    selectedModuleIds?: string[];
 }
 export interface Dashboard {
     id: string;

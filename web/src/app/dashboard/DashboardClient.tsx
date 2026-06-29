@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useEffect, useState, useCallback, useMemo } from 'react';
-import { getDashboards, createDashboard, getDashboard } from '../../api/dashboard';
+import { getDashboards, createDashboard, getDashboard, updateDashboard } from '../../api/dashboard';
 import { getHousehold } from '../../api/household';
 import { createWidget, deleteWidget, updateWidget, batchUpdateWidgetPositions } from '../../api/widget';
 import { Dashboard } from 'shared/types';
@@ -42,6 +42,11 @@ import { Modal } from 'shared/components';
 import HouseholdMemberManager from '../../components/household/HouseholdMemberManager';
 import { isHouseholdRosterManager } from '../../lib/householdPermissions';
 import { isRegisteredWidgetType } from '../../lib/personalDashboardNavigation';
+import {
+  buildDefaultLeftSidebarFromSelected,
+  normalizeSelectedModuleIds,
+  resolveSelectedModuleIds,
+} from '../../lib/dashboardTabModules';
 
 
 interface DashboardClientProps {
@@ -548,16 +553,58 @@ export default function DashboardClient({ dashboardId }: DashboardClientProps) {
     setShowBuildOutModal(false);
     setHasShownBuildOut((prev) => new Set([...Array.from(prev), pendingDashboard.id]));
 
+    const normalized = normalizeSelectedModuleIds(selectedModuleIds);
+    const defaultSidebar = buildDefaultLeftSidebarFromSelected(normalized, 'personal');
+    const existingPrefs =
+      pendingDashboard.preferences && typeof pendingDashboard.preferences === 'object'
+        ? pendingDashboard.preferences
+        : {};
+    const existingSidebar =
+      'sidebarCustomization' in existingPrefs &&
+      existingPrefs.sidebarCustomization &&
+      typeof existingPrefs.sidebarCustomization === 'object'
+        ? (existingPrefs.sidebarCustomization as {
+            leftSidebar?: Record<string, unknown>;
+            rightSidebar?: Record<string, unknown>;
+          })
+        : { leftSidebar: {}, rightSidebar: {} };
+
     try {
-      const widgetPromises = selectedModuleIds.map((moduleId) =>
+      await updateDashboard(session.accessToken, pendingDashboard.id, {
+        preferences: {
+          ...existingPrefs,
+          selectedModuleIds: normalized,
+          sidebarCustomization: {
+            ...existingSidebar,
+            leftSidebar: {
+              ...(existingSidebar.leftSidebar ?? {}),
+              [pendingDashboard.id]: defaultSidebar,
+            },
+            rightSidebar: existingSidebar.rightSidebar ?? {},
+          },
+        },
+      });
+
+      const widgetModuleIds = normalized.filter((id) => id !== 'dashboard');
+      const widgetPromises = widgetModuleIds.map((moduleId) =>
         createWidget(session.accessToken!, pendingDashboard.id, { type: moduleId })
       );
       if (widgetPromises.length > 0) {
         const newWidgets = await Promise.all(widgetPromises);
-        const updatedDashboard = { ...pendingDashboard, widgets: newWidgets };
+        const updatedDashboard = {
+          ...pendingDashboard,
+          preferences: {
+            ...(pendingDashboard.preferences ?? {}),
+            selectedModuleIds: normalized,
+          },
+          widgets: newWidgets,
+        };
         setDashboards((prev) =>
           prev.map((d) => (d.id === pendingDashboard.id ? updatedDashboard : d))
         );
+        if (currentDashboard?.id === pendingDashboard.id) {
+          setCurrentDashboard(updatedDashboard);
+        }
       }
       router.push(`/dashboard/${pendingDashboard.id}`);
     } catch (err) {
@@ -566,7 +613,7 @@ export default function DashboardClient({ dashboardId }: DashboardClientProps) {
     } finally {
       setPendingDashboard(null);
     }
-  }, [pendingDashboard, session?.accessToken, router]);
+  }, [pendingDashboard, session?.accessToken, router, currentDashboard?.id]);
 
   const handleBuildOutClose = useCallback(() => {
     setShowBuildOutModal(false);
@@ -747,6 +794,13 @@ export default function DashboardClient({ dashboardId }: DashboardClientProps) {
         existingWidgetTypes={widgets.map((w) => w.type)}
         dashboardType={dashboardContext.dashboardType}
         businessId={dashboardContext.businessId}
+        selectedModuleIds={
+          currentDashboard
+            ? resolveSelectedModuleIds(currentDashboard, {
+                widgetTypes: currentDashboard.widgets?.map((w) => w.type),
+              })
+            : undefined
+        }
       />
 
       {/* Grid Content */}

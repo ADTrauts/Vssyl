@@ -6,6 +6,11 @@ import { Button, Card, Modal } from 'shared/components';
 import { Module } from '../api/modules';
 import { getInstalledModules, getMarketplaceModules } from '../api/modules';
 import { useSession } from 'next-auth/react';
+import {
+  DASHBOARD_TAB_CORE_MODULE_IDS,
+  isLockedTabModuleId,
+  normalizeSelectedModuleIds,
+} from '../lib/dashboardTabModules';
 
 interface DashboardBuildOutModalProps {
   isOpen: boolean;
@@ -105,6 +110,16 @@ export default function DashboardBuildOutModal({
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const isPersonalScope = scope === 'personal';
+
+  // Reset selection when modal opens (personal: additional modules only; core is implicit)
+  useEffect(() => {
+    if (!isOpen) return;
+    setView('quick-setup');
+    setSearchQuery('');
+    setSelectedModules(new Set());
+  }, [isOpen]);
 
   // Load available modules
   useEffect(() => {
@@ -253,17 +268,21 @@ export default function DashboardBuildOutModal({
   }, [isOpen, session?.accessToken]);
 
   const handleQuickSetup = (option: QuickSetupOption) => {
-    const moduleIds = option.modules.filter(moduleId => 
-      availableModules.some(module => module.id === moduleId)
+    const moduleIds = option.modules.filter((moduleId) =>
+      availableModules.some((module) => module.id === moduleId)
     );
-    onComplete(moduleIds);
+    onComplete(isPersonalScope ? normalizeSelectedModuleIds(moduleIds) : moduleIds);
   };
 
   const handleCustomSetup = () => {
-    onComplete(Array.from(selectedModules));
+    const additional = Array.from(selectedModules);
+    onComplete(
+      isPersonalScope ? normalizeSelectedModuleIds(additional) : additional
+    );
   };
 
   const toggleModule = (moduleId: string) => {
+    if (isPersonalScope && isLockedTabModuleId(moduleId)) return;
     const newSelected = new Set(selectedModules);
     if (newSelected.has(moduleId)) {
       newSelected.delete(moduleId);
@@ -273,10 +292,50 @@ export default function DashboardBuildOutModal({
     setSelectedModules(newSelected);
   };
 
-  const filteredModules = availableModules.filter(module =>
-    module.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    module.description.toLowerCase().includes(searchQuery.toLowerCase())
+  const additionalModules = availableModules.filter(
+    (module) => !isPersonalScope || !isLockedTabModuleId(module.id)
   );
+
+  const filteredModules = additionalModules.filter(
+    (module) =>
+      module.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      module.description.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const coreModulesForDisplay = isPersonalScope
+    ? DASHBOARD_TAB_CORE_MODULE_IDS.map((id) => {
+        const found = availableModules.find((m) => m.id === id);
+        return (
+          found ?? {
+            id,
+            name: id === 'drive' ? 'File Hub' : id.charAt(0).toUpperCase() + id.slice(1),
+            description: getModuleDescription(id),
+            version: '1.0.0',
+            category: 'Core',
+            developer: 'Vssyl',
+            rating: 5,
+            reviewCount: 0,
+            downloads: 0,
+            status: 'available' as const,
+            pricingTier: 'free' as const,
+            manifest: {
+              name: id,
+              version: '1.0.0',
+              description: '',
+              author: 'Vssyl',
+              license: 'MIT',
+              entryPoint: 'index.js',
+              permissions: [],
+              dependencies: [],
+              runtime: { apiVersion: '1.0' },
+              frontend: { entryUrl: `/${id}` },
+              settings: {},
+            },
+            configured: { enabled: true, settings: {}, permissions: [] },
+          }
+        );
+      })
+    : [];
 
   return (
     <Modal
@@ -394,8 +453,54 @@ export default function DashboardBuildOutModal({
                   Select Modules
                 </h3>
                 <p className="text-gray-600 dark:text-gray-400 text-sm mb-4">
-                  Choose the modules you want to include in your dashboard
+                  {isPersonalScope
+                    ? 'Core apps are included on every tab. Choose additional modules below.'
+                    : 'Choose the modules you want to include in your dashboard'}
                 </p>
+
+                {isPersonalScope && coreModulesForDisplay.length > 0 && (
+                  <div className="mb-6">
+                    <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                      Core (included automatically)
+                    </h4>
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+                      {coreModulesForDisplay.map((module) => (
+                        <Card
+                          key={module.id}
+                          className="border-2 border-gray-200 dark:border-slate-600 bg-gray-50 dark:bg-slate-800 opacity-90"
+                        >
+                          <div className="p-4 cursor-not-allowed">
+                            <div className="flex items-start justify-between mb-2">
+                              <div className="flex items-center space-x-3">
+                                <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900">
+                                  {getModuleIcon(module.name)}
+                                </div>
+                                <div>
+                                  <h4 className="font-medium text-gray-900 dark:text-gray-100">
+                                    {module.name}
+                                  </h4>
+                                  <p className="text-xs text-gray-500 dark:text-gray-400">Required</p>
+                                </div>
+                              </div>
+                              <div className="p-1 bg-blue-500 rounded-full">
+                                <Check className="w-3 h-3 text-white" />
+                              </div>
+                            </div>
+                            <p className="text-sm text-gray-600 dark:text-gray-400">
+                              {getModuleDescription(module.name)}
+                            </p>
+                          </div>
+                        </Card>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {isPersonalScope && (
+                  <h4 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                    Additional modules
+                  </h4>
+                )}
 
                 {/* Search */}
                 <div className="relative">
@@ -475,8 +580,16 @@ export default function DashboardBuildOutModal({
 
       <div className="flex items-center justify-between border-t border-gray-200 dark:border-slate-700 -mx-v-6 px-v-6 py-v-4 mt-v-4 -mb-v-6">
         <div className="text-sm text-gray-600 dark:text-gray-400">
-          {view === 'custom' && selectedModules.size > 0 && (
-            <span>{selectedModules.size} module{selectedModules.size !== 1 ? 's' : ''} selected</span>
+          {view === 'custom' && isPersonalScope && (
+            <span>
+              {selectedModules.size} additional module
+              {selectedModules.size !== 1 ? 's' : ''} selected
+            </span>
+          )}
+          {view === 'custom' && !isPersonalScope && selectedModules.size > 0 && (
+            <span>
+              {selectedModules.size} module{selectedModules.size !== 1 ? 's' : ''} selected
+            </span>
           )}
         </div>
         <div className="flex space-x-3">
@@ -484,15 +597,16 @@ export default function DashboardBuildOutModal({
             Cancel
           </Button>
           {view === 'custom' && (
-            <Button
-              onClick={handleCustomSetup}
-              disabled={selectedModules.size === 0}
-            >
+            <Button onClick={handleCustomSetup}>
               Continue with Selected Modules
             </Button>
           )}
           {view === 'quick-setup' && (
-            <Button onClick={() => onComplete([])}>
+            <Button
+              onClick={() =>
+                onComplete(isPersonalScope ? normalizeSelectedModuleIds([]) : [])
+              }
+            >
               Skip Module Selection
             </Button>
           )}

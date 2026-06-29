@@ -88,8 +88,20 @@ export interface DashboardPreferences {
   defaultView?: 'grid' | 'list';
   refreshInterval?: number;
   notifications?: boolean;
+  /** Module membership for this dashboard tab (sidebar source of truth). */
+  selectedModuleIds?: string[];
   [key: string]: unknown;
 }
+
+/** Matches web DEFAULT_MAIN_PERSONAL_TAB_MODULE_IDS — preserves main personal tab sidebar. */
+export const DEFAULT_MAIN_PERSONAL_TAB_MODULE_IDS = [
+  'dashboard',
+  'drive',
+  'chat',
+  'calendar',
+  'connections',
+  'todo',
+] as const;
 
 export interface DashboardUpdateData {
   name?: string;
@@ -294,7 +306,12 @@ export async function ensureDefaultPersonalDashboard(userId: string) {
     return { dashboard: existing, created: false };
   }
 
-  const dashboard = await createDashboard(userId, { name: 'My Dashboard' });
+  const dashboard = await createDashboard(userId, {
+    name: 'My Dashboard',
+    preferences: {
+      selectedModuleIds: [...DEFAULT_MAIN_PERSONAL_TAB_MODULE_IDS],
+    },
+  });
   return { dashboard, created: true };
 }
 

@@ -24,6 +24,8 @@ interface WidgetPickerProps {
   existingWidgetTypes: string[];
   dashboardType?: DashboardType;
   businessId?: string | null;
+  /** Personal dashboard tab membership — limits widgets to selected modules. */
+  selectedModuleIds?: string[];
 }
 
 export default function WidgetPicker({
@@ -33,6 +35,7 @@ export default function WidgetPicker({
   existingWidgetTypes,
   dashboardType = 'personal',
   businessId = null,
+  selectedModuleIds,
 }: WidgetPickerProps) {
   const { data: session } = useSession();
   const [installedModuleIds, setInstalledModuleIds] = useState<string[]>([]);
@@ -52,13 +55,22 @@ export default function WidgetPicker({
 
     getInstalledModules(opts)
       .then((modules) => {
-        setInstalledModuleIds(modules.map((m) => m.id || m.name));
+        let ids = modules.map((m) => m.id || m.name);
+        if (
+          dashboardType === 'personal' &&
+          selectedModuleIds &&
+          selectedModuleIds.length > 0
+        ) {
+          const allowed = new Set(selectedModuleIds);
+          ids = ids.filter((id) => allowed.has(id));
+        }
+        setInstalledModuleIds(ids);
         setModulesLoaded(true);
       })
       .catch(() => {
         setModulesLoaded(true);
       });
-  }, [isOpen, session?.accessToken, dashboardType, businessId]);
+  }, [isOpen, session?.accessToken, dashboardType, businessId, selectedModuleIds]);
 
   useEffect(() => {
     if (!isOpen) {
