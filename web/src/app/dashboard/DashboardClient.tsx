@@ -596,9 +596,11 @@ export default function DashboardClient({ dashboardId }: DashboardClientProps) {
       setDashboards((prev) =>
         prev.map((d) => (d.id === pendingDashboard.id ? hydrated.dashboard : d))
       );
-      if (currentDashboard?.id === pendingDashboard.id) {
-        setCurrentDashboard(hydrated.dashboard);
-      }
+      setCurrentDashboard((prev) =>
+        prev?.id === pendingDashboard.id || activeDashboardId === pendingDashboard.id
+          ? hydrated.dashboard
+          : prev
+      );
 
       router.push(`/dashboard/${pendingDashboard.id}`);
     } catch (err) {
@@ -611,7 +613,7 @@ export default function DashboardClient({ dashboardId }: DashboardClientProps) {
     pendingDashboard,
     session?.accessToken,
     router,
-    currentDashboard?.id,
+    activeDashboardId,
     upsertDashboard,
     hydrateConfig,
   ]);

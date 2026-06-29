@@ -403,7 +403,16 @@ export function DashboardProvider({ children }: DashboardProviderProps) {
           : [...list, dashboard as (typeof list)[number]];
       return { ...prev, [category]: nextList };
     });
-  }, []);
+
+    const dashboardParam = searchParams?.get('dashboard');
+    const segments = pathname?.split('/').filter(Boolean) || [];
+    const pathDashboardId =
+      segments[0] === 'dashboard' && segments[1] ? segments[1] : null;
+    const activeId = dashboardParam ?? pathDashboardId;
+    if (activeId === dashboard.id) {
+      setCurrentDashboard(dashboard);
+    }
+  }, [pathname, searchParams]);
 
   const value: DashboardContextType = {
     currentDashboard,

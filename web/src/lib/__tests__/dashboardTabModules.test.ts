@@ -268,6 +268,19 @@ describe('WidgetPicker integration', () => {
   });
 });
 
+describe('DashboardBuildOutModal personal tab UX', () => {
+  it('opens directly to module selection for personal tabs', () => {
+    const modalPath = join(__dirname, '../../components/DashboardBuildOutModal.tsx');
+    const content = readFileSync(modalPath, 'utf8');
+    expect(content).toContain("isPersonalScope ? 'custom' : 'quick-setup'");
+    expect(content).toContain('getInstalledModules');
+    expect(content).toContain('/modules?tab=marketplace');
+    expect(content).toContain('isPersonalScope ? (');
+    expect(content).toContain('moduleSelectionContent');
+    expect(content).toContain('Core apps (included automatically)');
+  });
+});
+
 describe('DashboardClient integration', () => {
   it('hydrates dashboard and sidebar context after build-out', () => {
     const clientPath = join(__dirname, '../../app/dashboard/DashboardClient.tsx');
