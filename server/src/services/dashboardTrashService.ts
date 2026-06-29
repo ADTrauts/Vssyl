@@ -10,6 +10,10 @@ import {
 } from './dashboardActivityService';
 import { finalizeDashboardTabHardDeletePrereqs } from './dashboardService';
 import { recordDashboardTabDeletedDomainEvent } from './dashboardDomainEventService';
+import {
+  deleteHouseholdCascadeForOwner,
+  userIsHouseholdOwner,
+} from './householdLifecycleService';
 
 async function enforceDashboardPolicy(
   res: Response,
@@ -113,6 +117,29 @@ export async function permanentlyDeleteDashboardTab(
 
   if (!dashboard) {
     return false;
+  }
+
+  if (dashboard.householdId) {
+    if (!(await userIsHouseholdOwner(userId, dashboard.householdId))) {
+      return false;
+    }
+
+    await deleteHouseholdCascadeForOwner(userId, dashboard.householdId);
+
+    await recordDashboardDeleted({
+      actorUserId: userId,
+      dashboard: contextFromDashboard(dashboard),
+      hardDelete: true,
+    });
+
+    recordDashboardTabDeletedDomainEvent({
+      actorUserId: userId,
+      dashboard: contextFromDashboard(dashboard),
+      hardDelete: true,
+    });
+
+    res.json({ success: true, message: 'Item permanently deleted' });
+    return true;
   }
 
   await finalizeDashboardTabHardDeletePrereqs(userId, dashboardId);

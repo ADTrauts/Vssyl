@@ -2,6 +2,12 @@ import { Request, Response, NextFunction } from 'express';
 import { prisma } from '../lib/prisma';
 import { logger } from '../lib/logger';
 import { HouseholdRole, HouseholdType } from '@prisma/client';
+import {
+  deleteHouseholdCascadeForOwner,
+  findUserPrimaryHousehold,
+  hasActiveHouseholdDashboard,
+  userIsHouseholdOwner,
+} from '../services/householdLifecycleService';
 
 function logHouseholdError(message: string, operation: string, err: unknown): void {
   const e = err instanceof Error ? err : new Error(String(err));
@@ -144,21 +150,17 @@ export async function createHousehold(req: Request, res: Response, next: NextFun
 
     // Validate that user doesn't already have a primary household if creating one
     if (data.isPrimary) {
-      const existingPrimary = await prisma.household.findFirst({
-        where: {
-          isPrimary: true,
-          members: {
-            some: {
-              userId: userId,
-              isActive: true
-            }
-          }
-        }
-      });
+      const existingPrimary = await findUserPrimaryHousehold(userId);
 
       if (existingPrimary) {
-        res.status(400).json({ error: 'User already has a primary household' });
-        return;
+        const hasActiveTab = await hasActiveHouseholdDashboard(userId, existingPrimary.id);
+        if (hasActiveTab) {
+          res.status(400).json({ error: 'User already has a primary household' });
+          return;
+        }
+
+        // Orphaned household left after home tab was trashed or hard-deleted without cleanup
+        await deleteHouseholdCascadeForOwner(userId, existingPrimary.id);
       }
     }
 
@@ -359,25 +361,12 @@ export async function deleteHousehold(req: Request, res: Response, next: NextFun
     const userId = req.user.id;
     const householdId = req.params.id;
 
-    // Check if user is the household owner
-    const ownerMembership = await prisma.householdMember.findFirst({
-      where: {
-        householdId: householdId,
-        userId: userId,
-        isActive: true,
-        role: HouseholdRole.OWNER
-      }
-    });
-
-    if (!ownerMembership) {
+    if (!(await userIsHouseholdOwner(userId, householdId))) {
       res.status(403).json({ error: 'Only household owner can delete household' });
       return;
     }
 
-    // Delete the household (cascade will handle members and dashboards)
-    await prisma.household.delete({
-      where: { id: householdId }
-    });
+    await deleteHouseholdCascadeForOwner(userId, householdId);
 
     res.json({ deleted: true });
     return;

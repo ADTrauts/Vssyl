@@ -1,5 +1,5 @@
 import { prisma } from '../lib/prisma';
-import { HouseholdRole, Prisma } from '@prisma/client';
+import { Prisma } from '@prisma/client';
 import {
   recordDashboardCreated,
   recordDashboardDeleted,
@@ -12,6 +12,10 @@ import {
 } from './dashboardDomainEventService';
 import { prepareDashboardTabDeletion } from './chat/chatDashboardLifecycleService';
 import * as fileMigrationService from './fileMigrationService';
+import {
+  deleteHouseholdCascadeForOwner,
+  userIsHouseholdOwner,
+} from './householdLifecycleService';
 
 /** Invalid context or forbidden tenant access when creating a context-bound dashboard */
 export class DashboardCreationError extends Error {
@@ -436,50 +440,24 @@ export async function deleteDashboard(userId: string, dashboardId: string, optio
   
   // If this is a household dashboard, we need to handle the household deletion
   if (dashboard.householdId) {
-    // Check if user is the household owner before allowing deletion
-    const ownerMembership = await prisma.householdMember.findFirst({
-      where: {
-        householdId: dashboard.householdId,
-        userId: userId,
-        isActive: true,
-        role: HouseholdRole.OWNER
-      }
-    });
-
-    if (!ownerMembership) {
+    if (!(await userIsHouseholdOwner(userId, dashboard.householdId))) {
       return { count: 0 };
     }
 
-    await prisma.widget.deleteMany({
-      where: { dashboardId },
+    await deleteHouseholdCascadeForOwner(userId, dashboard.householdId);
+
+    await recordDashboardDeleted({
+      actorUserId: userId,
+      dashboard: activityCtx,
+      hardDelete: true,
+    });
+    recordDashboardTabDeletedDomainEvent({
+      actorUserId: userId,
+      dashboard: activityCtx,
+      hardDelete: true,
     });
 
-    await prepareDashboardTabDeletion({ actorUserId: userId, dashboardId });
-
-    await finalizeDashboardTabHardDeletePrereqs(userId, dashboardId);
-
-    const dashboardDeleteResult = await prisma.dashboard.deleteMany({
-      where: { id: dashboardId, userId },
-    });
-
-    await prisma.household.delete({
-      where: { id: dashboard.householdId },
-    });
-
-    if (dashboardDeleteResult.count > 0) {
-      await recordDashboardDeleted({
-        actorUserId: userId,
-        dashboard: activityCtx,
-        hardDelete: true,
-      });
-      recordDashboardTabDeletedDomainEvent({
-        actorUserId: userId,
-        dashboard: activityCtx,
-        hardDelete: true,
-      });
-    }
-
-    return dashboardDeleteResult;
+    return { count: 1 };
   }
 
   await prisma.widget.deleteMany({
