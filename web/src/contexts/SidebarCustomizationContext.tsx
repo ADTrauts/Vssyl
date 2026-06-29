@@ -49,6 +49,8 @@ interface SidebarCustomizationContextType {
   updateConfig: (updater: (config: SidebarCustomization) => SidebarCustomization) => void;
   getConfigForTab: (dashboardTabId: string) => LeftSidebarConfig | null;
   getConfigForContext: (context: string) => RightSidebarConfig | null;
+  /** Apply sidebar config in memory without a fetch (e.g. after tab build-out). */
+  hydrateConfig: (config: SidebarCustomization | null, dashboardId?: string) => void;
 }
 
 const SidebarCustomizationContext = createContext<SidebarCustomizationContextType | undefined>(undefined);
@@ -93,6 +95,7 @@ export function SidebarCustomizationProvider({ children, availableModules = [] }
   const [isDirty, setIsDirty] = useState(false);
   const [originalConfig, setOriginalConfig] = useState<SidebarCustomization | null>(null);
   const hasCleanedRef = React.useRef<string | null>(null); // Track which dashboard we've cleaned for
+  const loadRequestRef = React.useRef(0);
 
   const loadConfig = useCallback(async (dashboardId: string) => {
     if (!session?.accessToken) {
@@ -100,11 +103,16 @@ export function SidebarCustomizationProvider({ children, availableModules = [] }
       return;
     }
 
+    const requestId = ++loadRequestRef.current;
     setLoading(true);
     setError(null);
 
     try {
       const loadedConfig = await getSidebarConfig(session.accessToken, dashboardId);
+
+      if (requestId !== loadRequestRef.current) {
+        return;
+      }
       
       if (loadedConfig) {
         // Don't clean on load - just use the config as-is
@@ -119,12 +127,17 @@ export function SidebarCustomizationProvider({ children, availableModules = [] }
         setIsDirty(false);
       }
     } catch (err) {
+      if (requestId !== loadRequestRef.current) {
+        return;
+      }
       setError(err instanceof Error ? err.message : 'Failed to load sidebar configuration');
       console.error('[SidebarConfig] Error loading sidebar config:', err);
     } finally {
-      setLoading(false);
+      if (requestId === loadRequestRef.current) {
+        setLoading(false);
+      }
     }
-  }, [session?.accessToken, availableModules]);
+  }, [session?.accessToken]);
 
   const saveConfig = useCallback(async (dashboardId: string) => {
     if (!session?.accessToken || !config) {
@@ -205,6 +218,18 @@ export function SidebarCustomizationProvider({ children, availableModules = [] }
     return config.rightSidebar[context] || null;
   }, [config]);
 
+  const hydrateConfig = useCallback((nextConfig: SidebarCustomization | null, dashboardId?: string) => {
+    loadRequestRef.current += 1;
+    if (dashboardId) {
+      hasCleanedRef.current = dashboardId;
+    }
+    setConfig(nextConfig);
+    setOriginalConfig(nextConfig ? JSON.parse(JSON.stringify(nextConfig)) : null);
+    setIsDirty(false);
+    setLoading(false);
+    setError(null);
+  }, []);
+
   // Auto-load config when dashboard changes
   React.useEffect(() => {
     if (currentDashboardId && session?.accessToken) {
@@ -252,6 +277,7 @@ export function SidebarCustomizationProvider({ children, availableModules = [] }
     updateConfig,
     getConfigForTab,
     getConfigForContext,
+    hydrateConfig,
   };
 
   return (

@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, useMemo, ReactNode } from 'react';
+import React, { createContext, useContext, useState, useEffect, useMemo, useCallback, ReactNode } from 'react';
 import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { getDashboards, ensureDefaultPersonalDashboard } from '../api/dashboard';
@@ -51,6 +51,28 @@ interface AllDashboards {
   household: HouseholdDashboard[];
 }
 
+type DashboardEntry =
+  | Dashboard
+  | BusinessDashboard
+  | EducationalDashboard
+  | HouseholdDashboard;
+
+function getDashboardCategory(dashboard: DashboardEntry): keyof AllDashboards {
+  if ('business' in dashboard && dashboard.business) return 'business';
+  if ('institution' in dashboard && dashboard.institution) return 'educational';
+  if ('household' in dashboard && dashboard.household) return 'household';
+
+  const scoped = dashboard as Dashboard & {
+    businessId?: string | null;
+    institutionId?: string | null;
+    householdId?: string | null;
+  };
+  if (scoped.businessId) return 'business';
+  if (scoped.institutionId) return 'educational';
+  if (scoped.householdId) return 'household';
+  return 'personal';
+}
+
 interface DashboardContextType {
   // Current dashboard state
   currentDashboard: Dashboard | BusinessDashboard | EducationalDashboard | HouseholdDashboard | null;
@@ -81,6 +103,9 @@ interface DashboardContextType {
   // Last active dashboard tracking
   lastActiveDashboardId: string | null;
   setLastActiveDashboard: (dashboardId: string) => Promise<void>;
+
+  /** Insert or merge a dashboard into client cache (e.g. after create / build-out). */
+  upsertDashboard: (dashboard: DashboardEntry) => void;
 }
 
 const DashboardContext = createContext<DashboardContextType | undefined>(undefined);
@@ -367,6 +392,19 @@ export function DashboardProvider({ children }: DashboardProviderProps) {
     return getActiveModulesForDashboard(dashboardId).length > 0;
   };
 
+  const upsertDashboard = useCallback((dashboard: DashboardEntry) => {
+    const category = getDashboardCategory(dashboard);
+    setDashboards((prev) => {
+      const list = prev[category];
+      const index = list.findIndex((entry) => entry.id === dashboard.id);
+      const nextList =
+        index >= 0
+          ? list.map((entry, i) => (i === index ? { ...entry, ...dashboard } : entry))
+          : [...list, dashboard as (typeof list)[number]];
+      return { ...prev, [category]: nextList };
+    });
+  }, []);
+
   const value: DashboardContextType = {
     currentDashboard,
     currentDashboardId: currentDashboard?.id || null,
@@ -386,6 +424,7 @@ export function DashboardProvider({ children }: DashboardProviderProps) {
     hasAnyModules,
     lastActiveDashboardId,
     setLastActiveDashboard,
+    upsertDashboard,
   };
 
   return (

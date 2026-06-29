@@ -220,7 +220,8 @@ export function DashboardLayoutInner({ children }: { children: React.ReactNode }
     navigateToDashboard,
     navigateToModule,
     getDashboardDisplayName,
-    getDashboardType
+    getDashboardType,
+    upsertDashboard,
   } = useDashboard();
 
   const { currentBranding, isBusinessContext, getHeaderStyles, getSidebarStyles } = useGlobalBranding();
@@ -385,6 +386,7 @@ export function DashboardLayoutInner({ children }: { children: React.ReactNode }
           name: `${household.name} Dashboard`,
           householdId: household.id
         });
+        upsertDashboard(newDashboard);
         
         // Store household info for post-creation member invitation
         setCreatedHouseholdId(household.id);
@@ -399,7 +401,8 @@ export function DashboardLayoutInner({ children }: { children: React.ReactNode }
         const newDashboard = await createDashboard(session.accessToken, {
           name: name || `New Dashboard ${allDashboards.length + 1}`
         });
-        
+        upsertDashboard(newDashboard);
+
         // Navigate to the new dashboard which will show the build out modal
         router.push(buildPersonalDashboardHref(newDashboard.id));
         return;

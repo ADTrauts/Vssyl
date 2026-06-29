@@ -376,3 +376,69 @@ export function mergeSelectedModuleIds(
 export function buildDashboardRenameRequest(newName: string): { name: string } {
   return { name: newName.trim() };
 }
+
+export interface DashboardTabBuildOutResult {
+  dashboard: Dashboard;
+  normalizedSelectedModuleIds: string[];
+  sidebarCustomization: SidebarCustomization;
+}
+
+/** Build in-memory dashboard + sidebar state after tab build-out (matches persistence shape). */
+export function buildDashboardTabBuildOutState(
+  dashboard: Dashboard,
+  selectedModuleIds: string[],
+  widgets: Dashboard['widgets'] = dashboard.widgets ?? []
+): DashboardTabBuildOutResult {
+  const normalizedSelectedModuleIds = normalizeSelectedModuleIds(selectedModuleIds);
+  const defaultSidebar = buildDefaultLeftSidebarFromSelected(
+    normalizedSelectedModuleIds,
+    'personal'
+  );
+  const existingPrefs = readPreferences(dashboard);
+  const existingCustomization = existingPrefs.sidebarCustomization;
+  const sidebarCustomization: SidebarCustomization = {
+    leftSidebar: {
+      ...(existingCustomization?.leftSidebar ?? {}),
+      [dashboard.id]: defaultSidebar,
+    },
+    rightSidebar:
+      existingCustomization &&
+      'rightSidebar' in existingCustomization &&
+      existingCustomization.rightSidebar
+        ? (existingCustomization.rightSidebar as SidebarCustomization['rightSidebar'])
+        : {},
+  };
+
+  const dashboardWithPrefs: Dashboard = {
+    ...dashboard,
+    widgets,
+    preferences: {
+      ...(dashboard.preferences && typeof dashboard.preferences === 'object'
+        ? dashboard.preferences
+        : {}),
+      selectedModuleIds: normalizedSelectedModuleIds,
+      sidebarCustomization,
+    },
+  };
+
+  return {
+    dashboard: dashboardWithPrefs,
+    normalizedSelectedModuleIds,
+    sidebarCustomization,
+  };
+}
+
+export function readSidebarCustomizationFromDashboard(
+  dashboard: Dashboard | null | undefined
+): SidebarCustomization | null {
+  const prefs = readPreferences(dashboard);
+  if (!prefs.sidebarCustomization) return null;
+  const raw = prefs.sidebarCustomization;
+  return {
+    leftSidebar: raw.leftSidebar ?? {},
+    rightSidebar:
+      raw && 'rightSidebar' in raw && raw.rightSidebar
+        ? (raw.rightSidebar as SidebarCustomization['rightSidebar'])
+        : {},
+  };
+}

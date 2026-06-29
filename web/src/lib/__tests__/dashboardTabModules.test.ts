@@ -3,6 +3,7 @@ import { readFileSync } from 'node:fs';
 import { join } from 'node:path';
 import type { Dashboard } from 'shared/types';
 import {
+  buildDashboardTabBuildOutState,
   buildDefaultLeftSidebarFromSelected,
   buildDashboardRenameRequest,
   DEFAULT_MAIN_PERSONAL_TAB_MODULE_IDS,
@@ -232,6 +233,29 @@ describe('dashboardTabModules', () => {
       expect(req).toEqual({ name: 'Health Tab' });
       expect('preferences' in req).toBe(false);
     });
+
+    it('buildDashboardTabBuildOutState includes selectedModuleIds and sidebarCustomization immediately', () => {
+      const dashboard = makeDashboard({ id: 'tab-new', widgets: [] });
+      const { dashboard: hydrated, normalizedSelectedModuleIds, sidebarCustomization } =
+        buildDashboardTabBuildOutState(dashboard, ['drive', 'chat', 'calendar', 'todo'], [
+          { id: 'w1', type: 'todo', dashboardId: 'tab-new', config: {}, createdAt: '', updatedAt: '' },
+        ]);
+
+      expect(normalizedSelectedModuleIds).toEqual([
+        'dashboard',
+        'drive',
+        'chat',
+        'calendar',
+        'todo',
+      ]);
+      expect(hydrated.preferences?.selectedModuleIds).toEqual(normalizedSelectedModuleIds);
+      expect(sidebarCustomization.leftSidebar['tab-new']).toBeDefined();
+      expect(hydrated.preferences?.sidebarCustomization).toEqual(sidebarCustomization);
+      expect(resolveSelectedModuleIds(hydrated, { isMainPersonalTab: false })).toEqual(
+        normalizedSelectedModuleIds
+      );
+      expect(hydrated.widgets).toHaveLength(1);
+    });
   });
 });
 
@@ -241,6 +265,16 @@ describe('WidgetPicker integration', () => {
     const content = readFileSync(path, 'utf8');
     expect(content).toContain('selectedModuleIds');
     expect(content).toContain('allowed.has(id)');
+  });
+});
+
+describe('DashboardClient integration', () => {
+  it('hydrates dashboard and sidebar context after build-out', () => {
+    const clientPath = join(__dirname, '../../app/dashboard/DashboardClient.tsx');
+    const content = readFileSync(clientPath, 'utf8');
+    expect(content).toContain('buildDashboardTabBuildOutState');
+    expect(content).toContain('upsertDashboard(hydrated.dashboard)');
+    expect(content).toContain('hydrateConfig(hydrated.sidebarCustomization');
   });
 });
 

@@ -10,6 +10,8 @@ import { useHydration } from '../HydrationHandler';
 import { useSession } from 'next-auth/react';
 import { useRouter, useParams } from 'next/navigation';
 import { useGlobalTrash } from '../../contexts/GlobalTrashContext';
+import { useDashboard } from '../../contexts/DashboardContext';
+import { useSidebarCustomization } from '../../contexts/SidebarCustomizationContext';
 import { toast } from 'react-hot-toast';
 import { LayoutGrid, Plus } from 'lucide-react';
 
@@ -43,10 +45,9 @@ import HouseholdMemberManager from '../../components/household/HouseholdMemberMa
 import { isHouseholdRosterManager } from '../../lib/householdPermissions';
 import { isRegisteredWidgetType } from '../../lib/personalDashboardNavigation';
 import {
-  buildDefaultLeftSidebarFromSelected,
+  buildDashboardTabBuildOutState,
   getMainPersonalDashboardId,
   mergeSelectedModuleIds,
-  normalizeSelectedModuleIds,
   resolveSelectedModuleIds,
 } from '../../lib/dashboardTabModules';
 
@@ -309,6 +310,8 @@ export default function DashboardClient({ dashboardId }: DashboardClientProps) {
   const router = useRouter();
   const params = useParams();
   const { trashItem } = useGlobalTrash();
+  const { upsertDashboard } = useDashboard();
+  const { hydrateConfig } = useSidebarCustomization();
 
   const [dashboards, setDashboards] = useState<Dashboard[]>([]);
   const [currentDashboard, setCurrentDashboard] = useState<Dashboard | null>(null);
@@ -458,6 +461,7 @@ export default function DashboardClient({ dashboardId }: DashboardClientProps) {
       })
       .then((dashboard) => {
         if (dashboard) {
+          upsertDashboard(dashboard);
           setCurrentDashboard(dashboard);
         } else if (activeDashboardId && dashboards.length > 0) {
           router.push(`/dashboard/${dashboards[0].id}`);
@@ -474,7 +478,7 @@ export default function DashboardClient({ dashboardId }: DashboardClientProps) {
         }
       })
       .finally(() => setLoading(false));
-  }, [isHydrated, session?.accessToken, activeDashboardId, router]);
+  }, [isHydrated, session?.accessToken, activeDashboardId, router, upsertDashboard]);
 
   // Auto-prompt build-out for empty dashboards
   useEffect(() => {
@@ -555,59 +559,47 @@ export default function DashboardClient({ dashboardId }: DashboardClientProps) {
     setShowBuildOutModal(false);
     setHasShownBuildOut((prev) => new Set([...Array.from(prev), pendingDashboard.id]));
 
-    const normalized = normalizeSelectedModuleIds(selectedModuleIds);
-    const defaultSidebar = buildDefaultLeftSidebarFromSelected(normalized, 'personal');
-    const existingPrefs =
-      pendingDashboard.preferences && typeof pendingDashboard.preferences === 'object'
-        ? pendingDashboard.preferences
-        : {};
-    const existingSidebar =
-      'sidebarCustomization' in existingPrefs &&
-      existingPrefs.sidebarCustomization &&
-      typeof existingPrefs.sidebarCustomization === 'object'
-        ? (existingPrefs.sidebarCustomization as {
-            leftSidebar?: Record<string, unknown>;
-            rightSidebar?: Record<string, unknown>;
-          })
-        : { leftSidebar: {}, rightSidebar: {} };
+    const buildOutDraft = buildDashboardTabBuildOutState(pendingDashboard, selectedModuleIds);
 
     try {
       await updateDashboard(session.accessToken, pendingDashboard.id, {
         preferences: {
-          ...existingPrefs,
-          selectedModuleIds: normalized,
-          sidebarCustomization: {
-            ...existingSidebar,
-            leftSidebar: {
-              ...(existingSidebar.leftSidebar ?? {}),
-              [pendingDashboard.id]: defaultSidebar,
-            },
-            rightSidebar: existingSidebar.rightSidebar ?? {},
-          },
+          ...(pendingDashboard.preferences && typeof pendingDashboard.preferences === 'object'
+            ? pendingDashboard.preferences
+            : {}),
+          selectedModuleIds: buildOutDraft.normalizedSelectedModuleIds,
+          sidebarCustomization: buildOutDraft.sidebarCustomization,
         },
       });
 
-      const widgetModuleIds = normalized.filter((id) => id !== 'dashboard');
-      const widgetPromises = widgetModuleIds.map((moduleId) =>
-        createWidget(session.accessToken!, pendingDashboard.id, { type: moduleId })
+      const widgetModuleIds = buildOutDraft.normalizedSelectedModuleIds.filter(
+        (id) => id !== 'dashboard'
       );
-      if (widgetPromises.length > 0) {
-        const newWidgets = await Promise.all(widgetPromises);
-        const updatedDashboard = {
-          ...pendingDashboard,
-          preferences: {
-            ...(pendingDashboard.preferences ?? {}),
-            selectedModuleIds: normalized,
-          },
-          widgets: newWidgets,
-        };
-        setDashboards((prev) =>
-          prev.map((d) => (d.id === pendingDashboard.id ? updatedDashboard : d))
-        );
-        if (currentDashboard?.id === pendingDashboard.id) {
-          setCurrentDashboard(updatedDashboard);
-        }
+      const newWidgets =
+        widgetModuleIds.length > 0
+          ? await Promise.all(
+              widgetModuleIds.map((moduleId) =>
+                createWidget(session.accessToken!, pendingDashboard.id, { type: moduleId })
+              )
+            )
+          : [];
+
+      const hydrated = buildDashboardTabBuildOutState(
+        pendingDashboard,
+        buildOutDraft.normalizedSelectedModuleIds,
+        newWidgets
+      );
+
+      upsertDashboard(hydrated.dashboard);
+      hydrateConfig(hydrated.sidebarCustomization, pendingDashboard.id);
+
+      setDashboards((prev) =>
+        prev.map((d) => (d.id === pendingDashboard.id ? hydrated.dashboard : d))
+      );
+      if (currentDashboard?.id === pendingDashboard.id) {
+        setCurrentDashboard(hydrated.dashboard);
       }
+
       router.push(`/dashboard/${pendingDashboard.id}`);
     } catch (err) {
       console.error('Error adding widgets to dashboard:', err);
@@ -615,7 +607,14 @@ export default function DashboardClient({ dashboardId }: DashboardClientProps) {
     } finally {
       setPendingDashboard(null);
     }
-  }, [pendingDashboard, session?.accessToken, router, currentDashboard?.id]);
+  }, [
+    pendingDashboard,
+    session?.accessToken,
+    router,
+    currentDashboard?.id,
+    upsertDashboard,
+    hydrateConfig,
+  ]);
 
   const handleBuildOutClose = useCallback(() => {
     setShowBuildOutModal(false);
