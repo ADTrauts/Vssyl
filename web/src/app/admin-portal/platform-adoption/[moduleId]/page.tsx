@@ -39,7 +39,7 @@ function participationBadge(level: string): 'green' | 'blue' | 'yellow' | 'gray'
 
 export default function PlatformAdoptionModulePage() {
   const params = useParams();
-  const moduleId = typeof params.moduleId === 'string' ? params.moduleId : '';
+  const moduleId = typeof params?.moduleId === 'string' ? params.moduleId : '';
   const { detail, loading, error, refresh } = usePlatformAdoptionModuleDetail(moduleId);
   const mod = detail as ModuleDetail | null;
 

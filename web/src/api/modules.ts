@@ -1,3 +1,4 @@
+import { authenticatedApiCall } from '../lib/apiUtils';
 import type { ApplicationLifecycleMetadata } from 'shared/types';
 import {
   subscribeModule as billingSubscribeModule,

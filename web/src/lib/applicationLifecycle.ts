@@ -90,10 +90,10 @@ export function resolveApplicationLifecycleCapabilities(
 }
 
 /** Dashboard picker: installed, enabled, assignable apps only — never marketplace catalog. */
-export function filterModulesForDashboardPicker(
-  modules: ModuleLifecycleInput[],
+export function filterModulesForDashboardPicker<T extends ModuleLifecycleInput>(
+  modules: T[],
   browseScope: ModuleInstallScope
-): ModuleLifecycleInput[] {
+): T[] {
   return modules.filter((module) => {
     const moduleScope = module.moduleScope ?? null;
     if (!isVisibleInModuleManager(module.id, moduleScope, browseScope)) return false;
@@ -108,10 +108,10 @@ export function filterModulesForDashboardPicker(
 }
 
 /** Additional (non-core) modules eligible for tab membership selection. */
-export function filterAssignableModulesForTabPicker(
-  modules: ModuleLifecycleInput[],
+export function filterAssignableModulesForTabPicker<T extends ModuleLifecycleInput>(
+  modules: T[],
   browseScope: ModuleInstallScope
-): ModuleLifecycleInput[] {
+): T[] {
   return filterModulesForDashboardPicker(modules, browseScope).filter(
     (module) => !isCoreAppModuleId(module.id)
   );
