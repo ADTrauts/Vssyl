@@ -8,7 +8,7 @@ import {
   recordDashboardRestored,
   recordDashboardTrashed,
 } from './dashboardActivityService';
-import { recordDashboardTabDeletedDomainEvent } from './dashboardDomainEventService';
+import { finalizeDashboardTabHardDeletePrereqs } from './dashboardService';
 
 async function enforceDashboardPolicy(
   res: Response,
@@ -113,6 +113,8 @@ export async function permanentlyDeleteDashboardTab(
   if (!dashboard) {
     return false;
   }
+
+  await finalizeDashboardTabHardDeletePrereqs(userId, dashboardId);
 
   await prisma.dashboard.delete({ where: { id: dashboardId } });
 

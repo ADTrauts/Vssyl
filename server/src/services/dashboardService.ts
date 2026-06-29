@@ -402,6 +402,15 @@ export async function updateDashboard(userId: string, dashboardId: string, data:
   return dashboard;
 }
 
+export async function finalizeDashboardTabHardDeletePrereqs(
+  userId: string,
+  dashboardId: string
+): Promise<void> {
+  await prisma.retentionPolicy.deleteMany({ where: { dashboardId } });
+  await prisma.complianceSettings.deleteMany({ where: { dashboardId } });
+  await fileMigrationService.releaseDashboardTabStorageRefs(userId, dashboardId);
+}
+
 export async function deleteDashboard(userId: string, dashboardId: string, options?: { fileAction?: string }) {
   // First, validate that the user exists
   const user = await prisma.user.findUnique({
@@ -447,6 +456,8 @@ export async function deleteDashboard(userId: string, dashboardId: string, optio
 
     await prepareDashboardTabDeletion({ actorUserId: userId, dashboardId });
 
+    await finalizeDashboardTabHardDeletePrereqs(userId, dashboardId);
+
     const dashboardDeleteResult = await prisma.dashboard.deleteMany({
       where: { id: dashboardId, userId },
     });
@@ -476,6 +487,8 @@ export async function deleteDashboard(userId: string, dashboardId: string, optio
   });
 
   await prepareDashboardTabDeletion({ actorUserId: userId, dashboardId });
+
+  await finalizeDashboardTabHardDeletePrereqs(userId, dashboardId);
 
   const result = await prisma.dashboard.deleteMany({
     where: { id: dashboardId, userId },

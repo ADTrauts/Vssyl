@@ -33,6 +33,12 @@ describe('dashboardService deleteDashboardWithFiles (Package 2)', () => {
     } as never);
 
     vi.spyOn(prisma.widget, 'deleteMany').mockResolvedValue({ count: 0 } as never);
+    vi.spyOn(prisma.retentionPolicy, 'deleteMany').mockResolvedValue({ count: 0 } as never);
+    vi.spyOn(prisma.complianceSettings, 'deleteMany').mockResolvedValue({ count: 0 } as never);
+    vi.spyOn(fileMigrationService, 'releaseDashboardTabStorageRefs').mockResolvedValue({
+      filesReleased: 0,
+      foldersReleased: 0,
+    });
     vi.spyOn(prisma.dashboard, 'deleteMany').mockResolvedValue({ count: 1 } as never);
 
     const result = await deleteDashboardWithFiles('u1', 'd1', {
@@ -46,6 +52,7 @@ describe('dashboardService deleteDashboardWithFiles (Package 2)', () => {
       actorUserId: 'u1',
       dashboardId: 'd1',
     });
+    expect(fileMigrationService.releaseDashboardTabStorageRefs).toHaveBeenCalledWith('u1', 'd1');
     expect(result?.deleted).toBe(1);
     expect(dashboardDomainEvents.recordDashboardTabDeletedDomainEvent).toHaveBeenCalled();
   });

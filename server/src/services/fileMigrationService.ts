@@ -18,6 +18,52 @@ export type FileHandlingAction =
   | { type: 'move-to-trash'; retentionDays?: number }
   | { type: 'export'; format: 'zip' | 'tar' };
 
+/** Oldest personal dashboard tab excluding the one being removed (main-drive target). */
+export async function findFallbackPersonalDashboardId(
+  userId: string,
+  excludeDashboardId: string
+): Promise<string | null> {
+  const dashboard = await prisma.dashboard.findFirst({
+    where: {
+      userId,
+      id: { not: excludeDashboardId },
+      businessId: null,
+      institutionId: null,
+      householdId: null,
+      trashedAt: null,
+    },
+    orderBy: { createdAt: 'asc' },
+    select: { id: true },
+  });
+  return dashboard?.id ?? null;
+}
+
+/**
+ * Clear File/Folder FK refs so a dashboard row can be hard-deleted.
+ * Reassigns to another personal tab when available; otherwise nulls dashboardId.
+ */
+export async function releaseDashboardTabStorageRefs(
+  userId: string,
+  dashboardId: string
+): Promise<{ filesReleased: number; foldersReleased: number }> {
+  const targetDashboardId = await findFallbackPersonalDashboardId(userId, dashboardId);
+
+  const fileResult = await prisma.file.updateMany({
+    where: { userId, dashboardId },
+    data: { dashboardId: targetDashboardId },
+  });
+
+  const folderResult = await prisma.folder.updateMany({
+    where: { userId, dashboardId },
+    data: { dashboardId: targetDashboardId },
+  });
+
+  return {
+    filesReleased: fileResult.count,
+    foldersReleased: folderResult.count,
+  };
+}
+
 /**
  * Get summary of files and folders for a dashboard before deletion
  */
@@ -108,18 +154,31 @@ export async function moveFilesToMainDrive(
       userId
     });
     
-    // Get user's personal dashboard
+    // Target a different personal tab than the one being deleted (oldest remaining).
     const personalDashboard = await prisma.dashboard.findFirst({
       where: {
         userId,
         businessId: null,
         institutionId: null,
-        householdId: null
-      }
+        householdId: null,
+        id: { not: dashboardId },
+      },
+      orderBy: { createdAt: 'asc' },
     });
 
     if (!personalDashboard) {
-      throw new Error('User personal dashboard not found');
+      const detachedFiles = await prisma.file.updateMany({
+        where: { userId, dashboardId, trashedAt: null },
+        data: { dashboardId: null, folderId: null },
+      });
+      const detachedFolders = await prisma.folder.updateMany({
+        where: { userId, dashboardId, trashedAt: null },
+        data: { dashboardId: null, parentId: null },
+      });
+      return {
+        movedFiles: detachedFiles.count,
+        movedFolders: detachedFolders.count,
+      };
     }
 
     let createdFolderId: string | undefined;

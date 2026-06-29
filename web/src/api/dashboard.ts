@@ -68,7 +68,12 @@ export async function deleteDashboard(token: string, id: string): Promise<void> 
     method: 'DELETE',
     headers: authHeaders(token),
   });
-  if (!res.ok) throw new Error('Failed to delete dashboard');
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({ message: 'Failed to delete dashboard' }));
+    throw new Error(
+      typeof errorData.message === 'string' ? errorData.message : 'Failed to delete dashboard'
+    );
+  }
 }
 
 export async function updateDashboardLayout(token: string, id: string, layout: string[]): Promise<void> {
@@ -130,6 +135,11 @@ export async function deleteDashboardWithFiles(
     body: JSON.stringify({ fileAction }),
     headers: authHeaders(token, { 'Content-Type': 'application/json' }),
   });
-  if (!res.ok) throw new Error('Failed to delete dashboard');
+  if (!res.ok) {
+    const errorData = await res.json().catch(() => ({ message: 'Failed to delete dashboard' }));
+    throw new Error(
+      typeof errorData.message === 'string' ? errorData.message : 'Failed to delete dashboard'
+    );
+  }
   return res.json();
 }
