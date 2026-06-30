@@ -157,7 +157,7 @@ export async function sendPriceChangeNotification(params: {
   const isIncrease = priceChange > 0;
   
   const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://vssyl.com';
-  const billingUrl = `${appUrl}/settings/billing`;
+  const billingUrl = `${appUrl}/billing`;
 
   await transporter.sendMail({
     from: process.env.SMTP_FROM,
