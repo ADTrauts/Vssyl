@@ -13,12 +13,40 @@ const ContactPage = () => {
     subject: '',
     message: ''
   });
+  const [submitError, setSubmitError] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Implement contact form submission
-    console.log('Contact form submitted:', formData);
-    alert('Thank you for your message! We\'ll get back to you soon.');
+    setSubmitting(true);
+    setSubmitError(null);
+
+    try {
+      const response = await fetch('/api/contact', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: formData.name,
+          email: formData.email,
+          company: formData.company,
+          subject: formData.subject,
+          message: formData.message,
+        }),
+      });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error((errorData as { error?: string }).error || 'Failed to send message');
+      }
+
+      setFormData({ name: '', email: '', company: '', subject: '', message: '' });
+      alert('Thank you for your message! We\'ll get back to you soon.');
+    } catch (err: unknown) {
+      const msg = err instanceof Error ? err.message : 'Failed to send message';
+      setSubmitError(msg);
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
@@ -231,12 +259,17 @@ const ContactPage = () => {
                   />
                 </div>
 
+                {submitError && (
+                  <p className="text-red-600 text-sm text-center">{submitError}</p>
+                )}
+
                 <button
                   type="submit"
-                  className="w-full flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white hover:opacity-90 transition-opacity"
+                  disabled={submitting}
+                  className="w-full flex items-center justify-center px-6 py-3 border border-transparent text-base font-medium rounded-md text-white hover:opacity-90 transition-opacity disabled:opacity-50"
                   style={{ backgroundColor: COLORS.infoBlue }}
                 >
-                  Send Message
+                  {submitting ? 'Sending…' : 'Send Message'}
                   <Send className="ml-2 h-5 w-5" />
                 </button>
               </form>

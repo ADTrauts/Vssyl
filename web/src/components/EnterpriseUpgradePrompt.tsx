@@ -135,11 +135,11 @@ export const EnterpriseUpgradePrompt: React.FC<EnterpriseUpgradePromptProps> = (
   };
 
   const handleLearnMore = () => {
-    router.push('/enterprise');
+    router.push('/contact');
   };
 
-  const handleStartTrial = () => {
-    router.push('/billing?trial=enterprise');
+  const handleContactSales = () => {
+    router.push('/contact');
   };
 
   const sizeClasses = {
@@ -211,10 +211,10 @@ export const EnterpriseUpgradePrompt: React.FC<EnterpriseUpgradePromptProps> = (
           </button>
           
           <button
-            onClick={handleStartTrial}
+            onClick={handleContactSales}
             className="px-6 py-3 text-purple-600 bg-white dark:bg-slate-900 border border-purple-600 font-medium rounded-lg hover:bg-purple-50 transition-colors"
           >
-            Start Free Trial
+            Contact sales
           </button>
           
           <button
@@ -227,7 +227,7 @@ export const EnterpriseUpgradePrompt: React.FC<EnterpriseUpgradePromptProps> = (
 
         {/* Pricing Info */}
         <div className="mt-4 text-xs text-purple-600">
-          Enterprise starts at $99/month • 14-day free trial • Cancel anytime
+          Enterprise pricing is customized — contact us for a quote.
         </div>
 
         {/* Reason */}

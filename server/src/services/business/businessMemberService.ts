@@ -26,6 +26,48 @@ export async function getInvitationBusinessId(token: string): Promise<{ business
   return invitation;
 }
 
+export type InvitationPreviewStatus = 'pending' | 'expired' | 'accepted';
+
+export interface InvitationPreview {
+  status: InvitationPreviewStatus;
+  businessId: string;
+  businessName: string;
+  email: string;
+  role: string;
+  title: string | null;
+  department: string | null;
+  expiresAt: string;
+}
+
+export async function previewInvitation(token: string): Promise<InvitationPreview> {
+  const invitation = await prisma.businessInvitation.findUnique({
+    where: { token },
+    include: { business: { select: { id: true, name: true } } },
+  });
+
+  if (!invitation) {
+    throw new BusinessServiceError('Invitation not found', 'not_found', 404);
+  }
+
+  let status: InvitationPreviewStatus = 'pending';
+  if (invitation.acceptedAt) {
+    status = 'accepted';
+  } else if (invitation.expiresAt < new Date()) {
+    status = 'expired';
+  }
+
+  return {
+    status,
+    businessId: invitation.businessId,
+    businessName: invitation.business.name,
+    email: invitation.email,
+    role: invitation.role,
+    title: invitation.title,
+    department: invitation.department,
+    expiresAt: invitation.expiresAt.toISOString(),
+  };
+}
+
 export async function inviteMember(params: {
   actorUserId: string;
   actorName: string | null;

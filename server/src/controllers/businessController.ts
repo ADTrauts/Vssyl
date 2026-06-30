@@ -25,6 +25,7 @@ import {
   getInvitationBusinessId,
   inviteMember as inviteBusinessMember,
   listBusinessMembers,
+  previewInvitation as previewBusinessInvitation,
   removeBusinessMember as removeBusinessMemberRecord,
   updateBusinessMember as updateBusinessMemberRecord,
 } from '../services/business/businessMemberService';
@@ -205,6 +206,17 @@ export const acceptInvitation = async (req: Request, res: Response) => {
     res.json({ success: true, data: result });
   } catch (error) {
     handleError(res, error, 'Failed to accept invitation');
+  }
+};
+
+/** Public — token acts as authorization to view invitation metadata */
+export const previewInvitation = async (req: Request, res: Response) => {
+  try {
+    const { token } = req.params;
+    const preview = await previewBusinessInvitation(token);
+    res.json({ success: true, data: preview });
+  } catch (error) {
+    handleError(res, error, 'Failed to load invitation');
   }
 };
 

@@ -56,6 +56,32 @@ export async function sendWelcomeEmail(email: string, name: string) {
   });
 }
 
+export async function sendContactFormEmail(params: {
+  name: string;
+  email: string;
+  subject: string;
+  message: string;
+  company?: string;
+}) {
+  const supportTo = process.env.SUPPORT_EMAIL || process.env.SMTP_FROM || 'support@vssyl.com';
+  const companyLine = params.company ? `<p><strong>Company:</strong> ${params.company}</p>` : '';
+
+  await transporter.sendMail({
+    from: process.env.SMTP_FROM,
+    to: supportTo,
+    replyTo: params.email,
+    subject: `[Contact] ${params.subject}`,
+    html: `
+      <h1>Contact form submission</h1>
+      <p><strong>From:</strong> ${params.name} &lt;${params.email}&gt;</p>
+      ${companyLine}
+      <p><strong>Subject:</strong> ${params.subject}</p>
+      <hr />
+      <p>${params.message.replace(/\n/g, '<br />')}</p>
+    `,
+  });
+}
+
 export async function sendCalendarInviteEmail(params: {
   toEmail: string;
   subject: string;

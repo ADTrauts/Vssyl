@@ -87,12 +87,16 @@ interface BillingModalProps {
   isOpen: boolean;
   onClose: () => void;
   businessId?: string;
+  /** Open upgrade flow on mount (e.g. from /billing?upgrade=pro) */
+  initialUpgradeTier?: Tier;
+  /** Start on plans tab */
+  initialTab?: string;
 }
 
-export default function BillingModal({ isOpen, onClose, businessId }: BillingModalProps) {
+export default function BillingModal({ isOpen, onClose, businessId, initialUpgradeTier, initialTab }: BillingModalProps) {
   const { data: session } = useSession();
   const isAdmin = session?.user?.role === 'ADMIN';
-  const [activeTab, setActiveTab] = useState('overview');
+  const [activeTab, setActiveTab] = useState(initialTab ?? 'overview');
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [moduleSubscriptions, setModuleSubscriptions] = useState<ModuleSubscription[]>([]);
   const [usage, setUsage] = useState<UsageData | null>(null);
@@ -107,8 +111,17 @@ export default function BillingModal({ isOpen, onClose, businessId }: BillingMod
   useEffect(() => {
     if (isOpen) {
       loadBillingData();
+      if (initialTab) {
+        setActiveTab(initialTab);
+      }
     }
-  }, [isOpen]);
+  }, [isOpen, initialTab]);
+
+  useEffect(() => {
+    if (isOpen && initialUpgradeTier && subscription && !loading) {
+      setShowUpgradeFlow(true);
+    }
+  }, [isOpen, initialUpgradeTier, subscription, loading]);
 
   const loadBillingData = async () => {
     try {
@@ -656,6 +669,7 @@ export default function BillingModal({ isOpen, onClose, businessId }: BillingMod
           subscriptionId={subscription.id}
           businessId={businessId}
           onSuccess={loadBillingData}
+          initialSelectedTier={initialUpgradeTier}
         />
       )}
 

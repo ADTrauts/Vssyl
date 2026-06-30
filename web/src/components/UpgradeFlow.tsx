@@ -13,6 +13,8 @@ interface UpgradeFlowProps {
   subscriptionId?: string;
   businessId?: string;
   onSuccess?: () => void;
+  /** Pre-select tier when opened from deep link */
+  initialSelectedTier?: TierOrString;
 }
 
 // Note: Stripe handles proration automatically when updating subscriptions
@@ -24,6 +26,7 @@ export default function UpgradeFlow({
   subscriptionId,
   businessId,
   onSuccess,
+  initialSelectedTier,
 }: UpgradeFlowProps) {
   const [selectedTier, setSelectedTier] = useState<TierOrString | null>(null);
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly');
@@ -36,8 +39,11 @@ export default function UpgradeFlow({
       setStep('select');
       setSelectedTier(null);
       setError(null);
+    } else if (initialSelectedTier && initialSelectedTier !== currentTier) {
+      setSelectedTier(initialSelectedTier);
+      setStep('confirm');
     }
-  }, [isOpen]);
+  }, [isOpen, initialSelectedTier, currentTier]);
 
   const handleSelectTier = (tier: TierOrString) => {
     setSelectedTier(tier);

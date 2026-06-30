@@ -29,6 +29,9 @@ import vlinksRouter from './routes/vlinks';
 import contextGraphRouter from './routes/context-graph';
 import chatRouter from './routes/chat';
 import businessRouter from './routes/business';
+import businessInvitePublicRouter from './routes/businessInvitePublic';
+import supportRouter from './routes/support';
+import contactRouter from './routes/contact';
 import webhookSubscriptionsRouter from './routes/webhookSubscriptions';
 import { createInternalWebhookTestRouter } from './routes/internalWebhookTest';
 import educationalRouter from './routes/educational';
@@ -319,6 +322,7 @@ app.use('/api/vlinks', vlinksRouter);
 app.use('/api/context-graph', contextGraphRouter);
 app.use('/api/folder', folderRouter);
 app.use('/api/chat', authenticateJWT, chatRouter);
+app.use('/api/business/invite', businessInvitePublicRouter);
 app.use('/api/business', authenticateJWT, businessRouter);
 app.use('/api/business', authenticateJWT, webhookSubscriptionsRouter);
 app.use('/api/internal', createInternalWebhookTestRouter());
@@ -363,6 +367,8 @@ app.use(
   centralizedAiDeprecatedMiddleware
 );
 app.use('/api/billing', authenticateJWT, billingRouter);
+app.use('/api/support', authenticateJWT, supportRouter);
+app.use('/api/contact', contactRouter);
 app.use('/api/pricing', pricingRouter); // Public read access, admin write access
 app.use('/api/feature-gating', authenticateJWT, featureGatingRouter);
 app.use('/api/features', featuresRouter);

@@ -4,67 +4,91 @@ import React from 'react';
 import Link from 'next/link';
 import { COLORS } from 'shared/styles/theme';
 
-const HelpPage = () => {
+const faqs = [
+  {
+    q: 'What is Vssyl?',
+    a: 'Vssyl is a modular workspace platform — a dashboard home for chat, files, calendar, AI, and installable applications for personal and business use.',
+  },
+  {
+    q: 'Is there a free plan?',
+    a: 'Yes. Personal users can start free. Paid tiers unlock additional features — see Pricing on the home page or /billing after sign-in.',
+  },
+  {
+    q: 'How do I join my company\'s workspace?',
+    a: 'Use the link in your invitation email. It opens /auth/accept-invitation where you can sign in or create an account with the invited email address.',
+  },
+  {
+    q: 'Who can install applications for a business?',
+    a: 'Business Admins and Managers (and members with manage permission) install apps for the organization. Employees use apps that are already installed.',
+  },
+  {
+    q: 'How do I manage billing?',
+    a: 'Sign in and go to /billing or open Billing from your profile settings.',
+  },
+  {
+    q: 'Where can I get help?',
+    a: 'Read /docs, submit a support ticket at /support (sign-in required), or use the contact form at /contact.',
+  },
+];
+
+export default function HelpPage() {
   return (
     <div className="min-h-screen bg-white dark:bg-slate-900">
-      {/* Navigation */}
       <nav className="bg-white dark:bg-slate-900 shadow-sm border-b border-gray-200 dark:border-slate-700">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
-              <Link href="/" className="flex-shrink-0">
-                <h1 className="text-2xl font-bold" style={{ color: COLORS.infoBlue }}>
-                  Vssyl
-                </h1>
-              </Link>
-            </div>
+            <Link href="/" className="text-2xl font-bold" style={{ color: COLORS.infoBlue }}>
+              Vssyl
+            </Link>
             <div className="flex items-center space-x-4">
-              <Link
-                href="/auth/login"
-                className="text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-gray-100 px-3 py-2 rounded-md text-sm font-medium"
-              >
-                Sign In
+              <Link href="/docs" className="text-sm text-gray-700 dark:text-gray-300">
+                Docs
               </Link>
-              <Link
-                href="/auth/register"
-                className="text-white px-4 py-2 rounded-md text-sm font-medium hover:opacity-90 transition-opacity"
-                style={{ backgroundColor: COLORS.infoBlue }}
-              >
-                Get Started
+              <Link href="/support" className="text-sm text-gray-700 dark:text-gray-300">
+                Support
               </Link>
             </div>
           </div>
         </div>
       </nav>
 
-      {/* Content */}
-      <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
+      <div className="max-w-3xl mx-auto px-4 sm:px-6 lg:px-8 py-16">
         <h1 className="text-4xl font-bold text-gray-900 dark:text-gray-100 mb-8">Help Center</h1>
-        
-        <div className="text-center py-16">
-          <h2 className="text-2xl font-semibold text-gray-900 dark:text-gray-100 mb-4">Help Center Coming Soon</h2>
-          <p className="text-gray-600 dark:text-gray-400 mb-8">
-            We're building a comprehensive help center with tutorials, guides, and FAQs.
+
+        <div className="space-y-6 mb-12">
+          {faqs.map((faq) => (
+            <div key={faq.q} className="border-b border-gray-200 dark:border-slate-700 pb-6">
+              <h2 className="text-lg font-semibold text-gray-900 dark:text-gray-100 mb-2">{faq.q}</h2>
+              <p className="text-gray-600 dark:text-gray-400">{faq.a}</p>
+            </div>
+          ))}
+        </div>
+
+        <div className="rounded-lg bg-gray-50 dark:bg-slate-800 p-6">
+          <h2 className="text-lg font-semibold mb-2">Still need help?</h2>
+          <p className="text-gray-600 dark:text-gray-400 mb-4">
+            Open a support ticket (requires sign-in) or send us a message.
           </p>
-          <div className="space-y-4">
+          <div className="flex flex-wrap gap-3">
             <Link
-              href="/contact"
-              className="inline-block px-6 py-3 text-white rounded-md hover:opacity-90 transition-opacity mr-4"
+              href="/support"
+              className="px-4 py-2 rounded-md text-white text-sm font-medium"
               style={{ backgroundColor: COLORS.infoBlue }}
             >
-              Contact Support
+              Support tickets
             </Link>
             <Link
-              href="/"
-              className="inline-block px-6 py-3 border border-gray-300 dark:border-slate-600 text-gray-700 dark:text-gray-300 rounded-md hover:bg-gray-50 dark:hover:bg-slate-800 dark:bg-slate-800 transition-colors"
+              href="/contact"
+              className="px-4 py-2 rounded-md border border-gray-300 dark:border-slate-600 text-sm font-medium text-gray-800 dark:text-gray-200"
             >
-              Back to Home
+              Contact us
+            </Link>
+            <Link href="/status" className="px-4 py-2 text-sm font-medium underline" style={{ color: COLORS.infoBlue }}>
+              System status
             </Link>
           </div>
         </div>
       </div>
     </div>
   );
-};
-
-export default HelpPage;
+}

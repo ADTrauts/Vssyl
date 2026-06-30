@@ -55,7 +55,7 @@ const business: LandingAudienceContent = {
     line2Accent: 'Digital Workspace',
     subtitle:
       'Vssyl combines advanced AI intelligence with modular productivity tools to create the ultimate digital workspace that learns, adapts, and grows with your team.',
-    primaryCta: 'Start Free Trial',
+    primaryCta: 'Get Started',
     secondaryCta: 'Learn More',
   },
   featuresSectionTitle: 'Powerful Features for Modern Teams',
@@ -81,22 +81,22 @@ const business: LandingAudienceContent = {
       bullets: ['Live chat & messaging', 'File sharing', 'Real-time notifications'],
     },
     {
-      title: 'Advanced Analytics',
+      title: 'Team Analytics',
       description:
-        'Comprehensive analytics platform with real-time insights, predictive intelligence, and AI-powered recommendations.',
-      bullets: ['Real-time dashboards', 'Predictive insights', 'Business intelligence'],
+        'Workspace insights and activity visibility to help admins understand adoption — not a full BI suite.',
+      bullets: ['Activity visibility', 'Module-level metrics where available', 'Admin dashboards'],
     },
     {
-      title: 'Enterprise Security',
+      title: 'Security & Compliance',
       description:
-        'Bank-level security with advanced compliance features, audit logging, and data protection.',
-      bullets: ['GDPR & HIPAA compliance', 'End-to-end encryption', 'Audit trails'],
+        'Strong access controls, audit logging, and privacy practices designed for business workspaces.',
+      bullets: ['Role-based access', 'Tenant isolation', 'Privacy policy & terms'],
     },
     {
-      title: 'Global Platform',
+      title: 'Cloud Platform',
       description:
-        'Scalable cloud infrastructure with global reach, multi-language support, and 99.9% uptime.',
-      bullets: ['Global CDN', 'Multi-region deployment', '24/7 monitoring'],
+        'Reliable cloud infrastructure with scalable architecture for growing teams.',
+      bullets: ['HTTPS everywhere', 'Cloud-hosted', 'Production on Google Cloud'],
     },
   ],
   modulesSectionTitle: 'Essential Productivity Applications',
@@ -173,7 +173,7 @@ const business: LandingAudienceContent = {
   ],
   ctaTitle: 'Ready to Transform Your Workflow?',
   ctaSubtitle: 'Join thousands of teams already using Vssyl to boost productivity and collaboration.',
-  ctaPrimary: 'Start Your Free Trial',
+  ctaPrimary: 'Get Started',
   footerTagline:
     'The revolutionary digital workspace platform that combines AI intelligence with modular productivity tools.',
 };
@@ -276,7 +276,7 @@ const personal: LandingAudienceContent = {
         'Deeper insights',
         'Priority support',
       ],
-      ctaLabel: 'Start Pro trial',
+      ctaLabel: 'Get Pro',
       ctaHref: '/auth/register',
       highlight: true,
     },

@@ -2,21 +2,40 @@
 
 export const dynamic = "force-dynamic";
 
-import React, { useState } from "react";
-import { useRouter } from "next/navigation";
+import React, { useState, useEffect } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import { signIn } from "next-auth/react";
 import { COLORS } from "shared/styles/theme";
 import UserNumberDisplay from "../../../components/UserNumberDisplay";
 
 export default function RegisterPage() {
   const router = useRouter();
+  const searchParams = useSearchParams();
+  const inviteToken = searchParams?.get("inviteToken") ?? "";
+  const prefilledEmail = searchParams?.get("email") ?? "";
+  const returnUrl = searchParams?.get("returnUrl") ?? "";
+
   const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
+  const [email, setEmail] = useState(prefilledEmail);
   const [password, setPassword] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState(false);
   const [userNumber, setUserNumber] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (prefilledEmail) {
+      setEmail(prefilledEmail);
+    }
+  }, [prefilledEmail]);
+
+  const postRegisterDestination = () => {
+    if (returnUrl) return returnUrl;
+    if (inviteToken) {
+      return `/auth/accept-invitation?token=${encodeURIComponent(inviteToken)}`;
+    }
+    return "/dashboard";
+  };
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
@@ -57,8 +76,8 @@ export default function RegisterPage() {
       } else if (result?.ok) {
         // Don't redirect immediately, show success message first
         setTimeout(() => {
-          router.push("/dashboard");
-        }, 3000);
+          router.push(postRegisterDestination());
+        }, inviteToken ? 1500 : 3000);
       }
     } catch (err) {
       setError("Network error");

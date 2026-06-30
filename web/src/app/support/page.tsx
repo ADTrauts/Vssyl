@@ -1,8 +1,10 @@
 'use client';
 
 import React, { useState } from 'react';
+import Link from 'next/link';
 import { Card, Button, Input, Alert, Spinner } from 'shared/components';
 import { useSession } from 'next-auth/react';
+import { authenticatedApiCall } from '@/lib/apiUtils';
 import { 
   MessageSquare, 
   HelpCircle, 
@@ -59,22 +61,16 @@ export default function SupportPage() {
     setError(null);
 
     try {
-      const response = await fetch('/api/support/tickets/customer', {
+      await authenticatedApiCall('/api/support/tickets/customer', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
         body: JSON.stringify({
-          ...form,
-          userId: session?.user?.id,
-          userName: session?.user?.name
+          title: form.title,
+          description: form.description,
+          category: form.category,
+          priority: form.priority,
+          contactPhone: form.contactPhone,
         }),
       });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Failed to submit ticket');
-      }
 
       setSuccess(true);
       setForm({
@@ -121,6 +117,28 @@ export default function SupportPage() {
             </div>
           </Card>
         </div>
+      </div>
+    );
+  }
+
+  if (!session?.user) {
+    return (
+      <div className="min-h-screen bg-gray-50 dark:bg-slate-800 py-12 flex items-center justify-center px-4">
+        <Card className="p-8 max-w-md text-center">
+          <h1 className="text-2xl font-bold text-gray-900 dark:text-gray-100 mb-2">Sign in for support</h1>
+          <p className="text-gray-600 dark:text-gray-400 mb-6">
+            Support tickets are tied to your account. Sign in to submit a request.
+          </p>
+          <Link
+            href={`/auth/login?returnUrl=${encodeURIComponent('/support')}`}
+            className="inline-block px-6 py-3 rounded-lg bg-blue-600 text-white font-semibold"
+          >
+            Sign in
+          </Link>
+          <p className="mt-4 text-sm text-gray-500">
+            Or use the <Link href="/contact" className="underline text-blue-600">contact form</Link> without an account.
+          </p>
+        </Card>
       </div>
     );
   }

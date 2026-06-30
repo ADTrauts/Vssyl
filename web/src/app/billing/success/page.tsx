@@ -67,10 +67,10 @@ export default function BillingSuccessPage() {
             Your subscription has been activated successfully. You now have access to all premium features.
           </p>
           <div className="flex gap-4 justify-center">
-            <Link href="/">
+            <Link href="/billing">
               <Button variant="primary">
                 <Home className="h-4 w-4 mr-2" />
-                Go to Dashboard
+                Manage billing
               </Button>
             </Link>
           </div>
