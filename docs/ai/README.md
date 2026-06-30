@@ -1,10 +1,15 @@
 # AI operations (`docs/ai/`)
 
-Runbooks and rules for **vision, providers, and multimodal** behavior in production. Product-level AI rules and module context patterns live in **`memory-bank/aiContextSystem.md`**.
+Runbooks and rules for **vision, providers, and multimodal** behavior in production.
 
-**Canonical platform diagrams (May 2026):** [`docs/architecture/AI_PLATFORM_OVERVIEW.md`](../architecture/AI_PLATFORM_OVERVIEW.md)
+**Architecture navigation:** [`docs/architecture/AI_ARCHITECTURE_NAVIGATION_GUIDE.md`](../architecture/AI_ARCHITECTURE_NAVIGATION_GUIDE.md)  
+**AI platform constitution:** [`docs/architecture/AI_PLATFORM_CONSTITUTION.md`](../architecture/AI_PLATFORM_CONSTITUTION.md)  
+**Product-level AI rules:** [`memory-bank/aiContextSystem.md`](../../memory-bank/aiContextSystem.md)  
+**AI retrieval:** [`retrieval/`](./retrieval/) — [`AI_RETRIEVAL_CONSTITUTION.md`](./retrieval/AI_RETRIEVAL_CONSTITUTION.md)
 
-**Internal architecture textbook:** [`docs/architecture/AI_SYSTEM_TEXTBOOK.md`](../architecture/AI_SYSTEM_TEXTBOOK.md) — narrative onboarding; ops chapters link back here for vision runbooks.
+**Canonical platform diagrams:** [`docs/architecture/AI_PLATFORM_OVERVIEW.md`](../architecture/AI_PLATFORM_OVERVIEW.md)
+
+**Internal architecture textbook:** [`docs/architecture/AI_SYSTEM_TEXTBOOK.md`](../architecture/AI_SYSTEM_TEXTBOOK.md)
 
 | File | Purpose | Diagrams |
 |------|---------|----------|

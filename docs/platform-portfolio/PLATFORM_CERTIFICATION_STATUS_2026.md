@@ -1,9 +1,25 @@
+---
+
+⚠️ **Architecture Notice**
+
+This document is retained for historical context.
+
+The canonical Source of Truth is:
+
+[`docs/architecture/CERTIFICATION_LEDGER.md`](../architecture/CERTIFICATION_LEDGER.md)
+
+Newer portfolio snapshot: [`PLATFORM_CERTIFICATION_STATUS_2026_5.md`](./PLATFORM_CERTIFICATION_STATUS_2026_5.md)
+
+Please update the canonical document rather than this file.
+
+---
+
 # Platform Certification Status 2026
 
 **Program:** Platform Portfolio Refresh 2026  
 **Date:** 2026-06-21  
 **Authority:** [`CERTIFICATION_LEDGER.md`](../architecture/CERTIFICATION_LEDGER.md)  
-**Status:** Portfolio snapshot — synchronized 2026-06-22 (Analytics L2 CwF executed)
+**Status:** Portfolio snapshot — **superseded by ledger (2026-06-24+)**
 
 ---
 

@@ -1,8 +1,24 @@
+---
+
+⚠️ **Architecture Notice**
+
+This document is retained for historical context.
+
+The canonical Source of Truth is:
+
+[`docs/architecture/ARCHITECTURE_DOMAIN_MAP.md`](../architecture/ARCHITECTURE_DOMAIN_MAP.md)
+
+Certification status: [`docs/architecture/CERTIFICATION_LEDGER.md`](../architecture/CERTIFICATION_LEDGER.md)
+
+Please update the canonical document rather than this file.
+
+---
+
 # Platform Portfolio — Domain Map
 
 **Program:** Vssyl Platform Portfolio Reality Assessment  
 **Date:** 2026-06-19  
-**Status:** Discovery only
+**Status:** Discovery only — **superseded for certification status**
 
 ---
 

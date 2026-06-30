@@ -1,179 +1,144 @@
 # Vssyl Documentation Index
 
-This directory contains human-readable guides and references for development, deployment, and operations. For AI context and product/architectural decisions, see the [`memory-bank/`](../memory-bank/) directory.
+This directory contains human-readable guides and references for development, deployment, and operations.
 
-## 📚 Documentation Organization
+**Architecture entry point:** [`architecture/VSSYL_ARCHITECTURE_INDEX.md`](./architecture/VSSYL_ARCHITECTURE_INDEX.md)  
+**Source of truth hierarchy:** [`VSSYL_SOURCE_OF_TRUTH.md`](./VSSYL_SOURCE_OF_TRUTH.md)  
+**AI assistant navigation:** [`architecture/AI_ARCHITECTURE_NAVIGATION_GUIDE.md`](./architecture/AI_ARCHITECTURE_NAVIGATION_GUIDE.md)  
+**Product intent:** [`memory-bank/`](../memory-bank/)
 
-### Setup Guides (`setup/`)
+---
 
-Step-by-step instructions for configuring external services and integrations:
+## Architecture governance (`architecture/`)
 
-- **GOOGLE_CLOUD_SETUP.md** - Complete Google Cloud Platform setup
-- **STRIPE_SETUP_GUIDE.md** - Payment processing integration
-- **SMTP_SETUP.md** - Email service configuration
-- **EMAIL_NOTIFICATIONS_SETUP.md** - Email notification system
-- **PUSH_NOTIFICATIONS_SETUP.md** - Push notification setup
-- **AI_SETUP_GUIDE.md** - AI service integration
-- **UPDATE_SECRETS_GUIDE.md** - Secret / env update procedures (moved from `docs/` root April 2026)
+**Start here:** [`architecture/VSSYL_ARCHITECTURE_INDEX.md`](./architecture/VSSYL_ARCHITECTURE_INDEX.md)
 
-### Plans and audits (`plans/`)
+| Document | Purpose |
+|----------|---------|
+| [VSSYL_ARCHITECTURE_INDEX](./architecture/VSSYL_ARCHITECTURE_INDEX.md) | Executive table of contents |
+| [ARCHITECTURE_SOURCE_OF_TRUTH](./architecture/ARCHITECTURE_SOURCE_OF_TRUTH.md) | Ownership matrix; edit policy |
+| [ARCHITECTURE_DOMAIN_MAP](./architecture/ARCHITECTURE_DOMAIN_MAP.md) | Domain topology + certification |
+| [ARCHITECTURE_HEALTH_REPORT](./architecture/ARCHITECTURE_HEALTH_REPORT.md) | Documentation health metrics |
+| [AI_ARCHITECTURE_NAVIGATION_GUIDE](./architecture/AI_ARCHITECTURE_NAVIGATION_GUIDE.md) | AI decision trees |
+| [ARCHITECTURE_DOCUMENT_STANDARD](./architecture/ARCHITECTURE_DOCUMENT_STANDARD.md) | Template for new arch docs |
+| [CERTIFICATION_LEDGER](./architecture/CERTIFICATION_LEDGER.md) | Certification dashboard |
 
-Roadmaps, phased execution plans, and analysis summaries. See [`plans/README.md`](./plans/README.md) for an index.
+Cross-cutting design notes: [`architecture/README.md`](./architecture/README.md)
 
-### Deployment Guides (`deployment/`)
+### Domain landing pages
 
-Production deployment procedures and optimization:
+| Domain | README |
+|--------|--------|
+| Search | [`search/README.md`](./search/README.md) |
+| Marketplace | [`marketplace/README.md`](./marketplace/README.md) |
+| Dashboard | [`dashboard/README.md`](./dashboard/README.md) |
+| Workspace | [`workspace/README.md`](./workspace/README.md) |
+| Analytics | [`analytics/README.md`](./analytics/README.md) |
+| Context Graph | [`context-graph/README.md`](./context-graph/README.md) |
+| Platform Kernel | [`platform-kernel/README.md`](./platform-kernel/README.md) |
+| Account Platform | [`account-platform/README.md`](./account-platform/README.md) |
+| Business Operations | [`business-operations/README.md`](./business-operations/README.md) |
+| Business Administration | [`business-administration/README.md`](./business-administration/README.md) |
+| Connected Knowledge | [`connected-knowledge/README.md`](./connected-knowledge/README.md) |
+| Admin Portal | [`admin-portal/README.md`](./admin-portal/README.md) |
+| Platform Controller | [`platform-controller/README.md`](./platform-controller/README.md) |
+| Platform Portfolio | [`platform-portfolio/README.md`](./platform-portfolio/README.md) |
+| Platform Adoption | [`platform-adoption/README.md`](./platform-adoption/README.md) |
+| Deployment | [`deployment/README.md`](./deployment/README.md) |
+| UX / Design System | [`ux/README.md`](./ux/README.md) |
+| AI operations | [`ai/README.md`](./ai/README.md) |
 
-- **PRODUCTION_DEPLOYMENT.md** - Complete production deployment guide
-- **GOOGLE_CLOUD_DEPLOYMENT.md** - Cloud Run deployment process
-- **QUICK_DEPLOY.md** - Production `DATABASE_URL` / deploy notes (moved from repo root April 2026)
-- **AUTOMATIC_MIGRATION_DEPLOYMENT.md** - How migrations run in Cloud Build vs container startup
-- **BUILD_OPTIMIZATION_GUIDE.md** - Build performance optimization
-- **FAST_BUILD_SETUP.md** - Quick build configuration
-- **ULTRA_FAST_BUILD_GUIDE.md** - Advanced build optimization
-- **GOOGLE_CLOUD_COST_OPTIMIZATION.md** - Cost management strategies
-- **BUILD_CACHING_GUIDE.md** - Build cache / remote cache notes (moved from `docs/` root April 2026)
+---
 
-### Implementation Guides (`guides/`)
+## Setup Guides (`setup/`)
 
-Technical implementation references and troubleshooting — **index:** [`guides/README.md`](./guides/README.md).
+- **GOOGLE_CLOUD_SETUP.md** — Google Cloud Platform setup
+- **STRIPE_SETUP_GUIDE.md** — Payment processing
+- **SMTP_SETUP.md** — Email configuration
+- **AI_SETUP_GUIDE.md** — AI service integration
+- See folder for full list
 
-- **TECHNICAL_IMPLEMENTATION_GUIDE.md** - Comprehensive technical reference
-- **TROUBLESHOOTING.md** - Common issues and solutions (incident history: `archive/troubleshooting-historical-incidents.md`)
-- **PRISMA_MIGRATION_DISCIPLINE.md** - Schema change workflow and quick commands
-- **ADVANCED_FEATURES.md** - Advanced feature documentation
-- **ADVANCED_WORKFLOWS.md** - Complex workflow implementations
-- **SYSTEM_ARCHITECTURE_DIAGRAM.md** - System architecture overview
-- **ARCHITECTURE_FLOW_CHART.md** - Application flow diagrams
-- **LOGGING_PHASE3_GUIDE.md** - Logging rollout / phases
-- **NOTIFICATION_METADATA_GUIDE.md** - Notification types and manifests
-- **TESTING_CHECKLIST.md** - Manual testing checklist
-- **ALTERNATIVE_DATABASE_SOLUTIONS.md** - DB options notes
-- **ENTERPRISE_INTEGRATION.md** - Enterprise integration reference
-- **ADMIN_PORTAL.md** - Admin portal overview (moved from `docs/` root April 2026)
-- **THIRD_PARTY_MODULE_DEVELOPER_GUIDE.md** - Partner onboarding index (links pipeline, AI context, notifications)
+---
 
-**AI architecture / module AI guides** were consolidated (April 2026). Living rules: `memory-bank/aiContextSystem.md`. Archived copies: `archive/guides-merged-2026/`. **AI runbooks:** [`ai/README.md`](./ai/README.md).
+## Deployment (`deployment/`)
 
-### UX standards (`ux/`)
+**Index:** [`deployment/README.md`](./deployment/README.md)
 
-Visual and interaction governance (complement architecture certification). **Index:** [`ux/README.md`](./ux/README.md).
+- **PRODUCTION_DEPLOYMENT.md** — Production deployment guide
+- **GOOGLE_CLOUD_DEPLOYMENT.md** — Cloud Run deployment
+- **CLOUD_RUN_ROLLBACK_RUNBOOK.md** — Rollback runbook
+- Build optimization guides in folder
 
-- **UX_CONSTITUTION.md** — Non-negotiable UX principles and Shared Token Ownership
-- **DESIGN_TOKENS.md** — Five token families (`--v-*`); Tailwind `v.*` namespace
-- **LAYOUT_PATTERNS.md**, **COMPONENT_STANDARDS.md**, **INTERACTION_STANDARDS.md**, **ACCESSIBILITY_STANDARDS.md**
-- **UX_CERTIFICATION_SCORECARD.md**, **UX_AUDIT_TEMPLATE.md**, **UX_MODERNIZATION_ROADMAP.md**
+---
 
-Agent rule: `.cursor/rules/ux-standards.mdc`
+## Implementation Guides (`guides/`)
 
-### Architecture (`architecture/`)
+**Index:** [`guides/README.md`](./guides/README.md)
 
-Cross-cutting design notes (complement `memory-bank/systemPatterns.md`). **Index:** [`architecture/README.md`](./architecture/README.md).
+- **MODULE_DEVELOPMENT_GUIDE.md** — First-party module development
+- **THIRD_PARTY_MODULE_PIPELINE_SOURCE_OF_TRUTH.md** — Marketplace pipeline
+- **NOTIFICATION_METADATA_GUIDE.md** — Notification types
+- **ADMIN_PORTAL.md** — Operator overview
+- **TECHNICAL_IMPLEMENTATION_GUIDE.md** — Technical reference
 
-- **POLICY_ENGINE.md** — Policy Engine v1 (`authorize`, `enforcePolicy`, `requirePolicy`)
-- **DOMAIN_EVENTS.md** — Domain event bus vs module activity events
-- **WORKSPACE_RUNTIME_AND_MODULE_CONTRACTS.md** — Workspace Runtime Foundation v1: module = capability, widget = projection; `web/src/runtime/` contracts and legacy adapter rollout
+---
 
-### Archive (`archive/`)
+## UX standards (`ux/`)
 
-Historical records and session summaries — **structure:** [`archive/README.md`](./archive/README.md).
+**Index:** [`ux/README.md`](./ux/README.md)
 
-- **`session-summaries/`** - Development session notes and completion summaries
-  - `business-workspace/` - Business workspace implementation sessions
-  - `admin-access/` - Admin access setup sessions
-  - `org-chart/` - Org chart implementation sessions
-  - `fixes/` - Bug fix and issue resolution sessions
-  - `active-context-archive-2026-04-pretrim.md` - Older narratives trimmed from `memory-bank/activeContext.md`
-  - `BUSINESS_FRONT_PAGE_PROGRESS.md`, `COMPREHENSIVE_ADMIN_PORTAL_ANALYSIS.md`, `COMPREHENSIVE_CODEBASE_ANALYSIS.md`, `PIN_ICON_OPTIONS.md` - Moved from `docs/` root April 2026
-- **`migration/`** - Migration scripts and historical data
-  - Database schema migrations
-  - Pricing system changes
-  - Feature migration records
-  - `CLEAN_RESTART_COMPLETE.md`, `DEPLOYMENT_INSTRUCTIONS.md` (Jan 2026 snapshots)
-- **`guides-merged-2026/`** - Archived long-form AI docs (see folder README)
-- **`stripe-merged-2026/`** - Archived duplicate Stripe markdown (see folder README)
-- **`hr-merged-2026/`** - Archived HR framework completion docs (see folder README)
-- **`troubleshooting-historical-incidents.md`** - Full incident log moved from memory bank
+- **UX_CONSTITUTION.md** — Non-negotiable UX principles
+- **DESIGN_TOKENS.md** — `--v-*` token system
+- **LAYOUT_PATTERNS.md**, pattern catalog under `ux/patterns/`
 
-## 🎯 Quick Links
+---
 
-### For Developers
+## Plans (`plans/`)
 
-- [Technical Implementation Guide](./guides/TECHNICAL_IMPLEMENTATION_GUIDE.md)
-- [Third-party module developers](./guides/THIRD_PARTY_MODULE_DEVELOPER_GUIDE.md) (marketplace partners)
-- [Troubleshooting Guide](./guides/TROUBLESHOOTING.md)
-- [Build Optimization](./deployment/BUILD_OPTIMIZATION_GUIDE.md)
+Roadmaps and phased execution — [`plans/README.md`](./plans/README.md)
+
+---
+
+## Archive (`archive/`)
+
+Historical records — [`archive/README.md`](./archive/README.md)
+
+---
+
+## Quick links
+
+### For developers
+
+- [Architecture Index](./architecture/VSSYL_ARCHITECTURE_INDEX.md)
+- [AI Navigation Guide](./architecture/AI_ARCHITECTURE_NAVIGATION_GUIDE.md)
+- [Module Development Guide](./guides/MODULE_DEVELOPMENT_GUIDE.md)
+- [Third-party modules](./guides/THIRD_PARTY_MODULE_DEVELOPER_GUIDE.md)
 
 ### For DevOps
 
 - [Production Deployment](./deployment/PRODUCTION_DEPLOYMENT.md)
 - [Google Cloud Setup](./setup/GOOGLE_CLOUD_SETUP.md)
-- [Cost Optimization](./deployment/GOOGLE_CLOUD_COST_OPTIMIZATION.md)
 
-### For Setup
+### For AI assistants
 
-- [Stripe Integration](./setup/STRIPE_SETUP_GUIDE.md)
-- [Email Configuration](./setup/SMTP_SETUP.md)
-- [AI Services](./setup/AI_SETUP_GUIDE.md)
-
-## 📖 Documentation Philosophy
-
-### docs/ vs memory-bank/
-
-**docs/** - Human-readable operational guides
-- ✅ Step-by-step tutorials
-- ✅ Setup procedures
-- ✅ Deployment instructions
-- ✅ Troubleshooting references
-
-**memory-bank/** - AI knowledge base
-- ✅ Product context (why features exist)
-- ✅ System architecture (how things work)
-- ✅ Current state (what's done, what's next)
-- ✅ Technical patterns and decisions
-
-**Rule of thumb**: 
-- If it's **"how to do X"** → goes in `docs/`
-- If it's **"why we did X"** or **"how X works"** → goes in `memory-bank/`
-
-## 🔄 Documentation Updates
-
-### Adding New Documentation
-
-1. **Setup Guides**: Place in `docs/setup/`
-2. **Deployment Procedures**: Place in `docs/deployment/`
-3. **Implementation References**: Place in `docs/guides/`
-4. **Session Notes**: Archive in `docs/archive/session-summaries/`
-
-### Updating Documentation
-
-- Update this README when adding major new guides
-- Keep guides focused and actionable
-- Cross-reference memory-bank for architectural context
-- Archive outdated guides instead of deleting them
-
-## 📝 Contributing
-
-When creating new documentation:
-
-1. **Be specific** - Exact commands, file paths, and examples
-2. **Be complete** - Include prerequisites, steps, and verification
-3. **Be maintainable** - Date major updates, note version changes
-4. **Cross-reference** - Link to related docs and memory-bank files
-
-## 🔗 Related Resources
-
-- [Plans index](./plans/README.md) - Roadmaps and phased plans in `docs/plans/`
-- [Guides index](./guides/README.md) - Implementation guides in `docs/guides/`
-- [Archive index](./archive/README.md) - What lives under `docs/archive/`
-- [AI runbooks index](./ai/README.md) - Vision / provider operational docs
-- [Memory Bank](../memory-bank/) - AI context and architectural decisions
-- [Project Brief](../memory-bank/projectbrief.md) - Project overview and goals
-- [System Patterns](../memory-bank/systemPatterns.md) - Architectural patterns
-- [Tech Context](../memory-bank/techContext.md) - Technology stack details
-- [Progress](../memory-bank/progress.md) - Current status and completed features
+1. [`VSSYL_SOURCE_OF_TRUTH.md`](./VSSYL_SOURCE_OF_TRUTH.md)
+2. [`memory-bank/activeContext.md`](../memory-bank/activeContext.md)
+3. [`architecture/VSSYL_ARCHITECTURE_INDEX.md`](./architecture/VSSYL_ARCHITECTURE_INDEX.md)
+4. [`architecture/ARCHITECTURE_SOURCE_OF_TRUTH.md`](./architecture/ARCHITECTURE_SOURCE_OF_TRUTH.md)
 
 ---
 
-**Last Updated**: April 19, 2026  
-**Organization**: Vssyl Platform Documentation Team
+## docs/ vs memory-bank/
+
+| `docs/` | `memory-bank/` |
+|---------|----------------|
+| Architecture truth & governance | Product intent & current focus |
+| How-to guides & deployment | Why features exist |
+| Certification & contracts | `activeContext.md`, `progress.md` |
+| Domain README landing pages | `*ProductContext.md` per module |
+
+**Rule:** Architecture decisions → `docs/architecture/` SoT. Product intent → Memory Bank. See [`ARCHITECTURE_SOURCE_OF_TRUTH.md`](./architecture/ARCHITECTURE_SOURCE_OF_TRUTH.md).
+
+---
+
+**Last updated:** 2026-06-29 (Architecture Governance Phase 1)

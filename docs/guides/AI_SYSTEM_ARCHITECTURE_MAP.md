@@ -1,3 +1,19 @@
+---
+
+⚠️ **Architecture Notice**
+
+This document is retained for historical context.
+
+The canonical Source of Truth is:
+
+[`docs/architecture/AI_PLATFORM_OVERVIEW.md`](../architecture/AI_PLATFORM_OVERVIEW.md)
+
+Also see [`AI_ARCHITECTURE_NAVIGATION_GUIDE.md`](../architecture/AI_ARCHITECTURE_NAVIGATION_GUIDE.md).
+
+Please update the canonical document rather than this file.
+
+---
+
 # 🤖 Vssyl AI System Architecture Map
 
 > **⚠️ Partially superseded (May 2026):** Backend service names, autonomy flows, and context diagrams in this file reflect pre–platform-maturity architecture.

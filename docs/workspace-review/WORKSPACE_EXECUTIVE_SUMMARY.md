@@ -1,9 +1,25 @@
+---
+
+⚠️ **Architecture Notice**
+
+This document is retained for historical context.
+
+The canonical Source of Truth for dashboard/shell boundary is:
+
+[`WORKSPACE_DASHBOARD_REALITY_ASSESSMENT.md`](./WORKSPACE_DASHBOARD_REALITY_ASSESSMENT.md)
+
+Workspace program status: [`../workspace/WORKSPACE_CERTIFICATION_RECORD.md`](../workspace/WORKSPACE_CERTIFICATION_RECORD.md)
+
+Please update the canonical documents rather than this file.
+
+---
+
 # Workspace & Dashboard Executive Summary
 
 **Program:** Workspace & Dashboard Constitutional Review  
 **Date:** 2026-06-21  
 **Audience:** Product, engineering leadership, architecture council  
-**Status:** Discovery complete — **no implementation, no certification, no ledger changes**
+**Status:** Discovery complete — **superseded by reality assessment + WS-L3 ratification**
 
 ---
 

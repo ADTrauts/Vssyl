@@ -1,71 +1,99 @@
 # Architecture reference (`docs/architecture/`)
 
+**Start here for platform architecture:** [`VSSYL_ARCHITECTURE_INDEX.md`](./VSSYL_ARCHITECTURE_INDEX.md)
+
 Cross-cutting platform design notes. **Agent enforcement** lives in `.cursor/rules/` (short); this folder explains **why**, examples, anti-patterns, and review checklists.
 
 Complement (not replace) `memory-bank/systemPatterns.md` for product-level architecture narrative.
 
+---
+
+## Governance (Phase 1 — canonical entry points)
+
+| Document | Purpose |
+|----------|---------|
+| [**VSSYL_ARCHITECTURE_INDEX**](./VSSYL_ARCHITECTURE_INDEX.md) | Executive table of contents — **read first** |
+| [**ARCHITECTURE_SOURCE_OF_TRUTH**](./ARCHITECTURE_SOURCE_OF_TRUTH.md) | Which doc owns each topic; edit policy |
+| [**ARCHITECTURE_DOMAIN_MAP**](./ARCHITECTURE_DOMAIN_MAP.md) | Domain topology + certification status |
+| [**ARCHITECTURE_HEALTH_REPORT**](./ARCHITECTURE_HEALTH_REPORT.md) | Documentation health metrics |
+| [**AI_ARCHITECTURE_NAVIGATION_GUIDE**](./AI_ARCHITECTURE_NAVIGATION_GUIDE.md) | AI assistant decision trees |
+| [**ARCHITECTURE_DOCUMENT_STANDARD**](./ARCHITECTURE_DOCUMENT_STANDARD.md) | Required template for new architecture docs |
+| [**CERTIFICATION_LEDGER**](./CERTIFICATION_LEDGER.md) | Certification status dashboard |
+
+---
+
+## Constitutional & platform law
+
 | Topic | Document | Cursor rule |
 |-------|----------|-------------|
-| **Platform standards (constitutional)** | [VSSYL_PLATFORM_STANDARDS_AND_MODULE_CONTRACT.md](./VSSYL_PLATFORM_STANDARDS_AND_MODULE_CONTRACT.md) | `platform-standards.mdc` |
-| **Module certification ledger** | [CERTIFICATION_LEDGER.md](./CERTIFICATION_LEDGER.md) | `platform-standards.mdc` |
-| **Reference Module Catalog** | [REFERENCE_MODULE_CATALOG.md](./REFERENCE_MODULE_CATALOG.md) | `module-development.mdc` |
-| **Governance foundation (complete)** | [GOVERNANCE_FOUNDATION_COMPLETE.md](./GOVERNANCE_FOUNDATION_COMPLETE.md) | — |
-| Legacy cleanup / deprecation | [LEGACY_CLEANUP.md](./LEGACY_CLEANUP.md) | `platform-standards.mdc` |
-| Global Trash | [GLOBAL_TRASH.md](./GLOBAL_TRASH.md) | `module-development.mdc` |
-| V_Link | [V_LINK.md](./V_LINK.md) | — |
-| **Relationship Framework** | [RELATIONSHIP_FRAMEWORK_INDEX.md](./RELATIONSHIP_FRAMEWORK_INDEX.md) | — |
-| Platform entity model | [PLATFORM_ENTITY_MODEL.md](./PLATFORM_ENTITY_MODEL.md) | — |
-| Platform job registry | [PLATFORM_JOB_REGISTRY.md](./PLATFORM_JOB_REGISTRY.md) | — |
-| **AI System Textbook (internal onboarding)** | [AI_SYSTEM_TEXTBOOK.md](./AI_SYSTEM_TEXTBOOK.md) → [`ai-textbook/`](./ai-textbook/) | — |
-| Policy Engine (v1) | [POLICY_ENGINE.md](./POLICY_ENGINE.md) | `policy-engine.mdc` |
-| Domain event bus | [DOMAIN_EVENTS.md](./DOMAIN_EVENTS.md) | `domain-events.mdc` |
-| Workspace runtime + module contracts | [WORKSPACE_RUNTIME_AND_MODULE_CONTRACTS.md](./WORKSPACE_RUNTIME_AND_MODULE_CONTRACTS.md) | `workspace-runtime.mdc`, `runtime-state-boundaries.mdc` |
-| **Application lifecycle** | [APPLICATION_LIFECYCLE.md](./APPLICATION_LIFECYCLE.md) | `module-development.mdc`, `moduleClassification` |
-| **Reference Workspace Program** | [audits/REFERENCE_WORKSPACE_CHARTER_REVIEW.md](./audits/REFERENCE_WORKSPACE_CHARTER_REVIEW.md) | `module-development.mdc` (hub pattern) |
-| **AI platform overview (diagram hub)** | [AI_PLATFORM_OVERVIEW.md](./AI_PLATFORM_OVERVIEW.md) | — |
-| Digital Life Twin prompt path | [AI_TWIN_PROMPT_PIPELINE.md](./AI_TWIN_PROMPT_PIPELINE.md) | — |
-| AI context assembly | [AI_CONTEXT_ASSEMBLY.md](./AI_CONTEXT_ASSEMBLY.md) | — |
-| Business vs personal twin boundaries | [AI_BUSINESS_PERSONAL_TWIN_BOUNDARIES.md](./AI_BUSINESS_PERSONAL_TWIN_BOUNDARIES.md) | — |
-| Admin AI Pipeline (grounding diagnostics) | [AI_PIPELINE_ADMIN_TOOLS.md](./AI_PIPELINE_ADMIN_TOOLS.md) | `module-interoperability.mdc` (activity vs analytics) |
-| Attachments & vision pipelines | [../ai/ARCHITECTURE.md](../ai/ARCHITECTURE.md) | — |
-| Vision provider routing / runbook | [../ai/PROVIDERS.md](../ai/PROVIDERS.md), [../ai/RUNBOOK.md](../ai/RUNBOOK.md) | — |
-| Control Center / Learning hub | [AI_INTELLIGENCE_HUB.md](./AI_INTELLIGENCE_HUB.md) | — |
-| **File Hub (reference module) audits** | [audits/FILE_HUB_REFERENCE_IMPLEMENTATION_REVIEW.md](./audits/FILE_HUB_REFERENCE_IMPLEMENTATION_REVIEW.md) | `module-development.mdc` |
+| **Platform standards** | [VSSYL_PLATFORM_STANDARDS_AND_MODULE_CONTRACT.md](./VSSYL_PLATFORM_STANDARDS_AND_MODULE_CONTRACT.md) | `platform-standards.mdc` |
+| **Application lifecycle** | [APPLICATION_LIFECYCLE.md](./APPLICATION_LIFECYCLE.md) | `module-development.mdc` |
+| **Navigation discovery** | [NAVIGATION_WORKSPACE_ARCHITECTURE_DISCOVERY.md](./NAVIGATION_WORKSPACE_ARCHITECTURE_DISCOVERY.md) | — |
+| Policy Engine | [POLICY_ENGINE.md](./POLICY_ENGINE.md) | `policy-engine.mdc` |
+| Domain Events | [DOMAIN_EVENTS.md](./DOMAIN_EVENTS.md) | `domain-events.mdc` |
+| Workspace runtime | [WORKSPACE_RUNTIME_AND_MODULE_CONTRACTS.md](./WORKSPACE_RUNTIME_AND_MODULE_CONTRACTS.md) | `workspace-runtime.mdc` |
+| Reference Workspace shell | [REFERENCE_WORKSPACE_PLATFORM_SHELL.md](./REFERENCE_WORKSPACE_PLATFORM_SHELL.md) | `module-development.mdc` |
 
-**Reference modules:**
+---
+
+## Workspace & routing contracts
+
+| Topic | Document |
+|-------|----------|
+| Business routing | [WORKSPACE_ROUTING_CONTRACT.md](./WORKSPACE_ROUTING_CONTRACT.md) |
+| Personal routing | [PERSONAL_DASHBOARD_ROUTING_CONTRACT.md](./PERSONAL_DASHBOARD_ROUTING_CONTRACT.md) |
+| Cross-surface transitions | [CROSS_SURFACE_TRANSITIONS.md](./CROSS_SURFACE_TRANSITIONS.md) |
+| Reference Module Catalog | [REFERENCE_MODULE_CATALOG.md](./REFERENCE_MODULE_CATALOG.md) |
+
+---
+
+## AI architecture
+
+| Topic | Document |
+|-------|----------|
+| AI platform constitution | [AI_PLATFORM_CONSTITUTION.md](./AI_PLATFORM_CONSTITUTION.md) |
+| Overview / diagrams | [AI_PLATFORM_OVERVIEW.md](./AI_PLATFORM_OVERVIEW.md) |
+| Digital Life Twin | [AI_TWIN_PROMPT_PIPELINE.md](./AI_TWIN_PROMPT_PIPELINE.md) |
+| AI textbook | [AI_SYSTEM_TEXTBOOK.md](./AI_SYSTEM_TEXTBOOK.md) → [`ai-textbook/`](./ai-textbook/) |
+
+---
+
+## Platform capabilities
+
+| Topic | Document |
+|-------|----------|
+| V_Link | [V_LINK.md](./V_LINK.md) |
+| Global Trash | [GLOBAL_TRASH.md](./GLOBAL_TRASH.md) |
+| Relationship Framework | [RELATIONSHIP_FRAMEWORK_INDEX.md](./RELATIONSHIP_FRAMEWORK_INDEX.md) |
+| Platform entity model | [PLATFORM_ENTITY_MODEL.md](./PLATFORM_ENTITY_MODEL.md) |
+| Search ADR | [SEARCH_ARCHITECTURE_DECISION_RECORD.md](./SEARCH_ARCHITECTURE_DECISION_RECORD.md) |
+
+---
+
+## Reference modules (architecture)
 
 | # | Module | Doc |
 |---|--------|-----|
 | 1 | File Hub (L4) | [FILE_HUB_REFERENCE_IMPLEMENTATION_REVIEW.md](./audits/FILE_HUB_REFERENCE_IMPLEMENTATION_REVIEW.md) |
 | 2 | Chat (L3) | [CHAT_LEVEL3_CERTIFICATION_REVIEW.md](./audits/CHAT_LEVEL3_CERTIFICATION_REVIEW.md) |
 | 3 | Calendar (L3) | [CALENDAR_LEVEL3_CERTIFICATION_REVIEW.md](./audits/CALENDAR_LEVEL3_CERTIFICATION_REVIEW.md) |
+| 4 | Todo (L3) | [TODO_LEVEL3_CERTIFICATION_REVIEW.md](./audits/TODO_LEVEL3_CERTIFICATION_REVIEW.md) |
+| 5 | Place (L3) | [PLACE_LEVEL3_CERTIFICATION_REVIEW.md](./audits/PLACE_LEVEL3_CERTIFICATION_REVIEW.md) |
 
-**Copy guide:** [REFERENCE_MODULE_CATALOG.md](./REFERENCE_MODULE_CATALOG.md) — which patterns to take from which module.
+**Pattern catalog:** [`../guides/MODULE_REFERENCE_PATTERNS_FROM_FILE_HUB.md`](../guides/MODULE_REFERENCE_PATTERNS_FROM_FILE_HUB.md)
 
-**Reference programs (parallel tracks):**
+**Reference programs:** Architecture refs · UX refs ([`../ux/REFERENCE_MODULE_PROGRAM.md`](../ux/REFERENCE_MODULE_PROGRAM.md)) · Reference Workspace ([`audits/REFERENCE_WORKSPACE_CHARTER_REVIEW.md`](./audits/REFERENCE_WORKSPACE_CHARTER_REVIEW.md))
 
-| Track | Doc | Inaugural candidate |
-|-------|-----|---------------------|
-| Architecture Reference Modules | [REFERENCE_MODULE_CATALOG.md](./REFERENCE_MODULE_CATALOG.md) | Place #5 (L3) |
-| UX Reference Modules | [../ux/REFERENCE_MODULE_PROGRAM.md](../ux/REFERENCE_MODULE_PROGRAM.md) | #1–#5 registered; #6 Place eligible |
-| **Reference Workspace** | [audits/REFERENCE_WORKSPACE_CHARTER_REVIEW.md](./audits/REFERENCE_WORKSPACE_CHARTER_REVIEW.md) | Business Workspace + Personal Dashboard shell (WS-L1) |
+---
 
-Pattern catalog: [`../guides/MODULE_REFERENCE_PATTERNS_FROM_FILE_HUB.md`](../guides/MODULE_REFERENCE_PATTERNS_FROM_FILE_HUB.md). Executive status: [`CERTIFICATION_LEDGER.md`](./CERTIFICATION_LEDGER.md).
+## Domain folders (program docs)
 
-**Module audits (Phase 0):** [`audits/`](./audits/) — e.g. [TODO_CONSTITUTIONAL_AUDIT.md](./audits/TODO_CONSTITUTIONAL_AUDIT.md), [TODO_OPERATION_MATRIX.md](./audits/TODO_OPERATION_MATRIX.md), [TODO_SERVICE_EXTRACTION_PLAN.md](./audits/TODO_SERVICE_EXTRACTION_PLAN.md).
+Each major domain has a `README.md` landing page under `docs/`:
 
-**Onboarding and how-to guides** stay in [`docs/guides/README.md`](../guides/README.md).
+[`search/`](../search/) · [`marketplace/`](../marketplace/) · [`dashboard/`](../dashboard/) · [`workspace/`](../workspace/) · [`analytics/`](../analytics/) · [`context-graph/`](../context-graph/) · [`account-platform/`](../account-platform/) · [`platform-kernel/`](../platform-kernel/) · [`business-operations/`](../business-operations/) · [`go-to-market/`](../go-to-market/) · [`ux/`](../ux/)
 
-**Textbook maintenance:** Update [`AI_SYSTEM_TEXTBOOK.md`](./AI_SYSTEM_TEXTBOOK.md) when changing `server/src/ai/` orchestration, pipeline catalog, grounding enforcement, or twin request contract.
+**Module audits:** [`audits/`](./audits/) — Phase 0 constitutional audits and QA evidence.
 
-**Notebook (composition module):**
+**How-to guides:** [`../guides/README.md`](../guides/README.md) — not architecture truth.
 
-| Doc | Topic |
-|-----|--------|
-| [NOTEBOOK_IMPLEMENTATION_PLAN.md](./NOTEBOOK_IMPLEMENTATION_PLAN.md) | Phase sequence |
-| [NOTEBOOK_LINK_SCHEMA_DESIGN.md](./NOTEBOOK_LINK_SCHEMA_DESIGN.md) | Phase 3A — `notebook_links` schema |
-| [NOTEBOOK_LINK_API_DESIGN.md](./NOTEBOOK_LINK_API_DESIGN.md) | Phase 3A — REST API |
-| [NOTEBOOK_LINK_ACCESS_RULES.md](./NOTEBOOK_LINK_ACCESS_RULES.md) | Phase 3A — authorization |
-| [NOTEBOOK_LINK_IMPLEMENTATION_PLAN.md](./NOTEBOOK_LINK_IMPLEMENTATION_PLAN.md) | Phase 3B scope |
-
-**Last updated:** 2026-06-14 (Relationship Framework index; Reference Workspace Program charter)
+**Last updated:** 2026-06-29 (Architecture Governance Phase 1A)

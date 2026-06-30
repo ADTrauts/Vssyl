@@ -1,3 +1,19 @@
+---
+
+⚠️ **Architecture Notice**
+
+This document is retained for **historical phase decisions**.
+
+The canonical Source of Truth for V_Link architecture is:
+
+[`docs/architecture/V_LINK.md`](../architecture/V_LINK.md)
+
+Also: [`PLATFORM_ENTITY_MODEL.md`](../architecture/PLATFORM_ENTITY_MODEL.md), [`RELATIONSHIP_FRAMEWORK_INDEX.md`](../architecture/RELATIONSHIP_FRAMEWORK_INDEX.md)
+
+Please update the canonical documents rather than this file for current integration status.
+
+---
+
 # V_Link Platform Layer Plan
 
 > **Implementation status (2026-06-14):** V_Link is **shipped** for core modules. For current resolver/manifest/UI truth use [PLATFORM_ENTITY_MODEL.md](../architecture/PLATFORM_ENTITY_MODEL.md) and [V_LINK.md](../architecture/V_LINK.md). For relationship semantics use [RELATIONSHIP_FRAMEWORK_INDEX.md](../architecture/RELATIONSHIP_FRAMEWORK_INDEX.md). This plan retains **historical phase decisions and non-negotiables** — do not use VL phase checklists as integration status.

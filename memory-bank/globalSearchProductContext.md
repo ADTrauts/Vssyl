@@ -1,3 +1,17 @@
+---
+
+⚠️ **Architecture Notice**
+
+This document is retained for **product intent history** only.
+
+The canonical Source of Truth for search **architecture** is:
+
+[`docs/search/SEARCH_CONSTITUTION.md`](../docs/search/SEARCH_CONSTITUTION.md)
+
+Please update the Search Constitution rather than this file for architectural decisions.
+
+---
+
 <!--
 Update Rules for globalSearchProductContext.md
 - Updated when global search requirements, architecture, or implementation details change.
