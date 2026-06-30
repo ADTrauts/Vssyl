@@ -39,12 +39,14 @@ interface BusinessWorkspaceContentProps {
   business: Business;
   currentModule: string;
   businessDashboardId: string | null;
+  isBusinessAdmin?: boolean;
 }
 
 export default function BusinessWorkspaceContent({
   business,
   currentModule,
   businessDashboardId,
+  isBusinessAdmin = false,
 }: BusinessWorkspaceContentProps) {
   const renderModuleContent = () => {
     const _moduleContract = getModuleDefinition(normalizeModuleId(currentModule));
@@ -55,7 +57,13 @@ export default function BusinessWorkspaceContent({
 
     switch (currentModule) {
       case 'dashboard':
-        return <BusinessWorkspaceHubPanel businessName={business.name} />;
+        return (
+          <BusinessWorkspaceHubPanel
+            businessName={business.name}
+            businessId={business.id}
+            isAdmin={isBusinessAdmin}
+          />
+        );
       case 'drive':
         return (
           <DriveWorkspaceLanding
@@ -133,7 +141,13 @@ export default function BusinessWorkspaceContent({
             />
           );
         }
-        return <BusinessWorkspaceHubPanel businessName={business.name} />;
+        return (
+          <BusinessWorkspaceHubPanel
+            businessName={business.name}
+            businessId={business.id}
+            isAdmin={isBusinessAdmin}
+          />
+        );
       }
     }
   };

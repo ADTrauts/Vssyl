@@ -42,11 +42,20 @@ export const DASHBOARD_TEMPLATES: DashboardTemplate[] = [
   },
   {
     id: 'business-admin',
-    name: 'Business Admin',
+    name: 'Business Operations',
     description: 'Manage your team with HR, scheduling, and communications',
     icon: Briefcase,
     color: 'from-blue-500 to-indigo-600',
     widgets: ['quickstats', 'hr', 'scheduling', 'chat', 'activityfeed'],
+    recommended: ['business'],
+  },
+  {
+    id: 'team-collaboration',
+    name: 'Team Collaboration',
+    description: 'Drive, chat, and activity for distributed teams',
+    icon: Users,
+    color: 'from-emerald-500 to-teal-600',
+    widgets: ['drive', 'chat', 'calendar', 'activityfeed', 'notifications'],
     recommended: ['business'],
   },
   {
@@ -65,6 +74,7 @@ export const DASHBOARD_TEMPLATES: DashboardTemplate[] = [
     icon: BarChart3,
     color: 'from-gray-500 to-slate-600',
     widgets: ['quickstats', 'calendar'],
+    recommended: ['personal'],
   },
 ];
 

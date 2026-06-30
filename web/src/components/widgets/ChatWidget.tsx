@@ -412,7 +412,7 @@ export default function ChatWidget({
             size="sm"
             onClick={() => window.location.href = '/chat'}
           >
-            Start Chatting
+            Start your first conversation
           </Button>
         </div>
       )}

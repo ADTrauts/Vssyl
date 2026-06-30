@@ -279,6 +279,17 @@ describe('DashboardBuildOutModal personal tab UX', () => {
     expect(content).toContain('moduleSelectionContent');
     expect(content).toContain('Core apps (included automatically)');
   });
+
+  it('supports first-run persona onboarding branches', () => {
+    const modalPath = join(__dirname, '../../components/DashboardBuildOutModal.tsx');
+    const content = readFileSync(modalPath, 'utf8');
+    expect(content).toContain('onboardingMode');
+    expect(content).toContain("view === 'persona'");
+    expect(content).toContain('I want to organize my own work.');
+    expect(content).toContain('/business/create');
+    expect(content).toContain('/auth/accept-invitation');
+    expect(content).toContain('OnboardingHelpLinks');
+  });
 });
 
 describe('DashboardClient integration', () => {
@@ -288,6 +299,8 @@ describe('DashboardClient integration', () => {
     expect(content).toContain('buildDashboardTabBuildOutState');
     expect(content).toContain('upsertDashboard(hydrated.dashboard)');
     expect(content).toContain('hydrateConfig(hydrated.sidebarCustomization');
+    expect(content).toContain('vssyl-onboarding-persona-completed');
+    expect(content).toContain('onboardingMode={showOnboardingMode}');
   });
 });
 

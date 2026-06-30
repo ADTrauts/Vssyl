@@ -1,8 +1,8 @@
 # Product Readiness — Executive Summary
 
 **Program:** Vssyl Product Readiness Program  
-**Date:** 2026-06-30 (updated post Sprint 1)  
-**Status:** Sprint 1 complete — see [COMMERCIAL_READINESS_SPRINT_1.md](./COMMERCIAL_READINESS_SPRINT_1.md)
+**Date:** 2026-06-30 (updated post Sprint 2)  
+**Status:** Sprint 2 complete — see [FIRST_HOUR_EXPERIENCE_SPRINT_2.md](./FIRST_HOUR_EXPERIENCE_SPRINT_2.md)
 
 **Deliverables:** [README](./README.md) · [Inventory](./EXISTING_PRODUCT_INVENTORY.md) · [Public Assessment](./PUBLIC_EXPERIENCE_ASSESSMENT.md) · [Gaps](./PRODUCT_READINESS_GAP_REPORT.md) · [Roadmap](./IMPLEMENTATION_ROADMAP.md)
 
@@ -10,25 +10,25 @@
 
 ## 1. How close is Vssyl to a polished commercial product?
 
-Vssyl is **materially closer to a self-serve commercial product** after Commercial Readiness Sprint 1. The **customer boundary** — invitations, billing hub, support routing, public docs, and honest marketing — is now functional in code. Remaining gaps are onboarding polish, marketplace role UX, and operator verification (SMTP/Stripe live).
+Vssyl is **approaching self-serve commercial readiness** after Product Readiness Sprint 2. The **first hour** — persona onboarding, default dashboard at register, template-guided setup, contextual help, and marketplace role UX — is now implemented on existing surfaces. Remaining gaps are operator verification (SMTP/Stripe live), public marketplace browse, and landing visual polish.
 
-**Honest characterization:** A business administrator can register, create a business, access `/billing`, invite a teammate, and the teammate can accept via email link — **when SMTP is configured**.
+**Honest characterization:** A new user can register, choose personal/business/invite path, receive a populated dashboard, complete a guided first action, and find help — without architecture changes.
 
-**Distance to polished commercial product:** ~**two-thirds** — Sprint 2 targets first-hour experience and marketplace UX.
+**Distance to polished commercial product:** ~**three-quarters** — Sprint 3 targets production validation and GTM visual polish.
 
 ---
 
 ## 2. Overall Product Readiness Score
 
-### **68%** *(was 54% pre–Sprint 1)*
+### **76%** *(was 68% post–Sprint 1; 54% pre–Sprint 1)*
 
 | Lens | Weight | Score | Notes |
 |------|--------|-------|-------|
 | Public discovery & conversion | 20% | 75% | Docs, help, security, honest copy |
-| Onboarding & first hour | 25% | 62% | Invite accept fixed; persona branches remain |
+| Onboarding & first hour | 25% | 78% | Persona branches, register dashboard, templates |
 | Commercial & billing UX | 20% | 65% | `/billing` hub; trials still absent |
-| Application marketplace (customer) | 15% | 55% | Unchanged — Sprint 2 |
-| Visual & UX polish | 10% | 72% | Minor public page additions |
+| Application marketplace (customer) | 15% | 68% | Employee read-only; admin install preserved |
+| Visual & UX polish | 10% | 76% | First-action hints, help links, hub checklist |
 | Operations & trust | 10% | 58% | Support API fixed; SMTP operator-dependent |
 
 Architecture maturity (platform, AI, workspace certification) is **not** included in this score — those programs are treated as reference layers per program charter.
@@ -47,11 +47,11 @@ Architecture maturity (platform, AI, workspace certification) is **not** include
 
 ## 4. Onboarding Score
 
-### **62%** *(was 52%)*
+### **78%** *(was 62% post–Sprint 1)*
 
-**Strengths:** Register → auto-login → dashboard works; `DashboardBuildOutModal` and `DashboardTemplates` exist; business bootstrap installs core modules.
+**Strengths:** Register → default dashboard at signup; persona onboarding (personal / business / invite); templates in build-out modal; business hub checklist; invite accept (Sprint 1).
 
-**Weaknesses:** No unified persona wizard; lazy default dashboard; HR onboarding not linked to invite.
+**Weaknesses:** HR onboarding not linked to invite; household persona not in onboarding branch; no signup funnel analytics.
 
 ---
 
@@ -67,9 +67,9 @@ Architecture maturity (platform, AI, workspace certification) is **not** include
 
 ## 6. UX Polish Score
 
-### **71%**
+### **76%** *(was 72%)*
 
-**Strengths:** UX Constitution and design tokens; shared `EmptyState`, `Spinner`, `Button`; module-level UX L2–L3 certification on reference modules; dark mode; consistent Lucide icons.
+**Strengths:** UX Constitution and design tokens; shared `EmptyState`, `Spinner`, `Button`; first-action hints on core modules; onboarding help links; dark mode; consistent Lucide icons.
 
 **Weaknesses:** Public site lacks logo asset and product screenshots; landing uses CSS transitions only; public pages duplicate nav rather than shared layout; marketing visual story lags in-app polish.
 
@@ -158,11 +158,11 @@ Ranked by **adoption unlocked per engineering day**, assuming architecture is fr
 
 | Metric | Score |
 |--------|-------|
-| **Overall Product Readiness** | **68%** |
+| **Overall Product Readiness** | **76%** |
 | Public Experience | 75% |
-| Onboarding | 62% |
+| Onboarding | 78% |
 | Commercial Readiness | 65% |
-| UX Polish | 72% |
+| UX Polish | 76% |
 
 ---
 

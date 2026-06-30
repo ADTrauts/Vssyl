@@ -38,6 +38,7 @@ import SchedulingWidget from '../../components/widgets/SchedulingWidget';
 import WidgetPicker from '../../components/dashboard/WidgetPicker';
 import DashboardTemplates, { DashboardTemplate } from '../../components/dashboard/DashboardTemplates';
 import DashboardBuildOutModal from '../../components/DashboardBuildOutModal';
+import { OnboardingHelpLinks } from '../../components/onboarding/OnboardingHelpLinks';
 import ModuleManagementModal from '../../components/ModuleManagementModal';
 import { DashboardSkeleton } from '../../components/SkeletonComponents';
 import { Modal } from 'shared/components';
@@ -54,6 +55,26 @@ import {
 
 interface DashboardClientProps {
   dashboardId?: string | null;
+}
+
+const ONBOARDING_PERSONA_KEY = 'vssyl-onboarding-persona-completed';
+
+function hasCompletedPersonaOnboarding(): boolean {
+  if (typeof window === 'undefined') return true;
+  try {
+    return localStorage.getItem(ONBOARDING_PERSONA_KEY) === 'true';
+  } catch {
+    return true;
+  }
+}
+
+function markPersonaOnboardingComplete(): void {
+  if (typeof window === 'undefined') return;
+  try {
+    localStorage.setItem(ONBOARDING_PERSONA_KEY, 'true');
+  } catch {
+    // ignore storage errors
+  }
 }
 
 function getDashboardType(dashboard: Dashboard | null): 'personal' | 'business' | 'educational' | 'household' {
@@ -261,10 +282,13 @@ function EmptyDashboard({
         </div>
       </div>
 
-      <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">Welcome to your Dashboard</h3>
-      <p className="text-sm text-gray-600 dark:text-gray-400 text-center max-w-md mb-8">
-        Your dashboard is your command center. Add widgets to see quick summaries of your modules, 
+      <h3 className="text-xl font-semibold text-gray-900 dark:text-gray-100 mb-2">Welcome to your personal workspace</h3>
+      <p className="text-sm text-gray-600 dark:text-gray-400 text-center max-w-md mb-4">
+        Your dashboard is your command center. Add widgets to see quick summaries of your applications,
         or start with a template to get up and running quickly.
+      </p>
+      <p className="text-xs text-gray-500 dark:text-gray-400 text-center max-w-md mb-6">
+        First steps: upload a file in File Hub, create a calendar event, or start a chat.
       </p>
 
       {/* Quick start templates */}
@@ -300,6 +324,7 @@ function EmptyDashboard({
           Start Building Manually
         </button>
       )}
+      <OnboardingHelpLinks className="mt-8 w-full max-w-2xl" compact />
     </div>
   );
 }
@@ -557,6 +582,7 @@ export default function DashboardClient({ dashboardId }: DashboardClientProps) {
   const handleBuildOutComplete = useCallback(async (selectedModuleIds: string[]) => {
     if (!pendingDashboard || !session?.accessToken) return;
     setShowBuildOutModal(false);
+    markPersonaOnboardingComplete();
     setHasShownBuildOut((prev) => new Set([...Array.from(prev), pendingDashboard.id]));
 
     const buildOutDraft = buildDashboardTabBuildOutState(pendingDashboard, selectedModuleIds);
@@ -622,10 +648,23 @@ export default function DashboardClient({ dashboardId }: DashboardClientProps) {
     setShowBuildOutModal(false);
     if (pendingDashboard) {
       setHasShownBuildOut((prev) => new Set([...Array.from(prev), pendingDashboard.id]));
+      markPersonaOnboardingComplete();
       router.push(`/dashboard/${pendingDashboard.id}`);
       setPendingDashboard(null);
     }
   }, [pendingDashboard, router]);
+
+  const handlePersonaSelected = useCallback(() => {
+    markPersonaOnboardingComplete();
+  }, []);
+
+  const isMainPersonalDashboard =
+    !!currentDashboard &&
+    getDashboardType(currentDashboard) === 'personal' &&
+    getMainPersonalDashboardId(dashboards) === currentDashboard.id;
+
+  const showOnboardingMode =
+    isMainPersonalDashboard && !hasCompletedPersonaOnboarding() && getDashboardType(currentDashboard!) === 'personal';
 
   // Apply a dashboard template
   const handleApplyTemplate = useCallback(async (template: DashboardTemplate) => {
@@ -684,6 +723,19 @@ export default function DashboardClient({ dashboardId }: DashboardClientProps) {
       setWidgetLoading(false);
     }
   }, [currentDashboard, session?.accessToken, enterEditMode, dashboards]);
+
+  const handleOnboardingApplyTemplate = useCallback(
+    async (template: DashboardTemplate) => {
+      markPersonaOnboardingComplete();
+      await handleApplyTemplate(template);
+      setShowBuildOutModal(false);
+      if (pendingDashboard) {
+        setHasShownBuildOut((prev) => new Set([...Array.from(prev), pendingDashboard.id]));
+        setPendingDashboard(null);
+      }
+    },
+    [handleApplyTemplate, pendingDashboard]
+  );
 
   // Keyboard shortcuts
   useEffect(() => {
@@ -882,6 +934,9 @@ export default function DashboardClient({ dashboardId }: DashboardClientProps) {
         onClose={handleBuildOutClose}
         onComplete={handleBuildOutComplete}
         dashboardName={pendingDashboard?.name || 'New Dashboard'}
+        onboardingMode={showOnboardingMode}
+        onApplyTemplate={handleOnboardingApplyTemplate}
+        onPersonaSelected={handlePersonaSelected}
       />
 
       {/* Module Management Modal */}

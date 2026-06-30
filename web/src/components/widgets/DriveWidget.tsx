@@ -508,7 +508,8 @@ export default function DriveWidget({
       {recentFiles.length === 0 && recentFolders.length === 0 && (
         <div className="text-center py-6">
           <Folder className="w-12 h-12 text-gray-400 mx-auto mb-2" />
-          <p className="text-sm text-gray-700 dark:text-gray-300 mb-3">No files or folders yet</p>
+          <p className="text-sm text-gray-700 dark:text-gray-300 mb-1">No files or folders yet</p>
+          <p className="text-xs text-gray-500 dark:text-gray-400 mb-3">Upload your first file to get started</p>
           <div className="flex items-center justify-center gap-2">
             {safeConfig.showUploadButton && (
               <label className="cursor-pointer">

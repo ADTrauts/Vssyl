@@ -57,6 +57,10 @@ interface Business {
     fontFamily?: string;
     customCSS?: string;
   };
+  members?: Array<{
+    role: 'ADMIN' | 'MANAGER' | 'EMPLOYEE';
+    user: { id: string };
+  }>;
 }
 
 interface DashboardLayoutWrapperProps {
@@ -87,6 +91,16 @@ function DashboardLayoutWrapper({ business, children }: DashboardLayoutWrapperPr
   const [localBusiness, setLocalBusiness] = useState<Business | null>(business);
   const [businessLoading, setBusinessLoading] = useState(false);
   const [businessError, setBusinessError] = useState<string | null>(null);
+  const [isBusinessAdmin, setIsBusinessAdmin] = useState(false);
+
+  function resolveBusinessAdmin(
+    businessData: Business | null,
+    userId: string | undefined
+  ): boolean {
+    if (!businessData?.members || !userId) return false;
+    const member = businessData.members.find((m) => m.user.id === userId);
+    return member?.role === 'ADMIN' || member?.role === 'MANAGER';
+  }
 
   // Use local business if prop is null (fallback to loaded business)
   const effectiveBusiness = business || localBusiness;
@@ -109,8 +123,9 @@ function DashboardLayoutWrapper({ business, children }: DashboardLayoutWrapperPr
   useEffect(() => {
     if (business) {
       setLocalBusiness(business);
+      setIsBusinessAdmin(resolveBusinessAdmin(business, session?.user?.id));
     }
-  }, [business]);
+  }, [business, session?.user?.id]);
   
   const [showCustomizationModal, setShowCustomizationModal] = useState(false);
   const [collapsedFolders, setCollapsedFolders] = useState<Set<string>>(new Set());
@@ -193,7 +208,9 @@ function DashboardLayoutWrapper({ business, children }: DashboardLayoutWrapperPr
           }
           
           if (businessResponse.success && businessResponse.data) {
-            setLocalBusiness(businessResponse.data as unknown as Business);
+            const loaded = businessResponse.data as unknown as Business;
+            setLocalBusiness(loaded);
+            setIsBusinessAdmin(resolveBusinessAdmin(loaded, session.user?.id));
             if (isDev) {
               console.log('✅ DashboardLayoutWrapper: Business loaded:', businessResponse.data.name);
             }
@@ -492,6 +509,7 @@ function DashboardLayoutWrapper({ business, children }: DashboardLayoutWrapperPr
             business={effectiveBusiness}
             currentModule={currentModule}
             businessDashboardId={businessDashboardId}
+            isBusinessAdmin={isBusinessAdmin}
           />
         )}
       </PlatformShell>

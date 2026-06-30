@@ -229,6 +229,7 @@ interface MarketplaceModuleGridProps {
   onInstall: (moduleId: string) => void;
   actionLoadingId?: string | null;
   showFutureSections?: boolean;
+  canInstall?: boolean;
 }
 
 export function MarketplaceModuleGrid({
@@ -237,6 +238,7 @@ export function MarketplaceModuleGrid({
   onInstall,
   actionLoadingId,
   showFutureSections = false,
+  canInstall = true,
 }: MarketplaceModuleGridProps) {
   const router = useRouter();
 
@@ -306,7 +308,7 @@ export function MarketplaceModuleGrid({
               >
                 Open
               </Button>
-            ) : (
+            ) : canInstall ? (
               <Button
                 variant="primary"
                 size="sm"
@@ -316,6 +318,10 @@ export function MarketplaceModuleGrid({
               >
                 {actionLoadingId === module.id ? <Spinner size={16} /> : 'Install'}
               </Button>
+            ) : (
+              <p className="text-xs text-gray-500 dark:text-gray-400 flex-1 text-center py-2">
+                Sign in to install
+              </p>
             )}
           </div>
         </Card>

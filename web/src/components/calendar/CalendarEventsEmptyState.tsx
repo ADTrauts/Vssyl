@@ -9,11 +9,11 @@ export type CalendarEmptyVariant = 'day' | 'week' | 'month' | 'year';
 const COPY: Record<CalendarEmptyVariant, { title: string; description: string }> = {
   day: {
     title: 'No events today',
-    description: 'Drag on the timeline or use New Event to schedule something.',
+    description: 'Create your first event — drag on the timeline or use New Event.',
   },
   week: {
     title: 'No events this week',
-    description: 'Drag on a day column or use New Event to add an event.',
+    description: 'Create your first event — drag on a day column or use New Event.',
   },
   month: {
     title: 'No events this month',

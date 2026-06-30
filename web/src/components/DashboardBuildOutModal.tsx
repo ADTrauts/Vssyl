@@ -2,6 +2,7 @@
 
 import React, { useState, useEffect } from 'react';
 import Link from 'next/link';
+import { useRouter } from 'next/navigation';
 import {
   Puzzle,
   Check,
@@ -13,6 +14,9 @@ import {
   MessageSquare,
   Settings,
   Store,
+  User,
+  Briefcase,
+  UserPlus,
 } from 'lucide-react';
 import { Button, Card, Modal } from 'shared/components';
 import { Module, getInstalledModules } from '../api/modules';
@@ -27,6 +31,12 @@ import {
   isLockedTabModuleId,
   normalizeSelectedModuleIds,
 } from '../lib/dashboardTabModules';
+import DashboardTemplates, {
+  type DashboardTemplate,
+} from './dashboard/DashboardTemplates';
+import { OnboardingHelpLinks } from './onboarding/OnboardingHelpLinks';
+
+type BuildOutView = 'persona' | 'personal-setup' | 'quick-setup' | 'custom';
 
 interface DashboardBuildOutModalProps {
   isOpen: boolean;
@@ -35,6 +45,10 @@ interface DashboardBuildOutModalProps {
   dashboardName: string;
   businessId?: string;
   scope?: 'personal' | 'business';
+  /** First-run onboarding: persona branches before module/tab setup */
+  onboardingMode?: boolean;
+  onApplyTemplate?: (template: DashboardTemplate) => void;
+  onPersonaSelected?: () => void;
 }
 
 interface QuickSetupOption {
@@ -208,10 +222,16 @@ export default function DashboardBuildOutModal({
   dashboardName,
   businessId,
   scope = 'personal',
+  onboardingMode = false,
+  onApplyTemplate,
+  onPersonaSelected,
 }: DashboardBuildOutModalProps) {
+  const router = useRouter();
   const { data: session } = useSession();
   const isPersonalScope = scope === 'personal';
-  const [view, setView] = useState<'quick-setup' | 'custom'>(isPersonalScope ? 'custom' : 'quick-setup');
+  const [view, setView] = useState<BuildOutView>(
+    onboardingMode && isPersonalScope ? 'persona' : isPersonalScope ? 'custom' : 'quick-setup'
+  );
   const [availableModules, setAvailableModules] = useState<Module[]>([]);
   const [selectedModules, setSelectedModules] = useState<Set<string>>(new Set());
   const [searchQuery, setSearchQuery] = useState('');
@@ -220,10 +240,14 @@ export default function DashboardBuildOutModal({
 
   useEffect(() => {
     if (!isOpen) return;
-    setView(isPersonalScope ? 'custom' : 'quick-setup');
     setSearchQuery('');
     setSelectedModules(new Set());
-  }, [isOpen, isPersonalScope]);
+    if (onboardingMode && isPersonalScope) {
+      setView('persona');
+    } else {
+      setView(isPersonalScope ? 'custom' : 'quick-setup');
+    }
+  }, [isOpen, isPersonalScope, onboardingMode]);
 
   useEffect(() => {
     if (!isOpen || !session?.accessToken) return;
@@ -339,6 +363,137 @@ export default function DashboardBuildOutModal({
         );
       })
     : [];
+
+  const handlePersonaSelect = (path: 'personal' | 'business' | 'join') => {
+    onPersonaSelected?.();
+    if (path === 'personal') {
+      setView('personal-setup');
+      return;
+    }
+    if (path === 'business') {
+      onClose();
+      router.push('/business/create');
+      return;
+    }
+    onClose();
+    router.push('/auth/accept-invitation');
+  };
+
+  const handleTemplateSelect = (template: DashboardTemplate) => {
+    onPersonaSelected?.();
+    onApplyTemplate?.(template);
+    onClose();
+  };
+
+  const handleSkipOnboarding = () => {
+    onPersonaSelected?.();
+    onClose();
+  };
+
+  const personaOptions = [
+    {
+      id: 'personal' as const,
+      name: 'Personal',
+      tagline: 'I want to organize my own work.',
+      description: 'Your private workspace for files, calendar, chat, and AI.',
+      icon: <User className="w-6 h-6" />,
+      color: 'from-violet-500 to-purple-600',
+    },
+    {
+      id: 'business' as const,
+      name: 'Business',
+      tagline: 'I want to create a workspace for my team.',
+      description: 'Set up a business workspace with Drive, Chat, and team tools.',
+      icon: <Briefcase className="w-6 h-6" />,
+      color: 'from-blue-500 to-indigo-600',
+    },
+    {
+      id: 'join' as const,
+      name: 'Join Team',
+      tagline: "I've been invited to join an existing workspace.",
+      description: 'Accept an invitation link from your team administrator.',
+      icon: <UserPlus className="w-6 h-6" />,
+      color: 'from-emerald-500 to-teal-600',
+    },
+  ];
+
+  const modalTitle =
+    view === 'persona'
+      ? 'Welcome to Vssyl'
+      : view === 'personal-setup'
+        ? 'Set up your personal workspace'
+        : isPersonalScope
+          ? onboardingMode
+            ? 'Choose your applications'
+            : 'Set up your new tab'
+          : 'Build Out Your Dashboard';
+
+  const modalSubtitle =
+    view === 'persona'
+      ? 'Choose how you want to get started. You can always add a business workspace later.'
+      : view === 'personal-setup'
+        ? 'This is your personal workspace — a private home for your files, calendar, and apps. Pick a layout to begin.'
+        : isPersonalScope
+          ? onboardingMode
+            ? `Choose which applications appear on "${dashboardName}".`
+            : `Choose which applications appear on "${dashboardName}".`
+          : `Choose applications for "${dashboardName}"`;
+
+  const personaContent = (
+    <div>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+        {personaOptions.map((option) => (
+          <Card
+            key={option.id}
+            className="cursor-pointer hover:shadow-md transition-all border-2 border-transparent hover:border-blue-200 dark:hover:border-blue-800"
+          >
+            <button
+              type="button"
+              className="p-5 text-left w-full"
+              onClick={() => handlePersonaSelect(option.id)}
+            >
+              <div
+                className={`w-10 h-10 rounded-lg bg-gradient-to-br ${option.color} flex items-center justify-center text-white mb-3`}
+              >
+                {option.icon}
+              </div>
+              <h4 className="font-semibold text-gray-900 dark:text-gray-100 mb-1">{option.name}</h4>
+              <p className="text-sm font-medium text-blue-600 dark:text-blue-400 mb-2">{option.tagline}</p>
+              <p className="text-xs text-gray-600 dark:text-gray-400">{option.description}</p>
+            </button>
+          </Card>
+        ))}
+      </div>
+      <OnboardingHelpLinks />
+    </div>
+  );
+
+  const personalSetupContent = (
+    <div>
+      <div className="mb-6">
+        <h3 className="text-lg font-medium text-gray-900 dark:text-gray-100 mb-2">
+          Quick start with a template
+        </h3>
+        <p className="text-sm text-gray-600 dark:text-gray-400">
+          Templates add widgets to your dashboard so you can take your first action right away.
+        </p>
+      </div>
+      <DashboardTemplates
+        onSelectTemplate={handleTemplateSelect}
+        dashboardType="personal"
+        compact={false}
+      />
+      <div className="flex flex-col sm:flex-row items-center justify-center gap-3 mt-6">
+        <Button variant="secondary" onClick={() => setView('custom')}>
+          Customize applications
+        </Button>
+        <Button variant="ghost" onClick={handleSkipOnboarding}>
+          Skip for now
+        </Button>
+      </div>
+      <OnboardingHelpLinks className="mt-6" />
+    </div>
+  );
 
   const moduleSelectionContent = (
     <div>
@@ -505,6 +660,9 @@ export default function DashboardBuildOutModal({
           )}
         </div>
       )}
+      {onboardingMode && isPersonalScope && view === 'custom' && (
+        <OnboardingHelpLinks className="mt-4" />
+      )}
     </div>
   );
 
@@ -512,13 +670,11 @@ export default function DashboardBuildOutModal({
     <Modal
       open={isOpen}
       onClose={onClose}
-      title={isPersonalScope ? 'Set up your new tab' : 'Build Out Your Dashboard'}
+      title={modalTitle}
       size="xlarge"
     >
       <p className="text-sm text-gray-600 dark:text-gray-400 -mt-v-2 mb-v-4">
-        {isPersonalScope
-          ? `Choose which applications appear on "${dashboardName}".`
-          : `Choose applications for "${dashboardName}"`}
+        {modalSubtitle}
       </p>
 
       <div className="overflow-y-auto max-h-[min(60vh,32rem)] -mx-v-6 px-v-6">
@@ -528,7 +684,11 @@ export default function DashboardBuildOutModal({
           </div>
         )}
 
-        {isPersonalScope ? (
+        {onboardingMode && isPersonalScope && view === 'persona' ? (
+          personaContent
+        ) : onboardingMode && isPersonalScope && view === 'personal-setup' ? (
+          personalSetupContent
+        ) : isPersonalScope ? (
           moduleSelectionContent
         ) : (
           <>
@@ -638,14 +798,21 @@ export default function DashboardBuildOutModal({
               {selectedModules.size} application{selectedModules.size !== 1 ? 's' : ''} selected
             </span>
           )}
+          {onboardingMode && view === 'persona' && (
+            <Button variant="ghost" size="sm" onClick={handleSkipOnboarding}>
+              Skip setup
+            </Button>
+          )}
         </div>
         <div className="flex space-x-3">
-          <Button variant="secondary" onClick={onClose}>
-            Cancel
-          </Button>
-          {(isPersonalScope || view === 'custom') && (
+          {view !== 'persona' && view !== 'personal-setup' && (
+            <Button variant="secondary" onClick={onClose}>
+              Cancel
+            </Button>
+          )}
+          {(isPersonalScope || view === 'custom') && view !== 'persona' && view !== 'personal-setup' && (
             <Button onClick={handleModuleSelectionComplete}>
-              {isPersonalScope ? 'Create tab' : 'Continue with Selected Applications'}
+              {isPersonalScope ? (onboardingMode ? 'Continue' : 'Create tab') : 'Continue with Selected Applications'}
             </Button>
           )}
           {!isPersonalScope && view === 'quick-setup' && (

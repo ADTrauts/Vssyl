@@ -302,6 +302,8 @@ export default function BusinessModulesPage() {
     return marketplaceModules.filter(m => !installedIds.has(m.id));
   };
 
+  const userIsAdmin = isAdmin();
+
   if (loading) {
     return (
       <div className="flex items-center justify-center min-h-screen">
@@ -320,12 +322,102 @@ export default function BusinessModulesPage() {
     );
   }
 
-  if (!isAdmin()) {
+  if (!userIsAdmin) {
+    const employeeInstalled = filterModules(installedModules);
+    const employeeAvailable = filterModules(getAvailableModules());
+
     return (
-      <div className="container mx-auto p-6">
-        <Alert type="warning" title="Access Denied">
-          Only business administrators can manage applications.
-        </Alert>
+      <div className="min-h-screen bg-v-background">
+        <div className="bg-v-surface border-b border-v-border">
+          <div className="container mx-auto px-6 py-6">
+            <div className="flex items-center space-x-4">
+              <Button variant="ghost" size="sm" onClick={() => router.push(`/business/${businessId}/workspace`)}>
+                <ArrowLeft className="w-4 h-4 mr-2" />
+                Back to Workspace
+              </Button>
+              <div>
+                <h1 className="text-2xl font-bold text-v-text-primary">Applications</h1>
+                <p className="text-sm text-v-text-secondary">{business.name}</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="container mx-auto p-6">
+          <Alert type="info" title="View-only access">
+            You are viewing applications as a team member. Workspace administrators install and manage
+            applications for your team.
+          </Alert>
+
+          <div className="flex space-x-4 my-6">
+            <button
+              onClick={() => setActiveTab('installed')}
+              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                activeTab === 'installed'
+                  ? 'bg-blue-500 text-white'
+                  : 'bg-v-surface text-gray-700 hover:bg-v-surface'
+              }`}
+            >
+              Installed ({employeeInstalled.length})
+            </button>
+            <button
+              onClick={() => setActiveTab('marketplace')}
+              className={`px-4 py-2 rounded-lg font-medium transition-colors ${
+                activeTab === 'marketplace'
+                  ? 'bg-blue-500 text-white'
+                  : 'bg-v-surface text-gray-700 hover:bg-v-surface'
+              }`}
+            >
+              Discover ({employeeAvailable.length})
+            </button>
+          </div>
+
+          {activeTab === 'installed' ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {employeeInstalled.length === 0 ? (
+                <div className="col-span-full">
+                  <BusinessAdminEmptyState
+                    icon={<Package className="w-16 h-16" />}
+                    title="No applications installed yet"
+                    description="Your administrator can install applications from the marketplace."
+                  />
+                </div>
+              ) : (
+                employeeInstalled.map((module) => (
+                  <Card key={module.id} className="p-6">
+                    <h3 className="font-semibold text-v-text-primary">{module.name}</h3>
+                    <p className="text-sm text-v-text-secondary mt-2 line-clamp-2">{module.description}</p>
+                    <Badge color="green" className="mt-4">
+                      Available in workspace
+                    </Badge>
+                  </Card>
+                ))
+              )}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+              {employeeAvailable.length === 0 ? (
+                <div className="col-span-full">
+                  <BusinessAdminEmptyState
+                    icon={<Package className="w-16 h-16" />}
+                    title="No additional applications"
+                    description="All marketplace applications are already installed for your workspace."
+                  />
+                </div>
+              ) : (
+                employeeAvailable.map((module) => (
+                  <Card key={module.id} className="p-6">
+                    <h3 className="font-semibold text-v-text-primary">{module.name}</h3>
+                    <p className="text-sm text-v-text-secondary mt-2 line-clamp-2">{module.description}</p>
+                    <p className="text-xs text-v-text-muted mt-4">
+                      Ask your administrator to install this application.
+                    </p>
+                  </Card>
+                ))
+              )}
+            </div>
+          )}
+        </div>
       </div>
     );
   }

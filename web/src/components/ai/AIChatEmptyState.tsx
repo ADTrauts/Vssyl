@@ -58,7 +58,7 @@ export function AIChatEmptyState({
         <div className="max-w-md w-full">
           <EmptyState
             icon={<Brain className="h-16 w-16" />}
-            title="What's on your mind today?"
+            title="Ask your first question"
             description="Ask me anything about your digital life. I can help you schedule meetings, organize files, analyze data, and much more."
           />
         </div>

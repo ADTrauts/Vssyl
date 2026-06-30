@@ -529,7 +529,7 @@ const ChatSidebar: React.FC<ChatSidebarProps> = ({
             <div className="flex flex-col items-center justify-center h-full text-center">
               <MessageSquare className="w-12 h-12 text-gray-300 mb-3" />
               <p className="text-sm text-gray-500 dark:text-gray-400">
-                {searchQuery ? 'No conversations match your search' : 'No conversations yet'}
+                {searchQuery ? 'No conversations match your search' : 'Start your first conversation from the + button above'}
               </p>
             </div>
           ) : (

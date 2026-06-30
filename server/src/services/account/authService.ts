@@ -22,6 +22,7 @@ import {
   sendWelcomeEmail,
 } from '../emailService';
 import { createUserResponse } from './userResponse';
+import * as dashboardService from '../dashboardService';
 
 export class AuthServiceError extends Error {
   constructor(
@@ -225,6 +226,19 @@ export async function registerWithSession(params: {
       error: {
         message: refreshTokenError instanceof Error ? refreshTokenError.message : 'Unknown error',
         stack: refreshTokenError instanceof Error ? refreshTokenError.stack : undefined,
+      },
+    });
+  }
+
+  try {
+    await dashboardService.ensureDefaultPersonalDashboard(user.id);
+  } catch (dashboardError: unknown) {
+    await logger.error('Failed to ensure default personal dashboard during registration', {
+      operation: 'user_registration',
+      userId: user.id,
+      error: {
+        message: dashboardError instanceof Error ? dashboardError.message : 'Unknown error',
+        stack: dashboardError instanceof Error ? dashboardError.stack : undefined,
       },
     });
   }

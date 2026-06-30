@@ -1,10 +1,11 @@
 # Implementation Roadmap
 
 **Program:** Vssyl Product Readiness Program  
-**Date:** 2026-06-30 (updated post Sprint 1)  
-**Purpose:** Implementation waves — Sprint 1 completed items marked ✅
+**Date:** 2026-06-30 (updated post Sprint 2)  
+**Purpose:** Implementation waves — Sprint 1–2 completed items marked ✅
 
-**Sprint 1 closeout:** [COMMERCIAL_READINESS_SPRINT_1.md](./COMMERCIAL_READINESS_SPRINT_1.md)
+**Sprint 1 closeout:** [COMMERCIAL_READINESS_SPRINT_1.md](./COMMERCIAL_READINESS_SPRINT_1.md)  
+**Sprint 2 closeout:** [FIRST_HOUR_EXPERIENCE_SPRINT_2.md](./FIRST_HOUR_EXPERIENCE_SPRINT_2.md)
 
 **Principle:** Extend existing implementations. No architecture redesign.
 
@@ -16,11 +17,11 @@
 |------|-------|--------|--------------|
 | **1** | Landing website trust & honesty | 2–3 weeks | — | ✅ **Sprint 1** |
 | **2** | Authentication & signup | 2–3 weeks | — | ✅ **Sprint 1** (core items) |
-| **3** | Workspace creation | 2–3 weeks | Wave 2 (invite page) |
-| **4** | Dashboard templates & first-run | 1–2 weeks | Wave 3 |
-| **5** | Application discovery | 2–4 weeks | Wave 2 |
+| **3** | Workspace creation | 2–3 weeks | Wave 2 (invite page) | ✅ **Sprint 2** (core items) |
+| **4** | Dashboard templates & first-run | 1–2 weeks | Wave 3 | ✅ **Sprint 2** (core items) |
+| **5** | Application discovery | 2–4 weeks | Wave 2 | ⚠️ **Sprint 2** (partial — employee read-only) |
 | **6** | Visual polish | 2–3 weeks | Wave 1 |
-| **7** | First hour experience | 2–3 weeks | Waves 3–5 |
+| **7** | First hour experience | 2–3 weeks | Waves 3–5 | ✅ **Sprint 2** (core items) |
 
 **Total estimated effort:** 13–21 engineering weeks (sequential); **8–12 weeks** with parallel tracks.
 
@@ -96,12 +97,12 @@
 
 | # | Task | Preserves | Effort |
 |---|------|-----------|--------|
-| 3.1 | Call `ensureDefaultPersonalDashboard` during `registerWithSession` | `authService.ts` | S |
-| 3.2 | Extend `DashboardBuildOutModal` with persona branches | Existing modal | M |
-| 3.3 | "Create business" branch → `/business/create` | Business create flow | S |
-| 3.4 | "I have an invite" branch → `/auth/accept-invitation` | Wave 2.1 | S |
+| 3.1 | Call `ensureDefaultPersonalDashboard` during `registerWithSession` | `authService.ts` | S | ✅ |
+| 3.2 | Extend `DashboardBuildOutModal` with persona branches | Existing modal | M | ✅ |
+| 3.3 | "Create business" branch → `/business/create` | Business create flow | S | ✅ |
+| 3.4 | "I have an invite" branch → `/auth/accept-invitation` | Wave 2.1 | S | ✅ |
 | 3.5 | Optional: registration `?intent=business|personal` query param | Register page | S |
-| 3.6 | Surface business setup checklist link prominently post-create | `getBusinessSetupStatus` | S |
+| 3.6 | Surface business setup checklist link prominently post-create | `getBusinessSetupStatus` | S | ✅ Hub checklist |
 | 3.7 | Review EIN requirement — document or relax for pilot | `business/create` | M |
 
 ### Dependencies
@@ -124,11 +125,11 @@
 
 | # | Task | Preserves | Effort |
 |---|------|-----------|--------|
-| 4.1 | Surface `DashboardTemplates` in build-out modal — "Start from template" | `DashboardTemplates.tsx` | M |
-| 4.2 | Wire `handleApplyTemplate` for `selectedModuleIds` + widgets | `DashboardClient.tsx` | M |
-| 4.3 | Recommend template by persona (personal/business/household) | Template `recommended` flags | S |
-| 4.4 | Welcome empty state on dashboard when user skips build-out | `EmptyState` pattern | S |
-| 4.5 | First-task hints on core module hubs (optional) | Module landing components | M |
+| 4.1 | Surface `DashboardTemplates` in build-out modal — "Start from template" | `DashboardTemplates.tsx` | M | ✅ |
+| 4.2 | Wire `handleApplyTemplate` for `selectedModuleIds` + widgets | `DashboardClient.tsx` | M | ✅ |
+| 4.3 | Recommend template by persona (personal/business/household) | Template `recommended` flags | S | ✅ |
+| 4.4 | Welcome empty state on dashboard when user skips build-out | `EmptyState` pattern | S | ✅ |
+| 4.5 | First-task hints on core module hubs (optional) | Module landing components | M | ✅ |
 
 ### Dependencies
 
@@ -149,9 +150,9 @@
 
 | # | Task | Preserves | Effort |
 |---|------|-----------|--------|
-| 5.1 | Hide business-scope install/uninstall for non-admin members on `/modules` | API policy already correct | S |
-| 5.2 | Add `canManage` to `/business/[id]/modules` UI gate | Match `policyEngine.ts` | S |
-| 5.3 | Employee read-only "installed modules" view for business | New UI + optional API read | M |
+| 5.1 | Hide business-scope install/uninstall for non-admin members on `/modules` | API policy already correct | S | ✅ |
+| 5.2 | Add `canManage` to `/business/[id]/modules` UI gate | Match `policyEngine.ts` | S | ✅ |
+| 5.3 | Employee read-only "installed modules" view for business | New UI + optional API read | M | ✅ |
 | 5.4 | Public read-only marketplace catalog (unauthenticated browse) | `getMarketplaceModules` filter | L |
 | 5.5 | Business paid module checkout E2E | `businessModuleSubscriptionService` | L |
 | 5.6 | Fix module version update without PENDING delist | `moduleArtifactController.ts` | M |
@@ -209,7 +210,7 @@
 | 7.1 | Publish public Getting Started doc at `/docs` | `docs/guides/` curated | M |
 | 7.2 | Publish Help FAQ at `/help` | Content strategy FAQ | M |
 | 7.3 | Publish Business Admin + Join Your Team docs | Internal guides abridged | M |
-| 7.4 | In-app link to docs from dashboard build-out modal | Modal footer link | S |
+| 7.4 | In-app link to docs from dashboard build-out modal | Modal footer link | S | ✅ |
 | 7.5 | Optional: link to AI onboarding from build-out | `AIOnboardingFlow` | S |
 | 7.6 | Implement Stripe trial OR finalize copy alignment | Wave 1 + billing | M |
 | 7.7 | Instrument signup → first-action analytics (minimal) | Admin analytics or event | M |
@@ -288,4 +289,4 @@ flowchart LR
 
 ---
 
-*Roadmap planning only — no implementation authorized.*
+*Roadmap updated post Sprint 2 — see [FIRST_HOUR_EXPERIENCE_SPRINT_2.md](./FIRST_HOUR_EXPERIENCE_SPRINT_2.md).*
