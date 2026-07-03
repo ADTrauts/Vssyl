@@ -1,11 +1,13 @@
-/**
- * Backward-compatible re-exports. Prefer importing from `./email` directly.
- */
 export {
   getAppBaseUrl,
   getEmailAddressDefaults,
+  getSmtpConfig,
   isEmailConfigured,
-  sendEmail,
+} from './config';
+export { sendEmail } from './sendEmail';
+export { getEmailTransport, resetEmailTransportForTests } from './transport';
+export type { EmailAddressDefaults, SendEmailOptions, SendEmailResult } from './types';
+export {
   sendBusinessInvitationEmail,
   sendCalendarCancelEmail,
   sendCalendarInviteEmail,
@@ -16,5 +18,4 @@ export {
   sendSupportInboundEmail,
   sendVerificationEmail,
   sendWelcomeEmail,
-} from './email';
-export type { SendEmailOptions, SendEmailResult } from './email';
+} from './transactional';

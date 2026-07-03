@@ -3,6 +3,7 @@ import { body } from 'express-validator';
 import { validate } from '../middleware/validateRequest';
 import { logger } from '../lib/logger';
 import { sendContactFormEmail } from '../services/emailService';
+import { isEmailConfigured } from '../services/email';
 
 const router: express.Router = express.Router();
 
@@ -24,7 +25,17 @@ router.post('/', contactBody, async (req: Request, res: Response) => {
       company?: string;
     };
 
-    await sendContactFormEmail({ name, email, subject, message, company });
+    if (!isEmailConfigured()) {
+      res.status(503).json({
+        error: 'Email delivery is temporarily unavailable. Please email support@vssyl.com directly.',
+      });
+      return;
+    }
+
+    const result = await sendContactFormEmail({ name, email, subject, message, company });
+    if (!result.sent) {
+      throw new Error('Contact form email delivery failed');
+    }
 
     res.json({ success: true, message: 'Message sent successfully' });
   } catch (error: unknown) {

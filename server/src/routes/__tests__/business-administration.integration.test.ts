@@ -102,7 +102,7 @@ describe('/api/business — integration contracts (BA-1D)', () => {
 
   beforeEach(() => {
     vi.restoreAllMocks();
-    vi.spyOn(emailService, 'sendBusinessInvitationEmail').mockResolvedValue(undefined);
+    vi.spyOn(emailService, 'sendBusinessInvitationEmail').mockResolvedValue({ sent: true });
     vi.spyOn(moduleActivity, 'emitModuleActivityEvent').mockResolvedValue('evt_test');
     vi.spyOn(dashboardService, 'ensureBusinessDashboardForUser').mockResolvedValue({
       id: 'dash-ba-1d',

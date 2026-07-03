@@ -17,6 +17,7 @@ import {
   deleteAllUserRefreshTokens,
 } from '../../utils/tokenUtils';
 import {
+  isEmailConfigured,
   sendVerificationEmail,
   sendPasswordResetEmail,
   sendWelcomeEmail,
@@ -95,7 +96,7 @@ async function ensurePersonalPrimaryCalendar(user: User, mainName?: string): Pro
 
 async function handlePostRegistrationEmail(user: User): Promise<void> {
   try {
-    if (process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASS) {
+    if (isEmailConfigured()) {
       try {
         const verificationToken = await createEmailVerificationToken(user.id);
         await sendVerificationEmail(user.email, verificationToken);
