@@ -145,3 +145,14 @@ Run in production with a test mailbox:
 | Blocking beta? | **Yes** — invitations and reset require SMTP |
 
 **Minimum for 20-business beta:** M1–M8 pass in production.
+
+---
+
+## Smoke test log
+
+See **[SMTP_SMOKE_TEST_RESULTS.md](./SMTP_SMOKE_TEST_RESULTS.md)** for latest live test results.
+
+| Date | Provider | Result |
+|------|----------|--------|
+| 2026-07-03 | Postmark SMTP (local) | ❌ 0/4 — auth failed (no Server API token in env) |
+| 2026-07-03 | Production `/api/contact` | ❌ 500 — SMTP not delivering |
