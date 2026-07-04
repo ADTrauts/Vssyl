@@ -43,9 +43,9 @@ SMTP_USER=<server-api-token> SMTP_PASS=<server-api-token> \
 | Check | Result |
 |-------|--------|
 | Transport init | ✅ Connected to `smtp.postmarkapp.com:587` |
-| `transporter.verify()` | ❌ **Failed** — `535 5.7.8 authentication failed` |
+| `transporter.verify()` | ✅ **OK** (2026-07-04, after Secret Manager update) |
 
-**Root cause:** Postmark Server API token not available in local env or GCP Secret Manager (gcloud auth expired). Local `.env.production` still contains interim **Gmail** SMTP credentials, which Postmark rejects.
+**Credentials:** Postmark Server API token stored in GCP Secret Manager (`smtp-user`, `smtp-pass`); `EMAIL_FROM` in `smtp-from`.
 
 ---
 
@@ -53,12 +53,12 @@ SMTP_USER=<server-api-token> SMTP_PASS=<server-api-token> \
 
 | # | Test | Function | Sent | Notes |
 |---|------|----------|------|-------|
-| 1 | Contact form → support | `sendContactFormEmail` | ❌ | Auth failure before send |
-| 2 | Password reset | `sendPasswordResetEmail` | ❌ | Auth failure before send |
-| 3 | Business invitation | `sendBusinessInvitationEmail` | ❌ | Auth failure before send |
-| 4 | Email verification | `sendVerificationEmail` | ❌ | Auth failure before send |
+| 1 | Contact form → support | `sendContactFormEmail` | ✅ | 2026-07-04 |
+| 2 | Password reset | `sendPasswordResetEmail` | ✅ | 2026-07-04 |
+| 3 | Business invitation | `sendBusinessInvitationEmail` | ✅ | 2026-07-04 |
+| 4 | Email verification | `sendVerificationEmail` | ✅ | 2026-07-04 |
 
-**Summary:** 0 / 4 passed
+**Summary:** 4 / 4 passed (2026-07-04)
 
 ---
 
@@ -66,9 +66,7 @@ SMTP_USER=<server-api-token> SMTP_PASS=<server-api-token> \
 
 | Endpoint | Result |
 |----------|--------|
-| `POST /api/contact` (Cloud Run) | ❌ `500` — email delivery failed |
-
-Production SMTP is not yet delivering mail (likely same missing/invalid Postmark configuration on Cloud Run).
+| `POST /api/contact` (Cloud Run) | ✅ `200` — message sent (2026-07-04) |
 
 ---
 
@@ -77,19 +75,8 @@ Production SMTP is not yet delivering mail (likely same missing/invalid Postmark
 | Item | Status |
 |------|--------|
 | Email module refactor | ✅ Deployed to `main` |
-| Postmark SMTP credentials | ❌ **Not configured** for smoke test |
-| Live email delivery | ❌ **Blocked** until Postmark Server API token is set |
-| Operator action | Set `SMTP_USER`/`SMTP_PASS` to Postmark Server API token in Secret Manager + Cloud Run; verify sender signature for `no-reply@vssyl.com` |
+| Postmark SMTP credentials | ✅ In Secret Manager + Cloud Run revision `vssyl-server-00687-jj6` |
+| Live email delivery | ✅ **Working** |
+| Operator action | Confirm inbox delivery; verify Postmark sender signature / DNS if needed |
 
----
-
-## Rerun checklist (operator)
-
-1. Create Postmark **Server API token** (not Account token).
-2. Verify sender signature: `no-reply@vssyl.com`.
-3. Export token locally: `export POSTMARK_SERVER_TOKEN=<token>` (do not commit).
-4. Run smoke script (command above).
-5. Confirm 4 emails in `andrew.trautman@vssyl.com` inbox.
-6. Update this file with pass/fail and message IDs.
-
-**Last run:** 2026-07-03 — all tests failed (auth).
+**Last run:** 2026-07-04 — all tests passed.

@@ -156,3 +156,5 @@ See **[SMTP_SMOKE_TEST_RESULTS.md](./SMTP_SMOKE_TEST_RESULTS.md)** for latest li
 |------|----------|--------|
 | 2026-07-03 | Postmark SMTP (local) | ❌ 0/4 — auth failed (no Server API token in env) |
 | 2026-07-03 | Production `/api/contact` | ❌ 500 — SMTP not delivering |
+| 2026-07-04 | Postmark SMTP (GCP secrets) | ✅ 4/4 passed |
+| 2026-07-04 | Production `/api/contact` | ✅ 200 |
