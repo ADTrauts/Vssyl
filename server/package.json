@@ -29,6 +29,7 @@
     "seed:reset-place-tester-password": "ts-node scripts/reset-test-user-password.ts",
     "ensure:calendars": "ts-node scripts/ensure-personal-calendars.ts",
     "smtp:smoke": "ts-node scripts/smtp-smoke-test.ts",
+    "email:previews": "ts-node scripts/render-email-previews.ts",
     "backfill:ai-recall-index": "ts-node scripts/backfill-ai-message-recall-index.ts",
     "stripe:verify": "ts-node src/scripts/verifyStripeSetup.ts",
     "stripe:sync": "ts-node src/scripts/syncStripePrices.ts",

@@ -1,6 +1,7 @@
 import { prisma } from '../lib/prisma';
 import { logger } from '../lib/logger';
 import { isEmailConfigured, sendEmail as deliverEmail } from './email';
+import { buildNotificationEmail } from './email/templates';
 
 function logSrvErr(operation: string, message: string, err: unknown, context?: Record<string, unknown>): void {
   const e = err instanceof Error ? err : new Error(String(err));
@@ -177,110 +178,18 @@ export class EmailNotificationService {
   /**
    * Create email template from notification data
    */
-  createTemplateFromNotification(notification: NotificationData, user: UserData): EmailTemplate {
-    const appName = 'Vssyl';
-    const appUrl = process.env.NEXT_PUBLIC_APP_URL || 'https://vssyl.com';
-
-    const getNotificationIcon = (type: string) => {
-      switch (type) {
-        case 'chat':
-        case 'mentions':
-          return '💬';
-        case 'drive':
-          return '📁';
-        case 'business':
-          return '🏢';
-        case 'system':
-          return '🔔';
-        default:
-          return '📧';
-      }
+  createTemplateFromNotification(notification: NotificationData, _user: UserData): EmailTemplate {
+    const branded = buildNotificationEmail({
+      type: notification.type,
+      title: notification.title,
+      body: notification.body,
+      data: notification.data,
+    });
+    return {
+      subject: branded.subject,
+      html: branded.html,
+      text: branded.text,
     };
-
-    const getActionUrl = (type: string, data: Record<string, unknown>) => {
-      switch (type) {
-        case 'chat':
-        case 'mentions':
-          return data?.conversationId ? `${appUrl}/chat/${data.conversationId}` : `${appUrl}/notifications`;
-        case 'drive':
-          return data?.fileId ? `${appUrl}/drive/file/${data.fileId}` : `${appUrl}/drive`;
-        case 'business':
-          return data?.businessId ? `${appUrl}/business/${data.businessId}` : `${appUrl}/business`;
-        default:
-          return `${appUrl}/notifications`;
-      }
-    };
-
-    const icon = getNotificationIcon(notification.type);
-    const actionUrl = getActionUrl(notification.type, notification.data || {});
-
-    const subject = `${icon} ${notification.title}`;
-
-    const html = `
-      <!DOCTYPE html>
-      <html>
-        <head>
-          <meta charset="utf-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>${notification.title}</title>
-          <style>
-            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; line-height: 1.6; color: #333; }
-            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-            .header { background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px; }
-            .content { background: white; padding: 20px; border-radius: 8px; border: 1px solid #e9ecef; }
-            .button { display: inline-block; padding: 12px 24px; background: #007bff; color: white; text-decoration: none; border-radius: 6px; margin: 20px 0; }
-            .footer { margin-top: 30px; padding-top: 20px; border-top: 1px solid #e9ecef; font-size: 14px; color: #6c757d; }
-            .notification-icon { font-size: 24px; margin-right: 10px; }
-          </style>
-        </head>
-        <body>
-          <div class="container">
-            <div class="header">
-              <h1 style="margin: 0; color: #495057;">
-                <span class="notification-icon">${icon}</span>
-                ${appName}
-              </h1>
-            </div>
-            
-            <div class="content">
-              <h2 style="margin-top: 0; color: #212529;">${notification.title}</h2>
-              ${notification.body ? `<p style="color: #6c757d; font-size: 16px;">${notification.body}</p>` : ''}
-              
-              <a href="${actionUrl}" class="button">View Details</a>
-              
-              <p style="margin-top: 30px; font-size: 14px; color: #6c757d;">
-                You're receiving this email because you have email notifications enabled for ${notification.type} events.
-              </p>
-            </div>
-            
-            <div class="footer">
-              <p>
-                <a href="${appUrl}/notifications/settings" style="color: #007bff;">Manage notification preferences</a> |
-                <a href="${appUrl}/notifications" style="color: #007bff;">View all notifications</a>
-              </p>
-              <p style="margin: 0;">
-                © ${new Date().getFullYear()} ${appName}. All rights reserved.
-              </p>
-            </div>
-          </div>
-        </body>
-      </html>
-    `;
-
-    const text = `
-${appName} - ${notification.title}
-
-${notification.body || ''}
-
-View Details: ${actionUrl}
-
-Manage notification preferences: ${appUrl}/notifications/settings
-View all notifications: ${appUrl}/notifications
-
-© ${new Date().getFullYear()} ${appName}. All rights reserved.
-    `.trim();
-
-    return { subject, html, text };
   }
 
   /**

@@ -69,8 +69,8 @@ BILLING_EMAIL=billing@vssyl.com
 
 | Email | Function | Template quality | Tested live |
 |-------|----------|------------------|-------------|
-| Registration verification | `sendVerificationEmail` | ⚠️ Basic HTML | 🔧 |
-| Welcome | `sendWelcomeEmail` | ⚠️ Basic HTML | 🔧 |
+| Registration verification | `sendVerificationEmail` | ✅ Branded HTML | 🔧 |
+| Welcome | `sendWelcomeEmail` | ✅ Branded HTML | 🔧 |
 | Password reset | `sendPasswordResetEmail` | ✅ Token in URL | 🔧 |
 | Business invitation | `sendBusinessInvitationEmail` | ✅ Branded HTML | 🔧 |
 | Contact form (to support) | `sendContactFormEmail` | ✅ | 🔧 |

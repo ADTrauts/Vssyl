@@ -18,6 +18,7 @@ playwright-report/
 # QA seed files (local test business/dashboard IDs — do not commit)
 **/qa-evidence/**/qa-seed.json
 server/.env
+server/tmp/
 .env.local
 .env.production
 .env.development

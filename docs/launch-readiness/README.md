@@ -17,6 +17,7 @@
 | 3 | [PRODUCTION_VALIDATION_REPORT.md](./PRODUCTION_VALIDATION_REPORT.md) | Live URL checks, test results, operator gaps |
 | 4 | [STRIPE_PRODUCTION_CHECKLIST.md](./STRIPE_PRODUCTION_CHECKLIST.md) | Billing stack verification checklist |
 | 5 | [SMTP_PRODUCTION_CHECKLIST.md](./SMTP_PRODUCTION_CHECKLIST.md) | Email delivery checklist |
+| 5b | [EMAIL_EXPERIENCE_BRANDING.md](./EMAIL_EXPERIENCE_BRANDING.md) | Branded transactional email templates |
 | 6 | [OPERATIONS_READINESS.md](./OPERATIONS_READINESS.md) | Infra, secrets, health, monitoring |
 | 7 | [LAUNCH_CHECKLIST.md](./LAUNCH_CHECKLIST.md) | Comprehensive capability checklist |
 | 8 | [EARLY_BETA_READINESS.md](./EARLY_BETA_READINESS.md) | Controlled beta criteria and runbook |

@@ -101,7 +101,12 @@ export async function sendEventCreatedInviteEmails(params: {
       await sendCalendarInviteEmail({
         toEmail: email,
         subject: `Invitation: ${params.event.title}`,
-        bodyHtml: `<p>You are invited to: <strong>${params.event.title}</strong></p>`,
+        bodyHtml: '',
+        eventTitle: params.event.title,
+        organizerName: organizer?.name ?? null,
+        startAt: params.event.startAt,
+        endAt: params.event.endAt,
+        location: params.event.location,
         icsContent: ics,
       });
     }
@@ -142,7 +147,12 @@ export async function sendEventUpdatedEmails(params: {
       await sendCalendarUpdateEmail({
         toEmail: attendeeEmail,
         subject: `Updated: ${params.event.title}`,
-        bodyHtml: `<p>Event updated: <strong>${params.event.title}</strong></p>`,
+        bodyHtml: '',
+        eventTitle: params.event.title,
+        organizerName: organizer?.name ?? null,
+        startAt: params.event.startAt,
+        endAt: params.event.endAt,
+        location: params.event.location,
         icsContent: ics,
       });
     }
@@ -159,6 +169,11 @@ export async function sendEventCanceledEmails(params: {
   eventId: string;
 }): Promise<void> {
   try {
+    const event = await prisma.event.findUnique({
+      where: { id: params.eventId },
+      select: { id: true, title: true, startAt: true, endAt: true, location: true, createdById: true },
+    });
+
     const attendeeEmails = (
       await prisma.eventAttendee.findMany({
         where: { eventId: params.eventId, email: { not: null } },
@@ -170,8 +185,16 @@ export async function sendEventCanceledEmails(params: {
 
     if (attendeeEmails.length === 0) return;
 
+    const organizer = event?.createdById ? await loadOrganizer(event.createdById) : null;
+    const eventTitle = event?.title ?? 'Event';
+
     const ics = buildInviteIcsContent({
-      event: { id: params.eventId, title: '', startAt: new Date(), endAt: new Date() },
+      event: {
+        id: params.eventId,
+        title: eventTitle,
+        startAt: event?.startAt ?? new Date(),
+        endAt: event?.endAt ?? new Date(),
+      },
       attendeeEmails: [],
       method: 'CANCEL',
     });
@@ -179,8 +202,13 @@ export async function sendEventCanceledEmails(params: {
     for (const attendeeEmail of attendeeEmails) {
       await sendCalendarCancelEmail({
         toEmail: attendeeEmail,
-        subject: 'Cancelled: Event',
-        bodyHtml: '<p>An event has been cancelled.</p>',
+        subject: `Cancelled: ${eventTitle}`,
+        bodyHtml: '',
+        eventTitle,
+        organizerName: organizer?.name ?? null,
+        startAt: event?.startAt,
+        endAt: event?.endAt,
+        location: event?.location,
         icsContent: ics,
       });
     }
