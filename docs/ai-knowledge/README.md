@@ -1,7 +1,7 @@
 # AI Knowledge Reference Program
 
 **Program:** AI Knowledge Reference Program  
-**Phase:** 0A — Knowledge Architecture Discovery  
+**Phase:** 0B — Vssyl Knowledge Engine & Teach Vssyl Specification *(0A complete)*  
 **Date:** 2026-07-05  
 **Constraint:** Preserve existing AI architecture. Consolidation and product clarity only.
 
@@ -17,7 +17,21 @@
 | [Operator Model](./AI_KNOWLEDGE_OPERATOR_MODEL.md) | Operations Platform AI section evolution |
 | [User Experience](./AI_KNOWLEDGE_USER_EXPERIENCE.md) | How users teach Vssyl today and should tomorrow |
 | [AI Pipeline Review](./AI_PIPELINE_REVIEW.md) | Audit of existing operator AI Pipeline |
-| [Correction Workflow](./AI_CORRECTION_WORKFLOW.md) | Designed (not implemented) correction UX |
+| [Correction Workflow](./AI_CORRECTION_WORKFLOW.md) | Phase 0A correction UX wireframes (superseded in detail by 0B routing spec) |
+
+## Phase 0B — Knowledge Engine & Teach Vssyl (2026-07-05)
+
+Canonical specification for how Vssyl should be taught. **Documentation only — no implementation.**
+
+| Document | Purpose |
+|----------|---------|
+| [Phase 0B Executive Summary](./AI_KNOWLEDGE_PHASE_0B_EXECUTIVE_SUMMARY.md) | Decisions, lifecycle summary, Phase 1 scope |
+| [Knowledge Engine Spec](./AI_KNOWLEDGE_ENGINE_SPEC.md) | Engine definition — existing components, no new store |
+| [Knowledge Lifecycle](./KNOWLEDGE_LIFECYCLE.md) | Observation → regression protection |
+| [Teach Vssyl Product Spec](./TEACH_VSSYL_PRODUCT_SPEC.md) | Product flows and surfaces |
+| [Type → Store Matrix](./KNOWLEDGE_TYPE_TO_STORE_MATRIX.md) | Canonical knowledge type routing |
+| [Correction Routing Spec](./AI_CORRECTION_ROUTING_SPEC.md) | Governance modes and API routing |
+| [Eval Loop Spec](./AI_KNOWLEDGE_EVAL_LOOP_SPEC.md) | Minimum proof before Teach Vssyl ships |
 
 ## Deep dive audit (2026-07-05)
 
