@@ -54,10 +54,10 @@
 | Item | Status | Risk | Blocking? | Owner |
 |------|--------|------|-----------|-------|
 | `/billing` hub | ✅ | Low | No | Eng |
-| Stripe checkout | ⚠️ Webhook ✅; test keys; browser E2E 🔧 | Critical | 🚫 for live paid | Ops |
-| Webhooks → entitlements | ✅ Signature verified in prod (2026-07-05) | Critical | No for test-mode beta | Ops |
-| Customer portal | ⚠️ | Medium | No for free beta | Ops |
-| Cancel / upgrade | ⚠️ | Medium | No for free beta | Ops |
+| Stripe checkout | ✅ Test-mode E2E verified (2026-07-05) | Critical | 🚫 for **live** paid — still `sk_test_` | Ops |
+| Webhooks → entitlements | ✅ Real + signed probe; checkout sync verified | Critical | No for test-mode beta | Ops |
+| Customer portal | ✅ Opens from `/billing` | Medium | No | Ops |
+| Cancel / upgrade | ⚠️ Cancel works; UI hides cancelled rows | Medium | No for test beta | Ops |
 | Module subscriptions | ⚠️ | Medium | Partial | Eng |
 | Seat billing UI | ⚠️ | Medium | No | Eng |
 | Free tier usable without payment | ✅ | Low | No | Eng |
