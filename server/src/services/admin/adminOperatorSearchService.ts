@@ -6,6 +6,7 @@ export type OperatorSearchResultType =
   | 'module'
   | 'ticket'
   | 'subscription'
+  | 'invitation'
   | 'setting';
 
 export interface OperatorSearchResult {
@@ -24,7 +25,7 @@ export async function searchOperatorConsole(query: string): Promise<OperatorSear
 
   const contains = { contains: q, mode: 'insensitive' as const };
 
-  const [businesses, users, modules, tickets, subscriptions, configs] = await Promise.all([
+  const [businesses, users, modules, tickets, subscriptions, invitations, configs] = await Promise.all([
     prisma.business.findMany({
       where: {
         OR: [{ name: contains }, { email: contains }, { ein: contains }],
@@ -74,6 +75,18 @@ export async function searchOperatorConsole(query: string): Promise<OperatorSear
         status: true,
         stripeCustomerId: true,
         user: { select: { email: true } },
+      },
+    }),
+    prisma.businessInvitation.findMany({
+      where: { email: contains },
+      take: MAX_PER_TYPE,
+      orderBy: { createdAt: 'desc' },
+      select: {
+        id: true,
+        email: true,
+        acceptedAt: true,
+        expiresAt: true,
+        business: { select: { id: true, name: true } },
       },
     }),
     prisma.systemConfig.findMany({
@@ -129,12 +142,24 @@ export async function searchOperatorConsole(query: string): Promise<OperatorSear
   }
 
   for (const s of subscriptions) {
+    const customerQuery = s.stripeCustomerId ? `?customer=${s.stripeCustomerId}` : `?subscription=${s.id}`;
     results.push({
       type: 'subscription',
       id: s.id,
       label: s.user.email,
       subtitle: `${s.tier} · ${s.status}${s.stripeCustomerId ? ` · ${s.stripeCustomerId}` : ''}`,
-      href: `/admin-portal/billing?subscription=${s.id}`,
+      href: `/admin-portal/billing${customerQuery}`,
+    });
+  }
+
+  for (const inv of invitations) {
+    const status = inv.acceptedAt ? 'accepted' : inv.expiresAt < new Date() ? 'expired' : 'pending';
+    results.push({
+      type: 'invitation',
+      id: inv.id,
+      label: inv.email,
+      subtitle: `${status} · ${inv.business.name}`,
+      href: `/admin-portal/businesses?highlight=${inv.business.id}&invitationSearch=${encodeURIComponent(inv.email)}`,
     });
   }
 

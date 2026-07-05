@@ -2,11 +2,11 @@
 
 **Program:** Admin Portal Reference Program — Operational Excellence Phase 0A  
 **Date:** 2026-07-05  
-**Status:** Wave 2 complete — Readiness validation complete — Wave 3 scoped
+**Status:** Wave 3 complete — Wave 4 scoped
 
 **Product name (UI):** Operations Platform — routes remain `/admin-portal`.
 
-**Pre–Wave 3 gate:** [Operational Readiness Validation](./OPERATIONS_PLATFORM_READINESS_VALIDATION.md) — workflow-adjusted readiness **~85%** (feature maturity 93%).
+**Post–Wave 3:** [Wave 3 Closeout](./OPERATIONS_PLATFORM_WAVE_3_CLOSEOUT.md) — workflow-adjusted readiness **~91%** (feature maturity 93%).
 
 **Constraint:** Consolidation over creation. No architecture redesign. No parallel systems. Do not rebuild completed subsystems (AI Pipeline, module certification, billing, impersonation).
 

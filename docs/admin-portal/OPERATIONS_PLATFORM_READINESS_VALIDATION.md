@@ -3,6 +3,7 @@
 **Program:** Operations Platform Reference Program  
 **Date:** 2026-07-05  
 **Status:** Pre–Wave 3 validation (documentation only)  
+**Post–Wave 3 update:** 2026-07-05 — Scenarios 2, 3, 6 re-tested after [Wave 3 Closeout](./OPERATIONS_PLATFORM_WAVE_3_CLOSEOUT.md)
 **Method:** Operator workflow walkthrough against Waves 0–2 implementation  
 **Technical maturity (pre-validation):** ~93%  
 **Workflow-adjusted readiness (post-validation):** **~85%**
@@ -362,3 +363,17 @@ The Operations Platform has earned the right to be Vssyl's operational home. Wav
 ---
 
 **Validator conclusion:** The founder **can** operate 100 paying businesses tomorrow. They will **not** be comfortable at peak support and billing-incident load until Wave 3 P0 ships. No architectural blockers remain—only friction.
+
+---
+
+## 11. Post–Wave 3 re-validation (Scenarios 2, 3, 6)
+
+**Reference:** [Wave 3 Closeout](./OPERATIONS_PLATFORM_WAVE_3_CLOSEOUT.md)
+
+| Scenario | Clicks (before) | Clicks (after) | Pages (after) | Remaining friction |
+|----------|----------------:|---------------:|---------------|-------------------|
+| 2 — Invitation not received | 8–12 | **3–4** | Businesses (+ Email Ops optional) | Per-invitation log ID; users highlight |
+| 3 — Stripe payment failed | 10+ | **3–4** | Billing (+ Stripe dashboard) | No in-app cancel; Stripe Dashboard for remediation |
+| 6 — Support ticket | 12+ | **3–5** | Support (sidebar in modal) | Plan field still placeholder on ticket |
+
+**Workflow-adjusted readiness:** **~85%** → **~91%**

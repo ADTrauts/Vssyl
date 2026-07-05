@@ -2,9 +2,9 @@
 
 **Program:** Operations Platform Reference Program (formerly Admin Portal Reference Program)  
 **Date:** 2026-07-05  
-**Status:** Wave 2 complete — Operational Readiness Validation complete (pre–Wave 3)
+**Status:** Wave 3 complete — Operator Workflow Completion (2026-07-05)
 
-**Deliverables:** [Readiness Validation](./OPERATIONS_PLATFORM_READINESS_VALIDATION.md) · [Wave 2 Closeout](./OPERATIONS_PLATFORM_WAVE_2_CLOSEOUT.md) · [Modernization Plan](./ADMIN_PORTAL_MODERNIZATION_PLAN.md)
+**Deliverables:** [Wave 3 Closeout](./OPERATIONS_PLATFORM_WAVE_3_CLOSEOUT.md) · [Readiness Validation](./OPERATIONS_PLATFORM_READINESS_VALIDATION.md) · [Wave 2 Closeout](./OPERATIONS_PLATFORM_WAVE_2_CLOSEOUT.md) · [Modernization Plan](./ADMIN_PORTAL_MODERNIZATION_PLAN.md)
 
 ---
 
@@ -20,35 +20,36 @@ Customer-facing terminology is now **Operations Platform** (routes remain `/admi
 
 | Answer | Detail |
 |--------|--------|
-| **Yes** | For 93% of operator workflows today |
-| **Conditional** | Postmark bounce analytics, jobs monitor, probe persistence remain Wave 3 |
+| **Yes** | For ~91% of operator workflows (post–Wave 3) |
+| **Conditional** | Postmark bounce analytics, jobs monitor, probe persistence remain Wave 4 |
 | **No rebuild** | AI Pipeline, module gate, billing, impersonation are production-grade |
 
 ---
 
 ## Current operational maturity
 
-### **~93%** (post–Wave 2, weighted)
+### **~91%** (post–Wave 3, workflow-adjusted)
 
-| Dimension | Score (post–Wave 2) |
+| Dimension | Score (post–Wave 3) |
 |-----------|-------------------:|
 | User & access ops | 93% |
-| Business workspace ops | 90% |
-| Email & comms ops | 85% |
-| Billing & commercial | 88% |
+| Business workspace ops | 92% |
+| Email & comms ops | 86% |
+| Billing & commercial | 91% |
 | Operator analytics | 84% |
 | Platform health & infra | 82% |
 | AI administration | 91% |
 | Configuration & flags | 72% |
 | Security & audit | 85% |
+| Support triage | 82% |
 
-**Prior (Wave 1):** ~90%. **Prior (Wave 0):** ~86%. **Workflow-adjusted readiness (Jul 2026 validation):** **~85%**. **Target after Wave 3 P0:** ~91%.
+**Prior (Wave 2 feature maturity):** ~93%. **Workflow-adjusted (pre–Wave 3):** ~85%. **Workflow-adjusted (post–Wave 3):** **~91%**.
 
 ### Pre–Wave 3 validation (2026-07-05)
 
 Seven operator scenarios walkthrough → [Readiness Validation](./OPERATIONS_PLATFORM_READINESS_VALIDATION.md).
 
-**Verdict:** Conditional yes for 100 businesses. **Blockers are workflow friction** (support context sidebar, billing actions/Stripe links, invitation UI)—not architecture.
+**Verdict:** Conditional yes for 100 businesses. Wave 3 addressed support context, billing actions/Stripe links, and invitation UI. Remaining gaps: users highlight, invitation log correlation — see [Wave 3 Closeout](./OPERATIONS_PLATFORM_WAVE_3_CLOSEOUT.md).
 
 ---
 

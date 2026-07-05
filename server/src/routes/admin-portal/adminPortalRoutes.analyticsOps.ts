@@ -139,11 +139,14 @@ router.post('/analytics/custom-report', authenticateJWT, requireAdmin, async (re
 // Get subscription data
 router.get('/billing/subscriptions', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
   try {
-    const { page = 1, limit = 20, status } = req.query;
+    const { page = 1, limit = 20, status, customer, subscription, business } = req.query;
     const result = await adminBillingService.getSubscriptions({
       page: Number(page),
       limit: Number(limit),
-      status: status as string
+      status: status as string,
+      customer: typeof customer === 'string' ? customer : undefined,
+      subscription: typeof subscription === 'string' ? subscription : undefined,
+      business: typeof business === 'string' ? business : undefined,
     });
 
     if (result.schemaOutOfSync) {
@@ -226,11 +229,14 @@ router.get('/billing/subscriptions', authenticateJWT, requireAdmin, async (req: 
 // Get payment data
 router.get('/billing/payments', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
   try {
-    const { page = 1, limit = 20, status } = req.query;
+    const { page = 1, limit = 20, status, customer, subscription, business } = req.query;
     const result = await adminBillingService.getPayments({
       page: Number(page),
       limit: Number(limit),
-      status: status as string
+      status: status as string,
+      customer: typeof customer === 'string' ? customer : undefined,
+      subscription: typeof subscription === 'string' ? subscription : undefined,
+      business: typeof business === 'string' ? business : undefined,
     });
     res.json(result);
   } catch (error) {

@@ -90,10 +90,17 @@ export async function getBusinessIntelligenceDetail(businessId: string) {
         },
       },
       invitations: {
-        where: { acceptedAt: null },
         orderBy: { createdAt: 'desc' },
-        take: 5,
-        select: { email: true, role: true, createdAt: true, expiresAt: true },
+        take: 10,
+        select: {
+          id: true,
+          email: true,
+          role: true,
+          token: true,
+          createdAt: true,
+          expiresAt: true,
+          acceptedAt: true,
+        },
       },
     },
   });
@@ -130,12 +137,27 @@ export async function getBusinessIntelligenceDetail(businessId: string) {
 
   return {
     workspaceWarnings: warnings,
-    pendingInvitations: detail.invitations.map((i) => ({
-      email: i.email,
-      role: i.role,
-      createdAt: i.createdAt.toISOString(),
-      expiresAt: i.expiresAt.toISOString(),
-    })),
+    pendingInvitations: detail.invitations
+      .filter((i) => !i.acceptedAt && i.expiresAt >= new Date())
+      .map((i) => ({
+        id: i.id,
+        email: i.email,
+        role: i.role,
+        createdAt: i.createdAt.toISOString(),
+        expiresAt: i.expiresAt.toISOString(),
+      })),
+    invitations: detail.invitations.map((i) => {
+      const status = i.acceptedAt ? 'accepted' : i.expiresAt < new Date() ? 'expired' : 'pending';
+      return {
+        id: i.id,
+        email: i.email,
+        role: i.role,
+        status,
+        createdAt: i.createdAt.toISOString(),
+        expiresAt: i.expiresAt.toISOString(),
+        acceptedAt: i.acceptedAt?.toISOString() ?? null,
+      };
+    }),
     recentMembers: detail.members.map((m) => ({
       email: m.user.email,
       name: m.user.name,

@@ -6,6 +6,7 @@ import { requireAdmin, enforceDangerousMigrationOpGate, logDangerousMigrationOpE
 import { ADMIN_AUDIT_ACTIONS } from '../../services/admin/adminAuditTaxonomy';
 import * as adminAnalyticsService from '../../services/admin/adminAnalyticsService';
 import * as adminSupportService from '../../services/admin/adminSupportService';
+import * as adminSupportContextService from '../../services/admin/adminSupportContextService';
 import * as adminSystemOpsService from '../../services/admin/adminSystemOpsService';
 import * as adminPerformanceService from '../../services/admin/adminPerformanceService';
 import * as adminPlatformOperationsService from '../../services/admin/adminPlatformOperationsService';
@@ -385,6 +386,31 @@ router.get('/support/tickets', authenticateJWT, requireAdmin, async (req: Reques
       }
     });
     res.status(500).json({ error: 'Failed to get support tickets' });
+  }
+});
+
+router.get('/support/tickets/:ticketId/context', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
+  try {
+    const ticketId = req.params.ticketId;
+    if (typeof ticketId !== 'string' || !ticketId.trim()) {
+      return res.status(400).json({ error: 'Invalid ticket id' });
+    }
+
+    const data = await adminSupportContextService.getSupportTicketContext(ticketId);
+    if (!data) {
+      return res.status(404).json({ error: 'Ticket not found' });
+    }
+
+    res.json({ success: true, data });
+  } catch (error) {
+    await logger.error('Failed to get support ticket context', {
+      operation: 'admin_get_support_ticket_context',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+      },
+    });
+    res.status(500).json({ error: 'Failed to get support ticket context' });
   }
 });
 

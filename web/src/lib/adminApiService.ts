@@ -486,6 +486,9 @@ class AdminApiService {
     page?: number;
     limit?: number;
     status?: string;
+    customer?: string;
+    subscription?: string;
+    business?: string;
   }) {
     const searchParams = new URLSearchParams();
     Object.entries(params).forEach(([key, value]) => {
@@ -519,6 +522,9 @@ class AdminApiService {
     page?: number;
     limit?: number;
     status?: string;
+    customer?: string;
+    subscription?: string;
+    business?: string;
   }) {
     const searchParams = new URLSearchParams();
     Object.entries(params).forEach(([key, value]) => {
@@ -1247,6 +1253,35 @@ class AdminApiService {
       method: 'PATCH',
       body: JSON.stringify({ action, data })
     });
+  }
+
+  async getSupportTicketContext(ticketId: string): Promise<ApiResponse<Record<string, unknown>>> {
+    return this.makeRequest(`/support/tickets/${ticketId}/context`, { method: 'GET' });
+  }
+
+  async listInvitations(params?: {
+    search?: string;
+    businessId?: string;
+    status?: string;
+    page?: number;
+    limit?: number;
+  }): Promise<ApiResponse<Record<string, unknown>>> {
+    const searchParams = new URLSearchParams();
+    if (params) {
+      Object.entries(params).forEach(([key, value]) => {
+        if (value !== undefined) searchParams.append(key, String(value));
+      });
+    }
+    const q = searchParams.toString();
+    return this.makeRequest(`/invitations${q ? `?${q}` : ''}`, { method: 'GET' });
+  }
+
+  async resendInvitation(invitationId: string): Promise<ApiResponse<Record<string, unknown>>> {
+    return this.makeRequest(`/invitations/${invitationId}/resend`, { method: 'POST' });
+  }
+
+  async getInvitationLink(invitationId: string): Promise<ApiResponse<Record<string, unknown>>> {
+    return this.makeRequest(`/invitations/${invitationId}/link`, { method: 'GET' });
   }
 
   async getKnowledgeBase(): Promise<ApiResponse<any>> {

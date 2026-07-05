@@ -21,12 +21,18 @@ export async function getSubscriptions(params: {
     page?: number;
     limit?: number;
     status?: string;
+    customer?: string;
+    subscription?: string;
+    business?: string;
   }) {
-    const { page = 1, limit = 20, status } = params;
+    const { page = 1, limit = 20, status, customer, subscription, business } = params;
     const skip = (page - 1) * limit;
 
     const where: Record<string, unknown> = {};
     if (status) where.status = status;
+    if (customer) where.stripeCustomerId = customer;
+    if (subscription) where.id = subscription;
+    if (business) where.businessId = business;
 
     try {
       const [subscriptions, total, aggregates, statusGroups] = await Promise.all([
@@ -117,13 +123,21 @@ export async function getPayments(params: {
     page?: number;
     limit?: number;
     status?: string;
+    customer?: string;
+    subscription?: string;
+    business?: string;
   }) {
     try {
-      const { page = 1, limit = 20, status } = params;
+      const { page = 1, limit = 20, status, customer, subscription, business } = params;
       const skip = (page - 1) * limit;
 
       const where: Record<string, unknown> = {};
       if (status) where.status = status;
+      if (customer) where.stripeCustomerId = customer;
+      if (subscription) where.subscriptionId = subscription;
+      if (business) {
+        where.subscription = { businessId: business };
+      }
 
       const [payments, total] = await Promise.all([
         prisma.invoice.findMany({

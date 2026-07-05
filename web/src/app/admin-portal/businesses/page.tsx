@@ -14,6 +14,7 @@ import {
   RefreshCw,
   ChevronRight,
   Mail,
+  Copy,
   Package,
 } from 'lucide-react';
 import { adminApiService } from '../../../lib/adminApiService';
@@ -72,7 +73,16 @@ interface BusinessDetail {
   dashboards: Array<{ id: string }>;
   intelligence?: {
     workspaceWarnings: string[];
-    pendingInvitations: Array<{ email: string; role: string; createdAt: string }>;
+    pendingInvitations: Array<{ id: string; email: string; role: string; createdAt: string; expiresAt?: string }>;
+    invitations?: Array<{
+      id: string;
+      email: string;
+      role: string;
+      status: 'pending' | 'accepted' | 'expired' | 'failed';
+      createdAt: string;
+      expiresAt: string;
+      acceptedAt: string | null;
+    }>;
     recentMembers: Array<{ email: string; lastLoginRelative: string | null }>;
     recentBillingEvents: Array<{ action: string; timestamp: string }>;
     subscriptionStatus: string | null;
@@ -97,6 +107,7 @@ function formatDate(iso: string | null): string {
 function BusinessesPageContent() {
   const searchParams = useSearchParams();
   const highlightId = searchParams?.get('highlight') ?? null;
+  const invitationSearch = searchParams?.get('invitationSearch') ?? null;
 
   const [businesses, setBusinesses] = useState<OperatorBusiness[]>([]);
   const [total, setTotal] = useState(0);
@@ -106,6 +117,8 @@ function BusinessesPageContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [selectedId, setSelectedId] = useState<string | null>(highlightId);
+  const [resendingInvitationId, setResendingInvitationId] = useState<string | null>(null);
+  const [inviteActionMessage, setInviteActionMessage] = useState<string | null>(null);
   const [detail, setDetail] = useState<BusinessDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
   const [summary, setSummary] = useState<{
@@ -170,6 +183,35 @@ function BusinessesPageContent() {
       setSelectedId(highlightId);
     }
   }, [highlightId]);
+
+  const handleResendInvitation = async (invitationId: string) => {
+    setResendingInvitationId(invitationId);
+    setInviteActionMessage(null);
+    try {
+      const res = await adminApiService.resendInvitation(invitationId);
+      if (res.error) {
+        setInviteActionMessage(res.error);
+      } else {
+        setInviteActionMessage('Invitation resent');
+      }
+    } catch {
+      setInviteActionMessage('Failed to resend invitation');
+    } finally {
+      setResendingInvitationId(null);
+    }
+  };
+
+  const handleCopyInviteLink = async (invitationId: string) => {
+    const res = await adminApiService.getInvitationLink(invitationId);
+    const inviteUrl = (res.data as { inviteUrl?: string } | undefined)?.inviteUrl;
+    if (inviteUrl) {
+      await navigator.clipboard.writeText(inviteUrl);
+      setInviteActionMessage('Invite link copied');
+    }
+  };
+
+  const displayedInvitations = (detail?.intelligence?.invitations ?? detail?.intelligence?.pendingInvitations ?? [])
+    .filter((inv) => !invitationSearch || inv.email.toLowerCase().includes(invitationSearch.toLowerCase()));
 
   const totalPages = Math.max(1, Math.ceil(total / 20));
 
@@ -403,16 +445,22 @@ function BusinessesPageContent() {
                       <Eye className="w-4 h-4" /> Impersonate in workspace
                     </Link>
                     <Link
-                      href={`/admin-portal/billing${detail.stripeCustomerId ? `?customer=${detail.stripeCustomerId}` : ''}`}
+                      href={`/admin-portal/billing?business=${detail.id}${detail.stripeCustomerId ? `&customer=${detail.stripeCustomerId}` : ''}${detail.subscriptions[0]?.id ? `&subscription=${detail.subscriptions[0].id}` : ''}`}
                       className="flex items-center gap-2 text-sm text-blue-600 hover:underline"
                     >
                       <DollarSign className="w-4 h-4" /> Billing
                     </Link>
                     <Link
-                      href="/admin-portal/users"
+                      href={`/admin-portal/users${detail.members[0]?.user.id ? `?highlight=${detail.members[0].user.id}` : ''}`}
                       className="flex items-center gap-2 text-sm text-blue-600 hover:underline"
                     >
                       <Users className="w-4 h-4" /> Users directory
+                    </Link>
+                    <Link
+                      href="/admin-portal/email-operations"
+                      className="flex items-center gap-2 text-sm text-blue-600 hover:underline"
+                    >
+                      <Mail className="w-4 h-4" /> Email Operations
                     </Link>
                     <Link
                       href="/admin-portal/analytics"
@@ -431,6 +479,55 @@ function BusinessesPageContent() {
                       </p>
                     )}
                   </div>
+
+                  {displayedInvitations.length > 0 && (
+                    <div className="pt-2 border-t border-v-border">
+                      <p className="text-xs font-medium text-v-text-muted uppercase mb-2">
+                        Invitations {invitationSearch ? `(filtered: ${invitationSearch})` : ''}
+                      </p>
+                      {inviteActionMessage && (
+                        <p className="text-xs text-green-700 mb-2">{inviteActionMessage}</p>
+                      )}
+                      <ul className="space-y-2 max-h-40 overflow-y-auto">
+                        {displayedInvitations.map((inv) => {
+                          const status =
+                            'status' in inv && typeof inv.status === 'string' ? inv.status : 'pending';
+                          return (
+                            <li key={inv.id} className="text-xs border border-v-border rounded p-2">
+                              <div className="flex items-center justify-between gap-2">
+                                <span className="truncate font-medium">{inv.email}</span>
+                                <Badge className="shrink-0">{status}</Badge>
+                              </div>
+                              <p className="text-v-text-muted mt-0.5">
+                                {inv.role} · {formatDate(inv.createdAt)}
+                              </p>
+                              {status === 'pending' && inv.id && (
+                                <div className="flex gap-1 mt-1">
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    disabled={resendingInvitationId === inv.id}
+                                    onClick={() => void handleResendInvitation(inv.id)}
+                                    title="Resend"
+                                  >
+                                    <RefreshCw className={`w-3 h-3 ${resendingInvitationId === inv.id ? 'animate-spin' : ''}`} />
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => void handleCopyInviteLink(inv.id)}
+                                    title="Copy invite link"
+                                  >
+                                    <Copy className="w-3 h-3" />
+                                  </Button>
+                                </div>
+                              )}
+                            </li>
+                          );
+                        })}
+                      </ul>
+                    </div>
+                  )}
 
                   {detail.intelligence && detail.intelligence.recentMembers.length > 0 && (
                     <div className="pt-2 border-t border-v-border">

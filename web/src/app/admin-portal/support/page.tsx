@@ -1,8 +1,13 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Card, Button, Badge, Alert, Spinner, Modal, Input } from 'shared/components';
 import { adminApiService } from '../../../lib/adminApiService';
+import {
+  SupportContextSidebar,
+  type SupportTicketContext,
+} from '../../../components/admin-portal/SupportContextSidebar';
 import {
   MessageSquare,
   HelpCircle,
@@ -119,7 +124,10 @@ interface FilterOptions {
   dateRange: string;
 }
 
-export default function SupportPage() {
+function SupportPageContent() {
+  const searchParams = useSearchParams();
+  const ticketFromUrl = searchParams?.get('ticket') ?? null;
+
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
@@ -134,6 +142,9 @@ export default function SupportPage() {
   const [adminUsers, setAdminUsers] = useState<any[]>([]);
   const [showTicketDetailsModal, setShowTicketDetailsModal] = useState(false);
   const [selectedTicketForDetails, setSelectedTicketForDetails] = useState<SupportTicket | null>(null);
+  const [ticketContext, setTicketContext] = useState<SupportTicketContext | null>(null);
+  const [contextLoading, setContextLoading] = useState(false);
+  const [resendingInvitationId, setResendingInvitationId] = useState<string | null>(null);
   const [selectedArticle, setSelectedArticle] = useState<KnowledgeBaseArticle | null>(null);
   const [showTicketModal, setShowTicketModal] = useState(false);
   const [showArticleModal, setShowArticleModal] = useState(false);
@@ -246,9 +257,48 @@ export default function SupportPage() {
     }
   };
 
+  const loadTicketContext = useCallback(async (ticketId: string) => {
+    setContextLoading(true);
+    try {
+      const res = await adminApiService.getSupportTicketContext(ticketId);
+      if (res.data) {
+        setTicketContext(res.data as unknown as SupportTicketContext);
+      } else {
+        setTicketContext(null);
+      }
+    } catch {
+      setTicketContext(null);
+    } finally {
+      setContextLoading(false);
+    }
+  }, []);
+
+  const handleResendInvitation = async (invitationId: string) => {
+    setResendingInvitationId(invitationId);
+    try {
+      await adminApiService.resendInvitation(invitationId);
+      setSuccess('Invitation resent');
+    } catch {
+      setError('Failed to resend invitation');
+    } finally {
+      setResendingInvitationId(null);
+    }
+  };
+
+  useEffect(() => {
+    if (!ticketFromUrl || tickets.length === 0) return;
+    const match = tickets.find((t) => t.id === ticketFromUrl);
+    if (match) {
+      setSelectedTicketForDetails(match);
+      setShowTicketDetailsModal(true);
+      void loadTicketContext(match.id);
+    }
+  }, [ticketFromUrl, tickets, loadTicketContext]);
+
   const handleStartProgress = (ticket: SupportTicket) => {
     setSelectedTicketForDetails(ticket);
     setShowTicketDetailsModal(true);
+    void loadTicketContext(ticket.id);
   };
 
   const handleArticleAction = async (articleId: string, action: string, data?: any) => {
@@ -915,12 +965,13 @@ export default function SupportPage() {
       </Modal>
 
       {/* Ticket Details Modal */}
-      <Modal open={showTicketDetailsModal} onClose={() => setShowTicketDetailsModal(false)}>
-        <div className="p-6 max-w-4xl">
+      <Modal open={showTicketDetailsModal} onClose={() => { setShowTicketDetailsModal(false); setTicketContext(null); }}>
+        <div className="p-6 max-w-6xl">
           <h2 className="text-xl font-semibold mb-4">Ticket Details - {selectedTicketForDetails?.title}</h2>
           
           {selectedTicketForDetails && (
-            <div className="space-y-6">
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+              <div className="lg:col-span-2 space-y-6">
               {/* Ticket Info */}
               <div className="grid grid-cols-2 gap-6">
                 <div>
@@ -985,7 +1036,7 @@ export default function SupportPage() {
               <div className="flex justify-end space-x-3 pt-4 border-t border-v-border">
                 <Button
                   variant="secondary"
-                  onClick={() => setShowTicketDetailsModal(false)}
+                  onClick={() => { setShowTicketDetailsModal(false); setTicketContext(null); }}
                 >
                   Close
                 </Button>
@@ -993,11 +1044,23 @@ export default function SupportPage() {
                   onClick={async () => {
                     await handleTicketAction(selectedTicketForDetails.id, 'start_progress');
                     setShowTicketDetailsModal(false);
+                    setTicketContext(null);
                   }}
                 >
                   <Clock className="w-4 h-4 mr-2" />
                   Start Working on This
                 </Button>
+              </div>
+              </div>
+
+              <div className="lg:col-span-1 border-l border-v-border pl-6">
+                <h3 className="font-medium text-v-text-primary mb-3">Operator context</h3>
+                <SupportContextSidebar
+                  context={ticketContext}
+                  loading={contextLoading}
+                  onResendInvitation={handleResendInvitation}
+                  resendingId={resendingInvitationId}
+                />
               </div>
             </div>
           )}
@@ -1043,4 +1106,12 @@ export default function SupportPage() {
       </Modal>
     </div>
   );
-} 
+}
+
+export default function SupportPage() {
+  return (
+    <Suspense fallback={<div className="flex justify-center py-12"><Spinner /></div>}>
+      <SupportPageContent />
+    </Suspense>
+  );
+}

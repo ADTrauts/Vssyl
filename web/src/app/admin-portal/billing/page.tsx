@@ -1,6 +1,7 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, Suspense } from 'react';
+import { useSearchParams } from 'next/navigation';
 import { Card, Button, Badge, Spinner, Alert } from 'shared/components';
 import { 
   CreditCard, 
@@ -29,6 +30,7 @@ interface Subscription {
   id: string;
   userId: string;
   userEmail: string;
+  businessId?: string | null;
   tier: 'free' | 'pro' | 'business_basic' | 'business_advanced' | 'enterprise' | string;
   status: 'active' | 'cancelled' | 'past_due' | 'unpaid';
   amount: number | null;
@@ -113,7 +115,13 @@ interface PayoutSummary {
   totalDeveloperRevenue: number;
 }
 
-export default function FinancialManagement() {
+function BillingPageContent() {
+  const searchParams = useSearchParams();
+  const filterCustomer = searchParams?.get('customer') ?? undefined;
+  const filterSubscription = searchParams?.get('subscription') ?? undefined;
+  const filterBusiness = searchParams?.get('business') ?? undefined;
+  const hasContextFilter = Boolean(filterCustomer || filterSubscription || filterBusiness);
+
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [payments, setPayments] = useState<Payment[]>([]);
   const [payouts, setPayouts] = useState<DeveloperPayout[]>([]);
@@ -125,20 +133,23 @@ export default function FinancialManagement() {
   const [subscriptionSummary, setSubscriptionSummary] = useState<SubscriptionSummary | null>(null);
   const [payoutSummary, setPayoutSummary] = useState<PayoutSummary | null>(null);
 
-  useEffect(() => {
-    loadFinancialData();
-  }, []);
-
-  const loadFinancialData = async () => {
+  const loadFinancialData = useCallback(async () => {
     try {
       setLoading(true);
       setError(null);
       setWarnings([]);
 
-      // Load real data from APIs
+      const billingFilters = {
+        page: 1,
+        limit: hasContextFilter ? 50 : 20,
+        ...(filterCustomer ? { customer: filterCustomer } : {}),
+        ...(filterSubscription ? { subscription: filterSubscription } : {}),
+        ...(filterBusiness ? { business: filterBusiness } : {}),
+      };
+
       const [subscriptionsRes, paymentsRes, payoutsRes] = await Promise.all([
-        adminApiService.getSubscriptions({ page: 1, limit: 20 }),
-        adminApiService.getPayments({ page: 1, limit: 20 }),
+        adminApiService.getSubscriptions(billingFilters),
+        adminApiService.getPayments(billingFilters),
         adminApiService.getDeveloperPayouts({ page: 1, limit: 20 })
       ]);
 
@@ -195,7 +206,11 @@ export default function FinancialManagement() {
     } finally {
       setLoading(false);
     }
-  };
+  }, [filterCustomer, filterSubscription, filterBusiness, hasContextFilter]);
+
+  useEffect(() => {
+    void loadFinancialData();
+  }, [loadFinancialData]);
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -248,14 +263,26 @@ export default function FinancialManagement() {
     }
   };
 
-  const handleFinancialAction = async (itemId: string, action: string) => {
-    try {
-      console.log(`Performing financial action ${action} on item ${itemId}`);
-      // Implement financial actions
-    } catch (error) {
-      console.error('Error performing financial action:', error);
+  const openStripeUrl = (url: string | null | undefined) => {
+    if (url) window.open(url, '_blank');
+  };
+
+  const handleSubscriptionView = (subscription: Subscription) => {
+    if (subscription.stripeUrls?.subscription) {
+      openStripeUrl(subscription.stripeUrls.subscription);
+    } else if (subscription.stripeUrls?.customer) {
+      openStripeUrl(subscription.stripeUrls.customer);
     }
   };
+
+  const handlePaymentView = (payment: Payment) => {
+    openStripeUrl(payment.stripeUrls?.invoice ?? payment.stripeUrls?.charge ?? payment.stripeUrls?.customer);
+  };
+
+  const isHighlightedRow = (subscription: Subscription) =>
+    (filterSubscription && subscription.id === filterSubscription) ||
+    (filterCustomer && subscription.stripeCustomerId === filterCustomer) ||
+    (filterBusiness && subscription.businessId === filterBusiness);
 
   const handleSyncSubscription = async (subscriptionId: string) => {
     try {
@@ -330,16 +357,17 @@ export default function FinancialManagement() {
             <RefreshCw className={`w-4 h-4 mr-2 ${syncing.all ? 'animate-spin' : ''}`} />
             {syncing.all ? 'Syncing...' : 'Sync All from Stripe'}
           </Button>
-          <Button variant="secondary">
-            <DollarSign className="w-4 h-4 mr-2" />
-            Export Report
-          </Button>
-          <Button variant="primary">
-            <CreditCard className="w-4 h-4 mr-2" />
-            Process Payouts
-          </Button>
         </div>
       </div>
+
+      {hasContextFilter && (
+        <Alert type="info" title="Billing context filter active">
+          Showing results for{' '}
+          {filterSubscription && <>subscription <code>{filterSubscription}</code> </>}
+          {filterCustomer && <>customer <code>{filterCustomer}</code> </>}
+          {filterBusiness && <>business <code>{filterBusiness}</code> </>}
+        </Alert>
+      )}
 
       {warnings.length > 0 && (
         <Alert type="warning" title="Data Warnings">
@@ -483,7 +511,10 @@ export default function FinancialManagement() {
               </thead>
               <tbody className="bg-v-surface divide-y divide-gray-200 dark:divide-slate-700">
                 {subscriptions.map((subscription) => (
-                  <tr key={subscription.id} className="hover:bg-v-surface-muted bg-v-surface">
+                  <tr
+                    key={subscription.id}
+                    className={`hover:bg-v-surface-muted bg-v-surface ${isHighlightedRow(subscription) ? 'ring-2 ring-inset ring-blue-400' : ''}`}
+                  >
                     <td className="px-6 py-4 whitespace-nowrap">
                       <div className="text-sm font-medium text-v-text-primary">{subscription.userEmail}</div>
                     </td>
@@ -508,15 +539,28 @@ export default function FinancialManagement() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => handleFinancialAction(subscription.id, 'view')}
+                          onClick={() => handleSubscriptionView(subscription)}
+                          title="View in Stripe"
+                          disabled={!subscription.stripeUrls?.subscription && !subscription.stripeUrls?.customer}
                         >
                           <Eye className="w-4 h-4" />
                         </Button>
-                        {subscription.status === 'past_due' && (
+                        {subscription.stripeUrls?.customer && (
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => handleFinancialAction(subscription.id, 'retry')}
+                            onClick={() => openStripeUrl(subscription.stripeUrls?.customer)}
+                            title="Stripe customer"
+                          >
+                            <ExternalLink className="w-4 h-4" />
+                          </Button>
+                        )}
+                        {subscription.stripeUrls?.subscription && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => openStripeUrl(subscription.stripeUrls?.subscription)}
+                            title="Stripe subscription"
                           >
                             <CreditCard className="w-4 h-4" />
                           </Button>
@@ -524,9 +568,11 @@ export default function FinancialManagement() {
                         <Button
                           variant="ghost"
                           size="sm"
-                          onClick={() => handleFinancialAction(subscription.id, 'cancel')}
+                          onClick={() => handleSyncSubscription(subscription.id)}
+                          disabled={syncing[`sub_${subscription.id}`]}
+                          title={subscription.status === 'past_due' ? 'Sync from Stripe (retry)' : 'Sync from Stripe'}
                         >
-                          <XCircle className="w-4 h-4" />
+                          <RefreshCw className={`w-4 h-4 ${syncing[`sub_${subscription.id}`] ? 'animate-spin' : ''}`} />
                         </Button>
                       </div>
                     </td>
@@ -616,12 +662,21 @@ export default function FinancialManagement() {
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => window.open(payment.stripeUrls?.invoice || '', '_blank')}
+                            onClick={() => openStripeUrl(payment.stripeUrls?.invoice)}
                             title="View in Stripe Dashboard"
                           >
                             <ExternalLink className="w-4 h-4" />
                           </Button>
                         )}
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          onClick={() => handlePaymentView(payment)}
+                          title="View payment in Stripe"
+                          disabled={!payment.stripeUrls?.invoice && !payment.stripeUrls?.charge}
+                        >
+                          <Eye className="w-4 h-4" />
+                        </Button>
                         {payment.stripeInvoiceId && (
                           <Button
                             variant="ghost"
@@ -631,22 +686,6 @@ export default function FinancialManagement() {
                             title="Sync from Stripe"
                           >
                             <RefreshCw className={`w-4 h-4 ${syncing[`inv_${payment.id}`] ? 'animate-spin' : ''}`} />
-                          </Button>
-                        )}
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleFinancialAction(payment.id, 'view')}
-                        >
-                          <Eye className="w-4 h-4" />
-                        </Button>
-                        {payment.status === 'failed' && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleFinancialAction(payment.id, 'retry')}
-                          >
-                            <CreditCard className="w-4 h-4" />
                           </Button>
                         )}
                       </div>
@@ -679,9 +718,6 @@ export default function FinancialManagement() {
                   </th>
                   <th className="px-6 py-3 text-left text-xs font-medium text-v-text-muted dark:text-v-text-muted uppercase tracking-wider">
                     Paid
-                  </th>
-                  <th className="px-6 py-3 text-right text-xs font-medium text-v-text-muted dark:text-v-text-muted uppercase tracking-wider">
-                    Actions
                   </th>
                 </tr>
               </thead>
@@ -723,35 +759,6 @@ export default function FinancialManagement() {
                     <td className="px-6 py-4 whitespace-nowrap text-sm text-v-text-muted">
                       {payout.paidAt ? new Date(payout.paidAt).toLocaleDateString() : '-'}
                     </td>
-                    <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
-                      <div className="flex items-center justify-end space-x-2">
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => handleFinancialAction(payout.id, 'view')}
-                        >
-                          <Eye className="w-4 h-4" />
-                        </Button>
-                        {payout.status === 'pending' && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleFinancialAction(payout.id, 'approve')}
-                          >
-                            <CheckCircle className="w-4 h-4" />
-                          </Button>
-                        )}
-                        {payout.status === 'failed' && (
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => handleFinancialAction(payout.id, 'retry')}
-                          >
-                            <CreditCard className="w-4 h-4" />
-                          </Button>
-                        )}
-                      </div>
-                    </td>
                   </tr>
                 ))}
               </tbody>
@@ -767,4 +774,12 @@ export default function FinancialManagement() {
       )}
     </div>
   );
-} 
+}
+
+export default function FinancialManagement() {
+  return (
+    <Suspense fallback={<div className="flex justify-center py-12"><Spinner size={32} /></div>}>
+      <BillingPageContent />
+    </Suspense>
+  );
+}

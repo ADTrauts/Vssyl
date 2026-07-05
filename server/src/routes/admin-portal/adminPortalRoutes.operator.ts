@@ -10,6 +10,8 @@ import * as adminOperatorTimelineService from '../../services/admin/adminOperato
 import * as adminOperatorIntelligenceService from '../../services/admin/adminOperatorIntelligenceService';
 import * as adminInfraIntelligenceService from '../../services/admin/adminInfraIntelligenceService';
 import * as adminFeatureFlagsService from '../../services/admin/adminFeatureFlagsService';
+import * as adminSupportContextService from '../../services/admin/adminSupportContextService';
+import * as adminInvitationOpsService from '../../services/admin/adminInvitationOpsService';
 
 export function registerAdminPortalOperatorRoutes(router: express.Router): void {
   // ============================================================================
@@ -212,6 +214,80 @@ export function registerAdminPortalOperatorRoutes(router: express.Router): void 
         error: { message: err.message, stack: err.stack },
       });
       res.status(500).json({ error: 'Failed to load feature flags' });
+    }
+  });
+
+  // ============================================================================
+  // INVITATION OPERATIONS (Wave 3)
+  // ============================================================================
+
+  router.get('/invitations', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
+    try {
+      const search = typeof req.query.search === 'string' ? req.query.search : undefined;
+      const businessId = typeof req.query.businessId === 'string' ? req.query.businessId : undefined;
+      const status = typeof req.query.status === 'string' ? req.query.status : undefined;
+      const page = typeof req.query.page === 'string' ? parseInt(req.query.page, 10) : undefined;
+      const limit = typeof req.query.limit === 'string' ? parseInt(req.query.limit, 10) : undefined;
+
+      const data = await adminInvitationOpsService.listInvitationsForOperator({
+        search,
+        businessId,
+        status: status as adminInvitationOpsService.InvitationOpsStatus | undefined,
+        page,
+        limit,
+      });
+      res.json({ success: true, data });
+    } catch (error: unknown) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      await logger.error('Failed to list invitations', {
+        operation: 'admin_list_invitations',
+        error: { message: err.message, stack: err.stack },
+      });
+      res.status(500).json({ error: 'Failed to list invitations' });
+    }
+  });
+
+  router.get('/invitations/:invitationId/link', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
+    try {
+      const invitationId = req.params.invitationId;
+      if (typeof invitationId !== 'string' || !invitationId.trim()) {
+        return res.status(400).json({ error: 'Invalid invitation id' });
+      }
+      const data = await adminInvitationOpsService.getInvitationLinkForOperator(invitationId);
+      if (!data) return res.status(404).json({ error: 'Invitation not found' });
+      res.json({ success: true, data });
+    } catch (error: unknown) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      await logger.error('Failed to get invitation link', {
+        operation: 'admin_invitation_link',
+        error: { message: err.message, stack: err.stack },
+      });
+      res.status(500).json({ error: 'Failed to get invitation link' });
+    }
+  });
+
+  router.post('/invitations/:invitationId/resend', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
+    try {
+      const adminUser = req.user;
+      if (!adminUser) return res.status(401).json({ error: 'Unauthorized' });
+
+      const invitationId = req.params.invitationId;
+      if (typeof invitationId !== 'string' || !invitationId.trim()) {
+        return res.status(400).json({ error: 'Invalid invitation id' });
+      }
+
+      const result = await adminInvitationOpsService.resendInvitationForOperator(invitationId, adminUser.id);
+      if (!result.ok) {
+        return res.status(result.error === 'Invitation not found' ? 404 : 400).json({ error: result.error });
+      }
+      res.json({ success: true, data: result });
+    } catch (error: unknown) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      await logger.error('Failed to resend invitation', {
+        operation: 'admin_resend_invitation',
+        error: { message: err.message, stack: err.stack },
+      });
+      res.status(500).json({ error: 'Failed to resend invitation' });
     }
   });
 }
