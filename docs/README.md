@@ -41,6 +41,7 @@ Cross-cutting design notes: [`architecture/README.md`](./architecture/README.md)
 | Business Administration | [`business-administration/README.md`](./business-administration/README.md) |
 | Connected Knowledge | [`connected-knowledge/README.md`](./connected-knowledge/README.md) |
 | Admin Portal | [`admin-portal/README.md`](./admin-portal/README.md) |
+| AI Knowledge | [`ai-knowledge/README.md`](./ai-knowledge/README.md) |
 | Platform Controller | [`platform-controller/README.md`](./platform-controller/README.md) |
 | Platform Portfolio | [`platform-portfolio/README.md`](./platform-portfolio/README.md) |
 | Platform Adoption | [`platform-adoption/README.md`](./platform-adoption/README.md) |
