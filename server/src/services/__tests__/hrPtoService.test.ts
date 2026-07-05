@@ -50,27 +50,34 @@ describe('hrPtoService', () => {
 
   describe('requestTimeOff', () => {
     it('throws when an overlapping request exists', async () => {
-      vi.spyOn(prisma.employeePosition, 'findFirst').mockResolvedValue({
-        id: 'ep-1',
-      } as never);
-      vi.spyOn(prisma.timeOffRequest, 'findFirst').mockResolvedValue({
-        id: 'tor-1',
-        startDate: new Date('2026-07-01'),
-        endDate: new Date('2026-07-05'),
-        status: TimeOffStatus.PENDING,
-      } as never);
+      vi.useFakeTimers();
+      vi.setSystemTime(new Date('2026-06-01T12:00:00.000Z'));
 
-      await expect(
-        requestTimeOff({
-          businessId: 'biz-1',
-          userId: 'user-1',
-          userName: 'Pat',
-          userEmail: 'pat@example.com',
-          type: 'PTO',
-          startDate: '2026-07-03T00:00:00.000Z',
-          endDate: '2026-07-04T00:00:00.000Z',
-        })
-      ).rejects.toBeInstanceOf(TimeOffConflictError);
+      try {
+        vi.spyOn(prisma.employeePosition, 'findFirst').mockResolvedValue({
+          id: 'ep-1',
+        } as never);
+        vi.spyOn(prisma.timeOffRequest, 'findFirst').mockResolvedValue({
+          id: 'tor-1',
+          startDate: new Date('2026-07-01'),
+          endDate: new Date('2026-07-05'),
+          status: TimeOffStatus.PENDING,
+        } as never);
+
+        await expect(
+          requestTimeOff({
+            businessId: 'biz-1',
+            userId: 'user-1',
+            userName: 'Pat',
+            userEmail: 'pat@example.com',
+            type: 'PTO',
+            startDate: '2026-07-03T00:00:00.000Z',
+            endDate: '2026-07-04T00:00:00.000Z',
+          })
+        ).rejects.toBeInstanceOf(TimeOffConflictError);
+      } finally {
+        vi.useRealTimers();
+      }
     });
   });
 });
