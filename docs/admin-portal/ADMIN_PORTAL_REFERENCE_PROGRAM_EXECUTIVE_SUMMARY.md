@@ -2,9 +2,9 @@
 
 **Program:** Operations Platform Reference Program (formerly Admin Portal Reference Program)  
 **Date:** 2026-07-05  
-**Status:** Wave 2 complete — operational intelligence delivered
+**Status:** Wave 2 complete — Operational Readiness Validation complete (pre–Wave 3)
 
-**Deliverables:** [Wave 2 Closeout](./OPERATIONS_PLATFORM_WAVE_2_CLOSEOUT.md) · [Wave 1 Closeout](./ADMIN_PORTAL_WAVE_1_CLOSEOUT.md) · [Modernization Plan](./ADMIN_PORTAL_MODERNIZATION_PLAN.md)
+**Deliverables:** [Readiness Validation](./OPERATIONS_PLATFORM_READINESS_VALIDATION.md) · [Wave 2 Closeout](./OPERATIONS_PLATFORM_WAVE_2_CLOSEOUT.md) · [Modernization Plan](./ADMIN_PORTAL_MODERNIZATION_PLAN.md)
 
 ---
 
@@ -42,7 +42,13 @@ Customer-facing terminology is now **Operations Platform** (routes remain `/admi
 | Configuration & flags | 72% |
 | Security & audit | 85% |
 
-**Prior (Wave 1):** ~90%. **Prior (Wave 0):** ~86%. **Target after Wave 3:** ~95%.
+**Prior (Wave 1):** ~90%. **Prior (Wave 0):** ~86%. **Workflow-adjusted readiness (Jul 2026 validation):** **~85%**. **Target after Wave 3 P0:** ~91%.
+
+### Pre–Wave 3 validation (2026-07-05)
+
+Seven operator scenarios walkthrough → [Readiness Validation](./OPERATIONS_PLATFORM_READINESS_VALIDATION.md).
+
+**Verdict:** Conditional yes for 100 businesses. **Blockers are workflow friction** (support context sidebar, billing actions/Stripe links, invitation UI)—not architecture.
 
 ---
 

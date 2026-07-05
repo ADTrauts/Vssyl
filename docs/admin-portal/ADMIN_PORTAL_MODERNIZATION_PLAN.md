@@ -2,9 +2,11 @@
 
 **Program:** Admin Portal Reference Program — Operational Excellence Phase 0A  
 **Date:** 2026-07-05  
-**Status:** Wave 2 complete — Wave 3+ planning
+**Status:** Wave 2 complete — Readiness validation complete — Wave 3 scoped
 
 **Product name (UI):** Operations Platform — routes remain `/admin-portal`.
+
+**Pre–Wave 3 gate:** [Operational Readiness Validation](./OPERATIONS_PLATFORM_READINESS_VALIDATION.md) — workflow-adjusted readiness **~85%** (feature maturity 93%).
 
 **Constraint:** Consolidation over creation. No architecture redesign. No parallel systems. Do not rebuild completed subsystems (AI Pipeline, module certification, billing, impersonation).
 
@@ -75,15 +77,19 @@ See [Wave 2 Closeout](./OPERATIONS_PLATFORM_WAVE_2_CLOSEOUT.md).
 | W2-5 | **Grouped timeline** | Modernize | Category-grouped operations timeline | M | ✅ |
 | W2-6 | **Global operator insight** | Modernize | Dashboard intelligence panel | M | ✅ |
 
-### Wave 3 — P2 operator depth (2 weeks)
+### Wave 3 — Operator depth (2 weeks) — **Reordered per readiness validation**
 
-| ID | Item | Type | Description | Effort |
-|----|------|------|-------------|--------|
-| W3-0 | **Support context sidebar** | Modernize | Link ticket → user profile + business | S |
-| W3-1 | **Persist probe results** | Modernize | Store last probe outcome | M |
-| W3-2 | **Search ops page** | Missing → Complete | Lightweight page: delegate registry status, pilot module probe, link to Modules | S |
-| W3-3 | **Performance metrics real probes** | Modernize | Replace synthetic CPU/memory where possible with health service data | M |
-| W3-4 | **Modules page tab extraction** | Modernize | Split 2,100 LOC page into tab components (no behavior change) | M |
+See [Readiness Validation](./OPERATIONS_PLATFORM_READINESS_VALIDATION.md) for P0/P1 ordering.
+
+| ID | Item | Type | Description | Effort | Priority |
+|----|------|------|-------------|--------|----------|
+| W3-0 | **Support context sidebar** | Modernize | Ticket → user, business, billing, email links | S | **P0** |
+| W3-1 | **Billing Stripe links + actions** | Modernize | Expose `stripeUrls`; implement or remove stub actions | S | **P0** |
+| W3-2 | **Invitation list UI** | Modernize | Render `pendingInvitations` in business detail | S | **P1** |
+| W3-3 | **Billing query param filters** | Modernize | Honor `?customer=` / `?subscription=` | S | **P1** |
+| W3-4 | **Persist probe results** | Modernize | Store last probe outcome | M | P2 |
+| W3-5 | **Background jobs monitor** | Missing → Complete | `platformCronJobs` visibility | M | P2 |
+| W3-6 | **Active incidents strip** | Modernize | Dashboard strip when degraded | S | P2 |
 
 ### Wave 4 — P3 satellite migration (ongoing, low urgency)
 
