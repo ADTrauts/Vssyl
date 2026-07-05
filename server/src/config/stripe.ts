@@ -9,7 +9,7 @@ const secretKey = typeof rawSecretKey === 'string' ? rawSecretKey.trim() : '';
 export const STRIPE_CONFIG = {
   secretKey,
   publishableKey: process.env.STRIPE_PUBLISHABLE_KEY || '',
-  webhookSecret: process.env.STRIPE_WEBHOOK_SECRET || '',
+  webhookSecret: (process.env.STRIPE_WEBHOOK_SECRET ?? '').trim(),
   apiVersion: '2025-08-27.basil' as const,
 };
 

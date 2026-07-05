@@ -1,6 +1,7 @@
 import Stripe from 'stripe';
 import { prisma } from '../lib/prisma';
 import { logger } from '../lib/logger';
+import { getStripeSubscriptionPeriodDates } from './stripeSubscriptionPeriod';
 // Initialize Stripe with default API version from SDK types
 const stripe = process.env.STRIPE_SECRET_KEY ? new Stripe(process.env.STRIPE_SECRET_KEY, {}) : null;
 
@@ -181,7 +182,9 @@ export class PaymentService {
         type: 'module_subscription',
       },
     });
-    const subscription: StripeSubscriptionData = (createdSubscription as any)?.data ?? createdSubscription as any;
+    const subscription = createdSubscription as Stripe.Subscription;
+    const { start: currentPeriodStart, end: currentPeriodEnd } =
+      getStripeSubscriptionPeriodDates(subscription);
 
     // Create module subscription record
     const moduleSubscription = await prisma.moduleSubscription.create({
@@ -191,8 +194,8 @@ export class PaymentService {
         moduleId: module.id,
         tier: data.tier,
         status: 'active',
-        currentPeriodStart: new Date((subscription.current_period_start as unknown as number) * 1000),
-        currentPeriodEnd: new Date((subscription.current_period_end as unknown as number) * 1000),
+        currentPeriodStart,
+        currentPeriodEnd,
         stripeSubscriptionId: subscription.id,
         stripeCustomerId: customerId,
         amount: module.basePrice,
@@ -201,9 +204,14 @@ export class PaymentService {
       },
     });
 
+    const periodUnix = getStripeSubscriptionPeriodDates(subscription);
     return {
       subscription: moduleSubscription,
-      stripeSubscription: subscription,
+      stripeSubscription: {
+        id: subscription.id,
+        current_period_start: Math.floor(periodUnix.start.getTime() / 1000),
+        current_period_end: Math.floor(periodUnix.end.getTime() / 1000),
+      },
     };
   }
 

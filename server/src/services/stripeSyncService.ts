@@ -2,6 +2,10 @@ import Stripe from 'stripe';
 import { prisma } from '../lib/prisma';
 import { getStripeClient, isStripeConfigured } from '../config/stripe';
 import { logger } from '../lib/logger';
+import {
+  getStripeSubscriptionPeriodDates,
+  getStripeSubscriptionPeriodUnix,
+} from './stripeSubscriptionPeriod';
 
 function logSrvErr(operation: string, message: string, err: unknown, context?: Record<string, unknown>): void {
   const e = err instanceof Error ? err : new Error(String(err));
@@ -61,10 +65,10 @@ export class StripeSyncService {
       const stripeSubscription = await stripe.subscriptions.retrieve(
         dbSubscription.stripeSubscriptionId,
         { expand: ['customer', 'items.data.price.product'] }
-      ) as unknown as Stripe.Subscription & {
-        current_period_start: number;
-        current_period_end: number;
-      };
+      );
+      const { start: currentPeriodStart, end: currentPeriodEnd } =
+        getStripeSubscriptionPeriodDates(stripeSubscription);
+      const periodUnix = getStripeSubscriptionPeriodUnix(stripeSubscription);
 
       // Map Stripe status to our status
       const statusMap: Record<string, string> = {
@@ -94,8 +98,8 @@ export class StripeSyncService {
         where: { id: dbSubscription.id },
         data: {
           status: stripeSubscription.status ? (statusMap[stripeSubscription.status] || 'unpaid') : 'unpaid',
-          currentPeriodStart: new Date(stripeSubscription.current_period_start * 1000),
-          currentPeriodEnd: new Date(stripeSubscription.current_period_end * 1000),
+          currentPeriodStart,
+          currentPeriodEnd,
           cancelAtPeriodEnd: stripeSubscription.cancel_at_period_end || false,
           lastSyncedAt: new Date(),
           stripeMetadata: {
@@ -104,8 +108,8 @@ export class StripeSyncService {
             billingCycleAnchor: stripeSubscription.billing_cycle_anchor,
             cancelAt: stripeSubscription.cancel_at,
             canceledAt: stripeSubscription.canceled_at,
-            currentPeriodStart: stripeSubscription.current_period_start,
-            currentPeriodEnd: stripeSubscription.current_period_end,
+            currentPeriodStart: periodUnix.start,
+            currentPeriodEnd: periodUnix.end,
             items: stripeSubscription.items?.data?.map(item => ({
               priceId: item.price?.id,
               quantity: item.quantity,

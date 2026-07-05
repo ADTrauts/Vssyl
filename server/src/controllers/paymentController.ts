@@ -158,14 +158,18 @@ export const createSubscription = async (req: Request, res: Response) => {
       metadata: { userId, tier, interval, moduleId },
     });
 
+    const { getStripeSubscriptionPeriodDates } = await import('../services/stripeSubscriptionPeriod.js');
+    const { start: currentPeriodStart, end: currentPeriodEnd } =
+      getStripeSubscriptionPeriodDates(subscription);
+
     // Create local subscription record
     const localSubscription = await prisma.subscription.create({
       data: {
         userId,
         tier,
         status: subscription.status,
-        currentPeriodStart: new Date((subscription as any).current_period_start * 1000),
-        currentPeriodEnd: new Date((subscription as any).current_period_end * 1000),
+        currentPeriodStart,
+        currentPeriodEnd,
         stripeSubscriptionId: subscription.id,
         stripeCustomerId: customerId,
       },
@@ -269,7 +273,7 @@ export const reactivateSubscription = async (req: Request, res: Response) => {
 export const handleWebhook = async (req: Request, res: Response) => {
   try {
     const sig = req.headers['stripe-signature'];
-    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET;
+    const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET?.trim();
 
     if (!webhookSecret) {
       return res.status(400).json({ error: 'Webhook secret not configured' });

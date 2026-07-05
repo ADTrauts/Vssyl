@@ -344,16 +344,15 @@ export class StripeService {
   private static async handleCheckoutSessionCompleted(session: Stripe.Checkout.Session) {
     try {
       if (session.mode === 'subscription' && typeof session.subscription === 'string') {
-        const subscription = (await stripe!.subscriptions.retrieve(session.subscription)) as unknown as Stripe.Subscription & {
-          current_period_start: number;
-          current_period_end: number;
-          cancel_at_period_end?: boolean;
-        };
+        const subscription = await stripe!.subscriptions.retrieve(session.subscription);
         const userId = session.metadata?.userId;
         const tier = session.metadata?.tier;
         const businessId = session.metadata?.businessId;
 
         if (userId && tier) {
+          const { getStripeSubscriptionPeriodDates } = await import('./stripeSubscriptionPeriod');
+          const { start: currentPeriodStart, end: currentPeriodEnd } =
+            getStripeSubscriptionPeriodDates(subscription);
           const { upsertSubscriptionFromCheckout } = await import('./account/billingService');
           await upsertSubscriptionFromCheckout(userId, {
             userId,
@@ -363,8 +362,8 @@ export class StripeService {
               subscription.status === 'active' || subscription.status === 'trialing'
                 ? 'active'
                 : 'cancelled',
-            currentPeriodStart: new Date(subscription.current_period_start * 1000),
-            currentPeriodEnd: new Date(subscription.current_period_end * 1000),
+            currentPeriodStart,
+            currentPeriodEnd,
             stripeSubscriptionId: subscription.id,
             stripeCustomerId: subscription.customer as string,
             cancelAtPeriodEnd: Boolean(subscription.cancel_at_period_end),
