@@ -1,175 +1,235 @@
 # Admin Portal — UX Audit
 
-**Program:** Admin Portal Program — Phase 0A  
-**Date:** 2026-06-24  
-**Status:** Discovery only — **no UX certification awarded**
+**Program:** Admin Portal Reference Program — Operational Excellence Phase 0A  
+**Date:** 2026-07-05  
+**Status:** Discovery only — no UX certification awarded
 
-**Authority:** [`UX_CONSTITUTION.md`](../ux/UX_CONSTITUTION.md) · [`UX_REFERENCE_PATTERN_CATALOG.md`](../ux/UX_REFERENCE_PATTERN_CATALOG.md)
+**Authority:** [`UX_CONSTITUTION.md`](../ux/UX_CONSTITUTION.md) · [`DESIGN_TOKENS.md`](../ux/DESIGN_TOKENS.md)
 
-**Baseline:** G9 UX shell **PASS** (2026-06-18 closeout). This audit re-evaluates operator UX after marketplace readiness surfaces and governance/retention nav additions.
+**Baseline:** G9 UX shell PASS (2026-06-18). Re-evaluated after Platform Controller navigation reorganization (Phase 1B) and Platform Programs hub addition.
 
-**Related:** [Reality Assessment](./ADMIN_PORTAL_REALITY_ASSESSMENT.md) · [`ADMIN_PORTAL_UX_SHELL_CLOSEOUT.md`](../architecture/audits/ADMIN_PORTAL_UX_SHELL_CLOSEOUT.md)
+**Related:** [Information Architecture](./ADMIN_PORTAL_INFORMATION_ARCHITECTURE.md) · [Reference Assessment](./ADMIN_PORTAL_REFERENCE_ASSESSMENT.md)
 
 ---
 
 ## 1. Executive summary
 
-Admin Portal UX is **functional and improved** since the June 2026 modernization wave: shared `AdminPortalEmptyState`, `ConfirmModal` adoption, and token migration closed prior G9 findings. The **AI Pipeline sub-tree** remains the **reference UX pattern** for operator surfaces.
+Admin Portal UX is **operator-functional and improving**. The **Platform Controller** rebrand (sidebar sections, collapsible groups, Platform Programs hub) closes the largest IA gap from the June 2026 audit. AI Pipeline remains the **reference UX pattern** for deep operator workflows.
 
-Heterogeneity persists: the **modules governance page** is a 2,100+ LOC monolith; **business intelligence** and several AI satellite pages are hub-discovered but not sidebar-listed; marketplace probe feedback is minimal ("see network tab"); and **12 orphan/debug pages** remain reachable by URL.
+Heterogeneity persists: the **modules page** (~2,100 LOC) is dense; **business-intelligence** overlaps analytics; marketplace probe feedback is weak; **13 orphan/debug pages** remain URL-reachable. No global operator search exists.
 
-**Overall UX posture:** **Above minimum operator bar; below unified Platform Programs command-center ideal.**
+**Overall UX posture:** **Above minimum operator bar; approaching unified cockpit ideal (~78% UX completion).**
 
 ---
 
-## 2. UX scorecard (2026-06-24)
+## 2. UX scorecard
 
 | Category | Status | Evidence | Finding |
 |----------|--------|----------|---------|
-| Shell | **PASS WITH FINDINGS** | Custom sidebar + header; intentional PlatformShell exception | Operator isolation appropriate |
-| Navigation | **PASS WITH FINDINGS** | 22 sidebar items, 6 collapsible sections | 12 orphan pages; BI not in nav |
-| Admin IA | **PASS WITH FINDINGS** | Logical Operations → Commercial → AI → Platform → Modules | No Platform Programs hub |
-| Page consistency | **PASS WITH FINDINGS** | AI Pipeline uses sub-shell; shared page shell elsewhere | modules page ad-hoc density |
-| Dashboard consistency | **PASS WITH FINDINGS** | `AdminStatCard`, shared empty states | Heterogeneous chart patterns across analytics/BI |
-| Empty/loading/error | **PASS** | `AdminPortalEmptyState`, Spinner, retry patterns | 0E-C mock removal closed gaps |
-| Modal / confirm | **PASS** | `ConfirmModal` on critical flows | seed-modules may still use legacy patterns |
-| Token usage | **PASS WITH FINDINGS** | `v-*` tokens in layout/shell | Legacy `gray-*` in marketplace components |
-| Marketplace probe UX | **PASS WITH FINDINGS** | Readiness card + 4 probe buttons | Weak result surfacing; no history |
-| Certification workflow UX | **PASS** | Certification panel + checklist in modal | Dense but complete |
-| Debug page leakage | **PASS WITH FINDINGS** | Env-gated testing nav; debug pages by URL | Mitigated not eliminated |
-| Mobile behavior | **UNKNOWN** | Sidebar collapse exists | Not tested in this audit |
-| Accessibility | **UNKNOWN** | Pipeline sub-shell has aria on back link | Broader a11y not assessed |
+| Shell | **PASS** | Custom Platform Controller sidebar + header | Intentional PlatformShell exception |
+| Navigation | **PASS WITH FINDINGS** | 24 sidebar destinations, 10 sections | Orphan pages; no global search |
+| Information architecture | **PASS WITH FINDINGS** | Platform Programs hub added | BI still orphan |
+| Page consistency | **PASS WITH FINDINGS** | `AdminPortalPageShell`, Pipeline sub-shell | Modules page ad-hoc |
+| Dashboard | **PASS WITH FINDINGS** | `AdminStatCard`, empty states | No live health strip |
+| Empty / loading / error | **PASS** | `AdminPortalEmptyState`, Spinner, retry | Mock removal closed |
+| Modal / confirm | **PASS** | `ConfirmModal` on critical flows | — |
+| Token usage | **PASS WITH FINDINGS** | `v-*` in layout/shell | Legacy `gray-*` in some marketplace components |
+| Marketplace probe UX | **PASS WITH FINDINGS** | Readiness card + 4 probes | Weak result surfacing |
+| Certification workflow | **PASS** | Panel + checklist in modal | Dense on small viewports |
+| Platform Programs hub | **PASS** | `PlatformProgramCard` grid | Health load errors graceful |
+| Debug leakage | **PASS WITH FINDINGS** | Env-gated nav items | Direct URL still works |
+| Operator efficiency | **PASS WITH FINDINGS** | Most flows ≤3 clicks | Business ops requires impersonation workaround |
+| Searchability | **FAIL** | No global operator search | High friction for user/business lookup |
+| Accessibility | **UNKNOWN** | Pipeline back-link aria | Broader audit not run |
+| Mobile | **UNKNOWN** | Sidebar collapse | Not tested |
 
 ---
 
-## 3. Navigation and information architecture
+## 3. Navigation evaluation
 
-### 3.1 Sidebar structure (authoritative: `layout.tsx`)
+### 3.1 Current sidebar (authoritative: `platformControllerNavigation.ts`)
 
-| Section | Items | Count |
-|---------|-------|------:|
-| Operations | Overview, Users, Moderation, Support | 4 |
-| Commercial | Financial Management, Pricing | 2 |
-| AI | AI System, AI Pipeline | 2 |
-| Platform | Analytics, Performance, Security, **Governance**, **Retention**, System Logs, System Admin | 7 |
-| Developer & Modules | Developers, Modules | 2 |
-| Admin Labs | Overrides, Testing (gated), Impersonation | 2–3 |
+| Section | Items | Default collapsed |
+|---------|------:|:-------------------:|
+| Overview | 2 | No |
+| Platform Programs | 2 | No |
+| Marketplace | 2 | No |
+| AI & Diagnostics | 4 | No |
+| Operations | 4 | No |
+| Providers | 1 | No |
+| Security | 1 | No |
+| Billing | 2 | No |
+| Configuration | 3 | No |
+| Operator Labs | 2–3 | **Yes** |
 
-**Change since prior audit:** Governance and Retention **added to sidebar** (previously orphan under `/admin/*`).
+**Improvement since June 2026:** Platform Programs and Platform Adoption now in nav. AI System removed from nav (reduces duplicate launcher). Provider Governance uses hash deep-link on AI Pipeline.
 
-### 3.2 Orphan surfaces
+### 3.2 Click-depth analysis (operator efficiency)
 
-| Page | Discovery path | Risk | Recommendation |
-|------|----------------|------|----------------|
-| `/admin-portal/business-intelligence` | AI System hub | Low | Add to Platform or Commercial section |
-| `/admin-portal/business-ai` | AI System hub | Low | Acceptable hub pattern |
-| `/admin-portal/ai-context` | AI System hub | Medium | Retire → pipeline diagnostics |
-| `/admin-portal/ai-learning` | Redirect/hub | Low | Deprecated — keep redirect |
-| `/admin-portal/seed-modules` | Direct URL | Medium | Move to Admin Labs or CLI |
-| 6 debug/test pages | Direct URL | Medium | Keep env-gated; remove from prod build tree (future) |
+| Task | Clicks | Acceptable? |
+|------|-------:|:-----------:|
+| View platform stats | 1 (dashboard default) | ✅ |
+| Certify a module submission | 2 (modules → modal) | ✅ |
+| Run AI trace diagnostic | 2 (AI Pipeline → diagnostics) | ✅ |
+| Sync Stripe subscription | 2 (billing → sync) | ✅ |
+| Find a business (not impersonating) | 3+ (impersonate → search) | ⚠️ |
+| Check email delivery | N/A | ❌ |
+| Check API health | N/A (outside portal) | ❌ |
+| Platform program health | 1 (platform-programs) | ✅ |
+| Edit pricing tier | 2 (pricing → modal) | ✅ |
 
-### 3.3 Discoverability gaps for new platform programs
+**Verdict:** Core governance and AI flows are efficient. **Business and infra ops require unnecessary navigation or leave the portal.**
 
-| Platform capability | Expected operator path | Current path | Gap |
-|--------------------|------------------------|--------------|-----|
-| Marketplace partner probes | Modules → submission detail | ✅ Present | Probe results weak |
-| Unified Search ops | Platform → Search | ❌ Missing | No nav entry |
-| Context Graph ops | AI Pipeline → sources/registry | Partial | No labeled "Context Graph" IA |
-| Activity ingest monitor | Modules probe | Probe only | No aggregate view |
-| Sandbox pilot status | Platform or Modules | ❌ Missing | AP-G08 |
+### 3.3 Orphan surfaces
 
----
-
-## 4. Workflow audits
-
-### 4.1 Module certification workflow
-
-| Step | UX quality | Notes |
-|------|------------|-------|
-| List submissions with filters | **Good** | Search, bulk actions |
-| Open submission detail | **Good** | Modal with tabs |
-| Review certification checklist | **Good** | `ModuleCertificationReviewPanel` |
-| Check marketplace readiness | **Good** | `MarketplaceReadinessCard` with scope badge |
-| Run delegate probes | **Adequate** | Buttons work; feedback minimal |
-| Approve/reject with notes | **Good** | ConfirmModal, review notes |
-| Promote version | **Good** | Gate errors surfaced from API |
-
-**Friction points:** Modal density on smaller viewports; probe success requires network tab inspection; no persisted probe audit trail in UI.
-
-### 4.2 AI diagnostics workflow
-
-| Step | UX quality | Notes |
-|------|------------|-------|
-| Navigate to AI Pipeline | **Good** | Sidebar + AI System hub |
-| View health metrics | **Good** | Retrieval trigger rate, enforcement stats |
-| Open trace | **Excellent** | Evidence viewer with retrieval tab |
-| Test lab dry-run | **Good** | Structured panels |
-| Policy edit | **Good** | Registry validation feedback |
-
-**Verdict:** AI Pipeline is the **UX reference** for Admin Portal deep workflows.
-
-### 4.3 Platform configuration workflow
-
-| Step | UX quality | Notes |
-|------|------------|-------|
-| System config | **Adequate** | system page |
-| Dangerous migration ops | **Good** | Gated + confirm token |
-| Pricing edits | **Good** | Modal with query pack fields |
-| Governance / retention | **Adequate** | Now in nav; component-level UX varies |
-
-### 4.4 Support and moderation workflows
-
-| Workflow | UX quality | Notes |
-|----------|------------|-------|
-| Moderation queue | **Good** | Filters, bulk action |
-| Support tickets | **Adequate** | Large page; functional |
-| Impersonation | **Good** | Banner + lab; custom iframe sandbox |
+| Page | Discovery | Risk | Recommendation |
+|------|-----------|------|----------------|
+| `business-intelligence` | Direct URL / analytics tab | Low | Merge into analytics insights |
+| `business-ai` | Platform Programs link | Low | Acceptable hub |
+| `ai-system` | Bookmark only | Low | Keep redirect |
+| `ai-context` | Bookmark / old links | Medium | Redirect → diagnostics |
+| 7 debug pages | Direct URL | Medium | Keep gated |
+| `seed-modules` | Operator Labs (gated) | Low | Acceptable |
 
 ---
 
-## 5. Pattern alignment
+## 4. Information hierarchy
 
-### 5.1 Best-aligned: AI Pipeline
+### 4.1 What works
 
-| Pattern | Component | Notes |
-|---------|-----------|-------|
-| Sub-page shell | Pipeline sub-shell pattern | Back link, title, padding |
-| Operations hub | `PipelineOperationsHub.tsx` | Health cards, tool grid |
-| Enforcement badges | Pipeline components | Clear status semantics |
+1. **Overview first** — Dashboard and Analytics at top match founder/ops mental model.
+2. **Platform Programs as second section** — Correct elevation of certified capabilities.
+3. **AI & Diagnostics grouped** — Pipeline, diagnostics, logs, performance co-located.
+4. **Operator Labs collapsed** — Dangerous/debug tools deprioritized visually.
+5. **AI Pipeline sub-shell** — Back navigation, section titles, consistent spacing.
 
-**Recommendation:** Use AI Pipeline sub-shell as template for future **Platform Programs hub** and split modules tabs.
+### 4.2 Hierarchy gaps
 
-### 5.2 Weakest-aligned
+| Gap | Impact | Fix (consolidation) |
+|-----|--------|---------------------|
+| No **Businesses** in Operations | CS/Support friction | Add Operations → Businesses |
+| No **Email** in Configuration | Launch ops invisible | Add Configuration → Email Ops |
+| BI separate from Analytics | Duplicate mental model | Single analytics destination |
+| Provider Governance as hash link | Easy to miss | Acceptable if hub prominent |
+| No global search | Slow user/business lookup | Header search → users/businesses |
 
-| Page | Issues |
+---
+
+## 5. Visual consistency
+
+| Pattern | Adoption | Notes |
+|---------|----------|-------|
+| `AdminPortalPageShell` | Most non-pipeline pages | ✅ |
+| `PipelineSubpageShell` | All AI Pipeline sub-pages | ✅ Reference |
+| `AdminStatCard` | Dashboard, analytics | ✅ |
+| `AdminPortalEmptyState` | Standardized empty | ✅ |
+| `PlatformProgramCard` | Platform Programs | ✅ |
+| `shared/components` Button/Card/Spinner | Widespread | ✅ |
+| Legacy Tailwind grays | modules, some charts | 🔄 Token migration tail |
+| Chart libraries | Mixed across analytics/BI | 🔄 Normalize in merge |
+
+**Header:** "Platform Controller" + "Operational control plane" — consistent with Operational Excellence positioning. Static "System Online" indicator is **not wired to `/api/health`** (misleading during outages).
+
+---
+
+## 6. Loading, empty, and error states
+
+| Surface | Loading | Empty | Error |
+|---------|---------|-------|-------|
+| Dashboard | Spinner | EmptyState on no activity | Alert + retry |
+| Modules | Spinner | Empty submissions message | Error banner |
+| Support | Spinner | Empty ticket state | Retry (mock removed) |
+| AI Pipeline | Skeleton panels | Pipeline-specific empty | Per-section error |
+| Platform Programs | Card-level loading | N/A | Graceful degradation message |
+| Billing | Spinner | Empty subscriptions | Error + retry |
+
+**Verdict:** **PASS** — 0E-C mock removal and empty state standardization hold.
+
+---
+
+## 7. Workflow UX audits
+
+### 7.1 Module certification (reference workflow)
+
+| Step | Quality | Notes |
+|------|---------|-------|
+| Filter submissions | Good | Search, status filters |
+| Open detail modal | Good | Tabbed |
+| Certification checklist | Good | Clear pass/warn/fail |
+| Readiness probes | Adequate | Success unclear without network tab |
+| Approve/reject | Good | ConfirmModal |
+
+### 7.2 AI diagnostics (reference workflow)
+
+| Step | Quality | Notes |
+|------|---------|-------|
+| Hub health metrics | Good | At-a-glance |
+| Trace table | Excellent | Sortable, filterable |
+| Evidence viewer | Excellent | Retrieval tab |
+| Test lab | Good | Structured dry-run |
+
+### 7.3 Support workflow
+
+| Step | Quality | Notes |
+|------|---------|-------|
+| Ticket queue | Good | Filters work |
+| Assign / respond | Adequate | Large monolithic page |
+| Customer context | Weak | No linked user/business sidebar |
+
+### 7.4 Billing workflow
+
+| Step | Quality | Notes |
+|------|---------|-------|
+| Subscription list | Good | Stripe links |
+| Sync actions | Good | Per-row and bulk |
+| Payout review | Good | Tab separation |
+| Unknown amount warning | Good | Visible banner |
+
+---
+
+## 8. Accessibility
+
+| Item | Status |
 |------|--------|
-| `modules/page.tsx` | 2,100+ LOC; multiple concerns in one file |
-| `MarketplaceReadinessCard` | Legacy gray tokens; probe note is yellow text only |
-| Debug pages | Inconsistent with production shell standards |
+| Focus visible on sidebar links | Partial |
+| `sr-only` headings on Platform Programs | ✅ |
+| Pipeline back link aria | ✅ |
+| Color contrast on dark sidebar | Generally adequate |
+| Keyboard trap in large modals | Unknown |
+| Screen reader on data tables | Unknown |
+
+**Recommendation:** Run focused a11y pass on modules modal and support page before declaring operator UX certified.
 
 ---
 
-## 6. UX findings register
+## 9. UX modernization priorities (no redesign)
 
-| ID | Finding | Severity |
-|----|---------|----------|
-| UX-01 | No Platform Programs hub for Search / Context Graph / Marketplace pilot | Major |
-| UX-02 | Probe results not rendered inline — operator must inspect network | Advisory |
-| UX-03 | Business Intelligence not in sidebar | Advisory |
-| UX-04 | modules page monolith hurts maintainability and load time | Advisory |
-| UX-05 | Marketplace components use legacy color tokens | Advisory |
-| UX-06 | 12 orphan/debug pages in production tree | Advisory (mitigated) |
-
----
-
-## 7. Recommendations (planning only)
-
-1. Add **Platform Programs** nav item with federated status cards (Search, Marketplace pilot, Context Graph).
-2. Enhance **MarketplaceReadinessCard** — inline probe JSON summary + last-run timestamp.
-3. Add **Business Intelligence** to Platform section or merge into Analytics with tab IA.
-4. Split **modules page** into tab components (submissions, AI context, analytics) under shared shell.
-5. Retire **ai-context** page — redirect to AI Pipeline diagnostics.
+| Priority | Item | Effort |
+|----------|------|--------|
+| P0 | Header health indicator wired to `/api/health` | Small |
+| P0 | Global operator search (users + businesses) | Medium |
+| P1 | Merge BI into analytics (remove orphan) | Medium |
+| P1 | Probe result toast/panel on readiness card | Small |
+| P1 | Support page: linked user/business context | Medium |
+| P2 | Modules page decomposition (tabs extraction) | Medium |
+| P2 | Token migration tail on marketplace components | Small |
+| P3 | Redirect ai-context → diagnostics | Small |
 
 ---
 
-**Last updated:** 2026-06-24 (Phase 0A discovery)
+## 10. UX completion estimate
+
+| Area | % |
+|------|--:|
+| Shell & navigation | 85% |
+| Core workflows (AI, modules, billing) | 90% |
+| Secondary workflows (support, perf) | 70% |
+| Discoverability (search, orphans) | 60% |
+| Infra/email ops UX | 40% |
+| Accessibility confidence | 50% (unknown) |
+
+### **Weighted UX completion: ~78%**
+
+---
+
+**Last updated:** 2026-07-05
