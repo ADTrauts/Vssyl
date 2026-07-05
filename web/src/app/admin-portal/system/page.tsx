@@ -22,6 +22,8 @@ import {
   Zap
 } from 'lucide-react';
 import { adminApiService } from '../../../lib/adminApiService';
+import { PlatformOperationsPanel } from '../../../components/admin-portal/PlatformOperationsPanel';
+import { showOperatorToast } from '../../../lib/adminPortalOperatorToast';
 
 interface SystemMetrics {
   cpu: number;
@@ -68,6 +70,8 @@ export default function SystemPage() {
   const [autoRefresh, setAutoRefresh] = useState(false);
   const [editingConfig, setEditingConfig] = useState<string | null>(null);
   const [configValue, setConfigValue] = useState<string>('');
+  const [emailStatus, setEmailStatus] = useState<{ available: boolean; configured: boolean } | null>(null);
+  const [emailTesting, setEmailTesting] = useState(false);
 
   useEffect(() => {
     loadSystemData();
@@ -97,6 +101,12 @@ export default function SystemPage() {
       setSystemConfigs((configsRes.data as any[]) ?? []);
       setBackupStatus(backupRes.data as BackupStatus);
       setMaintenanceMode(maintenanceRes.data as MaintenanceMode);
+
+      const emailRes = await adminApiService.getEmailServiceStatus();
+      if (emailRes.data) {
+        setEmailStatus(emailRes.data);
+      }
+
       setError(null);
     } catch (err) {
       setError('Failed to load system data');
@@ -150,6 +160,20 @@ export default function SystemPage() {
     }
   };
 
+  const sendEmailTest = async () => {
+    setEmailTesting(true);
+    try {
+      const res = await adminApiService.testEmailService();
+      if (res.error) {
+        showOperatorToast(`SMTP test failed: ${res.error}`, 'error');
+      } else {
+        showOperatorToast('Test email sent to your admin address', 'success');
+      }
+    } finally {
+      setEmailTesting(false);
+    }
+  };
+
   const getHealthColor = (value: number) => {
     if (value < 50) return 'text-green-600';
     if (value < 80) return 'text-yellow-600';
@@ -184,7 +208,9 @@ export default function SystemPage() {
       <div className="flex items-center justify-between">
         <div>
           <h1 className="text-3xl font-bold text-v-text-primary">System Administration</h1>
-          <p className="text-v-text-secondary mt-2">Monitor and manage system health and configuration</p>
+          <p className="text-v-text-secondary mt-2">
+            Infrastructure configuration, email delivery, migrations, and maintenance controls.
+          </p>
         </div>
         <div className="flex items-center space-x-3">
           <button
@@ -216,6 +242,29 @@ export default function SystemPage() {
           {error}
         </Alert>
       )}
+
+      <PlatformOperationsPanel compact />
+
+      <Card className="p-6">
+        <div className="flex flex-wrap items-start justify-between gap-v-4">
+          <div>
+            <h2 className="text-lg font-semibold text-v-text-primary">Email (SMTP)</h2>
+            <p className="text-sm text-v-text-secondary mt-1">
+              Transactional delivery for invites, verification, and support — uses existing SMTP configuration.
+            </p>
+            {emailStatus && (
+              <p className="text-sm mt-2 text-v-text-primary">
+                Configured: {emailStatus.configured ? 'Yes' : 'No'}
+                {' · '}
+                Available: {emailStatus.available ? 'Yes' : 'No'}
+              </p>
+            )}
+          </div>
+          <Button variant="secondary" size="sm" onClick={() => void sendEmailTest()} disabled={emailTesting}>
+            {emailTesting ? 'Sending…' : 'Send test email'}
+          </Button>
+        </div>
+      </Card>
 
       {/* System Health */}
       {systemMetrics && (

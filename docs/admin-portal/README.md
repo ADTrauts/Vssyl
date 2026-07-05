@@ -24,7 +24,8 @@ Control plane surfaces at `/admin-portal` and `/api/admin-portal`. Certification
 | [Capability Matrix](./ADMIN_PORTAL_CAPABILITY_MATRIX.md) | Per-capability Complete / Modernize / Missing |
 | [UX Audit](./ADMIN_PORTAL_UX_AUDIT.md) | Navigation, efficiency, consistency |
 | [Information Architecture](./ADMIN_PORTAL_INFORMATION_ARCHITECTURE.md) | Nav map, API IA, target state |
-| [Modernization Plan](./ADMIN_PORTAL_MODERNIZATION_PLAN.md) | Consolidation waves 0–4 |
+| [Wave 0 Closeout](./ADMIN_PORTAL_WAVE_0_CLOSEOUT.md) | Operational confidence — live health, redirects, probe toasts |
+| [Modernization Plan](./ADMIN_PORTAL_MODERNIZATION_PLAN.md) | Waves 0–4 (Wave 0 ✅) |
 
 ## Prior assessments (still valid reference)
 
@@ -50,7 +51,7 @@ Control plane surfaces at `/admin-portal` and `/api/admin-portal`. Certification
 
 ## Verdict (Phase 0A)
 
-**Yes** — Admin Portal can become the single operational cockpit (**~82% today**, **~92%** after consolidation). See [Executive Summary](./ADMIN_PORTAL_REFERENCE_PROGRAM_EXECUTIVE_SUMMARY.md).
+**Yes** — Admin Portal can become the single operational cockpit (**~86% post–Wave 0**, **~92%** after Waves 1–3). See [Executive Summary](./ADMIN_PORTAL_REFERENCE_PROGRAM_EXECUTIVE_SUMMARY.md).
 
 ## Related Domains
 

@@ -2,7 +2,7 @@
 
 **Program:** Admin Portal Reference Program — Operational Excellence Phase 0A  
 **Date:** 2026-07-05  
-**Status:** Planning only — **no implementation authorized by this document**
+**Status:** Wave 0 complete — Wave 1+ planning
 
 **Constraint:** Consolidation over creation. No architecture redesign. No parallel systems. Do not rebuild completed subsystems (AI Pipeline, module certification, billing, impersonation).
 
@@ -33,15 +33,18 @@ Close the **~18% gap** between today's Admin Portal (~82% operational maturity) 
 
 ## 3. Work packages
 
-### Wave 0 — Quick wins (1 week)
+### Wave 0 — Quick wins (1 week) ✅ **Complete 2026-07-05**
 
-| ID | Item | Type | Files / surfaces | Effort |
-|----|------|------|------------------|--------|
-| W0-1 | Wire header "System Online" to `/api/health` | Modernize | `layout.tsx`, dashboard | S |
-| W0-2 | Redirect `ai-context` → `ai-pipeline/diagnostics` | Consolidate | `ai-context/page.tsx` | S |
-| W0-3 | Redirect `ai-system` → `ai-pipeline` | Deprecate | `ai-system/page.tsx` | S |
-| W0-4 | Probe result toast on readiness card | Modernize | `MarketplaceReadinessCard` | S |
-| W0-5 | Link email test API from System Admin | Consolidate | `system/page.tsx`, `emailNotification` routes | S |
+See [Wave 0 Closeout](./ADMIN_PORTAL_WAVE_0_CLOSEOUT.md).
+
+| ID | Item | Type | Files / surfaces | Effort | Status |
+|----|------|------|------------------|--------|--------|
+| W0-1 | Wire header "System Online" to live health | Modernize | `layout.tsx`, `PlatformHealthIndicator` | S | ✅ |
+| W0-2 | Redirect `ai-context` → `ai-pipeline/diagnostics` | Consolidate | `ai-context/page.tsx` | S | ✅ |
+| W0-3 | Redirect `ai-system` → `ai-pipeline` | Deprecate | `ai-system/page.tsx` | S | ✅ |
+| W0-4 | Probe result toast on readiness card | Modernize | `MarketplaceReadinessCard` | S | ✅ |
+| W0-5 | Link email test API from System Admin | Consolidate | `system/page.tsx`, email-notification | S | ✅ |
+| W0-6 | Dashboard health panel | Modernize | `PlatformOperationsPanel`, operations-status API | S | ✅ |
 
 ### Wave 1 — P0 operational gaps (2–3 weeks)
 
@@ -135,12 +138,12 @@ W4 satellite migration (parallel, low risk)
 
 ## 6. Success metrics
 
-| Metric | Baseline (2026-07-05) | Target (post-Wave 3) |
-|--------|----------------------:|---------------------:|
-| Operational maturity | 82% | 92% |
-| UX completion | 78% | 88% |
-| IA maturity | 75% | 90% |
-| Routine ops without leaving portal | ~70% | ~90% |
+| Metric | Baseline (2026-07-05) | Post–Wave 0 | Target (post-Wave 3) |
+|--------|----------------------:|------------:|---------------------:|
+| Operational maturity | 82% | **86%** | 92% |
+| UX completion | 78% | **82%** | 88% |
+| IA maturity | 75% | 76% | 90% |
+| Routine ops without leaving portal | ~70% | **~78%** | ~90% |
 | Orphan pages | 13 | ≤5 (debug only) |
 | Satellite mounts unmigrated | 6 | ≤2 |
 | Operator clicks to find business | 3+ | 1–2 |

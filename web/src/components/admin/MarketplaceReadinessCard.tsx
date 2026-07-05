@@ -4,6 +4,7 @@ import React, { useCallback, useEffect, useState } from 'react';
 import { Badge, Button, Spinner } from 'shared/components';
 import { RefreshCw } from 'lucide-react';
 import { adminApiService, type MarketplaceReadinessShape } from '../../lib/adminApiService';
+import { showProbeToast } from '../../lib/adminPortalOperatorToast';
 
 function scopeBadgeColor(scope: string | null): 'blue' | 'green' | 'gray' | 'yellow' | 'red' {
   switch (scope) {
@@ -71,11 +72,22 @@ export function MarketplaceReadinessCard({
       }
       if (res.error) {
         setProbeNote(`${kind} probe failed: ${res.error}`);
+        showProbeToast(`${kind} delegate`, false, res.error);
       } else {
-        setProbeNote(`${kind} probe completed — see server response in network tab`);
+        const payload = res.data as Record<string, unknown> | undefined;
+        const summary =
+          typeof payload?.message === 'string'
+            ? payload.message
+            : typeof payload?.outcome === 'string'
+              ? payload.outcome
+              : 'OK';
+        setProbeNote(`${kind} probe succeeded: ${summary}`);
+        showProbeToast(`${kind} delegate`, true, summary);
       }
     } catch (e) {
-      setProbeNote(e instanceof Error ? e.message : 'Probe failed');
+      const msg = e instanceof Error ? e.message : 'Probe failed';
+      setProbeNote(msg);
+      showProbeToast(kind, false, msg);
     } finally {
       setProbeLoading(null);
     }
@@ -222,7 +234,15 @@ export function MarketplaceReadinessCard({
       )}
 
       {probeNote && (
-        <p className="mt-2 text-xs text-yellow-700 dark:text-yellow-300">{probeNote}</p>
+        <p
+          className={`mt-2 text-xs ${
+            probeNote.includes('failed') || probeNote.includes('Probe failed')
+              ? 'text-red-700 dark:text-red-300'
+              : 'text-green-700 dark:text-green-300'
+          }`}
+        >
+          {probeNote}
+        </p>
       )}
     </div>
   );

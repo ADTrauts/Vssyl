@@ -2,9 +2,9 @@
 
 **Program:** Admin Portal Reference Program — Operational Excellence Phase 0A  
 **Date:** 2026-07-05  
-**Status:** Discovery complete
+**Status:** Wave 0 complete — operational confidence improved
 
-**Deliverables:** [Reference Assessment](./ADMIN_PORTAL_REFERENCE_ASSESSMENT.md) · [Operational Model](./ADMIN_PORTAL_OPERATIONAL_MODEL.md) · [Capability Matrix](./ADMIN_PORTAL_CAPABILITY_MATRIX.md) · [UX Audit](./ADMIN_PORTAL_UX_AUDIT.md) · [Information Architecture](./ADMIN_PORTAL_INFORMATION_ARCHITECTURE.md) · [Modernization Plan](./ADMIN_PORTAL_MODERNIZATION_PLAN.md)
+**Deliverables:** [Reference Assessment](./ADMIN_PORTAL_REFERENCE_ASSESSMENT.md) · [Wave 0 Closeout](./ADMIN_PORTAL_WAVE_0_CLOSEOUT.md) · [Modernization Plan](./ADMIN_PORTAL_MODERNIZATION_PLAN.md)
 
 ---
 
@@ -30,24 +30,22 @@ Remaining work is **consolidation and surfacing** (~6–8 weeks), not platform r
 
 ## Current operational maturity
 
-### **~82%** (weighted)
+### **~86%** (post–Wave 0, weighted)
 
-| Dimension | Score |
-|-----------|------:|
+| Dimension | Score (post–Wave 0) |
+|-----------|-------------------:|
 | User & access ops | 92% |
 | Marketplace & modules | 88% |
 | AI administration | 90% |
 | Billing & commercial | 85% |
 | Security & audit | 82% |
 | Operator analytics | 75% |
-| Platform health & infra | 55% |
-| Email & comms ops | 45% |
+| **Platform health & infra** | **72%** ↑ |
+| **Email & comms ops** | **58%** ↑ |
 | Configuration & flags | 60% |
 | Support & jobs | 70% |
 
-**Prior state (June 2026):** ~78%. **Improvement drivers:** Platform Programs hub, Platform Adoption surfaces, Launch Readiness closure on SMTP/Stripe.
-
-**Target after modernization Waves 0–3:** **~92%**
+**Prior (Phase 0A):** ~82%. **Target after Waves 1–3:** ~92%.
 
 ---
 
@@ -82,8 +80,8 @@ Remaining work is **consolidation and surfacing** (~6–8 weeks), not platform r
 | Priority | Gap | Why it matters |
 |----------|-----|----------------|
 | **P0** | No **Businesses** operator hub | CS/Support cannot manage accounts without impersonation workaround |
-| **P0** | No **Email Operations** surface | SMTP verified in launch; operators cannot diagnose delivery from portal |
-| **P1** | Infra health not in UI | `/api/health` exists; header shows static "System Online" |
+| **P0** | Email template/delivery ops panel | SMTP test exists; full Email Ops hub deferred Wave 1 |
+| ~~P1~~ | ~~Infra health not in UI~~ | **Resolved Wave 0** — header + dashboard panel |
 | **P1** | Analytics / BI duplication | Two mental models for same operator metrics |
 | **P1** | No feature flag visibility | Flags env-only; blocks operator rollout confidence |
 | **P2** | No background jobs monitor | Cron jobs run silently |
@@ -155,10 +153,10 @@ See [Modernization Plan](./ADMIN_PORTAL_MODERNIZATION_PLAN.md) for package detai
 
 | Milestone | % | ETA |
 |-----------|--:|-----|
-| Today (operational cockpit) | **82%** | — |
-| After Wave 1 (P0 gaps) | **87%** | +3 weeks |
-| After Wave 2–3 (P1–P2) | **92%** | +6–8 weeks |
-| Full operator ideal (incl. funnel, CS metrics, Policy Engine UI) | **~95%** | Future programs |
+| Phase 0A discovery | 82% | 2026-07-05 |
+| **Wave 0 complete** | **86%** | **2026-07-05** |
+| After Wave 1 (P0 gaps) | 87% | +3 weeks |
+| After Wave 2–3 (P1–P2) | 92% | +6–8 weeks |
 
 ---
 

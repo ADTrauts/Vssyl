@@ -373,6 +373,25 @@ class AdminApiService {
     }
   }
 
+  /** Non–admin-portal paths via Next.js API proxy (e.g. email-notification). */
+  private async makeProxyRequest<T>(path: string, options: RequestInit = {}): Promise<ApiResponse<T>> {
+    try {
+      const headers = await this.getAuthHeaders();
+      const response = await fetch(path, {
+        ...options,
+        headers: { ...headers, ...options.headers },
+      });
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error((errorData as { error?: string }).error || `HTTP ${response.status}`);
+      }
+      const responseData = await response.json();
+      return { data: responseData as T };
+    } catch (error: unknown) {
+      return { error: error instanceof Error ? error.message : 'Unknown error' };
+    }
+  }
+
   // ============================================================================
   // DASHBOARD ANALYTICS
   // ============================================================================
@@ -613,6 +632,22 @@ class AdminApiService {
 
   async getSystemHealth() {
     return this.makeRequest('/system/health');
+  }
+
+  async getPlatformOperationsStatus() {
+    return this.makeRequest('/platform/operations-status');
+  }
+
+  async getEmailServiceStatus() {
+    return this.makeProxyRequest<{ available: boolean; configured: boolean }>('/api/email-notification/status');
+  }
+
+  async testEmailService(email?: string) {
+    return this.makeProxyRequest<{ message?: string }>('/api/email-notification/test', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(email ? { email } : {}),
+    });
   }
 
   async getSystemConfig() {

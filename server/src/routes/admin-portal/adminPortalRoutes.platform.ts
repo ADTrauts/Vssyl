@@ -8,6 +8,7 @@ import * as adminAnalyticsService from '../../services/admin/adminAnalyticsServi
 import * as adminSupportService from '../../services/admin/adminSupportService';
 import * as adminSystemOpsService from '../../services/admin/adminSystemOpsService';
 import * as adminPerformanceService from '../../services/admin/adminPerformanceService';
+import * as adminPlatformOperationsService from '../../services/admin/adminPlatformOperationsService';
 
 export function registerAdminPortalPlatformRoutes(router: express.Router): void {
 // Business Intelligence Routes
@@ -1334,255 +1335,60 @@ router.get('/performance/export', authenticateJWT, requireAdmin, async (req: Req
 });
 
 // ============================================================================
-// INTEGRATION STATUS & DIAGNOSTICS
+// PLATFORM OPERATIONS & INTEGRATION STATUS (Wave 0)
 // ============================================================================
 
-/**
- * Helper: Run a promise with a timeout
- */
-function withTimeout<T>(promise: Promise<T>, ms: number, timeoutError: string): Promise<T> {
-  return Promise.race([
-    promise,
-    new Promise<T>((_, reject) => setTimeout(() => reject(new Error(timeoutError)), ms))
-  ]);
-}
-
-/**
- * GET /api/admin-portal/integrations/status
- * Comprehensive diagnostic endpoint for all external integrations
- * Tests Stripe, OpenAI, and Anthropic connectivity (with timeouts)
- */
-router.get('/integrations/status', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
-  const TIMEOUT_MS = 5000; // 5 second timeout for each check
-  
+/** GET /api/admin-portal/platform/operations-status — operator cockpit health summary */
+router.get('/platform/operations-status', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
   try {
     const adminUser = req.user;
     if (!adminUser) {
       return res.status(401).json({ error: 'User not authenticated' });
     }
 
-    // Get all env vars upfront
-    const stripeKey = process.env.STRIPE_SECRET_KEY;
-    const openaiKey = process.env.OPENAI_API_KEY;
-    const anthropicKey = process.env.ANTHROPIC_API_KEY;
+    const status = await adminPlatformOperationsService.getPlatformOperationsStatus();
 
-    // Initialize results structure
-    const integrations: Record<string, {
-      configured: boolean;
-      status: 'healthy' | 'error' | 'not_configured' | 'timeout';
-      error?: string;
-      details?: Record<string, unknown>;
-    }> = {
-      stripe: {
-        configured: !!(stripeKey && stripeKey.length > 10),
-        status: 'not_configured',
-        details: {
-          keyPrefix: stripeKey ? stripeKey.substring(0, 12) + '...' : null,
-          keyLength: stripeKey?.length || 0,
-          isTestMode: stripeKey?.startsWith('sk_test_') || false,
-          isLiveMode: stripeKey?.startsWith('sk_live_') || false,
-          webhookConfigured: !!process.env.STRIPE_WEBHOOK_SECRET
-        }
-      },
-      openai: {
-        configured: !!(openaiKey && openaiKey.length > 10),
-        status: 'not_configured',
-        details: {
-          keyPrefix: openaiKey ? openaiKey.substring(0, 10) + '...' : null,
-          keyLength: openaiKey?.length || 0,
-          adminKeyConfigured: !!process.env.OPENAI_ADMIN_API_KEY
-        }
-      },
-      anthropic: {
-        configured: !!(anthropicKey && anthropicKey.length > 10),
-        status: 'not_configured',
-        details: {
-          keyPrefix: anthropicKey ? anthropicKey.substring(0, 10) + '...' : null,
-          keyLength: anthropicKey?.length || 0
-        }
-      },
-      database: {
-        configured: !!process.env.DATABASE_URL,
-        status: 'not_configured',
-        details: {
-          urlConfigured: !!process.env.DATABASE_URL,
-          directUrlConfigured: !!process.env.DIRECT_URL
-        }
-      },
-      storage: {
-        configured: process.env.STORAGE_PROVIDER === 'gcs',
-        status: 'not_configured',
-        details: {
-          provider: process.env.STORAGE_PROVIDER || 'local',
-          bucket: process.env.GOOGLE_CLOUD_STORAGE_BUCKET || null,
-          projectId: process.env.GOOGLE_CLOUD_PROJECT_ID || null
-        }
-      }
-    };
-
-    // Run all checks in parallel with timeouts
-    const checks = await Promise.allSettled([
-      // 1. Stripe check
-      (async () => {
-        if (!stripeKey || stripeKey.length < 10) return;
-        const Stripe = require('stripe');
-        // Use default API version (SDK version) and longer timeout
-        const stripe = new Stripe(stripeKey, { 
-          timeout: 10000, // 10 second timeout
-          maxNetworkRetries: 1 // Reduce retries for faster feedback
-        });
-        await withTimeout(stripe.customers.list({ limit: 1 }), TIMEOUT_MS, 'Stripe API timeout');
-        integrations.stripe.status = 'healthy';
-      })(),
-      
-      // 2. OpenAI check
-      (async () => {
-        if (!openaiKey || openaiKey.length < 10) return;
-        const OpenAI = require('openai');
-        const client = new OpenAI({ apiKey: openaiKey, timeout: TIMEOUT_MS });
-        await withTimeout(client.models.list(), TIMEOUT_MS, 'OpenAI API timeout');
-        integrations.openai.status = 'healthy';
-      })(),
-      
-      // 3. Anthropic check - just verify key format, don't make API call (costs money)
-      (async () => {
-        if (!anthropicKey || anthropicKey.length < 10) return;
-        // Anthropic keys start with 'sk-ant-'
-        if (anthropicKey.startsWith('sk-ant-')) {
-          integrations.anthropic.status = 'healthy';
-          integrations.anthropic.details = {
-            ...integrations.anthropic.details,
-            keyFormat: 'valid'
-          };
-        } else {
-          integrations.anthropic.status = 'error';
-          integrations.anthropic.error = 'Invalid key format (should start with sk-ant-)';
-        }
-      })(),
-      
-      // 4. Database check
-      (async () => {
-        await adminSystemOpsService.probeDatabaseConnection(TIMEOUT_MS);
-        integrations.database.status = 'healthy';
-      })(),
-      
-      // 5. Storage check
-      (async () => {
-        if (process.env.STORAGE_PROVIDER !== 'gcs') {
-          integrations.storage.status = 'healthy'; // Local storage always works
-          return;
-        }
-        const { Storage } = require('@google-cloud/storage');
-        const storage = new Storage();
-        const bucket = storage.bucket(process.env.GOOGLE_CLOUD_STORAGE_BUCKET);
-        await withTimeout(bucket.exists(), TIMEOUT_MS, 'GCS connection timeout');
-        integrations.storage.status = 'healthy';
-      })()
-    ]);
-
-    // Process results and capture errors with full details
-    const checkNames = ['stripe', 'openai', 'anthropic', 'database', 'storage'];
-    checks.forEach((result, index) => {
-      const name = checkNames[index];
-      if (result.status === 'rejected') {
-        const error = result.reason;
-        if (integrations[name].configured) {
-          if (error.message?.includes('timeout')) {
-            integrations[name].status = 'timeout';
-          } else {
-            integrations[name].status = 'error';
-          }
-          // Capture full error details
-          const errorMessage = error instanceof Error ? error.message : String(error);
-          const errorCode = (error as any)?.code || (error as any)?.type || null;
-          const errorStatus = (error as any)?.statusCode || (error as any)?.status || null;
-          integrations[name].error = errorMessage;
-          integrations[name].details = {
-            ...integrations[name].details,
-            errorCode,
-            errorStatus,
-            errorType: error?.constructor?.name || 'Unknown'
-          };
-        }
-      }
-    });
-
-    // Calculate overall status
-    const statuses = Object.values(integrations).map(i => i.status);
-    const overallStatus = statuses.every(s => s === 'healthy') 
-      ? 'healthy' 
-      : statuses.some(s => s === 'error' || s === 'timeout') 
-        ? 'degraded' 
-        : 'partial';
-
-    // Log the check
-    await logger.info('Integration status check performed', {
-      operation: 'admin_integration_status_check',
+    await logger.info('Platform operations status check', {
+      operation: 'admin_platform_operations_status',
       adminId: adminUser.id,
-      overallStatus
+      overallStatus: status.overallStatus,
     });
 
-    res.json({
-      success: true,
-      timestamp: new Date().toISOString(),
-      environment: process.env.NODE_ENV || 'development',
-      overallStatus,
-      integrations,
-      recommendations: generateRecommendations(integrations)
+    res.json({ success: true, data: status });
+  } catch (error: unknown) {
+    const err = error instanceof Error ? error : new Error(String(error));
+    await logger.error('Failed to fetch platform operations status', {
+      operation: 'admin_platform_operations_status',
+      error: { message: err.message, stack: err.stack },
     });
-
-  } catch (error) {
-    await logger.error('Failed to check integration status', {
-      operation: 'admin_integration_status_check',
-      error: {
-        message: error instanceof Error ? error.message : 'Unknown error',
-        stack: error instanceof Error ? error.stack : undefined
-      }
-    });
-    res.status(500).json({ 
-      error: 'Failed to check integration status',
-      details: error instanceof Error ? error.message : 'Unknown error'
-    });
+    res.status(500).json({ error: 'Failed to fetch platform operations status' });
   }
 });
 
 /**
- * Helper function to generate recommendations based on integration status
+ * GET /api/admin-portal/integrations/status
+ * Legacy alias — same probes as platform/operations-status integrations block
  */
-function generateRecommendations(integrations: Record<string, { configured: boolean; status: string; error?: string; details?: Record<string, unknown> }>): string[] {
-  const recommendations: string[] = [];
+router.get('/integrations/status', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
+  try {
+    const adminUser = req.user;
+    if (!adminUser) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
 
-  if (!integrations.stripe?.configured) {
-    recommendations.push('Stripe: Add STRIPE_SECRET_KEY to GCP Secret Manager as "stripe-secret-key"');
-  } else if (integrations.stripe?.status === 'error' || integrations.stripe?.status === 'timeout') {
-    recommendations.push(`Stripe: ${integrations.stripe.error || 'Check API key validity'}`);
+    const payload = await adminPlatformOperationsService.getIntegrationsStatusPayload(adminUser.id);
+    res.json(payload);
+  } catch (error: unknown) {
+    const err = error instanceof Error ? error : new Error(String(error));
+    await logger.error('Failed to check integration status', {
+      operation: 'admin_integration_status_check',
+      error: { message: err.message, stack: err.stack },
+    });
+    res.status(500).json({
+      error: 'Failed to check integration status',
+      details: err.message,
+    });
   }
-
-  if (!integrations.openai?.configured) {
-    recommendations.push('OpenAI: Add OPENAI_API_KEY to GCP Secret Manager as "openai-api-key"');
-  } else if (integrations.openai?.status === 'error' || integrations.openai?.status === 'timeout') {
-    recommendations.push(`OpenAI: ${integrations.openai.error || 'Check API key validity'}`);
-  }
-
-  if (!integrations.anthropic?.configured) {
-    recommendations.push('Anthropic: Add ANTHROPIC_API_KEY to GCP Secret Manager as "anthropic-api-key"');
-  } else if (integrations.anthropic?.status === 'error') {
-    recommendations.push(`Anthropic: ${integrations.anthropic.error || 'Check API key validity'}`);
-  }
-
-  if (integrations.database?.status === 'error' || integrations.database?.status === 'timeout') {
-    recommendations.push('Database: Check DATABASE_URL connection string and VPC connectivity');
-  }
-
-  if (integrations.storage?.status === 'error' || integrations.storage?.status === 'timeout') {
-    recommendations.push('Storage: Check GCS bucket permissions and service account');
-  }
-
-  if (recommendations.length === 0) {
-    recommendations.push('All integrations are healthy!');
-  }
-
-  return recommendations;
-}
+});
 
 }

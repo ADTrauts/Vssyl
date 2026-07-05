@@ -19,6 +19,7 @@ import {
 import { adminApiService, DashboardStats } from '../../../lib/adminApiService';
 import { formatDashboardSystemHealth } from '../../../lib/adminPortalDashboard';
 import { AdminPortalEmptyState } from '../../../components/admin-portal/AdminPortalEmptyState';
+import { PlatformOperationsPanel } from '../../../components/admin-portal/PlatformOperationsPanel';
 
 interface StatCardProps {
   title: string;
@@ -185,7 +186,9 @@ export default function AdminDashboard() {
       <div className="space-y-6">
         <div>
           <h1 className="text-3xl font-bold text-v-text-primary">Platform Overview</h1>
-          <p className="text-v-text-secondary mt-2">Platform overview and quick actions</p>
+          <p className="text-v-text-secondary mt-2">
+            Operational snapshot — platform health, key metrics, and recent admin activity.
+          </p>
         </div>
         <div className="bg-red-50 border border-red-200 rounded-lg p-4">
           <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
@@ -211,7 +214,9 @@ export default function AdminDashboard() {
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold text-v-text-primary">Platform Overview</h1>
-        <p className="text-v-text-secondary mt-2">Platform overview and quick actions</p>
+        <p className="text-v-text-secondary mt-2">
+          Operational snapshot — platform health, key metrics, and recent admin activity.
+        </p>
         <div className="flex flex-wrap gap-3 mt-4">
           <Link href="/admin-portal/platform-programs">
             <Button variant="secondary" size="sm">Platform Programs</Button>
@@ -224,6 +229,8 @@ export default function AdminDashboard() {
           </Link>
         </div>
       </div>
+
+      <PlatformOperationsPanel />
 
       {/* Quick Stats */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">

@@ -8,6 +8,7 @@ import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ImpersonationProvider } from '../../contexts/ImpersonationContext';
 import { ImpersonationBanner } from '../../components/admin-portal/ImpersonationBanner';
+import { PlatformHealthIndicator } from '../../components/admin-portal/PlatformHealthIndicator';
 import AvatarContextMenu from '../../components/AvatarContextMenu';
 import { isAdminPortalDebugEnabled } from '../../lib/adminPortalDebugGate';
 import {
@@ -152,10 +153,7 @@ const AdminPortalLayout = ({ children }: AdminPortalLayoutProps) => {
               </div>
             </div>
             <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2">
-                <div className="w-2 h-2 bg-green-400 rounded-full"></div>
-                <span className="text-sm text-v-text-muted">System Online</span>
-              </div>
+              <PlatformHealthIndicator />
               <AvatarContextMenu className="text-white" />
             </div>
           </div>
