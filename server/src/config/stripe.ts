@@ -71,8 +71,8 @@ export const PRICING_CONFIG = {
     features: ['basic_modules', 'limited_ai', 'ads_supported'],
   },
   PRO: {
-    monthly: 29.00,
-    yearly: 290.00, // ~17% discount
+    monthly: 49.99,
+    yearly: 499.99, // ~17% discount
     features: ['all_modules', 'unlimited_ai', 'no_ads'],
   },
   BUSINESS_BASIC: {

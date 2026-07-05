@@ -266,8 +266,8 @@ const personal: LandingAudienceContent = {
     {
       tierKey: 'pro',
       name: 'Pro',
-      fallbackPriceLabel: '$29/mo',
-      fallbackYearlyLabel: '$290/yr',
+      fallbackPriceLabel: '$49.99/mo',
+      fallbackYearlyLabel: '$499.99/yr',
       subtitle: 'Full personal experience—more AI, storage, and priority support.',
       features: [
         'Advanced AI features',

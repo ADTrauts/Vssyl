@@ -1,5 +1,6 @@
 import { Request, Response } from 'express';
 import { PricingService } from '../services/pricingService';
+import { syncStripePriceIdsToDatabase } from '../services/pricingStripeSyncService.js';
 import { logger } from '../lib/logger';
 import { sendPriceChangeNotification } from '../services/emailService';
 import { prisma } from '../lib/prisma';
@@ -1059,6 +1060,49 @@ export const seedPricing = async (req: Request, res: Response): Promise<void> =>
     });
     res.status(500).json({
       error: 'Failed to seed pricing',
+      details: error instanceof Error ? error.message : 'Unknown error',
+    });
+  }
+};
+
+/**
+ * POST /api/pricing/sync-stripe
+ * Align Pro tier amounts and sync Stripe price IDs into PricingConfig (admin only).
+ * Runs on Cloud Run against production DB — no local Cloud SQL proxy required.
+ */
+export const syncStripePricing = async (req: Request, res: Response): Promise<void> => {
+  try {
+    const user = getUserFromRequest(req);
+    if (!user || user.role !== 'ADMIN') {
+      res.status(403).json({ error: 'Admin access required' });
+      return;
+    }
+
+    const result = await syncStripePriceIdsToDatabase();
+
+    await logger.info('Stripe pricing sync completed via admin API', {
+      operation: 'pricing_sync_stripe',
+      userId: user.id,
+      synced: result.synced,
+      skipped: result.skipped,
+      errors: result.errors,
+    });
+
+    res.json({
+      success: result.errors === 0,
+      message: 'Stripe price IDs synced to pricing configs',
+      ...result,
+    });
+  } catch (error) {
+    await logger.error('Stripe pricing sync failed', {
+      operation: 'pricing_sync_stripe',
+      error: {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        stack: error instanceof Error ? error.stack : undefined,
+      },
+    });
+    res.status(500).json({
+      error: 'Failed to sync Stripe pricing',
       details: error instanceof Error ? error.message : 'Unknown error',
     });
   }

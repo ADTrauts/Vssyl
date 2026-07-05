@@ -14,6 +14,7 @@ import {
   clearPricingCache,
   seedPricing,
   stripeStatus,
+  syncStripePricing,
 } from '../controllers/pricingController';
 
 const router: express.Router = express.Router();
@@ -36,6 +37,7 @@ router.get('/:tier/info', getPricingInfo);
 
 // Admin-only routes (specific paths before /:tier)
 router.post('/seed', authenticateJWT, requireAdmin, seedPricing);
+router.post('/sync-stripe', authenticateJWT, requireAdmin, syncStripePricing);
 router.post(
   '/tiers',
   authenticateJWT,
