@@ -18,7 +18,12 @@ export interface SendEmailResult {
 }
 
 export interface EmailAddressDefaults {
+  /** RFC5322 From header value, e.g. `Vssyl <no-reply@vssyl.com>` */
   from: string;
+  /** Bare email address for From */
+  fromEmail: string;
+  /** Display name shown in mail clients */
+  fromName: string;
   replyTo: string;
   support: string;
   billing: string;

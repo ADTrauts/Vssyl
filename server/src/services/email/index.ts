@@ -1,4 +1,5 @@
 export {
+  formatFromHeader,
   getAppBaseUrl,
   getEmailAddressDefaults,
   getSmtpConfig,

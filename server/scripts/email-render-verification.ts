@@ -47,6 +47,9 @@ interface RenderChecks {
   htmlPass: boolean;
   textPass: boolean;
   ctaPass: boolean;
+  footerPass: boolean;
+  preheaderPass: boolean;
+  fallbackPass: boolean;
   htmlIssues: string[];
   textIssues: string[];
 }
@@ -55,14 +58,17 @@ export interface EmailVerificationRow {
   email: string;
   result: 'PASS' | 'FAIL' | 'N/A' | 'PARTIAL';
   subject: string;
+  from: string;
+  replyTo: string;
+  previewText: string;
   sent: boolean;
   messageId?: string;
   error?: string;
   html: 'PASS' | 'FAIL' | 'N/A';
   plainText: 'PASS' | 'FAIL' | 'N/A';
   cta: 'PASS' | 'FAIL' | 'N/A';
-  expectedFrom: string;
-  expectedReplyTo: string;
+  footer: 'PASS' | 'FAIL' | 'N/A';
+  fallbackLink: 'PASS' | 'FAIL' | 'N/A';
   mobileIssues: string;
   accessibilityNotes: string;
   recommendedImprovements: string;
@@ -84,14 +90,20 @@ function applyPostmarkDefaults(): void {
   }
 }
 
+function extractPreheader(html: string): string {
+  const match = html.match(/display:none;max-height:0[^>]*>([^<]+)</);
+  return match?.[1]?.trim() ?? '';
+}
+
 function validateRenderedContent(
   html: string,
   text: string,
-  options: { requireCta?: boolean; ctaPattern?: RegExp } = {}
+  options: { requireCta?: boolean; requireFallback?: boolean; ctaPattern?: RegExp } = {}
 ): RenderChecks {
   const htmlIssues: string[] = [];
   const textIssues: string[] = [];
   const requireCta = options.requireCta !== false;
+  const requireFallback = options.requireFallback === true;
   const ctaPattern = options.ctaPattern ?? /https:\/\/vssyl\.com/;
 
   if (!html || html.length < 200) htmlIssues.push('HTML too short or missing');
@@ -101,12 +113,16 @@ function validateRenderedContent(
   if (!html.includes('/privacy')) htmlIssues.push('Missing privacy footer link');
   if (!html.includes('/terms')) htmlIssues.push('Missing terms footer link');
   if (!html.includes('/security')) htmlIssues.push('Missing security footer link');
+  if (!html.includes('support@vssyl.com') && !html.includes('/contact')) htmlIssues.push('Missing support footer');
   if (!html.includes('You received this email because')) htmlIssues.push('Missing context line');
   if (html.includes('undefined') || html.includes('null')) htmlIssues.push('Placeholder undefined/null in HTML');
   if (text.includes('undefined') || text.includes('null')) textIssues.push('Placeholder undefined/null in text');
   if (containsLikelySecret(html) || containsLikelySecret(text)) htmlIssues.push('Possible secret in output');
   if (/<img[^>]+src=["']https?:\/\//i.test(html)) htmlIssues.push('External image dependency');
   if (!html.includes('viewport')) htmlIssues.push('Missing viewport meta');
+
+  const preheader = extractPreheader(html);
+  const preheaderPass = preheader.length > 10;
 
   if (!text.includes('Vssyl')) textIssues.push('Plain text missing Vssyl');
   if (!text.includes('Privacy:')) textIssues.push('Plain text missing footer links');
@@ -118,7 +134,25 @@ function validateRenderedContent(
 
   if (requireCta && !ctaPattern.test(html)) htmlIssues.push('CTA/fallback link missing expected URL');
 
-  return { htmlPass: htmlIssues.length === 0, textPass: textIssues.length === 0, ctaPass, htmlIssues, textIssues };
+  const fallbackPass =
+    !requireFallback || html.includes('If the button does not work') || html.includes('word-break:break-all');
+
+  const footerPass =
+    html.includes('/privacy') &&
+    html.includes('/terms') &&
+    html.includes('/security') &&
+    html.includes('You received this email because');
+
+  return {
+    htmlPass: htmlIssues.length === 0,
+    textPass: textIssues.length === 0,
+    ctaPass,
+    footerPass,
+    preheaderPass,
+    fallbackPass,
+    htmlIssues,
+    textIssues,
+  };
 }
 
 function mobileNotes(html: string): string {
@@ -138,13 +172,17 @@ async function verifySend(params: {
   sendFn: () => Promise<{ sent: boolean; messageId?: string }>;
   expectedReplyTo: string;
   requireCta?: boolean;
+  requireFallback?: boolean;
   forceResult?: EmailVerificationRow['result'];
   improvements?: string;
   skipSend?: boolean;
 }): Promise<EmailVerificationRow> {
   resetEmailTransportForTests();
   const defaults = getEmailAddressDefaults();
-  const checks = validateRenderedContent(params.html, params.text, { requireCta: params.requireCta });
+  const checks = validateRenderedContent(params.html, params.text, {
+    requireCta: params.requireCta,
+    requireFallback: params.requireFallback,
+  });
   let sent = false;
   let messageId: string | undefined;
   let error: string | undefined;
@@ -164,23 +202,36 @@ async function verifySend(params: {
     messageId = 'render-only-skip-send';
   }
 
-  const allRenderPass = checks.htmlPass && checks.textPass && (params.requireCta === false || checks.ctaPass);
-  let result: EmailVerificationRow['result'] = params.forceResult ?? (sent && allRenderPass ? 'PASS' : sent ? 'PARTIAL' : 'FAIL');
+  const allRenderPass =
+    checks.htmlPass &&
+    checks.textPass &&
+    checks.footerPass &&
+    checks.preheaderPass &&
+    (params.requireCta === false || checks.ctaPass) &&
+    (params.requireFallback !== true || checks.fallbackPass);
+
+  let result: EmailVerificationRow['result'] =
+    params.forceResult ?? (sent && allRenderPass ? 'PASS' : sent ? 'PARTIAL' : 'FAIL');
 
   const issues = [...checks.htmlIssues, ...checks.textIssues].join('; ');
+  const previewText = extractPreheader(params.html);
 
   return {
     email: params.label,
     result,
     subject: params.subject,
+    from: defaults.from,
+    replyTo: params.expectedReplyTo,
+    previewText,
     sent,
     messageId,
     error,
     html: checks.htmlPass ? 'PASS' : 'FAIL',
     plainText: checks.textPass ? 'PASS' : 'FAIL',
     cta: params.requireCta === false ? 'N/A' : checks.ctaPass ? 'PASS' : 'FAIL',
-    expectedFrom: defaults.from,
-    expectedReplyTo: params.expectedReplyTo,
+    footer: checks.footerPass ? 'PASS' : 'FAIL',
+    fallbackLink:
+      params.requireFallback === true ? (checks.fallbackPass ? 'PASS' : 'FAIL') : params.requireCta === false ? 'N/A' : checks.fallbackPass ? 'PASS' : 'N/A',
     mobileIssues: mobileNotes(params.html),
     accessibilityNotes: a11yNotes(params.html),
     recommendedImprovements: params.improvements ?? (issues || 'None for this template'),
@@ -212,6 +263,7 @@ export async function runEmailRenderVerification(
       text: v.text,
       sendFn: () => sendVerificationEmail(recipient, SMOKE_TOKEN),
       expectedReplyTo: defaults.replyTo,
+      requireFallback: true,
       ...sendOpts,
     })
   );
@@ -225,6 +277,8 @@ export async function runEmailRenderVerification(
       text: pwd.text,
       sendFn: () => sendPasswordResetEmail(recipient, SMOKE_TOKEN),
       expectedReplyTo: defaults.replyTo,
+      requireFallback: true,
+      ...sendOpts,
     })
   );
 
@@ -270,23 +324,10 @@ export async function runEmailRenderVerification(
           'BLOCK-QA-001'
         ),
       expectedReplyTo: defaults.replyTo,
+      requireFallback: true,
+      ...sendOpts,
     })
   );
-
-  rows.push({
-    email: '5. Contact Form Confirmation (submitter)',
-    result: 'N/A',
-    subject: '—',
-    sent: false,
-    html: 'N/A',
-    plainText: 'N/A',
-    cta: 'N/A',
-    expectedFrom: defaults.from,
-    expectedReplyTo: defaults.replyTo,
-    mobileIssues: '—',
-    accessibilityNotes: '—',
-    recommendedImprovements: 'Not implemented — add submitter confirmation in a future sprint',
-  });
 
   const contact = buildContactFormEmail({
     name: 'Andrew Trautman',
@@ -297,7 +338,7 @@ export async function runEmailRenderVerification(
   });
   rows.push(
     await verifySend({
-      label: '5b. Contact Form (support inbox)',
+      label: '5. Contact Form Notification',
       subject: contact.subject,
       html: contact.html,
       text: contact.text,
@@ -326,7 +367,7 @@ export async function runEmailRenderVerification(
   });
   rows.push(
     await verifySend({
-      label: '6. Support Ticket Acknowledgement (assigned)',
+      label: '6. Support Ticket Acknowledgement',
       subject: supportAck.subject,
       html: supportAck.html,
       text: supportAck.text,

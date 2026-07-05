@@ -1,6 +1,7 @@
 import type { EmailAddressDefaults } from './types';
 
 const DEFAULT_FROM = 'no-reply@vssyl.com';
+const DEFAULT_FROM_NAME = 'Vssyl';
 const DEFAULT_REPLY_TO = 'support@vssyl.com';
 const DEFAULT_SUPPORT = 'support@vssyl.com';
 const DEFAULT_BILLING = 'billing@vssyl.com';
@@ -22,13 +23,25 @@ function readEnv(name: string): string | undefined {
   return trimmed.length > 0 ? trimmed : undefined;
 }
 
+/** Format `Display Name <email@domain>` unless already formatted. */
+export function formatFromHeader(email: string, name?: string): string {
+  const trimmed = email.trim();
+  if (trimmed.includes('<') && trimmed.includes('>')) {
+    return trimmed;
+  }
+  const displayName = (name ?? readEnv('EMAIL_FROM_NAME') ?? DEFAULT_FROM_NAME).trim();
+  return `${displayName} <${trimmed}>`;
+}
+
 /** Resolved sender / destination addresses (no secrets). */
 export function getEmailAddressDefaults(): EmailAddressDefaults {
-  const from = readEnv('EMAIL_FROM') ?? readEnv('SMTP_FROM') ?? DEFAULT_FROM;
+  const fromEmail = readEnv('EMAIL_FROM') ?? readEnv('SMTP_FROM') ?? DEFAULT_FROM;
+  const fromName = readEnv('EMAIL_FROM_NAME') ?? DEFAULT_FROM_NAME;
+  const from = formatFromHeader(fromEmail, fromName);
   const replyTo = readEnv('EMAIL_REPLY_TO') ?? DEFAULT_REPLY_TO;
   const support = readEnv('SUPPORT_EMAIL') ?? replyTo ?? DEFAULT_SUPPORT;
   const billing = readEnv('BILLING_EMAIL') ?? DEFAULT_BILLING;
-  return { from, replyTo, support, billing };
+  return { from, fromEmail, fromName, replyTo, support, billing };
 }
 
 export function getAppBaseUrl(): string {

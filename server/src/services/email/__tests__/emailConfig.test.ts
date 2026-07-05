@@ -80,7 +80,9 @@ describe('email config', () => {
     process.env.BILLING_EMAIL = 'billing@vssyl.com';
 
     expect(getEmailAddressDefaults()).toEqual({
-      from: 'no-reply@vssyl.com',
+      from: 'Vssyl <no-reply@vssyl.com>',
+      fromEmail: 'no-reply@vssyl.com',
+      fromName: 'Vssyl',
       replyTo: 'support@vssyl.com',
       support: 'support@vssyl.com',
       billing: 'billing@vssyl.com',
@@ -92,7 +94,8 @@ describe('email config', () => {
     delete process.env.EMAIL_FROM;
     process.env.SMTP_FROM = 'legacy@vssyl.com';
 
-    expect(getEmailAddressDefaults().from).toBe('legacy@vssyl.com');
+    expect(getEmailAddressDefaults().from).toBe('Vssyl <legacy@vssyl.com>');
+    expect(getEmailAddressDefaults().fromEmail).toBe('legacy@vssyl.com');
   });
 
   it('uses safe defaults when address env vars are unset', () => {
@@ -102,7 +105,9 @@ describe('email config', () => {
     }
 
     expect(getEmailAddressDefaults()).toEqual({
-      from: 'no-reply@vssyl.com',
+      from: 'Vssyl <no-reply@vssyl.com>',
+      fromEmail: 'no-reply@vssyl.com',
+      fromName: 'Vssyl',
       replyTo: 'support@vssyl.com',
       support: 'support@vssyl.com',
       billing: 'billing@vssyl.com',
