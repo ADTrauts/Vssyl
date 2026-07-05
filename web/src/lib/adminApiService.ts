@@ -680,8 +680,26 @@ class AdminApiService {
     return this.makeRequest(`/operator/search?${searchParams.toString()}`);
   }
 
-  async getOperatorTimeline(limit = 25) {
-    return this.makeRequest(`/operator/timeline?limit=${limit}`);
+  async getOperatorTimeline(limit = 25, grouped = false) {
+    const params = new URLSearchParams({ limit: String(limit) });
+    if (grouped) params.set('grouped', 'true');
+    return this.makeRequest(`/operator/timeline?${params.toString()}`);
+  }
+
+  async getOperatorIntelligence() {
+    return this.makeRequest('/operator/intelligence');
+  }
+
+  async getBusinessIntelligenceSummary() {
+    return this.makeRequest('/businesses/intelligence/summary');
+  }
+
+  async getInfrastructureIntelligence() {
+    return this.makeRequest('/infrastructure/intelligence');
+  }
+
+  async getFeatureFlags() {
+    return this.makeRequest('/feature-flags');
   }
 
   async getSystemConfig() {

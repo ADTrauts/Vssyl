@@ -49,7 +49,7 @@ export function buildPlatformControllerNavigationSections(): PlatformControllerN
       id: 'overview',
       label: 'Overview',
       items: [
-        { id: 'dashboard', label: 'Platform Overview', icon: Home, path: '/admin-portal/dashboard' },
+        { id: 'dashboard', label: 'Operations Overview', icon: Home, path: '/admin-portal/dashboard' },
         { id: 'analytics', label: 'Platform Analytics', icon: BarChart3, path: '/admin-portal/analytics' },
       ],
     },
@@ -143,6 +143,7 @@ export function buildPlatformControllerNavigationSections(): PlatformControllerN
       items: [
         { id: 'system', label: 'System Administration', icon: Settings, path: '/admin-portal/system' },
         { id: 'email-operations', label: 'Email Operations', icon: Mail, path: '/admin-portal/email-operations' },
+        { id: 'feature-flags', label: 'Feature Flags', icon: Key, path: '/admin-portal/feature-flags' },
         { id: 'governance', label: 'Governance', icon: Scale, path: '/admin-portal/governance' },
         { id: 'retention', label: 'Data Retention', icon: Archive, path: '/admin-portal/retention' },
       ],
@@ -196,6 +197,7 @@ export function resolvePlatformControllerActiveNavId(
 ): string {
   const normalized = pathname.replace(/\/$/, '') || '/admin-portal/dashboard';
 
+  if (normalized.includes('/feature-flags')) return 'feature-flags';
   if (normalized.includes('/email-operations')) return 'email-operations';
   if (normalized.includes('/businesses')) return 'businesses';
   if (normalized.includes('/platform-programs')) return 'platform-programs';

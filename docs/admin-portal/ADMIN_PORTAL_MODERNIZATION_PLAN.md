@@ -2,7 +2,9 @@
 
 **Program:** Admin Portal Reference Program — Operational Excellence Phase 0A  
 **Date:** 2026-07-05  
-**Status:** Wave 1 complete — Wave 2+ planning
+**Status:** Wave 2 complete — Wave 3+ planning
+
+**Product name (UI):** Operations Platform — routes remain `/admin-portal`.
 
 **Constraint:** Consolidation over creation. No architecture redesign. No parallel systems. Do not rebuild completed subsystems (AI Pipeline, module certification, billing, impersonation).
 
@@ -12,7 +14,7 @@
 
 ## 1. Objective
 
-Close the **~10% gap** between today's Admin Portal (~90% operational maturity post–Wave 1) and a **single operational cockpit** (~92% target) by surfacing capabilities that already exist in backend services, env config, and satellite routes.
+Close the **~7% gap** between today's Operations Platform (~93% operational maturity post–Wave 2) and full operational excellence (~95% target).
 
 **Not in scope:** Policy Engine admin UI, full GCP console replacement, product funnel instrumentation platform, Stripe Connect payouts, sub-role RBAC.
 
@@ -59,21 +61,26 @@ See [Wave 1 Closeout](./ADMIN_PORTAL_WAVE_1_CLOSEOUT.md).
 | W1-5 | **Operator UX** | Modernize | Nav, breadcrumbs, dashboard quick links, cross-linking | S | ✅ |
 | W1-6 | **System timeline** | Consolidate | Dashboard timeline from auditLog + securityEvent + business creates | M | ✅ |
 
-### Wave 2 — P1 consolidation (2–3 weeks)
+### Wave 2 — Operational intelligence ✅ **Complete 2026-07-05**
 
-| ID | Item | Type | Description | Effort |
-|----|------|------|-------------|--------|
-| W2-1 | **Analytics / BI merge** (AP-F-007) | Duplicate → Complete | Fold `business-intelligence` into `analytics?tab=insights`; redirect old URL | M |
-| W2-2 | **Infra health panel** | Missing → Complete | System Admin: Cloud Run + Cloud SQL status via health + GCP console deep links | M |
-| W2-3 | **Feature flags snapshot** | Missing → Complete | Read-only page: env vars + registry flags (no edit UI v1) | M |
-| W2-4 | **Support context sidebar** | Modernize | Link ticket → user profile + business from W1-1 | S |
-| W2-5 | **Persist probe results** | Modernize | Store last probe outcome on submission record or local audit table | M |
+See [Wave 2 Closeout](./OPERATIONS_PLATFORM_WAVE_2_CLOSEOUT.md).
+
+| ID | Item | Type | Description | Effort | Status |
+|----|------|------|-------------|--------|--------|
+| W2-0 | **Operations Platform rename** | Positioning | UI terminology; routes unchanged | S | ✅ |
+| W2-1 | **Business intelligence** | Modernize | Warnings, activity, billing events on Businesses hub | M | ✅ |
+| W2-2 | **Email intelligence** | Modernize | Failure rate, recent sends, provider health | M | ✅ |
+| W2-3 | **Infrastructure intelligence** | Modernize | GCP links, Stripe/SMTP modes, service grid | M | ✅ |
+| W2-4 | **Feature flags snapshot** | Missing → Complete | Read-only `/admin-portal/feature-flags` | M | ✅ |
+| W2-5 | **Grouped timeline** | Modernize | Category-grouped operations timeline | M | ✅ |
+| W2-6 | **Global operator insight** | Modernize | Dashboard intelligence panel | M | ✅ |
 
 ### Wave 3 — P2 operator depth (2 weeks)
 
 | ID | Item | Type | Description | Effort |
 |----|------|------|-------------|--------|
-| W3-1 | **Background jobs monitor** | Missing → Complete | Surface `platformCronJobs` last-run + next-run in Configuration | M |
+| W3-0 | **Support context sidebar** | Modernize | Link ticket → user profile + business | S |
+| W3-1 | **Persist probe results** | Modernize | Store last probe outcome | M |
 | W3-2 | **Search ops page** | Missing → Complete | Lightweight page: delegate registry status, pilot module probe, link to Modules | S |
 | W3-3 | **Performance metrics real probes** | Modernize | Replace synthetic CPU/memory where possible with health service data | M |
 | W3-4 | **Modules page tab extraction** | Modernize | Split 2,100 LOC page into tab components (no behavior change) | M |

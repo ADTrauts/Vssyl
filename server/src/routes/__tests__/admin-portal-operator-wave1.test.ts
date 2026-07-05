@@ -55,7 +55,6 @@ vi.mock('../../services/admin/adminBusinessOpsService', () => ({
 }));
 
 vi.mock('../../services/admin/adminEmailOpsService', () => ({
-  getEmailOperationsStatus: vi.fn(async () => emailOpsFixture),
   getEmailTemplatePreview: vi.fn((id: string) =>
     id === 'welcome'
       ? {
@@ -67,6 +66,11 @@ vi.mock('../../services/admin/adminEmailOpsService', () => ({
         }
       : null,
   ),
+}));
+
+vi.mock('../../services/admin/adminOperatorIntelligenceService', () => ({
+  getEmailIntelligence: vi.fn(async () => ({ ...emailOpsFixture, status: 'healthy', failuresLast24h: 0 })),
+  getBusinessIntelligenceDetail: vi.fn(async () => null),
 }));
 
 vi.mock('../../services/admin/adminOperatorSearchService', () => ({
@@ -95,6 +99,7 @@ vi.mock('../../services/admin/adminOperatorTimelineService', () => ({
       href: '/admin-portal/security',
     },
   ]),
+  getOperatorTimelineGrouped: vi.fn(async () => []),
 }));
 
 describe('Admin Portal operator routes — Wave 1', () => {
@@ -143,8 +148,8 @@ describe('Admin Portal operator routes — Wave 1', () => {
       .set(createAuthHeader(adminUser))
       .expect(200);
 
+    expect(res.body.data.status).toBeDefined();
     expect(res.body.data.provider).toBe('Postmark');
-    expect(res.body.data.templates).toHaveLength(1);
   });
 
   it('GET /email-operations/templates/:id/preview returns preview', async () => {

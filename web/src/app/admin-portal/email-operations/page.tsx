@@ -27,6 +27,15 @@ interface EmailOpsStatus {
   configured: boolean;
   transportReady: boolean;
   provider: string;
+  status?: string;
+  failureRate?: number;
+  sendsLast24h?: number;
+  failuresLast24h?: number;
+  lastSendRelative?: string | null;
+  providerHealth?: string;
+  recentSends?: Array<{ timestamp: string; message: string; success: boolean }>;
+  recentTestSends?: Array<{ timestamp: string; message: string }>;
+  placeholders?: { bounceRate: null; complaintRate: null; deliveryAnalytics: string };
   smtp: { host: string; port: number; secure: boolean; user: string } | null;
   addresses: {
     from: string;
@@ -120,7 +129,7 @@ export default function EmailOperationsPage() {
   return (
     <AdminPortalPageShell
       title="Email Operations"
-      description="SMTP delivery status, sender identities, template previews, and test sends — reusing Postmark/SMTP infrastructure."
+      description="Email intelligence — delivery health, failure rate, recent sends, and template previews."
       actions={
         <Button onClick={() => void load()} variant="secondary" size="sm">
           <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
@@ -131,6 +140,27 @@ export default function EmailOperationsPage() {
       <AdminPortalBreadcrumbs />
 
       {error && <Alert onClose={() => setError(null)}>{error}</Alert>}
+
+      {status && (
+        <Card className="p-4 flex flex-wrap gap-6 items-center">
+          <div>
+            <p className="text-xs text-v-text-muted uppercase">Delivery health</p>
+            <p className="text-lg font-semibold capitalize">{status.providerHealth ?? status.status ?? 'unknown'}</p>
+          </div>
+          <div>
+            <p className="text-xs text-v-text-muted uppercase">Failure rate (24h)</p>
+            <p className="text-lg font-semibold">{status.failureRate ?? 0}%</p>
+          </div>
+          <div>
+            <p className="text-xs text-v-text-muted uppercase">Last send</p>
+            <p className="text-lg font-semibold">{status.lastSendRelative ?? '—'}</p>
+          </div>
+          <div>
+            <p className="text-xs text-v-text-muted uppercase">Sends (24h)</p>
+            <p className="text-lg font-semibold">{status.sendsLast24h ?? 0}</p>
+          </div>
+        </Card>
+      )}
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-6">
@@ -203,6 +233,29 @@ export default function EmailOperationsPage() {
               </div>
             </dl>
           </Card>
+
+          {(status?.recentSends?.length ?? 0) > 0 && (
+            <Card className="p-6">
+              <h2 className="text-lg font-semibold mb-4">Recent Sends</h2>
+              <ul className="space-y-2 text-sm">
+                {status?.recentSends?.map((s, i) => (
+                  <li key={i} className="flex justify-between gap-2 border-b border-v-border pb-2 last:border-0">
+                    <span className={s.success ? 'text-v-text-primary' : 'text-red-600'}>{s.message}</span>
+                    <span className="text-v-text-muted shrink-0">{new Date(s.timestamp).toLocaleTimeString()}</span>
+                  </li>
+                ))}
+              </ul>
+            </Card>
+          )}
+
+          {status?.placeholders && (
+            <Card className="p-6 bg-v-surface-muted">
+              <h2 className="text-lg font-semibold mb-2">Future analytics</h2>
+              <p className="text-sm text-v-text-secondary">
+                Bounce rate, complaint rate, and delivery analytics — {status.placeholders.deliveryAnalytics}
+              </p>
+            </Card>
+          )}
 
           <Card className="p-6">
             <h2 className="text-lg font-semibold mb-4">Test Email</h2>

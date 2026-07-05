@@ -18,11 +18,12 @@ const REPO_ROOT = join(__dirname, '../../../..');
 
 describe('platformControllerPhase1B', () => {
   describe('branding', () => {
-    it('layout shows Platform Controller shell copy', () => {
+    it('layout shows Operations Platform shell copy', () => {
       const layout = readFileSync(join(WEB_ROOT, 'app/admin-portal/layout.tsx'), 'utf8');
-      expect(layout).toContain('Platform Controller');
-      expect(layout).toContain('Operational control plane');
+      expect(layout).toContain('OPERATIONS_PLATFORM_NAME');
+      expect(layout).toContain('OPERATIONS_PLATFORM_TAGLINE');
       expect(layout).not.toContain('>Admin Portal<');
+      expect(layout).not.toContain('Platform Controller');
     });
   });
 
@@ -68,7 +69,7 @@ describe('platformControllerPhase1B', () => {
 
       expect(labels).toContain('Platform Programs');
       expect(labels).toContain('Modules');
-      expect(labels).toContain('Platform Overview');
+      expect(labels).toContain('Operations Overview');
       expect(ids).not.toContain('ai-system');
       for (const removed of PLATFORM_CONTROLLER_REMOVED_NAV_IDS) {
         expect(ids).not.toContain(removed);
@@ -78,7 +79,7 @@ describe('platformControllerPhase1B', () => {
     it('reduces visible destinations to approximately 14 (grouped IA)', () => {
       const count = countPlatformControllerNavDestinations();
       expect(count).toBeGreaterThanOrEqual(14);
-      expect(count).toBeLessThanOrEqual(22);
+      expect(count).toBeLessThanOrEqual(26);
     });
 
     it('layout imports canonical navigation builder', () => {

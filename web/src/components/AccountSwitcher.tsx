@@ -283,9 +283,9 @@ export default function AccountSwitcher({ onClose, showButton = true, showModal:
                 </div>
                 <div className="flex-1">
                   <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">
-                    Admin Portal
+                    Operations Platform
                   </h3>
-                  <p className="text-sm text-gray-600 dark:text-gray-400">System administration</p>
+                  <p className="text-sm text-gray-600 dark:text-gray-400">Operational intelligence</p>
                   <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">Full platform access</p>
                 </div>
                 <ChevronRight className="w-5 h-5 text-gray-400" />

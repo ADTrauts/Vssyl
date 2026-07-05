@@ -70,6 +70,13 @@ interface BusinessDetail {
     user: { id: string; name: string | null; email: string };
   }>;
   dashboards: Array<{ id: string }>;
+  intelligence?: {
+    workspaceWarnings: string[];
+    pendingInvitations: Array<{ email: string; role: string; createdAt: string }>;
+    recentMembers: Array<{ email: string; lastLoginRelative: string | null }>;
+    recentBillingEvents: Array<{ action: string; timestamp: string }>;
+    subscriptionStatus: string | null;
+  };
 }
 
 const HEALTH_BADGE: Record<string, string> = {
@@ -101,6 +108,13 @@ function BusinessesPageContent() {
   const [selectedId, setSelectedId] = useState<string | null>(highlightId);
   const [detail, setDetail] = useState<BusinessDetail | null>(null);
   const [detailLoading, setDetailLoading] = useState(false);
+  const [summary, setSummary] = useState<{
+    total: number;
+    createdThisWeek: number;
+    billingIssues: number;
+    inactiveWorkspaces: number;
+    attention: string[];
+  } | null>(null);
 
   const loadList = useCallback(async () => {
     setLoading(true);
@@ -138,6 +152,9 @@ function BusinessesPageContent() {
 
   useEffect(() => {
     void loadList();
+    void adminApiService.getBusinessIntelligenceSummary().then((res) => {
+      if (!res.error && res.data) setSummary(res.data as typeof summary);
+    });
   }, [loadList]);
 
   useEffect(() => {
@@ -159,7 +176,7 @@ function BusinessesPageContent() {
   return (
     <AdminPortalPageShell
       title="Businesses"
-      description="Operator hub for workspace discovery, health, and quick navigation to billing, users, and impersonation."
+      description="Workspace intelligence — health, billing signals, member activity, and pending invitations."
       actions={
         <Button onClick={() => void loadList()} variant="secondary" size="sm">
           <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
@@ -171,6 +188,24 @@ function BusinessesPageContent() {
 
       {error && (
         <Alert onClose={() => setError(null)}>{error}</Alert>
+      )}
+
+      {summary && (
+        <Card className="p-4 flex flex-wrap gap-4 items-center justify-between">
+          <div>
+            <p className="text-sm text-v-text-muted">Platform businesses</p>
+            <p className="text-xl font-bold">{summary.total} <span className="text-sm font-normal text-green-600">+{summary.createdThisWeek} this week</span></p>
+          </div>
+          {summary.attention.length > 0 ? (
+            <div className="flex flex-wrap gap-2">
+              {summary.attention.map((a) => (
+                <Badge key={a} className="bg-amber-100 text-amber-800">{a}</Badge>
+              ))}
+            </div>
+          ) : (
+            <Badge className="bg-green-100 text-green-800">All nominal</Badge>
+          )}
+        </Card>
       )}
 
       <div className="flex gap-6">
@@ -310,6 +345,17 @@ function BusinessesPageContent() {
                     </Badge>
                   </div>
 
+                  {detail.intelligence && detail.intelligence.workspaceWarnings.length > 0 && (
+                    <div className="p-3 rounded-lg bg-amber-50 border border-amber-200">
+                      <p className="text-xs font-semibold text-amber-800 uppercase mb-1">Warnings</p>
+                      <ul className="text-sm text-amber-900 space-y-0.5">
+                        {detail.intelligence.workspaceWarnings.map((w) => (
+                          <li key={w}>• {w}</li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
+
                   <div className="grid grid-cols-2 gap-3 text-sm">
                     <div>
                       <p className="text-v-text-muted">Members</p>
@@ -385,6 +431,20 @@ function BusinessesPageContent() {
                       </p>
                     )}
                   </div>
+
+                  {detail.intelligence && detail.intelligence.recentMembers.length > 0 && (
+                    <div className="pt-2 border-t border-v-border">
+                      <p className="text-xs font-medium text-v-text-muted uppercase mb-2">Recent activity</p>
+                      <ul className="space-y-1 max-h-28 overflow-y-auto">
+                        {detail.intelligence.recentMembers.map((m) => (
+                          <li key={m.email} className="text-xs text-v-text-secondary truncate">
+                            {m.email}
+                            {m.lastLoginRelative ? ` · ${m.lastLoginRelative}` : ''}
+                          </li>
+                        ))}
+                      </ul>
+                    </div>
+                  )}
 
                   {detail.members.length > 0 && (
                     <div className="pt-2 border-t border-v-border">

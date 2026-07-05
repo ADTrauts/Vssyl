@@ -17,6 +17,11 @@ import {
   resolvePlatformControllerActiveNavId,
   type PlatformControllerNavSection,
 } from '../../config/platformControllerNavigation';
+import {
+  OPERATIONS_PLATFORM_NAME,
+  OPERATIONS_PLATFORM_TAGLINE,
+  OPERATIONS_PLATFORM_LOADING,
+} from '../../lib/operationsPlatformBranding';
 
 interface AdminPortalLayoutProps {
   children: React.ReactNode;
@@ -121,7 +126,7 @@ const AdminPortalLayout = ({ children }: AdminPortalLayoutProps) => {
       <div className="min-h-screen bg-v-background flex items-center justify-center">
         <div className="text-center">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
-          <p className="mt-2 text-v-text-secondary">Loading Platform Controller…</p>
+          <p className="mt-2 text-v-text-secondary">{OPERATIONS_PLATFORM_LOADING}</p>
         </div>
       </div>
     );
@@ -148,8 +153,8 @@ const AdminPortalLayout = ({ children }: AdminPortalLayoutProps) => {
               <div className="flex items-center space-x-3">
                 <Shield className="w-8 h-8 text-blue-400" />
                 <div>
-                  <h1 className="text-xl font-bold">Platform Controller</h1>
-                  <p className="text-sm text-v-text-muted">Operational control plane</p>
+                  <h1 className="text-xl font-bold">{OPERATIONS_PLATFORM_NAME}</h1>
+                  <p className="text-sm text-v-text-muted">{OPERATIONS_PLATFORM_TAGLINE}</p>
                 </div>
               </div>
             </div>

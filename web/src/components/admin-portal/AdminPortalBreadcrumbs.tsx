@@ -4,10 +4,13 @@ import React from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ChevronRight, Home } from 'lucide-react';
+import {
+  OPERATIONS_PLATFORM_NAME,
+} from '../../lib/operationsPlatformBranding';
 import { buildPlatformControllerNavigationSections } from '../../config/platformControllerNavigation';
 
 const SEGMENT_LABELS: Record<string, string> = {
-  dashboard: 'Platform Overview',
+  dashboard: 'Operations Overview',
   analytics: 'Platform Analytics',
   businesses: 'Businesses',
   'email-operations': 'Email Operations',
@@ -18,6 +21,7 @@ const SEGMENT_LABELS: Record<string, string> = {
   security: 'Security & Compliance',
   system: 'System Administration',
   impersonate: 'Impersonation',
+  'feature-flags': 'Feature Flags',
   'ai-pipeline': 'AI Pipeline',
   'platform-programs': 'Platform Programs',
   'platform-adoption': 'Platform Adoption',
@@ -43,7 +47,7 @@ export function AdminPortalBreadcrumbs() {
   for (let i = 0; i < segments.length; i++) {
     path += `/${segments[i]}`;
     if (segments[i] === 'admin-portal') {
-      crumbs.push({ label: 'Platform Controller', href: '/admin-portal/dashboard' });
+      crumbs.push({ label: OPERATIONS_PLATFORM_NAME, href: '/admin-portal/dashboard' });
       continue;
     }
     crumbs.push({ label: resolveLabel(segments[i]), href: path });

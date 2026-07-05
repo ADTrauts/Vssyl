@@ -7,6 +7,9 @@ import * as adminBusinessOpsService from '../../services/admin/adminBusinessOpsS
 import * as adminEmailOpsService from '../../services/admin/adminEmailOpsService';
 import * as adminOperatorSearchService from '../../services/admin/adminOperatorSearchService';
 import * as adminOperatorTimelineService from '../../services/admin/adminOperatorTimelineService';
+import * as adminOperatorIntelligenceService from '../../services/admin/adminOperatorIntelligenceService';
+import * as adminInfraIntelligenceService from '../../services/admin/adminInfraIntelligenceService';
+import * as adminFeatureFlagsService from '../../services/admin/adminFeatureFlagsService';
 
 export function registerAdminPortalOperatorRoutes(router: express.Router): void {
   // ============================================================================
@@ -42,12 +45,15 @@ export function registerAdminPortalOperatorRoutes(router: express.Router): void 
           return res.status(400).json({ error: 'Invalid business id' });
         }
 
-        const data = await adminBusinessOpsService.getBusinessOperatorDetail(businessId);
+        const [data, intelligence] = await Promise.all([
+          adminBusinessOpsService.getBusinessOperatorDetail(businessId),
+          adminOperatorIntelligenceService.getBusinessIntelligenceDetail(businessId),
+        ]);
         if (!data) {
           return res.status(404).json({ error: 'Business not found' });
         }
 
-        res.json({ success: true, data });
+        res.json({ success: true, data: { ...data, intelligence } });
       } catch (error: unknown) {
         const err = error instanceof Error ? error : new Error(String(error));
         await logger.error('Failed to get business operator detail', {
@@ -65,7 +71,7 @@ export function registerAdminPortalOperatorRoutes(router: express.Router): void 
 
   router.get('/email-operations', authenticateJWT, requireAdmin, async (_req: Request, res: Response) => {
     try {
-      const data = await adminEmailOpsService.getEmailOperationsStatus();
+      const data = await adminOperatorIntelligenceService.getEmailIntelligence();
       res.json({ success: true, data });
     } catch (error: unknown) {
       const err = error instanceof Error ? error : new Error(String(error));
@@ -131,6 +137,12 @@ export function registerAdminPortalOperatorRoutes(router: express.Router): void 
   router.get('/operator/timeline', authenticateJWT, requireAdmin, async (req: Request, res: Response) => {
     try {
       const limit = typeof req.query.limit === 'string' ? parseInt(req.query.limit, 10) : 25;
+      const grouped = req.query.grouped === 'true';
+      if (grouped) {
+        const groups = await adminOperatorTimelineService.getOperatorTimelineGrouped(limit);
+        res.json({ success: true, data: { grouped: true, groups } });
+        return;
+      }
       const entries = await adminOperatorTimelineService.getOperatorTimeline(limit);
       res.json({ success: true, data: entries });
     } catch (error: unknown) {
@@ -140,6 +152,66 @@ export function registerAdminPortalOperatorRoutes(router: express.Router): void 
         error: { message: err.message, stack: err.stack },
       });
       res.status(500).json({ error: 'Failed to load timeline' });
+    }
+  });
+
+  // ============================================================================
+  // OPERATIONAL INTELLIGENCE (Wave 2)
+  // ============================================================================
+
+  router.get('/operator/intelligence', authenticateJWT, requireAdmin, async (_req: Request, res: Response) => {
+    try {
+      const data = await adminOperatorIntelligenceService.getOperatorIntelligenceSummary();
+      res.json({ success: true, data });
+    } catch (error: unknown) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      await logger.error('Failed to get operator intelligence', {
+        operation: 'admin_operator_intelligence',
+        error: { message: err.message, stack: err.stack },
+      });
+      res.status(500).json({ error: 'Failed to load intelligence summary' });
+    }
+  });
+
+  router.get('/businesses/intelligence/summary', authenticateJWT, requireAdmin, async (_req: Request, res: Response) => {
+    try {
+      const data = await adminOperatorIntelligenceService.getBusinessIntelligenceSummary();
+      res.json({ success: true, data });
+    } catch (error: unknown) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      await logger.error('Failed to get business intelligence', {
+        operation: 'admin_business_intelligence',
+        error: { message: err.message, stack: err.stack },
+      });
+      res.status(500).json({ error: 'Failed to load business intelligence' });
+    }
+  });
+
+  router.get('/infrastructure/intelligence', authenticateJWT, requireAdmin, async (_req: Request, res: Response) => {
+    try {
+      const data = await adminInfraIntelligenceService.getInfrastructureIntelligence();
+      res.json({ success: true, data });
+    } catch (error: unknown) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      await logger.error('Failed to get infrastructure intelligence', {
+        operation: 'admin_infra_intelligence',
+        error: { message: err.message, stack: err.stack },
+      });
+      res.status(500).json({ error: 'Failed to load infrastructure intelligence' });
+    }
+  });
+
+  router.get('/feature-flags', authenticateJWT, requireAdmin, async (_req: Request, res: Response) => {
+    try {
+      const data = await adminFeatureFlagsService.getOperatorFeatureFlags();
+      res.json({ success: true, data });
+    } catch (error: unknown) {
+      const err = error instanceof Error ? error : new Error(String(error));
+      await logger.error('Failed to get feature flags', {
+        operation: 'admin_feature_flags',
+        error: { message: err.message, stack: err.stack },
+      });
+      res.status(500).json({ error: 'Failed to load feature flags' });
     }
   });
 }

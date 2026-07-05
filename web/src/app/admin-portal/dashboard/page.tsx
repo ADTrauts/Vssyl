@@ -20,8 +20,10 @@ import { adminApiService, DashboardStats } from '../../../lib/adminApiService';
 import { formatDashboardSystemHealth } from '../../../lib/adminPortalDashboard';
 import { AdminPortalEmptyState } from '../../../components/admin-portal/AdminPortalEmptyState';
 import { AdminPortalBreadcrumbs } from '../../../components/admin-portal/AdminPortalBreadcrumbs';
+import { OperatorIntelligencePanel } from '../../../components/admin-portal/OperatorIntelligencePanel';
 import { OperatorTimeline } from '../../../components/admin-portal/OperatorTimeline';
 import { PlatformOperationsPanel } from '../../../components/admin-portal/PlatformOperationsPanel';
+import { OPERATIONS_PLATFORM_TAGLINE } from '../../../lib/operationsPlatformBranding';
 
 interface StatCardProps {
   title: string;
@@ -215,9 +217,9 @@ export default function AdminDashboard() {
     <div className="space-y-6">
       {/* Header */}
       <div>
-        <h1 className="text-3xl font-bold text-v-text-primary">Platform Overview</h1>
+        <h1 className="text-3xl font-bold text-v-text-primary">Operations Overview</h1>
         <p className="text-v-text-secondary mt-2">
-          Operational snapshot — platform health, key metrics, and recent admin activity.
+          {OPERATIONS_PLATFORM_TAGLINE} — understand what is healthy and what needs attention.
         </p>
         <div className="flex flex-wrap gap-3 mt-4">
           <Link href="/admin-portal/businesses">
@@ -239,6 +241,8 @@ export default function AdminDashboard() {
       </div>
 
       <AdminPortalBreadcrumbs />
+
+      <OperatorIntelligencePanel />
 
       <PlatformOperationsPanel />
 

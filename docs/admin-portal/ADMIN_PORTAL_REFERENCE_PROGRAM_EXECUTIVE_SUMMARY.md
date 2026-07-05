@@ -1,20 +1,18 @@
-# Admin Portal Reference Program — Executive Summary
+# Operations Platform Reference Program — Executive Summary
 
-**Program:** Admin Portal Reference Program — Operational Excellence Phase 0A  
+**Program:** Operations Platform Reference Program (formerly Admin Portal Reference Program)  
 **Date:** 2026-07-05  
-**Status:** Wave 1 complete — operator workflow delivered
+**Status:** Wave 2 complete — operational intelligence delivered
 
-**Deliverables:** [Reference Assessment](./ADMIN_PORTAL_REFERENCE_ASSESSMENT.md) · [Wave 0 Closeout](./ADMIN_PORTAL_WAVE_0_CLOSEOUT.md) · [Wave 1 Closeout](./ADMIN_PORTAL_WAVE_1_CLOSEOUT.md) · [Modernization Plan](./ADMIN_PORTAL_MODERNIZATION_PLAN.md)
+**Deliverables:** [Wave 2 Closeout](./OPERATIONS_PLATFORM_WAVE_2_CLOSEOUT.md) · [Wave 1 Closeout](./ADMIN_PORTAL_WAVE_1_CLOSEOUT.md) · [Modernization Plan](./ADMIN_PORTAL_MODERNIZATION_PLAN.md)
 
 ---
 
 ## Bottom line
 
-**Yes — the Admin Portal can become Vssyl's single operational cockpit for controlled beta and beyond.**
+**Yes — the Operations Platform is Vssyl's single operational intelligence center for controlled beta and beyond.**
 
-It already serves as the day-to-day control plane for users, module governance, AI pipeline operations, Stripe billing, security, and impersonation. Architecture, Product Readiness, Commercial Readiness, Launch Readiness, Email, and Stripe are substantially complete for controlled beta — and the portal **inherits that maturity** on billing and module certification without additional architecture work.
-
-Remaining work is **consolidation and surfacing** (~6–8 weeks), not platform redesign.
+Customer-facing terminology is now **Operations Platform** (routes remain `/admin-portal`). Operators see what is healthy and what needs attention from the dashboard without opening multiple pages.
 
 ---
 
@@ -22,31 +20,29 @@ Remaining work is **consolidation and surfacing** (~6–8 weeks), not platform r
 
 | Answer | Detail |
 |--------|--------|
-| **Yes** | For 90% of operator workflows today |
-| **Conditional** | Infra probes, feature flags, and product funnel analytics require Wave 2 consolidation |
+| **Yes** | For 93% of operator workflows today |
+| **Conditional** | Postmark bounce analytics, jobs monitor, probe persistence remain Wave 3 |
 | **No rebuild** | AI Pipeline, module gate, billing, impersonation are production-grade |
 
 ---
 
 ## Current operational maturity
 
-### **~90%** (post–Wave 1, weighted)
+### **~93%** (post–Wave 2, weighted)
 
-| Dimension | Score (post–Wave 1) |
+| Dimension | Score (post–Wave 2) |
 |-----------|-------------------:|
 | User & access ops | 93% |
-| Marketplace & modules | 88% |
-| AI administration | 90% |
-| Billing & commercial | 86% |
-| Security & audit | 84% |
-| Operator analytics | 82% |
-| **Business workspace ops** | **85%** |
-| **Platform health & infra** | **74%** |
-| **Email & comms ops** | **78%** ↑ |
-| Configuration & flags | 62% |
-| Support & jobs | 72% |
+| Business workspace ops | 90% |
+| Email & comms ops | 85% |
+| Billing & commercial | 88% |
+| Operator analytics | 84% |
+| Platform health & infra | 82% |
+| AI administration | 91% |
+| Configuration & flags | 72% |
+| Security & audit | 85% |
 
-**Prior (Wave 0):** ~86%. **Prior (Phase 0A):** ~82%. **Target after Wave 2–3:** ~92%.
+**Prior (Wave 1):** ~90%. **Prior (Wave 0):** ~86%. **Target after Wave 3:** ~95%.
 
 ---
 

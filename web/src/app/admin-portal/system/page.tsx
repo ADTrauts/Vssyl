@@ -24,6 +24,7 @@ import {
 import Link from 'next/link';
 import { adminApiService } from '../../../lib/adminApiService';
 import { PlatformOperationsPanel } from '../../../components/admin-portal/PlatformOperationsPanel';
+import { InfrastructureIntelligencePanel } from '../../../components/admin-portal/InfrastructureIntelligencePanel';
 
 interface SystemMetrics {
   cpu: number;
@@ -229,6 +230,8 @@ export default function SystemPage() {
       )}
 
       <PlatformOperationsPanel compact />
+
+      <InfrastructureIntelligencePanel />
 
       <Card className="p-6">
         <div className="flex flex-wrap items-start justify-between gap-v-4">
