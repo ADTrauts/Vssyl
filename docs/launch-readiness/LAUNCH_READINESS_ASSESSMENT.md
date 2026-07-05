@@ -1,8 +1,8 @@
 # Launch Readiness Assessment
 
 **Program:** Launch Readiness — Phase 0A  
-**Date:** 2026-06-30  
-**Method:** Code-path trace + production URL probes + test suite — not live payment/email sends
+**Date:** 2026-07-05  
+**Method:** Code-path trace + production URL probes + Stripe API smoke test + test suite
 
 ---
 
@@ -19,20 +19,20 @@
 
 ## Launch Readiness score
 
-### **64%**
+### **68%**
 
 | Dimension | Weight | Score | Notes |
 |-----------|--------|-------|-------|
 | Customer journey completeness | 25% | 78% | Code paths exist; Sprint 2 onboarding strong |
-| Production verification | 20% | 45% | SMTP/Stripe live not confirmed in this audit |
-| Billing & commercial | 15% | 68% | Stack complete; operator + E2E gaps |
+| Production verification | 20% | 52% | SMTP verified; Stripe webhook + price sync partial |
+| Billing & commercial | 15% | 72% | Sync bug fixed; test keys; pro price drift |
 | Operations & infra | 15% | 70% | Cloud Run, health endpoints, CI/CD mature |
 | Trust & public surfaces | 10% | 72% | Docs/help/security exist; status is manual |
 | Observability & analytics | 10% | 35% | No product funnel instrumentation |
 | Support & comms | 5% | 60% | APIs fixed; depends on SMTP |
 
 **Product Readiness (prior program):** 76% — measures *capability in code*.  
-**Launch Readiness:** 64% — measures *confidence for real paying customers*.
+**Launch Readiness:** 68% — measures *confidence for real paying customers*.
 
 ---
 
@@ -40,8 +40,8 @@
 
 | # | Blocker | Why critical | Owner |
 |---|---------|--------------|-------|
-| C1 | **SMTP not operator-verified in production** | Invites, verification, password reset, contact form depend on delivery | Operator |
-| C2 | **Stripe live checkout + webhook not operator-smoke-tested** | Revenue and entitlements unproven in prod | Operator |
+| C1 | **SMTP not operator-verified in production** | Invites, verification, password reset, contact form depend on delivery | ✅ **Resolved** — see [SMTP_SMOKE_TEST_RESULTS.md](./SMTP_SMOKE_TEST_RESULTS.md) |
+| C2 | **Stripe live checkout + webhook not operator-smoke-tested** | Revenue and entitlements unproven in prod | ⚠️ **Partial** — webhook verified; test keys; browser E2E pending — see [STRIPE_LIVE_SMOKE_TEST_RESULTS.md](./STRIPE_LIVE_SMOKE_TEST_RESULTS.md) |
 | C3 | **Contact form returns 500 without SMTP** | Public trust surface breaks silently | Operator + Eng |
 | C4 | **No automated monitoring linked to `/status`** | Incidents invisible to customers and ops | Operator |
 | C5 | **Business paid module checkout E2E unverified** | Admins may hit dead-end on paid marketplace apps | Eng |
@@ -86,8 +86,8 @@
 
 ## Recommended closure order
 
-1. **Operator:** SMTP send test (register, invite, reset, contact) — [SMTP_PRODUCTION_CHECKLIST.md](./SMTP_PRODUCTION_CHECKLIST.md)
-2. **Operator:** Stripe checkout + webhook smoke test — [STRIPE_PRODUCTION_CHECKLIST.md](./STRIPE_PRODUCTION_CHECKLIST.md)
+1. **Operator:** ~~SMTP send test~~ ✅ Done — [SMTP_SMOKE_TEST_RESULTS.md](./SMTP_SMOKE_TEST_RESULTS.md)
+2. **Operator:** Stripe — run `pnpm stripe:sync` on **production DB**, align pro pricing, swap to `sk_live_`, browser E2E — [STRIPE_LIVE_SMOKE_TEST_RESULTS.md](./STRIPE_LIVE_SMOKE_TEST_RESULTS.md)
 3. **Eng:** Business paid module subscription E2E verification
 4. **Operator:** Wire `/status` to health probe or Statuspage
 5. **Eng:** Minimal product analytics (Phase 0B) — see Launch Assessment analytics section in [PRODUCTION_VALIDATION_REPORT.md](./PRODUCTION_VALIDATION_REPORT.md)
@@ -121,4 +121,4 @@ Gap is almost entirely **operator verification**, **observability**, and **comme
 
 ---
 
-*Phase 0A complete. No architecture redesign. One low-risk code fix: price-change email billing URL → `/billing`.*
+*Phase 0A updated 2026-07-05. Stripe sync bug fixed; webhook signature verified in production; SMTP verified.*

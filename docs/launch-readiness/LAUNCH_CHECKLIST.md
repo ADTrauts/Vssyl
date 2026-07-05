@@ -54,8 +54,8 @@
 | Item | Status | Risk | Blocking? | Owner |
 |------|--------|------|-----------|-------|
 | `/billing` hub | ✅ | Low | No | Eng |
-| Stripe checkout | ⚠️ Code ✅; live 🔧 | Critical | 🚫 for paid | Ops |
-| Webhooks → entitlements | ⚠️ Code ✅; live 🔧 | Critical | 🚫 for paid | Ops |
+| Stripe checkout | ⚠️ Webhook ✅; test keys; browser E2E 🔧 | Critical | 🚫 for live paid | Ops |
+| Webhooks → entitlements | ✅ Signature verified in prod (2026-07-05) | Critical | No for test-mode beta | Ops |
 | Customer portal | ⚠️ | Medium | No for free beta | Ops |
 | Cancel / upgrade | ⚠️ | Medium | No for free beta | Ops |
 | Module subscriptions | ⚠️ | Medium | Partial | Eng |

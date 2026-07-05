@@ -79,11 +79,18 @@ async function syncStripePrices() {
         active: true,
       });
 
-      // Find matching price by interval
+      // Find matching price by interval and base amount (avoid per-employee add-on prices)
       const interval = config.billingCycle === 'monthly' ? 'month' : 'year';
-      const matchingPrice = prices.data.find(
-        (p) => p.recurring?.interval === interval
-      );
+      const expectedAmount = Math.round(config.basePrice * 100);
+      const intervalPrices = prices.data.filter((p) => p.recurring?.interval === interval);
+
+      const matchingPrice = intervalPrices
+        .slice()
+        .sort((a, b) => {
+          const aDiff = Math.abs((a.unit_amount ?? 0) - expectedAmount);
+          const bDiff = Math.abs((b.unit_amount ?? 0) - expectedAmount);
+          return aDiff - bDiff;
+        })[0];
 
       if (!matchingPrice) {
         void logger.warn('No Stripe price found for pricing config', {
@@ -98,7 +105,6 @@ async function syncStripePrices() {
       }
 
       // Warn if amount doesn't match (still sync the ID - display price is in DB, Stripe ID is for checkout)
-      const expectedAmount = Math.round(config.basePrice * 100);
       const actualAmount = matchingPrice.unit_amount || 0;
       if (Math.abs(expectedAmount - actualAmount) > 1) {
         void logger.warn('Price mismatch detected; syncing Stripe ID anyway', {

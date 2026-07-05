@@ -33,6 +33,7 @@
     "email:verify-live": "ts-node scripts/email-render-verification.ts",
     "backfill:ai-recall-index": "ts-node scripts/backfill-ai-message-recall-index.ts",
     "stripe:verify": "ts-node src/scripts/verifyStripeSetup.ts",
+    "stripe:smoke": "ts-node scripts/stripe-smoke-test.ts",
     "stripe:sync": "ts-node src/scripts/syncStripePrices.ts",
     "stripe:setup": "ts-node src/scripts/setupStripeProducts.ts",
     "stripe:list-per-employee": "ts-node src/scripts/listStripePerEmployeePrices.ts",
