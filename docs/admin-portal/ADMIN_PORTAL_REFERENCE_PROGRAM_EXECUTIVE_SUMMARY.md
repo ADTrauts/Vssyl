@@ -2,9 +2,9 @@
 
 **Program:** Admin Portal Reference Program — Operational Excellence Phase 0A  
 **Date:** 2026-07-05  
-**Status:** Wave 0 complete — operational confidence improved
+**Status:** Wave 1 complete — operator workflow delivered
 
-**Deliverables:** [Reference Assessment](./ADMIN_PORTAL_REFERENCE_ASSESSMENT.md) · [Wave 0 Closeout](./ADMIN_PORTAL_WAVE_0_CLOSEOUT.md) · [Modernization Plan](./ADMIN_PORTAL_MODERNIZATION_PLAN.md)
+**Deliverables:** [Reference Assessment](./ADMIN_PORTAL_REFERENCE_ASSESSMENT.md) · [Wave 0 Closeout](./ADMIN_PORTAL_WAVE_0_CLOSEOUT.md) · [Wave 1 Closeout](./ADMIN_PORTAL_WAVE_1_CLOSEOUT.md) · [Modernization Plan](./ADMIN_PORTAL_MODERNIZATION_PLAN.md)
 
 ---
 
@@ -22,30 +22,31 @@ Remaining work is **consolidation and surfacing** (~6–8 weeks), not platform r
 
 | Answer | Detail |
 |--------|--------|
-| **Yes** | For 82% of operator workflows today |
-| **Conditional** | Email ops, business CRM, infra probes, and product funnel analytics require consolidation |
+| **Yes** | For 90% of operator workflows today |
+| **Conditional** | Infra probes, feature flags, and product funnel analytics require Wave 2 consolidation |
 | **No rebuild** | AI Pipeline, module gate, billing, impersonation are production-grade |
 
 ---
 
 ## Current operational maturity
 
-### **~86%** (post–Wave 0, weighted)
+### **~90%** (post–Wave 1, weighted)
 
-| Dimension | Score (post–Wave 0) |
+| Dimension | Score (post–Wave 1) |
 |-----------|-------------------:|
-| User & access ops | 92% |
+| User & access ops | 93% |
 | Marketplace & modules | 88% |
 | AI administration | 90% |
-| Billing & commercial | 85% |
-| Security & audit | 82% |
-| Operator analytics | 75% |
-| **Platform health & infra** | **72%** ↑ |
-| **Email & comms ops** | **58%** ↑ |
-| Configuration & flags | 60% |
-| Support & jobs | 70% |
+| Billing & commercial | 86% |
+| Security & audit | 84% |
+| Operator analytics | 82% |
+| **Business workspace ops** | **85%** |
+| **Platform health & infra** | **74%** |
+| **Email & comms ops** | **78%** ↑ |
+| Configuration & flags | 62% |
+| Support & jobs | 72% |
 
-**Prior (Phase 0A):** ~82%. **Target after Waves 1–3:** ~92%.
+**Prior (Wave 0):** ~86%. **Prior (Phase 0A):** ~82%. **Target after Wave 2–3:** ~92%.
 
 ---
 

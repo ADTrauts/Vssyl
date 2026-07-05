@@ -16,6 +16,7 @@ import {
 import { adminApiService } from '../../../lib/adminApiService';
 import { resolveAnalyticsTab } from '../../../lib/adminAnalyticsOwnership';
 import AdminPlatformAnalyticsInsightsPanel from '../../../components/admin-portal/AdminPlatformAnalyticsInsightsPanel';
+import { AdminAnalyticsFederatedPanel } from '../../../components/admin-portal/AdminAnalyticsFederatedPanel';
 import { AdminPortalEmptyState } from '../../../components/admin-portal/AdminPortalEmptyState';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
@@ -82,7 +83,7 @@ function AnalyticsPageContent() {
   });
   const [autoRefresh, setAutoRefresh] = useState(false);
 
-  const setTab = (tab: 'overview' | 'insights') => {
+  const setTab = (tab: 'overview' | 'insights' | 'federation') => {
     const params = new URLSearchParams(searchParams?.toString() ?? '');
     if (tab === 'overview') {
       params.delete('tab');
@@ -230,6 +231,17 @@ function AnalyticsPageContent() {
         >
           Strategic Insights
         </button>
+        <button
+          type="button"
+          onClick={() => setTab('federation')}
+          className={`px-4 py-2 text-sm font-medium border-b-2 -mb-px ${
+            activeTab === 'federation'
+              ? 'border-blue-600 text-blue-600'
+              : 'border-transparent text-v-text-muted hover:text-v-text-primary dark:hover:text-gray-200'
+          }`}
+        >
+          Federated Metrics
+        </button>
       </div>
 
       {error && (
@@ -240,6 +252,8 @@ function AnalyticsPageContent() {
 
       {activeTab === 'insights' ? (
         <AdminPlatformAnalyticsInsightsPanel />
+      ) : activeTab === 'federation' ? (
+        <AdminAnalyticsFederatedPanel />
       ) : (
         <>
           <Card className="p-6">

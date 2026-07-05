@@ -21,9 +21,9 @@ import {
   Cpu,
   Zap
 } from 'lucide-react';
+import Link from 'next/link';
 import { adminApiService } from '../../../lib/adminApiService';
 import { PlatformOperationsPanel } from '../../../components/admin-portal/PlatformOperationsPanel';
-import { showOperatorToast } from '../../../lib/adminPortalOperatorToast';
 
 interface SystemMetrics {
   cpu: number;
@@ -71,7 +71,6 @@ export default function SystemPage() {
   const [editingConfig, setEditingConfig] = useState<string | null>(null);
   const [configValue, setConfigValue] = useState<string>('');
   const [emailStatus, setEmailStatus] = useState<{ available: boolean; configured: boolean } | null>(null);
-  const [emailTesting, setEmailTesting] = useState(false);
 
   useEffect(() => {
     loadSystemData();
@@ -160,20 +159,6 @@ export default function SystemPage() {
     }
   };
 
-  const sendEmailTest = async () => {
-    setEmailTesting(true);
-    try {
-      const res = await adminApiService.testEmailService();
-      if (res.error) {
-        showOperatorToast(`SMTP test failed: ${res.error}`, 'error');
-      } else {
-        showOperatorToast('Test email sent to your admin address', 'success');
-      }
-    } finally {
-      setEmailTesting(false);
-    }
-  };
-
   const getHealthColor = (value: number) => {
     if (value < 50) return 'text-green-600';
     if (value < 80) return 'text-yellow-600';
@@ -250,7 +235,8 @@ export default function SystemPage() {
           <div>
             <h2 className="text-lg font-semibold text-v-text-primary">Email (SMTP)</h2>
             <p className="text-sm text-v-text-secondary mt-1">
-              Transactional delivery for invites, verification, and support — uses existing SMTP configuration.
+              Full email operations — templates, sender identities, and delivery probes — live on the
+              dedicated Email Operations surface.
             </p>
             {emailStatus && (
               <p className="text-sm mt-2 text-v-text-primary">
@@ -260,9 +246,9 @@ export default function SystemPage() {
               </p>
             )}
           </div>
-          <Button variant="secondary" size="sm" onClick={() => void sendEmailTest()} disabled={emailTesting}>
-            {emailTesting ? 'Sending…' : 'Send test email'}
-          </Button>
+          <Link href="/admin-portal/email-operations">
+            <Button variant="secondary" size="sm">Open Email Operations</Button>
+          </Link>
         </div>
       </Card>
 

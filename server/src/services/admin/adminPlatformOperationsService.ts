@@ -100,7 +100,9 @@ function generateRecommendations(
 }
 
 function computeOverallStatus(services: PlatformOperationsStatus['services']): OperatorServiceStatus {
-  const statuses = Object.values(services).map((s) => s.operatorStatus);
+  const statuses = Object.values(services).map((s) =>
+    'operatorStatus' in s ? s.operatorStatus : s.status,
+  );
   if (statuses.every((s) => s === 'healthy')) return 'healthy';
   if (statuses.some((s) => s === 'offline')) return 'offline';
   if (statuses.some((s) => s === 'warning')) return 'warning';

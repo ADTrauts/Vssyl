@@ -19,6 +19,8 @@ import {
 import { adminApiService, DashboardStats } from '../../../lib/adminApiService';
 import { formatDashboardSystemHealth } from '../../../lib/adminPortalDashboard';
 import { AdminPortalEmptyState } from '../../../components/admin-portal/AdminPortalEmptyState';
+import { AdminPortalBreadcrumbs } from '../../../components/admin-portal/AdminPortalBreadcrumbs';
+import { OperatorTimeline } from '../../../components/admin-portal/OperatorTimeline';
 import { PlatformOperationsPanel } from '../../../components/admin-portal/PlatformOperationsPanel';
 
 interface StatCardProps {
@@ -218,6 +220,12 @@ export default function AdminDashboard() {
           Operational snapshot — platform health, key metrics, and recent admin activity.
         </p>
         <div className="flex flex-wrap gap-3 mt-4">
+          <Link href="/admin-portal/businesses">
+            <Button variant="secondary" size="sm">Businesses</Button>
+          </Link>
+          <Link href="/admin-portal/email-operations">
+            <Button variant="secondary" size="sm">Email Operations</Button>
+          </Link>
           <Link href="/admin-portal/platform-programs">
             <Button variant="secondary" size="sm">Platform Programs</Button>
           </Link>
@@ -229,6 +237,8 @@ export default function AdminDashboard() {
           </Link>
         </div>
       </div>
+
+      <AdminPortalBreadcrumbs />
 
       <PlatformOperationsPanel />
 
@@ -412,6 +422,8 @@ export default function AdminDashboard() {
           )}
         </Card>
       </div>
+
+      <OperatorTimeline limit={10} />
     </div>
   );
 } 

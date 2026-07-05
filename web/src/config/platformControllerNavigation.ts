@@ -20,6 +20,8 @@ import {
   Settings,
   Shield,
   Users,
+  Building2,
+  Mail,
 } from 'lucide-react';
 import { isAdminPortalDebugEnabled } from '../lib/adminPortalDebugGate';
 
@@ -102,6 +104,7 @@ export function buildPlatformControllerNavigationSections(): PlatformControllerN
       label: 'Operations',
       items: [
         { id: 'users', label: 'Users', icon: Users, path: '/admin-portal/users' },
+        { id: 'businesses', label: 'Businesses', icon: Building2, path: '/admin-portal/businesses' },
         { id: 'moderation', label: 'Moderation', icon: Shield, path: '/admin-portal/moderation' },
         { id: 'support', label: 'Support', icon: MessageSquare, path: '/admin-portal/support' },
         { id: 'impersonate', label: 'Impersonation', icon: Eye, path: '/admin-portal/impersonate' },
@@ -139,6 +142,7 @@ export function buildPlatformControllerNavigationSections(): PlatformControllerN
       label: 'Configuration',
       items: [
         { id: 'system', label: 'System Administration', icon: Settings, path: '/admin-portal/system' },
+        { id: 'email-operations', label: 'Email Operations', icon: Mail, path: '/admin-portal/email-operations' },
         { id: 'governance', label: 'Governance', icon: Scale, path: '/admin-portal/governance' },
         { id: 'retention', label: 'Data Retention', icon: Archive, path: '/admin-portal/retention' },
       ],
@@ -192,7 +196,8 @@ export function resolvePlatformControllerActiveNavId(
 ): string {
   const normalized = pathname.replace(/\/$/, '') || '/admin-portal/dashboard';
 
-  if (normalized.includes('/platform-adoption')) return 'platform-adoption';
+  if (normalized.includes('/email-operations')) return 'email-operations';
+  if (normalized.includes('/businesses')) return 'businesses';
   if (normalized.includes('/platform-programs')) return 'platform-programs';
   if (hash === '#provider-governance' || hash === 'provider-governance') return 'providers';
   if (normalized.includes('/ai-pipeline/diagnostics')) return 'diagnostics';

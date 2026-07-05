@@ -2,7 +2,7 @@
 
 **Program:** Admin Portal Reference Program — Operational Excellence Phase 0A  
 **Date:** 2026-07-05  
-**Status:** Wave 0 complete — Wave 1+ planning
+**Status:** Wave 1 complete — Wave 2+ planning
 
 **Constraint:** Consolidation over creation. No architecture redesign. No parallel systems. Do not rebuild completed subsystems (AI Pipeline, module certification, billing, impersonation).
 
@@ -12,7 +12,7 @@
 
 ## 1. Objective
 
-Close the **~18% gap** between today's Admin Portal (~82% operational maturity) and a **single operational cockpit** (~92% target) by surfacing capabilities that already exist in backend services, env config, and satellite routes.
+Close the **~10% gap** between today's Admin Portal (~90% operational maturity post–Wave 1) and a **single operational cockpit** (~92% target) by surfacing capabilities that already exist in backend services, env config, and satellite routes.
 
 **Not in scope:** Policy Engine admin UI, full GCP console replacement, product funnel instrumentation platform, Stripe Connect payouts, sub-role RBAC.
 
@@ -46,19 +46,18 @@ See [Wave 0 Closeout](./ADMIN_PORTAL_WAVE_0_CLOSEOUT.md).
 | W0-5 | Link email test API from System Admin | Consolidate | `system/page.tsx`, email-notification | S | ✅ |
 | W0-6 | Dashboard health panel | Modernize | `PlatformOperationsPanel`, operations-status API | S | ✅ |
 
-### Wave 1 — P0 operational gaps (2–3 weeks)
+### Wave 1 — Operator workflow (2–3 weeks) ✅ **Complete 2026-07-05**
 
-| ID | Item | Type | Description | Effort |
-|----|------|------|-------------|--------|
-| W1-1 | **Businesses hub** | Missing → Complete | New `/admin-portal/businesses` — list/search businesses, member count, subscription status, link to impersonate | M |
-| W1-2 | **Email Operations panel** | Missing → Complete | Configuration section: template list, send-test, SMTP status indicator (from existing `emailService` health) | M |
-| W1-3 | **Dashboard health strip** | Missing → Complete | Poll `/api/health`, `/api/ready`; show DB + uptime; link to System Logs | S |
-| W1-4 | **Global operator search** | Missing → Complete | Header search → users, businesses (W1-1), modules, tickets | M |
+See [Wave 1 Closeout](./ADMIN_PORTAL_WAVE_1_CLOSEOUT.md).
 
-**W1-1 implementation notes:**
-- Reuse `adminImpersonationService.listImpersonationBusinesses` + billing join from `adminBillingService`
-- Add `GET /api/admin-portal/businesses` if list endpoint insufficient
-- Nav: Operations → Businesses (after Users)
+| ID | Item | Type | Description | Effort | Status |
+|----|------|------|-------------|--------|--------|
+| W1-1 | **Businesses hub** | Missing → Complete | `/admin-portal/businesses` — list, owners, tier, health, impersonate/billing links | M | ✅ |
+| W1-2 | **Email Operations** | Missing → Complete | `/admin-portal/email-operations` — SMTP, templates, previews, test send | M | ✅ |
+| W1-3 | **Global operator search** | Missing → Complete | Header search → users, businesses, modules, tickets, subscriptions, settings | M | ✅ |
+| W1-4 | **Analytics federation** | Consolidate | `analytics?tab=federation` — links to billing, modules, AI, performance satellites | M | ✅ |
+| W1-5 | **Operator UX** | Modernize | Nav, breadcrumbs, dashboard quick links, cross-linking | S | ✅ |
+| W1-6 | **System timeline** | Consolidate | Dashboard timeline from auditLog + securityEvent + business creates | M | ✅ |
 
 ### Wave 2 — P1 consolidation (2–3 weeks)
 

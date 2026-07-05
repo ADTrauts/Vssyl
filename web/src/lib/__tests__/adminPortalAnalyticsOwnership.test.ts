@@ -43,25 +43,29 @@ describe('adminPortalAnalyticsOwnership (0C)', () => {
     expect(layout).not.toMatch(/business-intelligence/);
   });
 
-  it('ai-system does not fetch platform analytics or BI APIs', () => {
+  it('ai-system redirects to ai-pipeline and does not fetch platform analytics', () => {
     const source = readFileSync(join(WEB_ROOT, 'app/admin-portal/ai-system/page.tsx'), 'utf8');
     expect(source).not.toMatch(/getBusinessIntelligence/);
     expect(source).not.toMatch(/getAnalytics/);
     expect(source).not.toMatch(/combinedAnalytics/);
-    expect(source).toContain(ADMIN_CANONICAL_ANALYTICS_PATH);
+    expect(source).toContain('/admin-portal/ai-pipeline');
+    expect(source).toMatch(/redirect\(/);
   });
 
-  it('canonical analytics page supports overview and insights tabs', () => {
+  it('canonical analytics page supports overview, insights, and federation tabs', () => {
     const source = readFileSync(join(WEB_ROOT, 'app/admin-portal/analytics/page.tsx'), 'utf8');
     expect(source).toContain('AdminPlatformAnalyticsInsightsPanel');
+    expect(source).toContain('AdminAnalyticsFederatedPanel');
     expect(source).toContain("resolveAnalyticsTab");
     expect(source).toContain('Strategic Insights');
+    expect(source).toContain('Federated Metrics');
     expect(source).not.toContain('/admin-portal/business-intelligence');
   });
 
   it('ownership helpers resolve tab and canonical path', () => {
     expect(resolveAnalyticsTab(null)).toBe('overview');
     expect(resolveAnalyticsTab('insights')).toBe('insights');
+    expect(resolveAnalyticsTab('federation')).toBe('federation');
     expect(isCanonicalAnalyticsPath(ADMIN_CANONICAL_ANALYTICS_PATH)).toBe(true);
     expect(isCanonicalAnalyticsPath(ADMIN_RETIRED_BI_PATH)).toBe(false);
   });

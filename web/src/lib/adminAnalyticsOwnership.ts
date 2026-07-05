@@ -84,6 +84,8 @@ export function isCanonicalAnalyticsPath(path: string): boolean {
 
 export function resolveAnalyticsTab(
   tab: string | null | undefined,
-): 'overview' | 'insights' {
-  return tab === 'insights' ? 'insights' : 'overview';
+): 'overview' | 'insights' | 'federation' {
+  if (tab === 'insights') return 'insights';
+  if (tab === 'federation') return 'federation';
+  return 'overview';
 }

@@ -650,6 +650,40 @@ class AdminApiService {
     });
   }
 
+  // ============================================================================
+  // OPERATOR WORKFLOW (Wave 1)
+  // ============================================================================
+
+  async listOperatorBusinesses(params?: { page?: number; limit?: number; search?: string }) {
+    const searchParams = new URLSearchParams();
+    if (params?.page) searchParams.set('page', String(params.page));
+    if (params?.limit) searchParams.set('limit', String(params.limit));
+    if (params?.search) searchParams.set('search', params.search);
+    const query = searchParams.toString();
+    return this.makeRequest(`/businesses${query ? `?${query}` : ''}`);
+  }
+
+  async getOperatorBusinessDetail(businessId: string) {
+    return this.makeRequest(`/businesses/${businessId}`);
+  }
+
+  async getEmailOperationsStatus() {
+    return this.makeRequest('/email-operations');
+  }
+
+  async getEmailTemplatePreview(templateId: string) {
+    return this.makeRequest(`/email-operations/templates/${templateId}/preview`);
+  }
+
+  async searchOperatorConsole(query: string) {
+    const searchParams = new URLSearchParams({ q: query });
+    return this.makeRequest(`/operator/search?${searchParams.toString()}`);
+  }
+
+  async getOperatorTimeline(limit = 25) {
+    return this.makeRequest(`/operator/timeline?limit=${limit}`);
+  }
+
   async getSystemConfig() {
     return this.makeRequest('/system/config');
   }

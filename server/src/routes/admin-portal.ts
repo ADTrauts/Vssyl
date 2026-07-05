@@ -7,6 +7,7 @@ import { registerAdminPortalAnalyticsOpsRoutes } from './admin-portal/adminPorta
 import { registerAdminPortalPlatformRoutes } from './admin-portal/adminPortalRoutes.platform';
 import { registerAdminPortalAiPipelineRoutes } from './admin-portal/adminPortalRoutes.aiPipeline';
 import { registerAdminPortalAdoptionRoutes } from './admin-portal/adminPortalRoutes.adoption';
+import { registerAdminPortalOperatorRoutes } from './admin-portal/adminPortalRoutes.operator';
 
 const router: express.Router = express.Router();
 
@@ -16,6 +17,7 @@ registerAdminPortalAnalyticsOpsRoutes(router);
 registerAdminPortalPlatformRoutes(router);
 registerAdminPortalAiPipelineRoutes(router);
 registerAdminPortalAdoptionRoutes(router);
+registerAdminPortalOperatorRoutes(router);
 
 router.use('/security', authenticateJWT, requireAdmin, adminSecurityRoutes);
 
