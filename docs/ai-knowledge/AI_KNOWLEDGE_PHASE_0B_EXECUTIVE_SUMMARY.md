@@ -142,14 +142,16 @@ Full detail: [TEACH_VSSYL_PRODUCT_SPEC.md](./TEACH_VSSYL_PRODUCT_SPEC.md) — mu
 
 ## Recommended next phase
 
-**Phase 1A — Engineering (no UI polish sprint):**
+**Phase 1A — Engineering (validated — see [Implementation Plan](./TEACH_VSSYL_PHASE_1_IMPLEMENTATION_PLAN.md)):**
 
-1. Implement correction routing tests (G3, G4) — per [AI_KNOWLEDGE_EVAL_LOOP_SPEC.md](./AI_KNOWLEDGE_EVAL_LOOP_SPEC.md)
+1. Implement correction routing tests (G3, G4) — [Checklist](./TEACH_VSSYL_PHASE_1_CHECKLIST.md)
 2. Implement retrieval + assembly EvalCases (G1, G2)
-3. Modify thumbs-down / feedback to create reviewable corrections — per [AI_CORRECTION_ROUTING_SPEC.md](./AI_CORRECTION_ROUTING_SPEC.md)
-4. Then UI: Improve Answer modal — per [TEACH_VSSYL_PRODUCT_SPEC.md](./TEACH_VSSYL_PRODUCT_SPEC.md)
+3. Modify thumbs-down / feedback to create reviewable corrections — [API matrix](./TEACH_VSSYL_API_REUSE_MATRIX.md)
+4. Then UI: Improve Answer modal — [UI flow](./TEACH_VSSYL_UI_FLOW.md)
 
-**Phase 1B — Product UI:** Teach Vssyl surfaces per product spec.
+**Phase 1B — Product UI:** Teach Vssyl surfaces after Phase 1A gate passes.
+
+**Verdict:** Phase 1 is **primarily UI orchestration** over existing architecture, plus **small route glue** (~100–200 LOC) and **required eval tests** — no new services or schema.
 
 **Gate:** All Phase 1 work must pass [Constitution compliance checklist](./AI_KNOWLEDGE_CONSTITUTION.md#compliance-checklist-for-new-ai-knowledge-features).
 
