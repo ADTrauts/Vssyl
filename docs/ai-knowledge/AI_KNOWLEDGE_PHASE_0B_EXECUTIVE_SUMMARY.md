@@ -164,7 +164,8 @@ AI Knowledge Constitution v1  ← canonical philosophy (start here)
   ├── Phase 0A (discovery)
   │     └── deep-dive/ (audit evidence)
   ├── Phase 0B (specification)
-  └── Phase 1 (implementation) — must comply with Constitution
+  ├── Phase 1A (implementation readiness) ← validated
+  └── Phase 1B (UI) — gated on 1A checklist
 ```
 
 ---

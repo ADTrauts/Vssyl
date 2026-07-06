@@ -43,6 +43,18 @@ Canonical specification for how Vssyl should be taught. **Documentation only —
 | [Correction Routing Spec](./AI_CORRECTION_ROUTING_SPEC.md) | Governance modes and API routing |
 | [Eval Loop Spec](./AI_KNOWLEDGE_EVAL_LOOP_SPEC.md) | Minimum proof before Teach Vssyl ships |
 
+## Phase 1A — Implementation readiness (2026-07-05)
+
+Validation that Teach Vssyl Phase 1 can ship via existing architecture. **Documentation only — implementation begins after checklist gate.**
+
+| Document | Purpose |
+|----------|---------|
+| [Phase 1 Implementation Plan](./TEACH_VSSYL_PHASE_1_IMPLEMENTATION_PLAN.md) | Verdict, trace, phases 1A/1B |
+| [API Reuse Matrix](./TEACH_VSSYL_API_REUSE_MATRIX.md) | Endpoints, services, stores, gaps per journey |
+| [UI Flow](./TEACH_VSSYL_UI_FLOW.md) | Modal flow, entry points, client routing |
+| [Risk Assessment](./TEACH_VSSYL_RISK_ASSESSMENT.md) | Journey and cross-cutting risks |
+| [Phase 1 Checklist](./TEACH_VSSYL_PHASE_1_CHECKLIST.md) | Gates before UI work |
+
 ## Constitution (2026-07-05)
 
 Philosophy and principles — **required reading before Phase 1 implementation.**
