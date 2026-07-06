@@ -1,9 +1,19 @@
 # AI Knowledge Reference Program
 
 **Program:** AI Knowledge Reference Program  
-**Phase:** 0B — Vssyl Knowledge Engine & Teach Vssyl Specification *(0A complete)*  
+**Phase:** Constitution v1 *(0A, deep-dive, 0B complete)*  
 **Date:** 2026-07-05  
 **Constraint:** Preserve existing AI architecture. Consolidation and product clarity only.
+
+## Constitutional authority (start here)
+
+**All future AI knowledge work must align with:**
+
+| Document | Purpose |
+|----------|---------|
+| **[AI Knowledge Constitution v1](./AI_KNOWLEDGE_CONSTITUTION.md)** | **Canonical philosophy — Source of Truth for AI knowledge** |
+| [AI Knowledge Principles](./AI_KNOWLEDGE_PRINCIPLES.md) | Numbered principles + PR checklist |
+| [AI Knowledge Glossary](./AI_KNOWLEDGE_GLOSSARY.md) | Canonical term definitions |
 
 ## Documents
 
@@ -33,6 +43,16 @@ Canonical specification for how Vssyl should be taught. **Documentation only —
 | [Correction Routing Spec](./AI_CORRECTION_ROUTING_SPEC.md) | Governance modes and API routing |
 | [Eval Loop Spec](./AI_KNOWLEDGE_EVAL_LOOP_SPEC.md) | Minimum proof before Teach Vssyl ships |
 
+## Constitution (2026-07-05)
+
+Philosophy and principles — **required reading before Phase 1 implementation.**
+
+| Document | Purpose |
+|----------|---------|
+| [AI Knowledge Constitution v1](./AI_KNOWLEDGE_CONSTITUTION.md) | Canonical philosophy for all AI knowledge features |
+| [AI Knowledge Principles](./AI_KNOWLEDGE_PRINCIPLES.md) | Quick-reference principles and anti-patterns |
+| [AI Knowledge Glossary](./AI_KNOWLEDGE_GLOSSARY.md) | Term definitions |
+
 ## Deep dive audit (2026-07-05)
 
 Full end-to-end AI system audit before Teach Vssyl implementation. **Documentation only — no code changes.**
@@ -52,6 +72,8 @@ Full end-to-end AI system audit before Teach Vssyl implementation. **Documentati
 
 ## Related architecture (canonical — do not duplicate)
 
+- **[AI Knowledge Constitution v1](./AI_KNOWLEDGE_CONSTITUTION.md)** — **start here for AI knowledge philosophy**
+- [AI Platform Constitution](../architecture/AI_PLATFORM_CONSTITUTION.md) — runtime orchestration boundaries
 - `memory-bank/aiContextSystem.md`
 - `memory-bank/AI_CONTEXT_MEMORY_ARCHITECTURE.md`
 - `docs/architecture/AI_TWIN_PROMPT_PIPELINE.md`

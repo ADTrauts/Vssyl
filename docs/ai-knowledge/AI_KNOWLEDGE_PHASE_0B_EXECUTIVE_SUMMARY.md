@@ -4,6 +4,7 @@
 **Phase:** 0B — Vssyl Knowledge Engine & Teach Vssyl Specification  
 **Date:** 2026-07-05  
 **Prior phases:** 0A discovery + deep-dive audit (complete)  
+**Constitution:** [AI_KNOWLEDGE_CONSTITUTION.md v1](./AI_KNOWLEDGE_CONSTITUTION.md) — **canonical authority for all future AI knowledge work**  
 **Constraint:** Documentation only. No UI. No architecture redesign. No new memory store.
 
 ---
@@ -13,6 +14,8 @@
 Vssyl **already has a Knowledge Engine** — distributed across Digital Life Twin, Business Digital Twin, context orchestration, memory stores, V_Link, search, pipeline policies, and diagnostics. Phase 0B **names, specifies, and binds** these components. It does **not** require a new engine service, knowledge graph, or memory table.
 
 **Teach Vssyl** is the product layer that completes the loop: correction → governed store → retrieval → proof.
+
+**Post-0B:** The [AI Knowledge Constitution v1](./AI_KNOWLEDGE_CONSTITUTION.md) establishes the philosophical Source of Truth. Phase 1 implementation must comply with the Constitution and [AI_KNOWLEDGE_PRINCIPLES.md](./AI_KNOWLEDGE_PRINCIPLES.md).
 
 ---
 
@@ -48,7 +51,7 @@ What's missing is **product unification and eval closure** — not a new backend
 | **Evaluation** | Retrieval + assembly assertions |
 | **Regression protection** | EvalCase CI gates |
 
-Full detail: [KNOWLEDGE_LIFECYCLE.md](./KNOWLEDGE_LIFECYCLE.md)
+Full detail: [KNOWLEDGE_LIFECYCLE.md](./KNOWLEDGE_LIFECYCLE.md) — aligned with [Constitution Article VI](./AI_KNOWLEDGE_CONSTITUTION.md#article-vi--knowledge-lifecycle).
 
 ---
 
@@ -63,7 +66,7 @@ Full detail: [KNOWLEDGE_LIFECYCLE.md](./KNOWLEDGE_LIFECYCLE.md)
 5. Confirmation linking to Memory/Learning tabs
 6. CI gates G1–G4 from eval spec before ship
 
-Full detail: [TEACH_VSSYL_PRODUCT_SPEC.md](./TEACH_VSSYL_PRODUCT_SPEC.md)
+Full detail: [TEACH_VSSYL_PRODUCT_SPEC.md](./TEACH_VSSYL_PRODUCT_SPEC.md) — must comply with [Constitution Article VII](./AI_KNOWLEDGE_CONSTITUTION.md#article-vii--teach-vssyl).
 
 ---
 
@@ -76,8 +79,8 @@ Full detail: [TEACH_VSSYL_PRODUCT_SPEC.md](./TEACH_VSSYL_PRODUCT_SPEC.md)
 | Module context provider HTTP contract | 35 certified providers |
 | Application SoR tables | Teach redirects, not copies |
 | Retired 410 routes | Stable fences |
-| Model training / fine-tuning | Out of scope |
-| New KnowledgeGraph or unified knowledge table | Audit proves unnecessary |
+| Model training / fine-tuning | Out of scope — [Constitution Article VIII](./AI_KNOWLEDGE_CONSTITUTION.md#article-viii--what-vssyl-does-not-do) |
+| New KnowledgeGraph or unified knowledge table | Audit proves unnecessary — [Constitution §2](./AI_KNOWLEDGE_CONSTITUTION.md#2-the-knowledge-engine-is-emergent-not-a-database) |
 
 ---
 
@@ -91,6 +94,7 @@ Full detail: [TEACH_VSSYL_PRODUCT_SPEC.md](./TEACH_VSSYL_PRODUCT_SPEC.md)
 | Module redirect | Never write entity data to memory |
 | Prove with tests | Retrieval + assembly EvalCases in CI |
 | No new routes required | Modal → existing API clients |
+| **Constitution compliance** | PR checklist in [AI_KNOWLEDGE_PRINCIPLES.md](./AI_KNOWLEDGE_PRINCIPLES.md) |
 
 **Ship order:** Routing tests → API wiring → chat modal → explain CTA → eval gates → release.
 
@@ -108,7 +112,7 @@ Full detail: [TEACH_VSSYL_PRODUCT_SPEC.md](./TEACH_VSSYL_PRODUCT_SPEC.md)
 
 **Constant:** Applications remain SoR; Knowledge Engine governs what the twin retrieves and remembers; operators govern platform rules; users govern personal and approved business intelligence.
 
-**Never:** Confuse OpenAI/Anthropic model improvements with Vssyl knowledge governance.
+**Never:** Confuse OpenAI/Anthropic model improvements with Vssyl knowledge governance — [Constitution Article IX](./AI_KNOWLEDGE_CONSTITUTION.md#article-ix--long-term-vision).
 
 ---
 
@@ -126,30 +130,45 @@ Full detail: [TEACH_VSSYL_PRODUCT_SPEC.md](./TEACH_VSSYL_PRODUCT_SPEC.md)
 
 ---
 
+## Constitution deliverables (post-0B)
+
+| Document | Purpose |
+|----------|---------|
+| **[AI_KNOWLEDGE_CONSTITUTION.md v1](./AI_KNOWLEDGE_CONSTITUTION.md)** | **Canonical philosophy — required for all future AI knowledge features** |
+| [AI_KNOWLEDGE_PRINCIPLES.md](./AI_KNOWLEDGE_PRINCIPLES.md) | Principles, anti-patterns, PR checklist |
+| [AI_KNOWLEDGE_GLOSSARY.md](./AI_KNOWLEDGE_GLOSSARY.md) | Term definitions |
+
+---
+
 ## Recommended next phase
 
 **Phase 1A — Engineering (no UI polish sprint):**
 
-1. Implement correction routing tests (G3, G4)
+1. Implement correction routing tests (G3, G4) — per [AI_KNOWLEDGE_EVAL_LOOP_SPEC.md](./AI_KNOWLEDGE_EVAL_LOOP_SPEC.md)
 2. Implement retrieval + assembly EvalCases (G1, G2)
-3. Modify thumbs-down / feedback to create reviewable corrections
-4. Then UI: Improve Answer modal
+3. Modify thumbs-down / feedback to create reviewable corrections — per [AI_CORRECTION_ROUTING_SPEC.md](./AI_CORRECTION_ROUTING_SPEC.md)
+4. Then UI: Improve Answer modal — per [TEACH_VSSYL_PRODUCT_SPEC.md](./TEACH_VSSYL_PRODUCT_SPEC.md)
 
 **Phase 1B — Product UI:** Teach Vssyl surfaces per product spec.
+
+**Gate:** All Phase 1 work must pass [Constitution compliance checklist](./AI_KNOWLEDGE_CONSTITUTION.md#compliance-checklist-for-new-ai-knowledge-features).
 
 ---
 
 ## Document hierarchy
 
 ```
-Phase 0A (discovery)
-  └── deep-dive/ (audit evidence)
-Phase 0B (specification) ← you are here
-  └── Phase 1 (implementation)
+AI Knowledge Constitution v1  ← canonical philosophy (start here)
+  ├── AI Knowledge Principles
+  ├── AI Knowledge Glossary
+  ├── Phase 0A (discovery)
+  │     └── deep-dive/ (audit evidence)
+  ├── Phase 0B (specification)
+  └── Phase 1 (implementation) — must comply with Constitution
 ```
 
 ---
 
 ## Sign-off
 
-Phase 0B complete. No code changes. Ready for Phase 1 implementation planning.
+Phase 0B complete. Constitution v1 establishes governing principles. No code changes until Phase 1A with constitutional compliance.
