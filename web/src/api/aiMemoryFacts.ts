@@ -128,6 +128,7 @@ export async function createMemoryFact(
     scope?: string;
     businessId?: string;
     category?: MemoryFactCategory;
+    sourceConversationId?: string;
     expiresAt?: string | null;
   }
 ): Promise<UserMemoryFact> {

@@ -46,6 +46,7 @@ import { uploadFile, uploadFileWithProgress, listFiles, type File as DriveFile }
 import { getSuggestions, acceptSuggestion, dismissSuggestion, type AISuggestionItem } from '../../api/aiSuggestions';
 import AILearningNotice from './AILearningNotice';
 import AIResponseExplainDrawer from './AIResponseExplainDrawer';
+import TeachVssylModal from './TeachVssylModal';
 import { isContextDensityDebugEnabled } from '../../lib/aiFeatureFlags';
 import WorkspaceAIDrawer from './WorkspaceAIDrawer';
 import { resolveBusinessIdFromDashboard } from '../../lib/resolveBusinessIdFromDashboard';
@@ -240,6 +241,7 @@ export default function AIChatWorkspace({
     pending?: PendingLearningFromTwin;
   } | null>(null);
   const [explainOpen, setExplainOpen] = useState(false);
+  const [teachModalOpen, setTeachModalOpen] = useState(false);
   const [explainInfluence, setExplainInfluence] = useState<ResponseInfluenceSummary | null>(null);
   const [workspaceAIDrawerOpen, setWorkspaceAIDrawerOpen] = useState(false);
 
@@ -2376,6 +2378,14 @@ export default function AIChatWorkspace({
                                   )}
                                 {item.type === 'ai' && (item.content || '').trim().length > 0 && (
                               <div className="mt-2 pt-2 border-t border-gray-100 dark:border-slate-700 flex flex-wrap gap-3">
+                                <button
+                                  type="button"
+                                  onClick={() => setTeachModalOpen(true)}
+                                  className="inline-flex items-center gap-1 text-xs text-gray-600 dark:text-gray-400 hover:text-purple-600"
+                                >
+                                  <Sparkles className="h-4 w-4" />
+                                  <span>Improve answer</span>
+                                </button>
                                 {item.responseInfluence && (
                                   <button
                                     type="button"
@@ -2431,6 +2441,16 @@ export default function AIChatWorkspace({
             influence={explainInfluence}
             onClose={() => setExplainOpen(false)}
           />
+
+          {session?.accessToken && (
+            <TeachVssylModal
+              isOpen={teachModalOpen}
+              onClose={() => setTeachModalOpen(false)}
+              token={session.accessToken}
+              conversationId={currentConversationId ?? undefined}
+              title="Teach Vssyl"
+            />
+          )}
           
           {(isAILoading || isGeneratingImage) && (
             <div className="flex justify-start">
