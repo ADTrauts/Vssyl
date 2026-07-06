@@ -65,6 +65,28 @@ Philosophy and principles — **required reading before Phase 1 implementation.*
 | [AI Knowledge Principles](./AI_KNOWLEDGE_PRINCIPLES.md) | Quick-reference principles and anti-patterns |
 | [AI Knowledge Glossary](./AI_KNOWLEDGE_GLOSSARY.md) | Term definitions |
 
+## Indexed Knowledge & Retrieval Audit (2026-07-06)
+
+Architecture verification — **documentation only; no code changes.** Validates whether existing retrieval/indexing is sufficient.
+
+| Document | Purpose |
+|----------|---------|
+| [Indexed Knowledge Reference Audit](./INDEXED_KNOWLEDGE_REFERENCE_AUDIT.md) | Per-system 10-question audit; three-category classification |
+| [Retrieval Architecture](./RETRIEVAL_ARCHITECTURE.md) | Canonical map: Applications → retrieval → assembly → twin |
+| [Application Intelligence Model](./APPLICATION_INTELLIGENCE_MODEL.md) | How each Application contributes; SoR vs taught knowledge |
+| [Knowledge Engine Retrieval Validation](./KNOWLEDGE_ENGINE_RETRIEVAL_VALIDATION.md) | Orchestrator verdict, constitution alignment, recommendation |
+
+**Verdict:** Retrieval architecture **complete** for constitutional SoR + federated model. **Optional:** persistent file-content index if product requires document-body search without per-chat attach.
+
+## Teach Vssyl Phase 1A (shipped)
+
+Personal knowledge loop — Improve answer → Teach Vssyl modal.
+
+| Document | Purpose |
+|----------|---------|
+| [Phase 1A Implementation](./TEACH_VSSYL_PHASE_1A_IMPLEMENTATION.md) | What shipped; APIs reused; gate tests |
+| [AI Identity IA Review](./AI_IDENTITY_INFORMATION_ARCHITECTURE_REVIEW.md) | Memory → Knowledge terminology |
+
 ## Deep dive audit (2026-07-05)
 
 Full end-to-end AI system audit before Teach Vssyl implementation. **Documentation only — no code changes.**
