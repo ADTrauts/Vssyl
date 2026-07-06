@@ -78,6 +78,19 @@ Architecture verification — **documentation only; no code changes.** Validates
 
 **Verdict:** Retrieval architecture **complete** for constitutional SoR + federated model. **Optional:** persistent file-content index if product requires document-body search without per-chat attach.
 
+## AI Learning Experience Review (2026-07-06)
+
+UX and IA alignment audit for the Learning tab — **documentation only; no code changes.**
+
+| Document | Purpose |
+|----------|---------|
+| [Learning Experience Audit](./AI_LEARNING_EXPERIENCE_AUDIT.md) | Section-by-section audit; overlaps and issues |
+| [Learning Information Architecture](./AI_LEARNING_INFORMATION_ARCHITECTURE.md) | Lifecycle placement; recommended IA |
+| [Learning Responsibility Matrix](./AI_LEARNING_RESPONSIBILITY_MATRIX.md) | Every action → API → model |
+| [Learning Constitution Alignment](./AI_LEARNING_ALIGNMENT_WITH_CONSTITUTION.md) | P3/P4/P8; final verdict |
+
+**Verdict:** Learning tab is **fundamentally correct** as the inference review gate; **simplify and reorganize** copy (not rewrite backend).
+
 ## Teach Vssyl Phase 1A (shipped)
 
 Personal knowledge loop — Improve answer → Teach Vssyl modal.
