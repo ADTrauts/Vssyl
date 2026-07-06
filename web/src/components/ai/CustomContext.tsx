@@ -1010,7 +1010,7 @@ function AddContextModal({
                 className="w-full px-3 py-2 border border-gray-300 dark:border-slate-600 rounded-md"
                 rows={4}
                 required
-                placeholder="Describe what the AI should remember..."
+                placeholder="Describe what the AI should know..."
               />
             </div>
 

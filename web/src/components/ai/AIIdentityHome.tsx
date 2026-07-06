@@ -131,7 +131,7 @@ export default function AIIdentityHome({
               Your AI Identity
             </h2>
             <p className="text-sm text-gray-600 dark:text-gray-400 mt-2 max-w-xl">
-              Here’s how I communicate, what shapes my replies, and what I remember — calm,
+              Here’s how I communicate, what shapes my replies, and what I know about you — calm,
               adaptive, and always under your control.
             </p>
           </div>
@@ -246,7 +246,7 @@ export default function AIIdentityHome({
             <p className="text-gray-600 dark:text-gray-400 mt-1">
               {context.memoryFactCount > 0
                 ? `${context.memoryFactCount} long-term fact${context.memoryFactCount === 1 ? '' : 's'}`
-                : 'No structured memories yet'}
+                : 'No saved knowledge yet'}
             </p>
           </div>
           <div className="p-3 rounded-lg bg-gray-50 dark:bg-slate-800">
@@ -257,7 +257,7 @@ export default function AIIdentityHome({
             <p className="text-gray-600 dark:text-gray-400 mt-1">
               {context.userContextCount + context.learnedContextCount > 0
                 ? `${context.userContextCount} you added · ${context.learnedContextCount} from chat`
-                : 'Add instructions or facts in Memory'}
+                : 'Add instructions or facts in Knowledge'}
             </p>
           </div>
         </div>
@@ -286,7 +286,7 @@ export default function AIIdentityHome({
           className="mt-3 text-gray-700 dark:text-gray-300"
           onClick={() => onNavigateToTab('memory')}
         >
-          Manage in Memory
+          Manage knowledge
           {context.memoryFactCount > 0
             ? ` (${context.memoryFactCount} fact${context.memoryFactCount === 1 ? '' : 's'})`
             : ''}

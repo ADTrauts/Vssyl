@@ -180,7 +180,7 @@ export function buildResponseInfluence(input: BuildResponseInfluenceInput): Resp
     for (const inf of effectivePreferences.inferred.slice(0, 2)) {
       const line =
         inf.kind === 'memory_fact'
-          ? `I used what you asked me to remember about ${inf.label}`
+          ? `I used knowledge you taught about ${inf.label}`
           : inf.kind === 'learning_applied'
             ? `I applied a learning you saved (${inf.label})`
             : `I applied a preference you saved: ${inf.label}`;
@@ -211,7 +211,7 @@ export function buildResponseInfluence(input: BuildResponseInfluenceInput): Resp
 
   if (input.userMemoryFacts && input.userMemoryFacts.length > 0) {
     for (const fact of input.userMemoryFacts.slice(0, MAX_MEMORIES)) {
-      const subject = fact.subject?.trim() || 'something you asked me to remember';
+      const subject = fact.subject?.trim() || 'something you taught me';
       const id = fact.id?.trim() || subject;
       const sourceType =
         fact.sourceType && isMemoryFactSourceType(fact.sourceType) ? fact.sourceType : undefined;
@@ -232,13 +232,13 @@ export function buildResponseInfluence(input: BuildResponseInfluenceInput): Resp
         });
       }
     }
-    if (memoryItems.length > 0 && !shapedBy.some((s) => s.includes('remember'))) {
+    if (memoryItems.length > 0 && !shapedBy.some((s) => s.includes('taught') || s.includes('remember'))) {
       const explicitCount = memoryItems.filter((m) => m.isExplicit !== false).length;
       pushUnique(
         shapedBy,
         explicitCount > 0
-          ? `I drew on ${memoryItems.length} memory fact${memoryItems.length === 1 ? '' : 's'} you saved or asked me to remember`
-          : `I used ${memoryItems.length} inferred memory fact${memoryItems.length === 1 ? '' : 's'}`
+          ? `I drew on ${memoryItems.length} piece${memoryItems.length === 1 ? '' : 's'} of knowledge you saved or taught`
+          : `I used ${memoryItems.length} inferred piece${memoryItems.length === 1 ? '' : 's'} of knowledge`
       );
     }
   }

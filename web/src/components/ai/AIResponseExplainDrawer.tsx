@@ -12,9 +12,9 @@ interface AIResponseExplainDrawerProps {
   onClose: () => void;
 }
 
-function memoryTabHref(factId?: string): string {
-  if (factId) return `/ai?tab=memory#fact-${encodeURIComponent(factId)}`;
-  return '/ai?tab=memory';
+function knowledgeTabHref(factId?: string): string {
+  if (factId) return `/ai?tab=knowledge#fact-${encodeURIComponent(factId)}`;
+  return '/ai?tab=knowledge';
 }
 
 export default function AIResponseExplainDrawer({
@@ -105,7 +105,7 @@ export default function AIResponseExplainDrawer({
         {memoryItems.length > 0 && (
           <section className="mb-4">
             <h3 className="text-xs font-medium text-gray-600 dark:text-gray-400 mb-2">
-              Memories that shaped this reply
+              Knowledge that shaped this reply
             </h3>
             <ul className="space-y-2">
               {memoryItems.map((m) => (
@@ -130,10 +130,10 @@ export default function AIResponseExplainDrawer({
                     <p className="text-xs text-gray-500 dark:text-gray-400 mt-0.5">{m.sourceLabel}</p>
                   )}
                   <Link
-                    href={memoryTabHref(m.id)}
+                    href={knowledgeTabHref(m.id)}
                     className="inline-flex items-center text-xs text-purple-600 dark:text-purple-400 hover:underline mt-1"
                   >
-                    View in Memory
+                    View in Knowledge
                     <ChevronRight className="w-3 h-3 ml-0.5" />
                   </Link>
                 </li>
@@ -209,10 +209,10 @@ export default function AIResponseExplainDrawer({
         )}
 
         <Link
-          href="/ai?tab=memory"
+          href="/ai?tab=knowledge"
           className="inline-flex items-center text-sm text-purple-600 dark:text-purple-400 hover:underline mt-2 mr-4"
         >
-          Manage memories
+          Manage knowledge
           <ChevronRight className="w-4 h-4 ml-0.5" />
         </Link>
         <Link

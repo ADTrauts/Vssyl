@@ -19,6 +19,7 @@ export interface NormalizedAITab {
 const LEGACY_TAB_MAP: Record<string, Omit<NormalizedAITab, 'intel'>> = {
   overview: { tab: 'identity' },
   identity: { tab: 'identity' },
+  knowledge: { tab: 'memory' },
   memories: { tab: 'memory' },
   memory: { tab: 'memory' },
   learning: { tab: 'learning' },
@@ -93,7 +94,7 @@ export function buildAITabSearchParams(
 ): URLSearchParams {
   const params = new URLSearchParams();
   if (tab !== DEFAULT_AI_TAB) {
-    params.set('tab', tab);
+    params.set('tab', tab === 'memory' ? 'knowledge' : tab);
   }
   if (tab === 'more' && options?.section) {
     params.set('section', options.section);
@@ -125,7 +126,10 @@ export function aiTabNeedsRedirect(
   }
 
   if (LEGACY_TAB_MAP[rawTab]) {
-    if (rawTab === 'memories' || rawTab === 'personality' || rawTab === 'autonomy') {
+    if (rawTab === 'memory' || rawTab === 'memories') {
+      return { tab: 'memory' };
+    }
+    if (rawTab === 'personality' || rawTab === 'autonomy') {
       return normalized;
     }
     if (rawTab === 'context') return normalized;

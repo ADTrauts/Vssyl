@@ -77,10 +77,10 @@ export function buildInfluenceItems(input: BuildInfluenceItemsInput): AIIdentity
     const label =
       inf.kind === 'memory_fact'
         ? inf.isExplicit === false
-          ? `Inferred memory: ${inf.label}`
+          ? `Inferred knowledge: ${inf.label}`
           : inf.sourceType && isMemoryFactSourceType(inf.sourceType)
             ? `${memorySourceTypeUserLabel(inf.sourceType)}: ${inf.label}`
-            : `You asked me to remember: ${inf.label}`
+            : `You taught: ${inf.label}`
         : `Learned from you: ${inf.label}`;
     const detail =
       inf.value.length > 140 ? `${inf.value.slice(0, 137)}…` : inf.value;
@@ -104,8 +104,8 @@ export function buildInfluenceItems(input: BuildInfluenceItemsInput): AIIdentity
   if (memoryFactCount > 0 && !resolved.inferred.some((i) => i.kind === 'memory_fact')) {
     items.push({
       id: 'memory-facts',
-      label: 'You asked your twin to remember specific things',
-      detail: `${memoryFactCount} long-term memor${memoryFactCount === 1 ? 'y' : 'ies'}`,
+      label: 'Knowledge you taught your twin',
+      detail: `${memoryFactCount} long-term fact${memoryFactCount === 1 ? '' : 's'}`,
       permanence: 'permanent',
     });
   }

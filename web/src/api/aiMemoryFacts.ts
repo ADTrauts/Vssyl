@@ -65,18 +65,18 @@ const CATEGORY_LABELS: Record<MemoryFactCategory, string> = {
 };
 
 export function memoryFactSourceLabel(sourceType: MemoryFactSourceType): string {
-  return SOURCE_LABELS[sourceType] ?? 'Memory';
+  return SOURCE_LABELS[sourceType] ?? 'Knowledge';
 }
 
 export function memoryFactCategoryLabel(category: MemoryFactCategory): string {
   return CATEGORY_LABELS[category] ?? 'General';
 }
 
-/** Plain-language explanation for “Why I remembered this”. */
+/** Plain-language explanation for “Why I used this”. */
 export function memoryFactWhyExplanation(fact: UserMemoryFact): string {
   switch (fact.sourceType) {
     case 'explicit_user':
-      return 'You added this directly in Memory. Your twin treats it as something you want remembered.';
+      return 'You added this directly in Knowledge. Your twin treats it as something you want kept.';
     case 'remember_that':
       return 'Saved when you asked your twin to “remember that…” in chat.';
     case 'inferred_chat':
@@ -84,9 +84,9 @@ export function memoryFactWhyExplanation(fact: UserMemoryFact): string {
     case 'questionnaire':
       return 'Derived from your AI Identity or personality setup.';
     case 'import':
-      return 'Imported from another source into your memory store.';
+      return 'Imported from another source into your knowledge store.';
     default:
-      return 'Stored as a long-term memory for future replies.';
+      return 'Stored as long-term knowledge for future replies.';
   }
 }
 

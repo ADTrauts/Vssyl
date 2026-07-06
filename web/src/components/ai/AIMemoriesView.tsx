@@ -194,7 +194,7 @@ export default function AIMemoriesView({ onNavigateToTab }: AIMemoriesViewProps)
       setMemoryFacts(facts);
     } catch (err) {
       console.error('Error loading memories:', err);
-      setError('Failed to load memory. Please try again.');
+      setError('Failed to load knowledge. Please try again.');
       setContexts([]);
       setPatterns([]);
       setMemoryFacts([]);
@@ -355,11 +355,11 @@ export default function AIMemoriesView({ onNavigateToTab }: AIMemoriesViewProps)
       <div>
         <h2 className="text-xl font-semibold text-gray-900 dark:text-gray-100 flex items-center gap-2">
           <BookOpen className="w-5 h-5 text-purple-600" />
-          Memory
+          Knowledge
         </h2>
         <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 max-w-2xl">
-          Durable knowledge your twin keeps across chats — facts you asked it to remember, context
-          you added, and learnings you saved from conversations. Pending suggestions live in{' '}
+          What your twin knows across chats — facts you taught, context you added, and learnings you
+          saved. Pending proposals live in{' '}
           <button
             type="button"
             className="text-purple-600 dark:text-purple-400 underline-offset-2 hover:underline"
@@ -378,18 +378,19 @@ export default function AIMemoriesView({ onNavigateToTab }: AIMemoriesViewProps)
             Nothing saved yet
           </h3>
           <p className="text-gray-700 dark:text-gray-300 mb-6 max-w-md mx-auto">
-            Chat with your twin, say &quot;remember that…&quot;, or add a memory below.
+            Chat with your twin, use Teach Vssyl from a reply, say &quot;remember that…&quot;, or add
+            knowledge below.
           </p>
           <Button onClick={() => setShowAddFact(true)} variant="primary">
             <Plus className="w-4 h-4 mr-2" />
-            Add a memory
+            Add knowledge
           </Button>
         </Card>
       ) : null}
 
       <Card className="p-6">
         <div className="flex items-center justify-between mb-4">
-          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Long-term memories</h3>
+          <h3 className="text-lg font-semibold text-gray-900 dark:text-gray-100">Long-term knowledge</h3>
           <Button
             onClick={() => setShowAddFact((v) => !v)}
             variant="ghost"
@@ -408,7 +409,7 @@ export default function AIMemoriesView({ onNavigateToTab }: AIMemoriesViewProps)
               onChange={(e) => setNewSubject(e.target.value)}
             />
             <Textarea
-              placeholder="What should your twin remember?"
+              placeholder="What should your twin know?"
               value={newPredicate}
               onChange={(e) => setNewPredicate(e.target.value)}
               rows={3}
@@ -445,7 +446,7 @@ export default function AIMemoriesView({ onNavigateToTab }: AIMemoriesViewProps)
                 size="sm"
                 disabled={addingFact || !newSubject.trim() || !newPredicate.trim()}
               >
-                {addingFact ? 'Saving…' : 'Save memory'}
+                {addingFact ? 'Saving…' : 'Save knowledge'}
               </Button>
               <Button onClick={() => setShowAddFact(false)} variant="secondary" size="sm">
                 Cancel
@@ -496,8 +497,8 @@ export default function AIMemoriesView({ onNavigateToTab }: AIMemoriesViewProps)
         {memoryFacts.length === 0 ? (
           <p className="text-sm text-gray-600 dark:text-gray-400">
             {filterCategory || filterSource || filterScope
-              ? 'No memories match these filters.'
-              : 'No structured memories yet. Say "remember that…" in chat or add one above.'}
+              ? 'No knowledge matches these filters.'
+              : 'No structured knowledge yet. Teach Vssyl in chat, say "remember that…", or add one above.'}
           </p>
         ) : (
           <ul className="space-y-2">
@@ -599,7 +600,7 @@ export default function AIMemoriesView({ onNavigateToTab }: AIMemoriesViewProps)
                     className="inline-flex items-center gap-1 text-xs text-purple-600 dark:text-purple-400 hover:underline mt-2"
                     aria-expanded={expandedFactId === fact.id}
                   >
-                    Why I remembered this
+                    Why I used this
                     {expandedFactId === fact.id ? (
                       <ChevronUp className="w-3 h-3" />
                     ) : (
@@ -628,7 +629,7 @@ export default function AIMemoriesView({ onNavigateToTab }: AIMemoriesViewProps)
                     onClick={() => startEditMemoryFact(fact)}
                     variant="ghost"
                     size="sm"
-                    aria-label="Edit memory"
+                    aria-label="Edit knowledge"
                   >
                     <Pencil className="w-4 h-4 text-gray-500" />
                   </Button>
@@ -637,7 +638,7 @@ export default function AIMemoriesView({ onNavigateToTab }: AIMemoriesViewProps)
                     variant="ghost"
                     size="sm"
                     disabled={savingFactId === fact.id}
-                    aria-label={pinned ? 'Unpin memory' : 'Pin memory'}
+                    aria-label={pinned ? 'Unpin knowledge' : 'Pin knowledge'}
                   >
                     <Pin
                       className={`w-4 h-4 ${pinned ? 'text-amber-500 fill-amber-500' : 'text-gray-500'}`}
@@ -648,7 +649,7 @@ export default function AIMemoriesView({ onNavigateToTab }: AIMemoriesViewProps)
                     variant="ghost"
                     size="sm"
                     disabled={deletingId === fact.id}
-                    aria-label="Forget memory"
+                    aria-label="Remove knowledge"
                   >
                     <Trash2 className="w-4 h-4 text-gray-500" />
                   </Button>
@@ -777,14 +778,14 @@ export default function AIMemoriesView({ onNavigateToTab }: AIMemoriesViewProps)
       open={pendingMemoryToForget !== null}
       onClose={() => setPendingMemoryToForget(null)}
       onConfirm={executeForgetMemoryFact}
-      title="Forget memory?"
+      title="Remove this knowledge?"
       description={
         pendingMemoryToForget
-          ? `Forget “${pendingMemoryToForget.subject}”? Your twin will stop using this in future replies.`
+          ? `Remove “${pendingMemoryToForget.subject}”? Your twin will stop using this in future replies.`
           : ''
       }
       variant="destructive"
-      confirmLabel="Forget"
+      confirmLabel="Remove"
       loading={
         pendingMemoryToForget !== null &&
         deletingId === pendingMemoryToForget.id

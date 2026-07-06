@@ -21,14 +21,14 @@ const TOUR_STEPS = [
     id: 'learning',
     icon: Sparkles,
     title: 'Learning',
-    body: 'When I notice something worth remembering, I’ll wait here for you. Nothing is saved until you choose “Save to AI Identity.”',
+    body: 'When I notice something worth learning, I’ll wait here for you. Nothing is saved until you choose “Save to AI Identity.”',
     tab: 'learning' as AITabValue,
   },
   {
-    id: 'memory',
+    id: 'knowledge',
     icon: BookOpen,
-    title: 'Memory',
-    body: 'Facts, context, and instructions you want me to keep long-term live in Memory — separate from everyday chat.',
+    title: 'Knowledge',
+    body: 'Facts, preferences, and instructions you want me to keep long-term live in Knowledge — separate from everyday chat.',
     tab: 'memory' as AITabValue,
   },
 ] as const;

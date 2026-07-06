@@ -256,7 +256,7 @@ export default function AIPage() {
     <div className="flex min-h-0 flex-1 flex-col">
       <PageHeader
         title="AI Identity"
-        description="How I behave, learn, and remember for you — adaptive, transparent, and always yours to shape."
+        description="How I behave, learn, and know about you — adaptive, transparent, and always yours to shape."
         icon={<Brain className="h-8 w-8 text-purple-600" />}
         actions={
           <>
@@ -311,7 +311,7 @@ export default function AIPage() {
             </TabsTrigger>
             <TabsTrigger value="memory" className="flex items-center gap-2">
               <BookOpen className="w-4 h-4" />
-              Memory
+              Knowledge
             </TabsTrigger>
             <TabsTrigger value="behavior" className="flex items-center gap-2">
               <User className="w-4 h-4" />

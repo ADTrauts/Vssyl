@@ -124,7 +124,7 @@ export default function AILearningHub({ onLearningChanged }: AILearningHubProps)
           Learning
         </h2>
         <p className="text-sm text-gray-600 dark:text-gray-400 mt-1 max-w-2xl">
-          When I notice something worth remembering, I wait here for you. Save what fits your AI
+          When I notice something worth learning, I wait here for you. Save what fits your AI
           Identity — or choose not now. I won’t nag you.
         </p>
       </div>

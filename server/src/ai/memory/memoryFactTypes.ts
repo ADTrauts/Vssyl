@@ -84,7 +84,7 @@ export function memorySourceTypeUserLabel(sourceType: MemoryFactSourceType): str
     case 'import':
       return 'Imported';
     default:
-      return 'Memory';
+      return 'Knowledge';
   }
 }
 
