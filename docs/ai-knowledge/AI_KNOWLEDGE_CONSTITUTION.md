@@ -23,6 +23,8 @@ This Constitution is the **Source of Truth for every future AI knowledge feature
 | **This document** | Philosophy, principles, lifecycle, ownership — *why* Vssyl learns this way |
 | [AI_KNOWLEDGE_PRINCIPLES.md](./AI_KNOWLEDGE_PRINCIPLES.md) | Numbered principles — quick reference |
 | [AI_KNOWLEDGE_GLOSSARY.md](./AI_KNOWLEDGE_GLOSSARY.md) | Canonical term definitions |
+| [AI_KNOWLEDGE_DECISION_MODEL.md](./AI_KNOWLEDGE_DECISION_MODEL.md) | Ingress philosophy — *what happens to new information* |
+| [KNOWLEDGE_TRANSITION_MODEL.md](./KNOWLEDGE_TRANSITION_MODEL.md) | State transitions between observation and durable knowledge |
 | [docs/architecture/AI_PLATFORM_CONSTITUTION.md](../architecture/AI_PLATFORM_CONSTITUTION.md) | AI Platform runtime boundaries |
 | [docs/ai/retrieval/AI_RETRIEVAL_CONSTITUTION.md](../ai/retrieval/AI_RETRIEVAL_CONSTITUTION.md) | Retrieval and SoR alignment |
 | Phase 0B specs (`AI_KNOWLEDGE_ENGINE_SPEC.md`, etc.) | Operational specification derived from this Constitution |
@@ -170,7 +172,9 @@ Learning (observation, correction, evaluation)
 
 ### Knowledge Engine
 
-**Responsibility:** Decide what to retrieve, enforce scope and permissions, apply review gates, route corrections to stores, orchestrate live fetches alongside taught memory.
+**Responsibility:** Retrieve eligible knowledge per turn, enforce scope and permissions, assemble context, orchestrate live fetches alongside taught memory, and surface explainability.
+
+**Ingress decisions** (ignore, review, durable teach, live-only) are governed by the [AI Knowledge Decision Model](./AI_KNOWLEDGE_DECISION_MODEL.md) — not by a separate runtime service.
 
 **Must not:** Own domain entities. **Must not:** Bypass Application permissions.
 
@@ -253,6 +257,8 @@ Observation → Correction → Classification → Review → Application
 | **Regression protection** | Future changes must not break proven teach paths |
 
 Detail: [KNOWLEDGE_LIFECYCLE.md](./KNOWLEDGE_LIFECYCLE.md).
+
+**Decision Model (ingress):** Before lifecycle stages apply, new information is classified into a canonical outcome — ignore, temporary context, live retrieval, suggestion, learning review, or immediate knowledge. See [AI_KNOWLEDGE_DECISION_MODEL.md](./AI_KNOWLEDGE_DECISION_MODEL.md), [OBSERVATION_CLASSIFICATION_MATRIX.md](./OBSERVATION_CLASSIFICATION_MATRIX.md), and [KNOWLEDGE_DECISION_EXAMPLES.md](./KNOWLEDGE_DECISION_EXAMPLES.md).
 
 ---
 
@@ -348,6 +354,7 @@ Implementation may not outpace the Constitution without either compliance or for
 
 Before shipping any feature that stores, retrieves, or learns knowledge, confirm:
 
+- [ ] Does it declare a **Decision Model** outcome (ingress branch)?  
 - [ ] Does it respect Application SoR?  
 - [ ] Does it scope by tenant and role?  
 - [ ] Is inference reviewable?  

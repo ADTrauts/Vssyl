@@ -14,6 +14,7 @@
 | **[AI Knowledge Constitution v1](./AI_KNOWLEDGE_CONSTITUTION.md)** | **Canonical philosophy — Source of Truth for AI knowledge** |
 | [AI Knowledge Principles](./AI_KNOWLEDGE_PRINCIPLES.md) | Numbered principles + PR checklist |
 | [AI Knowledge Glossary](./AI_KNOWLEDGE_GLOSSARY.md) | Canonical term definitions |
+| [AI Knowledge Decision Model](./AI_KNOWLEDGE_DECISION_MODEL.md) | Ingress philosophy — what happens to new information |
 
 ## Documents
 
@@ -90,6 +91,19 @@ UX and IA alignment audit for the Learning tab — **documentation only; no code
 | [Learning Constitution Alignment](./AI_LEARNING_ALIGNMENT_WITH_CONSTITUTION.md) | P3/P4/P8; final verdict |
 
 **Verdict:** Learning tab is **fundamentally correct** as the inference review gate; **simplify and reorganize** copy (not rewrite backend).
+
+## AI Knowledge Decision Model (2026-07-06)
+
+Canonical ingress philosophy — **documentation only; no code changes.** Defines what happens when new information enters Vssyl.
+
+| Document | Purpose |
+|----------|---------|
+| [AI Knowledge Decision Model](./AI_KNOWLEDGE_DECISION_MODEL.md) | Primary SoT — observation → classification → decision branches |
+| [Knowledge Transition Model](./KNOWLEDGE_TRANSITION_MODEL.md) | State transitions: proposal → review → durable → retirement |
+| [Observation Classification Matrix](./OBSERVATION_CLASSIFICATION_MATRIX.md) | Initiator × intent × type → outcome; component map |
+| [Knowledge Decision Examples](./KNOWLEDGE_DECISION_EXAMPLES.md) | Scenario walkthroughs (remember that, PDF, calendar, V_Link, etc.) |
+
+**Verdict:** Existing architecture **supports** Decision Model v1. **No new infrastructure required.** Decision Model governs ingress; Knowledge Engine governs per-turn retrieval and assembly.
 
 ## Teach Vssyl Phase 1A (shipped)
 
