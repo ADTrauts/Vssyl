@@ -10,6 +10,8 @@ import PipelineLiveActivityFeed from './PipelineLiveActivityFeed';
 import PipelineAtRiskTrends from './PipelineAtRiskTrends';
 import PipelineHubToolSections from './PipelineHubToolSections';
 import ProviderGovernancePanel from './ProviderGovernancePanel';
+import { PipelineOperatorSubNav } from './PipelineOperatorSubNav';
+import { PipelineIntelligenceOverviewStrip } from './PipelineIntelligenceOverviewStrip';
 import { usePipelineHubData } from './usePipelineHubData';
 
 export default function PipelineOperationsHub() {
@@ -25,8 +27,8 @@ export default function PipelineOperationsHub() {
           <div>
             <h1 className="text-3xl font-bold text-v-text-primary">AI Pipeline</h1>
             <p className="text-v-text-secondary mt-1 max-w-2xl">
-              Operations console for grounding, retrieval, tools, and response quality across the
-              Digital Life Twin.
+              Canonical Admin Portal AI operator console — grounding, retrieval, tools, response
+              quality, and intelligence workflows (evaluations, corrections, regressions).
             </p>
             <div className="mt-2">
               <PipelineEnforcementBadge enforcement={data.catalog?.enforcement} />
@@ -39,6 +41,8 @@ export default function PipelineOperationsHub() {
         </Button>
       </header>
 
+      <PipelineOperatorSubNav />
+
       {error && (
         <Alert>
           <div className="flex flex-wrap items-center justify-between gap-2">
@@ -49,6 +53,8 @@ export default function PipelineOperationsHub() {
           </div>
         </Alert>
       )}
+
+      <PipelineIntelligenceOverviewStrip />
 
       <section>
         <h2 className="text-sm font-semibold text-v-text-secondary uppercase tracking-wide mb-3">
@@ -82,10 +88,15 @@ export default function PipelineOperationsHub() {
           Response Diagnostics
         </Link>{' '}
         ·{' '}
-        <Link href="/admin-portal/ai-system" className="text-indigo-600 hover:underline">
-          AI System
+        <Link href="/admin-portal/ai-pipeline/system-health" className="text-indigo-600 hover:underline">
+          System Health
+        </Link>{' '}
+        ·{' '}
+        <Link href="/admin-portal/ai-pipeline/test-lab" className="text-indigo-600 hover:underline">
+          Test Lab
         </Link>
       </p>
     </div>
   );
 }
+

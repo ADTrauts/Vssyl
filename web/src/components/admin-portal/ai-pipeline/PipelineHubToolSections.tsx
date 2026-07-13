@@ -12,6 +12,12 @@ import {
   History,
   FileDown,
   Cloud,
+  GitBranch,
+  ClipboardCheck,
+  Route,
+  Library,
+  BarChart3,
+  Play,
 } from 'lucide-react';
 
 interface ToolCard {
@@ -25,8 +31,15 @@ interface ToolCard {
 const SECTIONS: Array<{ title: string; description: string; cards: ToolCard[] }> = [
   {
     title: 'Observe',
-    description: 'Inspect traces and dry-run the live twin pipeline.',
+    description: 'Inspect traces, executions, and dry-run the live twin pipeline.',
     cards: [
+      {
+        title: 'Execution Explorer',
+        description: 'Canonical AIExecutionRecord timeline, tools, and explainability.',
+        path: '/admin-portal/ai-pipeline/executions',
+        icon: GitBranch,
+        color: 'indigo',
+      },
       {
         title: 'Response Diagnostics',
         description: 'Pipeline traces, intents, grounding, and evidence.',
@@ -40,6 +53,47 @@ const SECTIONS: Array<{ title: string; description: string; cards: ToolCard[] }>
         path: '/admin-portal/ai-pipeline/test-lab',
         icon: FlaskConical,
         color: 'purple',
+      },
+      {
+        title: 'Replay Preparation',
+        description: 'Preview replay config — execution disabled.',
+        path: '/admin-portal/ai-pipeline/replay',
+        icon: Play,
+        color: 'purple',
+      },
+    ],
+  },
+  {
+    title: 'Improve',
+    description: 'Evaluate, diagnose root causes, route corrections, and track regressions.',
+    cards: [
+      {
+        title: 'Evaluations',
+        description: 'Operator evaluation queue and workflow.',
+        path: '/admin-portal/ai-pipeline/evaluations',
+        icon: ClipboardCheck,
+        color: 'blue',
+      },
+      {
+        title: 'Corrections',
+        description: 'Correction routing proposals (observe-only).',
+        path: '/admin-portal/ai-pipeline/corrections',
+        icon: Route,
+        color: 'amber',
+      },
+      {
+        title: 'Regressions',
+        description: 'Regression library — CI deferred.',
+        path: '/admin-portal/ai-pipeline/regressions',
+        icon: Library,
+        color: 'green',
+      },
+      {
+        title: 'Platform Metrics',
+        description: 'Intelligence platform quality metrics.',
+        path: '/admin-portal/ai-pipeline/metrics',
+        icon: BarChart3,
+        color: 'teal',
       },
     ],
   },

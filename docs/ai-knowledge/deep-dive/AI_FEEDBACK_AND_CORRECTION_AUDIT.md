@@ -1,3 +1,13 @@
+> **HISTORICAL DOCUMENT**  
+> This document reflects an earlier stage of the AI architecture (deep-dive audit, 2026-07-05).  
+> For the **current** architecture, see:  
+> - [`docs/ai-system-audit/README.md`](../../ai-system-audit/README.md) — official System Audit  
+> - [`docs/architecture/AI_SYSTEM_MENTAL_MODEL.md`](../../architecture/AI_SYSTEM_MENTAL_MODEL.md) — mental model  
+> - [`docs/architecture/AI_READING_GUIDE.md`](../../architecture/AI_READING_GUIDE.md) — reading order  
+> - [`docs/architecture/AI_ARCHITECTURE_NAVIGATION_GUIDE.md`](../../architecture/AI_ARCHITECTURE_NAVIGATION_GUIDE.md) — agent navigation  
+
+---
+
 # AI Feedback and Correction Audit
 
 **Program:** AI System Deep Dive Audit  

@@ -23,11 +23,12 @@ import { logger } from '../../lib/logger';
 import type { StructuredAIResponse } from '../types/structuredResponse';
 import type { FileIssue } from '../types/fileIssues';
 import { getMessageForCode } from '../types/fileIssues';
-import { executeTool } from '../tools/toolExecutor';
+import { executeGovernedTool } from '../governance/governedToolExecutor';
 import { fetchAccessibleActiveFiles } from '../../services/driveVisibilityService';
 import { AI_TOOL_DEFINITIONS } from '../tools/toolDefinitions';
 import type { AIToolName } from '../tools/toolDefinitions';
 import { getModel } from '../providers/modelCatalog';
+import { resolveAIProvider } from '../providers/aiProviderFactory';
 import {
   finalizeRoutingEffectiveProvider,
   resolveLlmFallback,
@@ -161,6 +162,14 @@ export interface DigitalLifeTwinResponse {
     pipelineTrace?: AIPipelineTrace;
     /** Conversation reasoning layer (objective, confidence, coaching policy). */
     conversationReasoning?: ConversationReasoningResult;
+    /** Phase 1B: governed tool proposals awaiting user approval (approve via POST /api/ai/approvals/:id/respond). */
+    pendingToolApprovals?: Array<{
+      approvalId: string;
+      executionId?: string;
+      tool: string;
+      riskCategory?: string;
+      args?: Record<string, unknown>;
+    }>;
   };
 }
 
@@ -1228,6 +1237,12 @@ export class DigitalLifeTwinCore {
           }),
           ...(response.pipelineTrace && { pipelineTrace: response.pipelineTrace }),
           conversationReasoning,
+          ...(Array.isArray((response as { pendingToolApprovals?: unknown }).pendingToolApprovals) &&
+            ((response as { pendingToolApprovals: unknown[] }).pendingToolApprovals.length > 0) && {
+              pendingToolApprovals: (response as {
+                pendingToolApprovals: DigitalLifeTwinResponse['metadata']['pendingToolApprovals'];
+              }).pendingToolApprovals,
+            }),
           // NEW: Smart context metadata
           smartContext: smartContext ? {
             queryAnalysis: {
@@ -1413,6 +1428,15 @@ export class DigitalLifeTwinCore {
       userId: query.userId,
       dashboardId: optionsDashboardId,
     };
+    const ctxForScope = query.context as Record<string, unknown>;
+    if (typeof ctxForScope.businessId === 'string' && ctxForScope.businessId.trim() !== '') {
+      options.businessId = ctxForScope.businessId.trim();
+    }
+    if (typeof ctxForScope.conversationId === 'string' && ctxForScope.conversationId.trim() !== '') {
+      options.conversationId = ctxForScope.conversationId.trim();
+    } else if (traceContext?.conversationId) {
+      options.conversationId = traceContext.conversationId;
+    }
     if (visionImageParts && visionImageParts.length > 0) {
       options.visionImageParts = visionImageParts;
     }
@@ -1733,7 +1757,27 @@ export class DigitalLifeTwinCore {
     let aiResponse = await this.callAIProvider(provider, query.query, options);
     let round = 0;
     const toolsUsedRecords: PipelineToolUsageRecord[] = [];
-    const toolContext = { userId: query.userId, dashboardId: options.dashboardId as string | null | undefined };
+    const pendingToolApprovals: Array<{
+      approvalId: string;
+      executionId?: string;
+      tool: string;
+      riskCategory?: string;
+      args?: Record<string, unknown>;
+    }> = [];
+    const toolContext = {
+      userId: query.userId,
+      dashboardId: options.dashboardId as string | null | undefined,
+      prisma: this.prisma,
+      requestId: traceContext?.requestId,
+      conversationId:
+        typeof options.conversationId === 'string'
+          ? options.conversationId
+          : traceContext?.conversationId,
+      businessId:
+        typeof options.businessId === 'string' && options.businessId.trim() !== ''
+          ? options.businessId.trim()
+          : undefined,
+    };
     while (round < MAX_TOOL_CALL_ROUNDS) {
       const meta = aiResponse.metadata && typeof aiResponse.metadata === 'object' ? aiResponse.metadata as Record<string, unknown> : {};
       const toolCalls = meta.toolCalls as Array<{ id: string; type: 'function'; function: { name: string; arguments: string } }> | undefined;
@@ -1752,7 +1796,31 @@ export class DigitalLifeTwinCore {
           }
           let content = '';
           try {
-            content = await executeTool(tc.function.name as AIToolName, args, toolContext);
+            content = await executeGovernedTool(tc.function.name as AIToolName, args, toolContext);
+            try {
+              const parsed = JSON.parse(content) as {
+                success?: boolean;
+                governance?: {
+                  status?: string;
+                  approvalId?: string;
+                  executionId?: string;
+                  riskCategory?: string;
+                };
+                data?: { approvalId?: string; tool?: string; args?: Record<string, unknown> };
+              };
+              success = Boolean(parsed.success) || parsed.governance?.status === 'AWAITING_APPROVAL';
+              if (parsed.governance?.status === 'AWAITING_APPROVAL' && parsed.governance.approvalId) {
+                pendingToolApprovals.push({
+                  approvalId: parsed.governance.approvalId,
+                  executionId: parsed.governance.executionId,
+                  tool: tc.function?.name ?? 'unknown',
+                  riskCategory: parsed.governance.riskCategory,
+                  args: parsed.data?.args ?? args,
+                });
+              }
+            } catch {
+              success = true;
+            }
           } catch {
             success = false;
             content = 'Tool execution failed';
@@ -1922,6 +1990,7 @@ export class DigitalLifeTwinCore {
       pipelineTrace,
       assembledContext: assembledForTrace as AIAssembledContext | undefined,
       ...(quality.warnings.length > 0 && { aiResponseQualityWarnings: quality.warnings }),
+      ...(pendingToolApprovals.length > 0 && { pendingToolApprovals }),
     };
   }
 
@@ -2310,11 +2379,6 @@ export class DigitalLifeTwinCore {
     options: Record<string, unknown>
   ): Promise<Record<string, unknown>> {
     try {
-      // Import AI providers
-      const { OpenAIProvider } = await import('../providers/OpenAIProvider');
-      const { AnthropicProvider } = await import('../providers/AnthropicProvider');
-      const { LocalProvider } = await import('../providers/LocalProvider');
-
       // Create AI request object
       const aiRequest = {
         id: `ai_req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
@@ -2351,7 +2415,7 @@ export class DigitalLifeTwinCore {
       };
 
       // Call the appropriate provider (pass options as data so providers can use visionImageParts and traceContext)
-      let response;
+      // Phase 1: resolve via factory (overrideable in tests without network)
       const aiRequestTyped = aiRequest as any; // AI request structures are runtime-determined
       const userContextTyped = userContext as any; // User context structures are runtime-determined
       const providerData = buildProviderData({ options: options || {} });
@@ -2367,18 +2431,18 @@ export class DigitalLifeTwinCore {
           contextBlockCount: Array.isArray(ac.contextBlocks) ? ac.contextBlocks.length : 0,
         });
       }
-      if (provider === 'openai') {
-        const openaiProvider = new OpenAIProvider();
-        response = await openaiProvider.process(aiRequestTyped, userContextTyped, providerData);
-      } else if (provider === 'anthropic') {
-        const anthropicProvider = new AnthropicProvider();
-        response = await anthropicProvider.process(aiRequestTyped, userContextTyped, providerData);
-      } else {
-        const localProvider = new LocalProvider();
-        // LocalProvider does not support vision; pass only traceContext so logging still works
-        const localData = providerData.traceContext ? { traceContext: providerData.traceContext } : {};
-        response = await localProvider.process(aiRequestTyped, userContextTyped, localData);
-      }
+      const resolvedProvider = await resolveAIProvider(provider);
+      const dataForProvider =
+        provider === 'local'
+          ? providerData.traceContext
+            ? { traceContext: providerData.traceContext }
+            : {}
+          : providerData;
+      const response = await resolvedProvider.process(
+        aiRequestTyped,
+        userContextTyped,
+        dataForProvider
+      );
 
       return {
         response: response.response,

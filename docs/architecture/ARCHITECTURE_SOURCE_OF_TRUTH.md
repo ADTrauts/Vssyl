@@ -86,14 +86,22 @@ Before creating or editing architecture documentation:
 
 | Topic | Source of Truth | Supporting (living) | Historical / read-only | Never edit for truth |
 |-------|-----------------|---------------------|------------------------|----------------------|
+| **AI mental model (plain English)** | [`AI_SYSTEM_MENTAL_MODEL.md`](./AI_SYSTEM_MENTAL_MODEL.md) | [`AI_READING_GUIDE.md`](./AI_READING_GUIDE.md) | — | — |
+| **AI intelligence scopes** | [`AI_INTELLIGENCE_MODEL.md`](./AI_INTELLIGENCE_MODEL.md) | Mental Model | Industry packs (future only) | — |
+| **AI document status / terminology** | [`AI_DOCUMENT_STATUS_MATRIX.md`](./AI_DOCUMENT_STATUS_MATRIX.md) | Reading Guide, Nav Guide | — | — |
+| **AI whole-system analysis** | [`../ai-system-audit/README.md`](../ai-system-audit/README.md) | Audit package docs | [`../ai-knowledge/deep-dive/`](../ai-knowledge/deep-dive/) | Do not fork parallel inventories |
+| **AI accepted architecture decisions** | [`AI_ARCHITECTURE_DECISION_RECORDS.md`](./AI_ARCHITECTURE_DECISION_RECORDS.md) | [`../ai-system-audit/AI_ARCHITECTURE_DECISION_REGISTER.md`](../ai-system-audit/AI_ARCHITECTURE_DECISION_REGISTER.md), [`AI_AUDIT_RECOMMENDATION_DISPOSITIONS.md`](./AI_AUDIT_RECOMMENDATION_DISPOSITIONS.md) | — | — |
 | **AI platform (constitutional)** | [`AI_PLATFORM_CONSTITUTION.md`](./AI_PLATFORM_CONSTITUTION.md) | [`AI_PLATFORM_OVERVIEW.md`](./AI_PLATFORM_OVERVIEW.md), Platform Standards §6 | L2 certification review | — |
+| **AI knowledge (constitutional)** | [`../ai-knowledge/AI_KNOWLEDGE_CONSTITUTION.md`](../ai-knowledge/AI_KNOWLEDGE_CONSTITUTION.md) | Decision Model, Transition Model, Engine Spec | deep-dive set | — |
+| **AI knowledge ingress philosophy** | [`../ai-knowledge/AI_KNOWLEDGE_DECISION_MODEL.md`](../ai-knowledge/AI_KNOWLEDGE_DECISION_MODEL.md) | Transition Model, Observation matrix | — | — |
 | **AI context providers** | [`memory-bank/aiContextSystem.md`](../../memory-bank/aiContextSystem.md) | [`AI_CONTEXT_ASSEMBLY.md`](./AI_CONTEXT_ASSEMBLY.md), module manifests | — | — |
 | **Digital Life Twin pipeline** | [`AI_TWIN_PROMPT_PIPELINE.md`](./AI_TWIN_PROMPT_PIPELINE.md) | [`AI_CONVERSATION_REASONING.md`](./AI_CONVERSATION_REASONING.md) | — | — |
-| **AI business/personal boundaries** | [`AI_BUSINESS_PERSONAL_TWIN_BOUNDARIES.md`](./AI_BUSINESS_PERSONAL_TWIN_BOUNDARIES.md) | — | — | — |
+| **AI business/personal boundaries** | [`AI_BUSINESS_PERSONAL_TWIN_BOUNDARIES.md`](./AI_BUSINESS_PERSONAL_TWIN_BOUNDARIES.md) | Intelligence Model (Business scope) | — | — |
 | **AI retrieval (constitutional)** | [`../ai/retrieval/AI_RETRIEVAL_CONSTITUTION.md`](../ai/retrieval/AI_RETRIEVAL_CONSTITUTION.md) | [`../ai/retrieval/AI_RETRIEVAL_OPERATION_MATRIX.md`](../ai/retrieval/AI_RETRIEVAL_OPERATION_MATRIX.md) | Phase 2A closeout | — |
 | **AI experience routes** | `web/src/lib/aiExperienceNavigation.ts` | [`../ux/patterns/AI_EXPERIENCE_PATTERNS.md`](../ux/patterns/AI_EXPERIENCE_PATTERNS.md) | — | — |
 | **Connected Knowledge** | [`../connected-knowledge/KNOWLEDGE_CONSTITUTION.md`](../connected-knowledge/KNOWLEDGE_CONSTITUTION.md) | Provenance, trust, consumption docs in same folder | Phase 0A summaries | — |
 | **AI onboarding textbook** | [`AI_SYSTEM_TEXTBOOK.md`](./AI_SYSTEM_TEXTBOOK.md) | [`ai-textbook/`](./ai-textbook/) chapters | — | — |
+| **Task-tier model routing (design)** | — (not shipped) | [`../ai-system-audit/AI_MODEL_ROUTING_TARGET_ARCHITECTURE.md`](../ai-system-audit/AI_MODEL_ROUTING_TARGET_ARCHITECTURE.md) | — | Do not treat as runtime SoT |
 
 ### Search & Discovery
 

@@ -325,6 +325,7 @@ model User {
   aiPersonalityProfiles AIPersonalityProfile[]
   aiAutonomySettings AIAutonomySettings[]
   aiApprovalRequests AIApprovalRequest[]
+  aiActionExecutions AIActionExecution[]
   aiConversationHistories AIConversationHistory[]
   aiPipelineDiagnostics   AIPipelineDiagnostic[]
   aiPipelinePolicyAudits  AIPipelinePolicyAuditLog[] @relation("AIPipelinePolicyAuditAdmin")
@@ -339,6 +340,7 @@ model User {
   aiSuggestions       AISuggestion[]
   aiSuggestionSignals AISuggestionSignal[]
   aiSuggestionFeedbacks AISuggestionFeedback[]
+  aiExecutionRecords AIExecutionRecord[]
 
   // Calendar relations
   calendarMemberships CalendarMember[]
@@ -2119,6 +2121,211 @@ model VLinkActivity {
 
   @@index([vlinkId, createdAt])
   @@map("vlink_activities")
+}
+
+
+// ============================================================================
+// AI MODULE
+// ============================================================================
+
+/// Phase 1: AI mutating action execution / idempotency ledger
+model AIActionExecution {
+  id                 String   @id @default(uuid())
+  idempotencyKey     String
+  userId             String
+  businessId         String?
+  actionName         String
+  argsHash           String
+  approvalId         String?
+  requestId          String?
+  conversationId     String?
+  riskCategory       String
+  status             String   // AIActionExecutionStatus values
+  authorized         Boolean  @default(false)
+  executed           Boolean  @default(false)
+  idempotentReplay   Boolean  @default(false)
+  resultJson         Json?
+  errorMessage       String?
+  activityId         String?
+  retryCount         Int      @default(0)
+  firstAttemptedAt   DateTime @default(now())
+  completedAt        DateTime?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([idempotencyKey])
+  @@index([userId, actionName])
+  @@index([businessId])
+  @@index([approvalId])
+  @@index([status])
+  @@map("ai_action_executions")
+}
+
+
+// ============================================================================
+// AI MODULE
+// ============================================================================
+
+// ============================================================================
+// AI INTELLIGENCE PLATFORM (Phase 3) — observational hub
+// Links existing history / diagnostics / AIActionExecution without duplicating payloads.
+// Evaluations never auto-mutate runtime. Knowledge remains scoped.
+// ============================================================================
+
+model AIExecutionRecord {
+  id                      String   @id @default(uuid())
+  userId                  String
+  businessId              String?
+  surface                 String   // AIExecutionSurface
+  /// One identifier for the interaction; stable for operator / replay / eval links
+  conversationHistoryId   String?
+  pipelineDiagnosticId    String?
+  conversationId          String?
+  requestId               String?
+  userQuery               String?
+  aiResponseSummary       String?
+  provider                String?
+  model                   String?
+  routingSummaryJson      Json?
+  linkedArtifactsJson     Json     @default("{}")
+  timelineJson            Json     @default("[]")
+  usageJson               Json?
+  errorSummary            String?
+  diagnosticsSummaryJson  Json?
+  learningSignalsJson     Json?
+  completedAt             DateTime?
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+
+  user         User            @relation(fields: [userId], references: [id], onDelete: Cascade)
+  evaluations  AIEvaluation[]
+  corrections  AICorrectionRoute[]
+  regressions  AIRegressionCase[]
+
+  @@index([userId])
+  @@index([businessId])
+  @@index([surface])
+  @@index([conversationHistoryId])
+  @@index([pipelineDiagnosticId])
+  @@index([conversationId])
+  @@index([createdAt])
+  @@map("ai_execution_records")
+}
+
+model AIEvaluation {
+  id                 String   @id @default(uuid())
+  executionRecordId  String
+  evaluatorRole      String   // AIEvaluatorRole
+  evaluatorUserId    String?
+  labelsJson         Json     // AIEvaluationLabel[]
+  score              Float?
+  notes              String?
+  /// Evaluations must not drive automatic runtime mutation
+  mutatesRuntime     Boolean  @default(false)
+  /// Phase 4 operator workflow
+  workflowStatus     String   @default("PENDING") // AIEvaluationWorkflowStatus
+  assignedToUserId   String?
+  priority           String?  // LOW | MEDIUM | HIGH | CRITICAL
+  severity           String?
+  confidence         Float?
+  commentsJson       Json     @default("[]")
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  executionRecord AIExecutionRecord  @relation(fields: [executionRecordId], references: [id], onDelete: Cascade)
+  rootCauses      AIRootCauseFinding[]
+  corrections     AICorrectionRoute[]
+  regressions     AIRegressionCase[]
+
+  @@index([executionRecordId])
+  @@index([evaluatorRole])
+  @@index([workflowStatus])
+  @@index([assignedToUserId])
+  @@index([createdAt])
+  @@map("ai_evaluations")
+}
+
+model AIRootCauseFinding {
+  id               String   @id @default(uuid())
+  evaluationId     String
+  code             String   // AIRootCauseCode
+  notes            String?
+  /// Phase 4 review workflow
+  reviewStatus     String   @default("SUGGESTED") // SUGGESTED | APPROVED | REJECTED
+  reviewedByUserId String?
+  reviewedAt       DateTime?
+  historyJson      Json     @default("[]")
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  evaluation AIEvaluation @relation(fields: [evaluationId], references: [id], onDelete: Cascade)
+
+  @@index([evaluationId])
+  @@index([code])
+  @@index([reviewStatus])
+  @@map("ai_root_cause_findings")
+}
+
+model AICorrectionRoute {
+  id                      String   @id @default(uuid())
+  executionRecordId       String
+  evaluationId            String?
+  rootCauseCode           String   // AIRootCauseCode
+  destinationsJson        Json     // AICorrectionDestination[]
+  status                  String   @default("OPEN") // AICorrectionRouteStatus
+  rationale               String?
+  ownerHint               String?
+  /// Phase 4 operator workflow
+  assignedOwnerId         String?
+  overrideDestinationsJson Json?
+  routingApprovalStatus   String   @default("PENDING_REVIEW") // PENDING_REVIEW | APPROVED | REJECTED
+  commentsJson            Json     @default("[]")
+  createdAt               DateTime @default(now())
+  updatedAt               DateTime @updatedAt
+  resolvedAt              DateTime?
+
+  executionRecord AIExecutionRecord @relation(fields: [executionRecordId], references: [id], onDelete: Cascade)
+  evaluation      AIEvaluation?     @relation(fields: [evaluationId], references: [id], onDelete: SetNull)
+  regressions     AIRegressionCase[]
+
+  @@index([executionRecordId])
+  @@index([evaluationId])
+  @@index([rootCauseCode])
+  @@index([status])
+  @@index([routingApprovalStatus])
+  @@index([assignedOwnerId])
+  @@map("ai_correction_routes")
+}
+
+model AIRegressionCase {
+  id                 String   @id @default(uuid())
+  executionRecordId  String
+  evaluationId       String?
+  correctionRouteId  String?
+  title              String
+  originalRequest    String
+  expectationsJson   Json
+  tagsJson           Json     @default("[]")
+  status             String   @default("DRAFT") // AIRegressionCaseStatus
+  lastResultNotes    String?
+  /// Phase 4 library workflow
+  ownerUserId        String?
+  priority           String?
+  historyJson        Json     @default("[]")
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  executionRecord AIExecutionRecord  @relation(fields: [executionRecordId], references: [id], onDelete: Cascade)
+  evaluation      AIEvaluation?      @relation(fields: [evaluationId], references: [id], onDelete: SetNull)
+  correctionRoute AICorrectionRoute? @relation(fields: [correctionRouteId], references: [id], onDelete: SetNull)
+
+  @@index([executionRecordId])
+  @@index([status])
+  @@index([ownerUserId])
+  @@index([createdAt])
+  @@map("ai_regression_cases")
 }
 
 

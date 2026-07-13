@@ -1,9 +1,10 @@
 # AI Architecture Navigation Guide
 
-**Program:** Architecture Governance — Phase 1E  
-**Date:** 2026-06-29  
+**Program:** Architecture Governance — Phase 1E (AI tree updated Phase 0 — 2026-07-12)  
+**Date:** 2026-07-12  
 **Status:** Active — for AI assistants and new contributors  
-**Entry point:** [`VSSYL_ARCHITECTURE_INDEX.md`](./VSSYL_ARCHITECTURE_INDEX.md)
+**Entry point:** [`VSSYL_ARCHITECTURE_INDEX.md`](./VSSYL_ARCHITECTURE_INDEX.md)  
+**AI reading order:** [`AI_READING_GUIDE.md`](./AI_READING_GUIDE.md)
 
 ---
 
@@ -75,17 +76,32 @@ Code SSOT        → web/src/lib/*Navigation.ts
 ```
 AI task
     ↓
+Need whole-system understanding / onboarding?
+    YES → docs/architecture/AI_READING_GUIDE.md
+        → docs/architecture/AI_SYSTEM_MENTAL_MODEL.md
+        → docs/architecture/AI_INTELLIGENCE_MODEL.md
+        → docs/ai-system-audit/README.md  (official analysis)
+    ↓
+Changing AI platform behavior or boundaries?
+    YES → docs/architecture/AI_PLATFORM_CONSTITUTION.md  (law first)
+        → docs/architecture/AI_ARCHITECTURE_DECISION_RECORDS.md
+    ↓
 Platform governance → docs/architecture/AI_PLATFORM_CONSTITUTION.md
 Overview / diagrams → docs/architecture/AI_PLATFORM_OVERVIEW.md
 Digital Life Twin   → docs/architecture/AI_TWIN_PROMPT_PIPELINE.md
 Context providers   → memory-bank/aiContextSystem.md
                       → docs/architecture/AI_CONTEXT_ASSEMBLY.md
 Business/personal   → docs/architecture/AI_BUSINESS_PERSONAL_TWIN_BOUNDARIES.md
+Knowledge ingress   → docs/ai-knowledge/AI_KNOWLEDGE_DECISION_MODEL.md
+Knowledge law       → docs/ai-knowledge/AI_KNOWLEDGE_CONSTITUTION.md
 AI retrieval        → docs/ai/retrieval/AI_RETRIEVAL_CONSTITUTION.md
+Providers / vision  → docs/ai/PROVIDERS.md (Twin path; see audit for exemptions)
 Admin diagnostics   → docs/architecture/AI_PIPELINE_ADMIN_TOOLS.md
 UX patterns         → docs/ux/patterns/AI_EXPERIENCE_PATTERNS.md
 Route SSOT          → web/src/lib/aiExperienceNavigation.ts
+Doc status / terms  → docs/architecture/AI_DOCUMENT_STATUS_MATRIX.md
 Onboarding textbook → docs/architecture/AI_SYSTEM_TEXTBOOK.md
+Historical deep-dive → docs/ai-knowledge/deep-dive/ (HISTORICAL — prefer audit)
 ```
 
 ---
@@ -194,6 +210,14 @@ docs/architecture/audits/ADMIN_PORTAL_REFERENCE_STATUS_RECORD.md
 Operation matrix → ADMIN_PORTAL_OPERATION_MATRIX.md
 Platform Controller IA → docs/platform-controller/PLATFORM_CONTROLLER_INFORMATION_ARCHITECTURE.md
 Operator how-to  → docs/guides/ADMIN_PORTAL.md
+
+Admin AI operator (canonical shell = AI Pipeline Hub)
+    ↓
+AI_PIPELINE_OPERATOR_INFORMATION_ARCHITECTURE.md
+AI_ADMIN_SURFACE_CONSOLIDATION_MATRIX.md
+AI_PIPELINE_OPERATOR_RBAC.md
+API (intelligence workflows) → AI_OPERATIONS_CENTER_API.md  (/api/admin/ai/operations)
+UI → /admin-portal/ai-pipeline/*  (NOT /admin-portal/ai/operations — redirects only)
 ```
 
 ---

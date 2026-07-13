@@ -1,0 +1,34 @@
+/// Phase 1: AI mutating action execution / idempotency ledger
+model AIActionExecution {
+  id                 String   @id @default(uuid())
+  idempotencyKey     String
+  userId             String
+  businessId         String?
+  actionName         String
+  argsHash           String
+  approvalId         String?
+  requestId          String?
+  conversationId     String?
+  riskCategory       String
+  status             String   // AIActionExecutionStatus values
+  authorized         Boolean  @default(false)
+  executed           Boolean  @default(false)
+  idempotentReplay   Boolean  @default(false)
+  resultJson         Json?
+  errorMessage       String?
+  activityId         String?
+  retryCount         Int      @default(0)
+  firstAttemptedAt   DateTime @default(now())
+  completedAt        DateTime?
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([idempotencyKey])
+  @@index([userId, actionName])
+  @@index([businessId])
+  @@index([approvalId])
+  @@index([status])
+  @@map("ai_action_executions")
+}

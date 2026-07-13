@@ -1,10 +1,12 @@
 # AI platform overview (canonical diagrams)
 
-**Last updated:** 2026-05-23  
+**Last updated:** 2026-07-12 (Phase 0 cross-links; diagrams still reflect live Twin path)  
 **Audience:** Engineers, admins, onboarding  
 **Status:** Shipped — reflects Phases 1–5 maturity, pipeline admin, V_Link pipeline integration, ambient suggestions
 
-This document is the **visual hub** for the live AI platform. Detailed sub-diagrams live in linked architecture docs; avoid duplicating long prose here.
+**Plain-English entry:** [`AI_SYSTEM_MENTAL_MODEL.md`](./AI_SYSTEM_MENTAL_MODEL.md) · **Reading order:** [`AI_READING_GUIDE.md`](./AI_READING_GUIDE.md) · **Whole-system analysis:** [`../ai-system-audit/README.md`](../ai-system-audit/README.md)
+
+This document is the **visual hub** for the live AI platform. Detailed sub-diagrams live in linked architecture docs; avoid duplicating long prose here. If a diagram conflicts with the System Audit on runtime status, **prefer the audit + code**.
 
 **Narrative textbook (May 2026):** [`AI_SYSTEM_TEXTBOOK.md`](./AI_SYSTEM_TEXTBOOK.md) — internal onboarding; links here for canonical diagrams.
 

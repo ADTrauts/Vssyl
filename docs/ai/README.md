@@ -2,7 +2,9 @@
 
 Runbooks and rules for **vision, providers, and multimodal** behavior in production.
 
+**Start here (Phase 0):** [`docs/architecture/AI_READING_GUIDE.md`](../architecture/AI_READING_GUIDE.md) · [`AI_SYSTEM_MENTAL_MODEL.md`](../architecture/AI_SYSTEM_MENTAL_MODEL.md)  
 **Architecture navigation:** [`docs/architecture/AI_ARCHITECTURE_NAVIGATION_GUIDE.md`](../architecture/AI_ARCHITECTURE_NAVIGATION_GUIDE.md)  
+**Whole-system analysis:** [`docs/ai-system-audit/README.md`](../ai-system-audit/README.md)  
 **AI platform constitution:** [`docs/architecture/AI_PLATFORM_CONSTITUTION.md`](../architecture/AI_PLATFORM_CONSTITUTION.md)  
 **Product-level AI rules:** [`memory-bank/aiContextSystem.md`](../../memory-bank/aiContextSystem.md)  
 **AI retrieval:** [`retrieval/`](./retrieval/) — [`AI_RETRIEVAL_CONSTITUTION.md`](./retrieval/AI_RETRIEVAL_CONSTITUTION.md)
@@ -14,7 +16,7 @@ Runbooks and rules for **vision, providers, and multimodal** behavior in product
 | File | Purpose | Diagrams |
 |------|---------|----------|
 | **ARCHITECTURE.md** | Attachment + vision pipelines (client → GCS → provider) | ✅ Mermaid |
-| **PROVIDERS.md** | `callAIProvider` multimodal routing + capabilities | ✅ Mermaid |
+| **PROVIDERS.md** | Twin `callAIProvider` multimodal routing + capabilities | ✅ Mermaid |
 | **RUNBOOK.md** | Prod troubleshooting; `[VISION_PIPELINE]` checklist | ✅ Mermaid |
 | **GOLDEN_RULES.md** | Non-negotiable behavior for AI / vision paths | — |
 
@@ -22,4 +24,4 @@ Runbooks and rules for **vision, providers, and multimodal** behavior in product
 
 **Platform roadmap & execution discipline:** [`docs/plans/AI_PLATFORM_MATURITY_PLAN.md`](../plans/AI_PLATFORM_MATURITY_PLAN.md) (what to build) · [`docs/plans/AI_PLATFORM_EXECUTION_PRINCIPLES.md`](../plans/AI_PLATFORM_EXECUTION_PRINCIPLES.md) (how to build — **Visible Intelligence > Hidden Intelligence**)
 
-Long narrative architecture (diagrams, deep dives) was archived to **`docs/archive/guides-merged-2026/`** (April 2026). Prefer **`docs/architecture/AI_*.md`** for current Mermaid source.
+Long narrative architecture (diagrams, deep dives) was archived to **`docs/archive/guides-merged-2026/`** (April 2026). Prefer **`docs/architecture/AI_*.md`** for current Mermaid source. Prefer **`docs/ai-system-audit/`** for whole-system analysis.

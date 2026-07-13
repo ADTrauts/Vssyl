@@ -187,6 +187,11 @@ export class ApprovalManager {
   /**
    * Execute an approved action
    */
+  /**
+   * @deprecated Phase 2 — does NOT run domain or governed execution.
+   * Canonical path: POST /api/ai/approvals/:id/respond → executeApprovedGovernedAction.
+   * This method only flips approval status to EXECUTED (historical autonomy UI).
+   */
   async executeApprovedAction(requestId: string): Promise<boolean> {
     const request = await this.prisma.aIApprovalRequest.findUnique({
       where: { id: requestId }

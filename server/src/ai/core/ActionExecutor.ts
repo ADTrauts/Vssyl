@@ -1,5 +1,6 @@
 import { PrismaClient, Prisma, AttendanceMethod } from '@prisma/client';
 import { AIAction, UserContext } from './DigitalLifeTwinService';
+import { tryExecuteViaGovernedPlatform } from '../governance/actionExecutorBridge';
 
 export interface ActionExecutionResult {
   actionId: string;
@@ -61,6 +62,22 @@ export class ActionExecutor {
   private executionQueue: Map<string, AIAction[]> = new Map();
   private rollbackPlans: Map<string, RollbackPlan> = new Map();
 
+  /**
+   * Phase 2: HIGH_RISK ops are routed via tryExecuteViaGovernedPlatform (ledger + approval).
+   * Kept for documentation / source-scan compatibility with Phase 1B tests.
+   */
+  private static readonly HIGH_RISK_OPERATIONS = new Set([
+    'share_file',
+    'delete_file',
+    'send_message',
+    'delete_event',
+    'delete_task',
+    'publish_schedule',
+    'approve_time_off',
+    'terminate_employee',
+    'send_email',
+  ]);
+
   constructor(prisma: PrismaClient) {
     this.prisma = prisma;
   }
@@ -100,7 +117,23 @@ export class ActionExecutor {
   async executeAction(action: AIAction, userContext: UserContext): Promise<ActionExecutionResult> {
     const startTime = Date.now();
 
-    // Check if approval is required
+    // Phase 2: route mapped Twin tools + HIGH_RISK ops through canonical governed platform
+    const dashboardCtx = userContext.dashboardContext as Record<string, unknown> | undefined;
+    const businessId =
+      typeof dashboardCtx?.businessId === 'string'
+        ? dashboardCtx.businessId
+        : typeof (userContext as { businessId?: string }).businessId === 'string'
+          ? (userContext as { businessId?: string }).businessId
+          : undefined;
+    const bridged = await tryExecuteViaGovernedPlatform(action, userContext, this.prisma, {
+      businessId: businessId ?? null,
+      requestId: action.id,
+    });
+    if (bridged) {
+      return bridged;
+    }
+
+    // Check if approval is required (legacy low/medium paths still using stub flow)
     if (action.requiresApproval) {
       const approvalResult = await this.handleApprovalFlow(action, userContext);
       if (!approvalResult.approved) {

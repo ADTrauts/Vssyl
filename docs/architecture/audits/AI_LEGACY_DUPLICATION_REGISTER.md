@@ -1,5 +1,11 @@
 # AI Legacy and Duplication Register
 
+> **HISTORICAL DOCUMENT**  
+> Wave 0 register (2026-06-04). Preserved for archaeology.  
+> For the **current** redundancy analysis, see [`docs/ai-system-audit/AI_REDUNDANCY_AND_COMPLEXITY_AUDIT.md`](../../ai-system-audit/AI_REDUNDANCY_AND_COMPLEXITY_AUDIT.md).  
+> For the official System Audit hub: [`docs/ai-system-audit/README.md`](../../ai-system-audit/README.md).  
+> Mental model: [`docs/architecture/AI_SYSTEM_MENTAL_MODEL.md`](../AI_SYSTEM_MENTAL_MODEL.md).
+
 **Phase:** AI Platform Wave 0 (2026-06-04)  
 **Parent:** [AI_PLATFORM_CONSTITUTIONAL_AUDIT.md](./AI_PLATFORM_CONSTITUTIONAL_AUDIT.md)
 

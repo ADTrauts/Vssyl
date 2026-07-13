@@ -87,6 +87,7 @@ model User {
   aiPersonalityProfiles AIPersonalityProfile[]
   aiAutonomySettings AIAutonomySettings[]
   aiApprovalRequests AIApprovalRequest[]
+  aiActionExecutions AIActionExecution[]
   aiConversationHistories AIConversationHistory[]
   aiPipelineDiagnostics   AIPipelineDiagnostic[]
   aiPipelinePolicyAudits  AIPipelinePolicyAuditLog[] @relation("AIPipelinePolicyAuditAdmin")
@@ -101,6 +102,7 @@ model User {
   aiSuggestions       AISuggestion[]
   aiSuggestionSignals AISuggestionSignal[]
   aiSuggestionFeedbacks AISuggestionFeedback[]
+  aiExecutionRecords AIExecutionRecord[]
 
   // Calendar relations
   calendarMemberships CalendarMember[]

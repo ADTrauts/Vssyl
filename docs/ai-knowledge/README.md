@@ -1,9 +1,13 @@
 # AI Knowledge Reference Program
 
 **Program:** AI Knowledge Reference Program  
-**Phase:** Constitution v1 *(0A, deep-dive, 0B complete)*  
-**Date:** 2026-07-05  
+**Phase:** Constitution v1 *(0A, deep-dive, 0B complete; Phase 0 architecture governance 2026-07-12)*  
+**Date:** 2026-07-12  
 **Constraint:** Preserve existing AI architecture. Consolidation and product clarity only.
+
+**Platform navigation (Phase 0):** [`../architecture/AI_READING_GUIDE.md`](../architecture/AI_READING_GUIDE.md) · [`../architecture/AI_SYSTEM_MENTAL_MODEL.md`](../architecture/AI_SYSTEM_MENTAL_MODEL.md) · [`../architecture/AI_INTELLIGENCE_MODEL.md`](../architecture/AI_INTELLIGENCE_MODEL.md) (Knowledge vs Intelligence) · [`../ai-system-audit/README.md`](../ai-system-audit/README.md)
+
+> **Note:** The `deep-dive/` folder is **Historical**. Prefer the System Audit for whole-system analysis.
 
 ## Constitutional authority (start here)
 

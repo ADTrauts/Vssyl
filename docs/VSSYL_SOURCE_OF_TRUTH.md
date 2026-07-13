@@ -10,6 +10,9 @@ This repository defines the canonical references for VSSYL:
    - [`ARCHITECTURE_DOMAIN_MAP.md`](architecture/ARCHITECTURE_DOMAIN_MAP.md) — domain topology and certification status
    - [`ARCHITECTURE_HEALTH_REPORT.md`](architecture/ARCHITECTURE_HEALTH_REPORT.md) — documentation health metrics
    - [`AI_ARCHITECTURE_NAVIGATION_GUIDE.md`](architecture/AI_ARCHITECTURE_NAVIGATION_GUIDE.md) — AI assistant decision trees
+   - [`AI_READING_GUIDE.md`](architecture/AI_READING_GUIDE.md) — official AI documentation reading order
+   - [`AI_SYSTEM_MENTAL_MODEL.md`](architecture/AI_SYSTEM_MENTAL_MODEL.md) — plain-English AI mental model
+   - [`ai-system-audit/README.md`](ai-system-audit/README.md) — official whole-system AI architecture analysis (Phase 0 adopted)
    - [`ARCHITECTURE_DOCUMENT_STANDARD.md`](architecture/ARCHITECTURE_DOCUMENT_STANDARD.md) — required template for new architecture docs
 5. **Platform standards (constitutional framework):** [`docs/architecture/VSSYL_PLATFORM_STANDARDS_AND_MODULE_CONTRACT.md`](architecture/VSSYL_PLATFORM_STANDARDS_AND_MODULE_CONTRACT.md) — Runtime Kernel, module contract, governance, migration
 6. **Certification status:** [`docs/architecture/CERTIFICATION_LEDGER.md`](architecture/CERTIFICATION_LEDGER.md) — operational certification dashboard (dated)
@@ -28,4 +31,4 @@ If **repo code** and a **constitutional doc** disagree, stop and reconcile befor
 
 Use this document as the baseline reference across custom GPT, Cursor, and ChatGPT conversations.
 
-**Last updated:** 2026-06-29 (Architecture Governance Phase 1A)
+**Last updated:** 2026-07-12 (AI Architecture Phase 0 — audit adoption + mental model)

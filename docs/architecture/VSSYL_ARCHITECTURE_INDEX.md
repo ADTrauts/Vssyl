@@ -1,7 +1,7 @@
 # Vssyl Architecture Index
 
 **Program:** Architecture Consolidation — Phase 0A  
-**Date:** 2026-06-29  
+**Date:** 2026-06-29 (AI section updated 2026-07-12 — Phase 0)  
 **Status:** Canonical entry point — **supersedes informal navigation via scattered READMEs**  
 **Audience:** Engineers, architects, AI agents, program owners
 
@@ -148,10 +148,18 @@ Install, configure, assign, and discover applications.
 
 Digital Life Twin, context system, retrieval, orchestration.
 
+**Start here:** [`AI_READING_GUIDE.md`](./AI_READING_GUIDE.md) · Mental model: [`AI_SYSTEM_MENTAL_MODEL.md`](./AI_SYSTEM_MENTAL_MODEL.md)
+
 | Topic | Canonical document | Cert | Status |
 |-------|-------------------|------|--------|
+| **AI mental model** | [`AI_SYSTEM_MENTAL_MODEL.md`](./AI_SYSTEM_MENTAL_MODEL.md) | — | Phase 0 constitutional explanation |
+| **AI intelligence model** | [`AI_INTELLIGENCE_MODEL.md`](./AI_INTELLIGENCE_MODEL.md) | — | Four scopes; Knowledge vs Intelligence |
+| **AI reading / doc status** | [`AI_READING_GUIDE.md`](./AI_READING_GUIDE.md) · [`AI_DOCUMENT_STATUS_MATRIX.md`](./AI_DOCUMENT_STATUS_MATRIX.md) | — | Phase 0 |
+| **AI system audit (analysis)** | [`../ai-system-audit/README.md`](../ai-system-audit/README.md) | — | Official whole-system analysis |
+| **AI architecture decisions** | [`AI_ARCHITECTURE_DECISION_RECORDS.md`](./AI_ARCHITECTURE_DECISION_RECORDS.md) | — | Accepted ADRs |
 | **AI platform constitution** | [`AI_PLATFORM_CONSTITUTION.md`](./AI_PLATFORM_CONSTITUTION.md) | — | Constitutional |
 | **AI platform overview** | [`AI_PLATFORM_OVERVIEW.md`](./AI_PLATFORM_OVERVIEW.md) | L2 | L3 deferred |
+| **AI knowledge constitution** | [`../ai-knowledge/AI_KNOWLEDGE_CONSTITUTION.md`](../ai-knowledge/AI_KNOWLEDGE_CONSTITUTION.md) | — | Constitutional |
 | **AI context system** | [`../../memory-bank/aiContextSystem.md`](../../memory-bank/aiContextSystem.md) | — | Product + implementation |
 | **Digital Life Twin pipeline** | [`AI_TWIN_PROMPT_PIPELINE.md`](./AI_TWIN_PROMPT_PIPELINE.md) | — | Active |
 | **AI retrieval constitution** | [`../ai/retrieval/AI_RETRIEVAL_CONSTITUTION.md`](../ai/retrieval/AI_RETRIEVAL_CONSTITUTION.md) | L2 CwF | Phase 2A governance |
@@ -159,7 +167,7 @@ Digital Life Twin, context system, retrieval, orchestration.
 | **Connected Knowledge** | [`../connected-knowledge/KNOWLEDGE_CONSTITUTION.md`](../connected-knowledge/KNOWLEDGE_CONSTITUTION.md) | — | Constitution only |
 | **AI textbook (onboarding)** | [`AI_SYSTEM_TEXTBOOK.md`](./AI_SYSTEM_TEXTBOOK.md) | — | Internal reference |
 
-**Supporting:** [`../ai/`](../ai/) · [`./ai-textbook/`](./ai-textbook/) · [`../plans/AI_PLATFORM_MATURITY_PLAN.md`](../plans/AI_PLATFORM_MATURITY_PLAN.md)
+**Supporting:** [`../ai/`](../ai/) · [`../ai-knowledge/`](../ai-knowledge/) · [`./ai-textbook/`](./ai-textbook/) · [`../plans/AI_PLATFORM_MATURITY_PLAN.md`](../plans/AI_PLATFORM_MATURITY_PLAN.md)
 
 ---
 

@@ -179,6 +179,11 @@ export class BusinessAIDigitalTwinService {
   /**
    * Process employee AI interaction with business context
    */
+  /**
+   * Employee interaction entry.
+   * Phase 2: NOT the canonical AI execution path — currently returns mock business intelligence.
+   * Canonical: POST /api/ai/twin with context.businessId (same governed lifecycle as personal Twin).
+   */
   async processEmployeeInteraction(
     businessId: string,
     userId: string,

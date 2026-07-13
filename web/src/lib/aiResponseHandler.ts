@@ -18,6 +18,15 @@ export interface FileIssue {
   developerDetails?: string;
 }
 
+export interface TwinPendingToolApproval {
+  approvalId: string;
+  executionId?: string;
+  tool: string;
+  riskCategory?: string;
+  args?: Record<string, unknown>;
+  status?: 'AWAITING_APPROVAL' | 'APPROVED' | 'REJECTED' | 'COMPLETED' | 'FAILED';
+}
+
 export interface TwinResponseData {
   response?: string;
   confidence?: number;
@@ -27,7 +36,9 @@ export interface TwinResponseData {
   fileIssues?: FileIssue[];
   /** Optional: true when the model used vision parts (images) in this reply; UI shows "Image used in this reply". */
   usedVisionParts?: boolean;
-  metadata?: Record<string, unknown>;
+  metadata?: Record<string, unknown> & {
+    pendingToolApprovals?: TwinPendingToolApproval[];
+  };
 }
 
 export interface AIConversationItemBase {
@@ -332,12 +343,31 @@ export function buildAddMessagePayloadFromTwinData(data: TwinResponseData): {
   if (normalized.structured != null) metadata.structured = normalized.structured;
   if (Array.isArray(normalized.fileIssues) && normalized.fileIssues.length > 0) metadata.fileIssues = normalized.fileIssues;
   if (normalized.usedVisionParts === true) metadata.usedVisionParts = true;
+  const pending = extractPendingToolApprovals(normalized);
+  if (pending.length > 0) metadata.pendingToolApprovals = pending;
   return {
     role: 'assistant',
     content: normalized.response?.trim() || 'No response generated',
     confidence: typeof normalized.confidence === 'number' ? normalized.confidence : 0.5,
     metadata,
   };
+}
+
+/**
+ * Extract Phase 1 governed tool approval proposals from twin metadata.
+ * Canonical respond path: POST /api/ai/approvals/:approvalId/respond
+ */
+export function extractPendingToolApprovals(data: TwinResponseData): TwinPendingToolApproval[] {
+  const raw = data.metadata?.pendingToolApprovals;
+  if (!Array.isArray(raw)) return [];
+  return raw.filter((item): item is TwinPendingToolApproval => {
+    return (
+      Boolean(item) &&
+      typeof item === 'object' &&
+      typeof (item as TwinPendingToolApproval).approvalId === 'string' &&
+      typeof (item as TwinPendingToolApproval).tool === 'string'
+    );
+  });
 }
 
 /**

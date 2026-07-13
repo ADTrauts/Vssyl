@@ -82,19 +82,26 @@ export default function ApprovalManager() {
 
   const loadPendingApprovals = async () => {
     try {
-      const response = await authenticatedApiCall<ApprovalRequest[]>(
-        '/api/ai/autonomy/approvals/pending'
+      // Phase 1B canonical path (not retired /autonomy/* execute semantics)
+      const response = await authenticatedApiCall<{ success?: boolean; data?: ApprovalRequest[] } | ApprovalRequest[]>(
+        '/api/ai/approvals'
       );
-      setPendingApprovals(response);
+      const list = Array.isArray(response)
+        ? response
+        : Array.isArray((response as { data?: ApprovalRequest[] }).data)
+          ? (response as { data: ApprovalRequest[] }).data
+          : [];
+      setPendingApprovals(list);
     } catch (error) {
       console.error('Failed to load pending approvals:', error);
     }
   };
 
   const respondToApproval = async (requestId: string) => {
+    if (loading) return;
     setLoading(true);
     try {
-      await authenticatedApiCall(`/api/ai/autonomy/approvals/${requestId}/respond`, {
+      await authenticatedApiCall(`/api/ai/approvals/${requestId}/respond`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -113,17 +120,8 @@ export default function ApprovalManager() {
   };
 
   const executeApprovedAction = async (requestId: string) => {
-    setLoading(true);
-    try {
-      await authenticatedApiCall(`/api/ai/autonomy/approvals/${requestId}/execute`, {
-        method: 'POST'
-      });
-      await loadPendingApprovals();
-    } catch (error) {
-      console.error('Failed to execute action:', error);
-    } finally {
-      setLoading(false);
-    }
+    // Phase 1B: approve path already executes governed tools; keep button as approve+execute
+    await respondToApproval(requestId);
   };
 
   const getStatusBadge = (status: string) => {

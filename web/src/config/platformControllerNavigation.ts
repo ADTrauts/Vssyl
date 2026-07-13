@@ -202,6 +202,7 @@ export function resolvePlatformControllerActiveNavId(
   if (normalized.includes('/businesses')) return 'businesses';
   if (normalized.includes('/platform-programs')) return 'platform-programs';
   if (hash === '#provider-governance' || hash === 'provider-governance') return 'providers';
+  if (normalized.includes('/ai/operations')) return 'ai-pipeline';
   if (normalized.includes('/ai-pipeline/diagnostics')) return 'diagnostics';
   if (normalized.includes('/ai-pipeline/test-lab')) return 'diagnostics';
   if (normalized.includes('/ai-pipeline')) return 'ai-pipeline';
@@ -217,6 +218,7 @@ export function resolvePlatformControllerActiveNavId(
 /** Nav must not expose legacy AI System launcher or duplicate debug impersonation routes. */
 export const PLATFORM_CONTROLLER_REMOVED_NAV_IDS = [
   'ai-system',
+  'ai-operations',
   'test-impersonation',
   'impersonation-test',
 ] as const;

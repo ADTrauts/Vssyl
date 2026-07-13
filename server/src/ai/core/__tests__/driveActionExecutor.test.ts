@@ -6,10 +6,11 @@ import { ActionExecutor } from '../ActionExecutor';
 import type { AIAction, UserContext } from '../DigitalLifeTwinService';
 import * as driveAIActionService from '../../../services/driveAIActionService';
 import * as actionExecutorRegistryModule from '../ActionExecutorRegistry';
+import * as bridge from '../../governance/actionExecutorBridge';
 
 const executorSource = readFileSync(join(process.cwd(), 'src/ai/core/ActionExecutor.ts'), 'utf8');
 
-describe('ActionExecutor drive paths (Wave 1B)', () => {
+describe('ActionExecutor drive paths (Wave 1B / Phase 2)', () => {
   const userContext: UserContext = {
     userId: 'user-1',
     personality: {},
@@ -44,10 +45,24 @@ describe('ActionExecutor drive paths (Wave 1B)', () => {
     expect(executorSource).toMatch(/driveAIActionService/);
   });
 
-  it('share_file uses driveAIActionService', async () => {
-    const spy = vi.spyOn(driveAIActionService, 'aiShareFile').mockResolvedValue({
+  it('share_file routes via governed platform (Phase 2) and does not call domain share directly', async () => {
+    const shareSpy = vi.spyOn(driveAIActionService, 'aiShareFile').mockResolvedValue({
       success: true,
       data: { permission: { id: 'p1' } },
+    });
+    const bridgeSpy = vi.spyOn(bridge, 'tryExecuteViaGovernedPlatform').mockResolvedValue({
+      actionId: 'action-1',
+      success: true,
+      result: {
+        governance: { status: 'AWAITING_APPROVAL', approvalId: 'appr-1', executionId: 'exec-1' },
+      },
+      metadata: {
+        executionTime: 1,
+        module: 'drive',
+        operation: 'share_file',
+        affectedUsers: [],
+        rollbackAvailable: false,
+      },
     });
 
     const action = baseAction({
@@ -56,13 +71,9 @@ describe('ActionExecutor drive paths (Wave 1B)', () => {
     });
 
     const results = await executor.executeActions([action], userContext);
+    expect(bridgeSpy).toHaveBeenCalled();
     expect(results[0]?.success).toBe(true);
-    expect(spy).toHaveBeenCalledWith({
-      ownerUserId: 'user-1',
-      fileId: 'f1',
-      targetUserId: 'target-1',
-      canRead: true,
-      canWrite: false,
-    });
+    expect(JSON.stringify(results[0]?.result)).toMatch(/AWAITING_APPROVAL/);
+    expect(shareSpy).not.toHaveBeenCalled();
   });
 });

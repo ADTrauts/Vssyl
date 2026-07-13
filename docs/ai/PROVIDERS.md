@@ -2,6 +2,11 @@
 
 Documentation of how the Digital Life Twin sends requests to OpenAI and Anthropic, and how vision/model selection works.
 
+**Scope:** Twin path (`DigitalLifeTwinCore` → provider adapters).  
+**Specialized exemptions** (not covered by this document’s routing diagrams): Notebook AI completion, document/fact extraction helpers, Whisper/TTS/image generation routes — see [`../ai-system-audit/AI_PROVIDER_AND_MODEL_AUDIT.md`](../ai-system-audit/AI_PROVIDER_AND_MODEL_AUDIT.md) and [`../architecture/AI_SYSTEM_MENTAL_MODEL.md`](../architecture/AI_SYSTEM_MENTAL_MODEL.md).
+
+**Navigation:** [`../architecture/AI_READING_GUIDE.md`](../architecture/AI_READING_GUIDE.md)
+
 ---
 
 ## Request shapes

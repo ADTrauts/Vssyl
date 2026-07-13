@@ -12,4 +12,7 @@ export * from './chat';
 export * from './module-ai-context';
 export * from './ai-context-provider-contract';
 export * from './ai-orchestration-snapshot';
+export * from './ai-action-governance';
+export * from './ai-intelligence-platform';
+export * from './ai-operations-center';
 export * from './analyticsDashboardSummary';

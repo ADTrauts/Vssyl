@@ -1481,7 +1481,7 @@ router.get('/approvals', authenticateJWT, async (req, res) => {
 
 /**
  * POST /api/ai/approvals/:id/respond
- * Respond to an approval request
+ * Respond to an approval request. Approve path executes governed tools exactly once.
  */
 router.post('/approvals/:id/respond', authenticateJWT, async (req, res) => {
   try {
@@ -1509,6 +1509,48 @@ router.post('/approvals/:id/respond', authenticateJWT, async (req, res) => {
       return res.status(403).json({ error: 'Not authorized to respond to this approval' });
     }
 
+    if (approval.expiresAt && approval.expiresAt.getTime() < Date.now()) {
+      if (approval.status === 'PENDING') {
+        await prisma.aIApprovalRequest.update({
+          where: { id },
+          data: { status: 'EXPIRED' },
+        });
+      }
+      return res.status(410).json({ error: 'Approval request has expired' });
+    }
+
+    // Duplicate approve after completed governed execution → replay prior result
+    if (response === 'approve' && (approval.status === 'APPROVED' || approval.status === 'EXECUTED')) {
+      const { executeApprovedGovernedAction } = await import('../ai/governance/executeApprovedGovernedAction');
+      const replay = await executeApprovedGovernedAction({
+        prisma,
+        userId,
+        approvalId: id,
+      });
+      if (replay.ok && replay.body.idempotentReplay) {
+        return res.status(200).json({
+          success: true,
+          data: approval,
+          execution: replay.body,
+          idempotentReplay: true,
+        });
+      }
+    }
+
+    if (approval.status !== 'PENDING' && response === 'approve') {
+      return res.status(409).json({
+        error: 'Approval is not pending',
+        status: approval.status,
+      });
+    }
+
+    if (approval.status !== 'PENDING' && response === 'reject') {
+      return res.status(409).json({
+        error: 'Approval is not pending',
+        status: approval.status,
+      });
+    }
+
     // Update approval request
     const updatedApproval = await prisma.aIApprovalRequest.update({
       where: { id },
@@ -1529,17 +1571,53 @@ router.post('/approvals/:id/respond', authenticateJWT, async (req, res) => {
       }
     });
 
-    // If approved, execute the action
-    if (response === 'approve') {
-      // TODO: Execute the approved action
-      logSrvDebug('ai_approval_execute', 'Action approved, executing', {
-        actionData: approval.actionData as Record<string, unknown>,
+    let executionResult: Record<string, unknown> | undefined;
+
+    if (response === 'reject') {
+      const pendingExec = await prisma.aIActionExecution.findFirst({
+        where: { approvalId: id, status: 'AWAITING_APPROVAL' },
       });
+      if (pendingExec) {
+        await prisma.aIActionExecution.update({
+          where: { id: pendingExec.id },
+          data: {
+            status: 'REJECTED',
+            executed: false,
+            errorMessage: typeof reasoning === 'string' ? reasoning : 'Rejected by user',
+            completedAt: new Date(),
+          },
+        });
+      }
+    }
+
+    // If approved, execute the governed action exactly once
+    if (response === 'approve') {
+      const { executeApprovedGovernedAction } = await import('../ai/governance/executeApprovedGovernedAction');
+      const exec = await executeApprovedGovernedAction({
+        prisma,
+        userId,
+        approvalId: id,
+      });
+      executionResult = exec.body;
+      if (exec.ok && exec.body.success) {
+        await prisma.aIApprovalRequest.update({
+          where: { id },
+          data: { status: 'EXECUTED', executedAt: new Date() },
+        });
+      } else if (!exec.ok) {
+        logSrvErr('ai_approval_execute_failed', 'Governed approval execution failed', exec.body);
+        return res.status(exec.status).json({
+          success: false,
+          data: updatedApproval,
+          execution: exec.body,
+        });
+      }
     }
 
     res.json({
       success: true,
-      data: updatedApproval
+      data: updatedApproval,
+      ...(executionResult ? { execution: executionResult } : {}),
     });
   } catch (error) {
     logSrvErr('ai_respond_to_approval_error', 'Respond to approval error:', error);
