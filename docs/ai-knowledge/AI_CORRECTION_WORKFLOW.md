@@ -1,5 +1,8 @@
 # AI Correction Workflow
 
+> **Scope note (Phase 6B):** This document is the **Knowledge / Teach Vssyl UX design** for in-chat “Improve this answer” flows. It is **design-only** and does **not** describe the operator evaluation/correction platform.  
+> For **governed operator correction proposals** (Phase 6), see [`../architecture/AI_CORRECTION_WORKFLOW.md`](../architecture/AI_CORRECTION_WORKFLOW.md).
+
 **Program:** AI Knowledge Reference Program — Phase 0A  
 **Date:** 2026-07-05  
 **Status:** **Design only** — not implemented  

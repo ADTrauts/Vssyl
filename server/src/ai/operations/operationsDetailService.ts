@@ -4,7 +4,6 @@
 import type { PrismaClient } from '@prisma/client';
 import type { AIExecutionDetailView } from 'vssyl-shared';
 import {
-  getAIExecutionRecord,
   rowToSnapshot,
 } from '../intelligence/executionRecordService';
 import {
@@ -114,6 +113,10 @@ export async function getExecutionDetail(
     diagnostics = { ...diagnostics, ...(row.diagnosticsSummaryJson as Record<string, unknown>) };
   }
 
+  const observationEvents = Array.isArray(row.observationEventsJson)
+    ? (row.observationEventsJson as unknown as AIExecutionDetailView['observationEvents'])
+    : [];
+
   return {
     record,
     evaluations: row.evaluations.map(mapEvaluationRow) as AIExecutionDetailView['evaluations'],
@@ -132,5 +135,10 @@ export async function getExecutionDetail(
     contextProviders,
     retrievedSources,
     diagnostics,
+    observationEvents,
+    observationState:
+      typeof (row as { observationState?: string }).observationState === 'string'
+        ? (row as { observationState: string }).observationState
+        : undefined,
   };
 }

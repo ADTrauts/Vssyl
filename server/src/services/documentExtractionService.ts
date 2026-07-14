@@ -43,6 +43,18 @@ ${documentText.slice(0, 12000)}
       return { success: false, error: 'OpenAI API key not configured.' };
     }
 
+    try {
+      const { shadowRouteForSpecializedPath } = await import('../ai/routing/shadowRouting');
+      shadowRouteForSpecializedPath({
+        capability: 'STRUCTURED_EXTRACTION',
+        currentProvider: 'openai',
+        currentModel: EXTRACTION_MODEL,
+        surface: 'DOCUMENT_EXTRACTION',
+      });
+    } catch {
+      /* shadow never blocks extraction */
+    }
+
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
       headers: {

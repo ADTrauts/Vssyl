@@ -98,6 +98,12 @@ import type {
   PipelineContextRetrievedRecord,
   PipelineToolUsageRecord,
 } from '../types/pipelineDiagnostics';
+import {
+  emitTwinObservation,
+  emitTwinTurnCompleted,
+  emitTwinTurnFailed,
+  emitTwinTurnStarted,
+} from '../observation/runtimeObservation';
 
 const VISION_PIPELINE_PREFIX = '[VISION_PIPELINE]';
 const MODEL_PREF_KEYS: Record<string, string> = {
@@ -170,6 +176,8 @@ export interface DigitalLifeTwinResponse {
       riskCategory?: string;
       args?: Record<string, unknown>;
     }>;
+    /** Phase 5 observation correlation (emit-only; does not change Twin behavior). */
+    requestId?: string;
   };
 }
 
@@ -338,6 +346,18 @@ export class DigitalLifeTwinCore {
     const requestId = randomUUID();
     const context = query.context as Record<string, unknown> | undefined;
     const conversationId = (context?.conversationId != null && typeof context.conversationId === 'string') ? context.conversationId : undefined;
+    const observationBusinessId =
+      context && typeof context.businessId === 'string' && context.businessId.trim() !== ''
+        ? context.businessId.trim()
+        : null;
+
+    emitTwinTurnStarted({
+      requestId,
+      userId: query.userId,
+      conversationId,
+      businessId: observationBusinessId,
+      userQuery: typeof query.query === 'string' ? query.query : undefined,
+    });
 
     try {
       // Validate input
@@ -382,6 +402,21 @@ export class DigitalLifeTwinCore {
         if (sc?.moduleContexts && typeof sc.moduleContexts === 'object' && !Array.isArray(sc.moduleContexts)) {
           moduleContextsForAssembly = sc.moduleContexts as Record<string, unknown>;
         }
+
+        emitTwinObservation({
+          requestId,
+          userId: query.userId,
+          conversationId,
+          businessId: observationBusinessId,
+          type: 'ContextBuilt',
+          surface: 'TWIN',
+          metadata: {
+            relevantModuleCount:
+              typeof (sc as { relevantModuleCount?: unknown } | null)?.relevantModuleCount === 'number'
+                ? (sc as { relevantModuleCount: number }).relevantModuleCount
+                : undefined,
+          },
+        });
 
         const ctxRecordEarly = query.context as Record<string, unknown>;
         const businessIdForVLink =
@@ -1186,10 +1221,56 @@ export class DigitalLifeTwinCore {
           ...(includeDeveloperDetails && { developerDetails: r.summary }),
         }));
 
+      if (fileIssues.length > 0) {
+        emitTwinObservation({
+          requestId,
+          userId: query.userId,
+          conversationId,
+          businessId: observationBusinessId,
+          type: 'FileIssueRecorded',
+          sourceComponent: 'DigitalLifeTwinCore',
+          idempotencyKey: `FileIssueRecorded:${fileIssues.map((f) => f.code).join(',')}`,
+          metadata: {
+            fileCount: fileIssues.length,
+            fileIssueCodes: fileIssues.map((f) => f.code),
+          },
+        });
+      }
+
       const contextUsedModuleNames =
         responseInfluence?.contextUsed
           ?.filter((item) => item.usedInPrompt)
           .map((item) => item.moduleName) ?? [];
+
+      const pendingApprovals = Array.isArray(
+        (response as { pendingToolApprovals?: unknown }).pendingToolApprovals
+      )
+        ? (
+            response as {
+              pendingToolApprovals: NonNullable<
+                DigitalLifeTwinResponse['metadata']['pendingToolApprovals']
+              >;
+            }
+          ).pendingToolApprovals
+        : undefined;
+
+      emitTwinTurnCompleted({
+        requestId,
+        userId: query.userId,
+        conversationId,
+        businessId: observationBusinessId,
+        userQuery: query.query,
+        aiResponseSummary: typeof response.response === 'string' ? response.response : undefined,
+        provider: response.provider || 'hybrid',
+        latencyMs: processingTime,
+        pendingApprovals: pendingApprovals?.map((a) => ({
+          approvalId: a.approvalId,
+          tool: a.tool,
+        })),
+        actionExecutionIds: pendingApprovals
+          ?.map((a) => a.executionId)
+          .filter((id): id is string => typeof id === 'string'),
+      });
 
       return {
         response: response.response,
@@ -1203,6 +1284,7 @@ export class DigitalLifeTwinCore {
         ...(fileIssues.length > 0 && { fileIssues }),
         ...(response.usedVisionParts && { usedVisionParts: true }),
         metadata: {
+          requestId,
           contextUsed: contextUsedModuleNames,
           contextAvailability: response.assembledContext?.contextAvailability,
           modulesFocused: response.modulesFocused || [],
@@ -1265,6 +1347,15 @@ export class DigitalLifeTwinCore {
         operation: 'digital_life_twin_processing_error',
         error: { message: err.message, stack: err.stack },
       });
+
+      emitTwinTurnFailed({
+        requestId,
+        userId: query.userId,
+        conversationId,
+        businessId: observationBusinessId,
+        message: err.message,
+        latencyMs: Date.now() - startTime,
+      });
       
       return {
         response: "I apologize, but I'm having trouble accessing your full digital context right now. Let me try to help with what I can access.",
@@ -1276,6 +1367,7 @@ export class DigitalLifeTwinCore {
         crossModuleConnections: [],
         fileIssues: [],
         metadata: {
+          requestId,
           contextUsed: [],
           modulesFocused: [],
           patternMatches: [],
@@ -1392,6 +1484,40 @@ export class DigitalLifeTwinCore {
       preferredModel: query.preferredModel,
     });
     let provider = selectedProvider;
+
+    if (traceContext?.requestId) {
+      emitTwinObservation({
+        requestId: traceContext.requestId,
+        userId: query.userId,
+        conversationId: traceContext.conversationId,
+        type: 'ProviderSelected',
+        sourceComponent: 'DigitalLifeTwinCore',
+        idempotencyKey: `ProviderSelected:${selectedProvider}`,
+        metadata: {
+          selectedProvider,
+          requestedProvider: preferredProvider,
+          requestedModel: query.preferredModel,
+          selectionReason: 'selectLlmProvider',
+          // Phase 7 shadow — observe-only; does not change selection
+          ...(llmProviderRouting.shadowComparison
+            ? { shadowComparison: llmProviderRouting.shadowComparison }
+            : {}),
+        },
+      });
+      if (llmProviderRouting.shadowComparison) {
+        emitTwinObservation({
+          requestId: traceContext.requestId,
+          userId: query.userId,
+          conversationId: traceContext.conversationId,
+          type: 'ModelRoutingShadowCompared',
+          sourceComponent: 'ModelRouter',
+          idempotencyKey: `ModelRoutingShadowCompared:${llmProviderRouting.shadowComparison.proposedCatalogKey}`,
+          metadata: {
+            ...llmProviderRouting.shadowComparison,
+          },
+        });
+      }
+    }
 
     // Model selection: 1) request override (query.preferredModel) 2) user pref for this provider 3) vision block may override to vision-capable model when images present
     let resolvedModel: string | null = query.preferredModel && query.preferredModel.trim() ? query.preferredModel.trim() : null;
@@ -1851,6 +1977,21 @@ export class DigitalLifeTwinCore {
     let effectiveProvider = provider;
     if (shouldFallback) {
       const fallbackCode = typeof metadata.code === 'string' ? metadata.code : 'TEMP_UNAVAILABLE';
+      if (traceContext?.requestId) {
+        emitTwinObservation({
+          requestId: traceContext.requestId,
+          userId: query.userId,
+          conversationId: traceContext.conversationId,
+          type: 'ProviderCallFailed',
+          sourceComponent: 'DigitalLifeTwinCore',
+          idempotencyKey: `ProviderCallFailed:${provider}:${fallbackCode}`,
+          metadata: {
+            selectedProvider: provider,
+            errorCode: fallbackCode,
+            failureKind: 'provider',
+          },
+        });
+      }
       const fallbackResolution = resolveLlmFallback(
         provider,
         fallbackCode,
@@ -1863,6 +2004,21 @@ export class DigitalLifeTwinCore {
       );
       if (fallbackResolution) {
         const fallbackProvider = fallbackResolution.fallbackProvider;
+        if (traceContext?.requestId) {
+          emitTwinObservation({
+            requestId: traceContext.requestId,
+            userId: query.userId,
+            conversationId: traceContext.conversationId,
+            type: 'ProviderFallbackStarted',
+            sourceComponent: 'DigitalLifeTwinCore',
+            idempotencyKey: `ProviderFallbackStarted:${provider}:${fallbackProvider}`,
+            metadata: {
+              selectedProvider: provider,
+              fallbackDestination: fallbackProvider,
+              fallbackReason: fallbackCode,
+            },
+          });
+        }
         await logger.info(`${VISION_PIPELINE_PREFIX} provider fallback (${provider} → ${fallbackProvider})`, {
           operation: 'vision_pipeline_fallback',
           requestId: traceContext?.requestId,
@@ -1882,6 +2038,21 @@ export class DigitalLifeTwinCore {
         aiResponse = await this.callAIProvider(fallbackProvider, query.query, options);
         effectiveProvider = fallbackProvider;
         finalizeRoutingEffectiveProvider(llmProviderRouting, fallbackProvider);
+        if (traceContext?.requestId) {
+          emitTwinObservation({
+            requestId: traceContext.requestId,
+            userId: query.userId,
+            conversationId: traceContext.conversationId,
+            type: 'ProviderFallbackCompleted',
+            sourceComponent: 'DigitalLifeTwinCore',
+            idempotencyKey: `ProviderFallbackCompleted:${fallbackProvider}`,
+            metadata: {
+              selectedProvider: fallbackProvider,
+              fallbackDestination: fallbackProvider,
+              fallbackReason: fallbackCode,
+            },
+          });
+        }
       }
     }
     ctxRecord.llmProviderRouting = llmProviderRouting;
@@ -1892,6 +2063,21 @@ export class DigitalLifeTwinCore {
     const finalMetadata = aiResponse.metadata && typeof aiResponse.metadata === 'object' ? aiResponse.metadata as Record<string, unknown> : {};
     const finalProviderErrored = Boolean(finalMetadata.error);
     const usedVisionParts = hasVisionParts && !finalProviderErrored && !visionResolution.stripVisionParts;
+    if (traceContext?.requestId && hasVisionParts) {
+      emitTwinObservation({
+        requestId: traceContext.requestId,
+        userId: query.userId,
+        conversationId: traceContext.conversationId,
+        type: usedVisionParts ? 'VisionUsed' : 'VisionPrepared',
+        sourceComponent: 'DigitalLifeTwinCore',
+        idempotencyKey: usedVisionParts ? 'VisionUsed' : 'VisionPrepared',
+        metadata: {
+          visionPartCount: Array.isArray(visionParts) ? visionParts.length : 0,
+          usedVision: usedVisionParts,
+          pdfRenderFallback: Boolean(visionResolution.stripVisionParts),
+        },
+      });
+    }
 
     const assembledForQuality =
       options?.assembledContext && typeof options.assembledContext === 'object'
@@ -1953,6 +2139,17 @@ export class DigitalLifeTwinCore {
     );
 
     if (!pipelineOptions?.skipEnforcement) {
+      if (traceContext?.requestId) {
+        emitTwinObservation({
+          requestId: traceContext.requestId,
+          userId: query.userId,
+          conversationId: traceContext.conversationId,
+          type: 'GroundingStarted',
+          sourceComponent: 'DigitalLifeTwinCore',
+          idempotencyKey: 'GroundingStarted',
+          metadata: { groundingRequired: true },
+        });
+      }
       const enforced = applyPipelineEnforcement(finalResponseText, pipelineTrace, enforcementSettings);
       finalResponseText = enforced.response;
       pipelineTrace = {
@@ -1960,6 +2157,29 @@ export class DigitalLifeTwinCore {
         ...enforced.tracePatch,
         finalResponsePreview: enforced.tracePatch.finalResponsePreview,
       };
+      if (traceContext?.requestId) {
+        emitTwinObservation({
+          requestId: traceContext.requestId,
+          userId: query.userId,
+          conversationId: traceContext.conversationId,
+          type: 'EnforcementApplied',
+          sourceComponent: 'DigitalLifeTwinCore',
+          idempotencyKey: 'EnforcementApplied',
+          metadata: {
+            enforcementResult: enforced.tracePatch.enforcementAction,
+            groundingStatus: 'evaluated',
+          },
+        });
+        emitTwinObservation({
+          requestId: traceContext.requestId,
+          userId: query.userId,
+          conversationId: traceContext.conversationId,
+          type: 'GroundingEvaluated',
+          sourceComponent: 'DigitalLifeTwinCore',
+          idempotencyKey: 'GroundingEvaluated',
+          metadata: { groundingStatus: 'evaluated' },
+        });
+      }
     }
 
     const evidenceBundle = buildPipelineEvidenceBundle({

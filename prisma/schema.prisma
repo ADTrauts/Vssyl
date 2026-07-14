@@ -2191,6 +2191,12 @@ model AIExecutionRecord {
   routingSummaryJson      Json?
   linkedArtifactsJson     Json     @default("{}")
   timelineJson            Json     @default("[]")
+  /// Phase 5 — cache/materialization of events (Phase 5B source of truth is AIObservationEvent rows)
+  observationEventsJson   Json     @default("[]")
+  /// Phase 5B — observation turn lifecycle state
+  observationState        String   @default("STARTED")
+  /// Optimistic concurrency for hub summary updates
+  observationVersion      Int      @default(0)
   usageJson               Json?
   errorSummary            String?
   diagnosticsSummaryJson  Json?
@@ -2199,10 +2205,11 @@ model AIExecutionRecord {
   createdAt               DateTime @default(now())
   updatedAt               DateTime @updatedAt
 
-  user         User            @relation(fields: [userId], references: [id], onDelete: Cascade)
-  evaluations  AIEvaluation[]
-  corrections  AICorrectionRoute[]
-  regressions  AIRegressionCase[]
+  user              User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  evaluations       AIEvaluation[]
+  corrections       AICorrectionRoute[]
+  regressions       AIRegressionCase[]
+  observationEvents AIObservationEvent[]
 
   @@index([userId])
   @@index([businessId])
@@ -2210,8 +2217,43 @@ model AIExecutionRecord {
   @@index([conversationHistoryId])
   @@index([pipelineDiagnosticId])
   @@index([conversationId])
+  @@index([requestId])
+  @@index([observationState])
   @@index([createdAt])
   @@map("ai_execution_records")
+}
+
+/// Phase 5B — immutable observation event rows (append-only; unique eventId)
+model AIObservationEvent {
+  id                 String   @id @default(uuid())
+  eventId            String   @unique
+  executionRecordId  String?
+  requestId          String
+  eventType          String
+  eventVersion       Int      @default(2)
+  sequenceNumber     Int
+  emittedAt          DateTime
+  observedAt         DateTime @default(now())
+  surface            String
+  sourceComponent    String?
+  conversationId     String?
+  userId             String
+  businessId         String?
+  deliveryClass      String   @default("ASYNC_AT_LEAST_ONCE")
+  retentionClass     String   @default("HOT")
+  correlationJson    Json     @default("{}")
+  metadataJson       Json     @default("{}")
+  createdAt          DateTime @default(now())
+
+  executionRecord AIExecutionRecord? @relation(fields: [executionRecordId], references: [id], onDelete: SetNull)
+
+  @@index([executionRecordId, sequenceNumber])
+  @@index([requestId, sequenceNumber])
+  @@index([eventType])
+  @@index([emittedAt])
+  @@index([retentionClass, createdAt])
+  @@index([userId, createdAt])
+  @@map("ai_observation_events")
 }
 
 model AIEvaluation {
@@ -2224,13 +2266,17 @@ model AIEvaluation {
   notes              String?
   /// Evaluations must not drive automatic runtime mutation
   mutatesRuntime     Boolean  @default(false)
-  /// Phase 4 operator workflow
+  /// Phase 4/6 operator workflow status (single field — Phase 6 extends vocabulary)
   workflowStatus     String   @default("PENDING") // AIEvaluationWorkflowStatus
   assignedToUserId   String?
   priority           String?  // LOW | MEDIUM | HIGH | CRITICAL
   severity           String?
   confidence         Float?
+  /// Phase 6 — resolution classification when closed
+  resolutionCode     String?
   commentsJson       Json     @default("[]")
+  /// Phase 6 — auditable workflow history
+  historyJson        Json     @default("[]")
   createdAt          DateTime @default(now())
   updatedAt          DateTime @updatedAt
 
@@ -2256,6 +2302,9 @@ model AIRootCauseFinding {
   reviewStatus     String   @default("SUGGESTED") // SUGGESTED | APPROVED | REJECTED
   reviewedByUserId String?
   reviewedAt       DateTime?
+  /// Phase 6
+  confidence       Float?
+  ownerUserId      String?
   historyJson      Json     @default("[]")
   createdAt        DateTime @default(now())
   updatedAt        DateTime @updatedAt
@@ -2282,6 +2331,8 @@ model AICorrectionRoute {
   overrideDestinationsJson Json?
   routingApprovalStatus   String   @default("PENDING_REVIEW") // PENDING_REVIEW | APPROVED | REJECTED
   commentsJson            Json     @default("[]")
+  /// Phase 6 auditable history
+  historyJson             Json     @default("[]")
   createdAt               DateTime @default(now())
   updatedAt               DateTime @updatedAt
   resolvedAt              DateTime?
@@ -2289,6 +2340,7 @@ model AICorrectionRoute {
   executionRecord AIExecutionRecord @relation(fields: [executionRecordId], references: [id], onDelete: Cascade)
   evaluation      AIEvaluation?     @relation(fields: [evaluationId], references: [id], onDelete: SetNull)
   regressions     AIRegressionCase[]
+  workItems       AICorrectionWorkItem[]
 
   @@index([executionRecordId])
   @@index([evaluationId])
@@ -2297,6 +2349,28 @@ model AICorrectionRoute {
   @@index([routingApprovalStatus])
   @@index([assignedOwnerId])
   @@map("ai_correction_routes")
+}
+
+/// Phase 6 — internal work items from accepted corrections (no external ticketing)
+model AICorrectionWorkItem {
+  id                 String   @id @default(uuid())
+  correctionRouteId  String
+  kind               String   // AICorrectionWorkItemKind
+  destination        String   // AICorrectionDestination
+  status             String   @default("OPEN") // OPEN | IN_PROGRESS | DONE | CANCELLED
+  title              String
+  assignedOwnerId    String?
+  historyJson        Json     @default("[]")
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  correctionRoute AICorrectionRoute @relation(fields: [correctionRouteId], references: [id], onDelete: Cascade)
+
+  @@index([correctionRouteId])
+  @@index([status])
+  @@index([kind])
+  @@index([assignedOwnerId])
+  @@map("ai_correction_work_items")
 }
 
 model AIRegressionCase {

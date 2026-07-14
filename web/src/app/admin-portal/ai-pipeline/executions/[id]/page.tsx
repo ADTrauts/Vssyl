@@ -7,6 +7,7 @@ import { Card, Spinner, Alert, Button, Badge } from 'shared/components';
 import PipelineSubpageShell from '../../../../../components/admin-portal/ai-pipeline/PipelineSubpageShell';
 import { ExecutionTimelinePanel } from '../../../../../components/admin-portal/ai-operations/ExecutionTimelinePanel';
 import { OperationsStatusBadge } from '../../../../../components/admin-portal/ai-operations/OperationsStatusBadge';
+import { EvaluationWorkflowPanel } from '../../../../../components/admin-portal/ai-operations/EvaluationWorkflowPanel';
 import { aiOperationsApi } from '../../../../../lib/aiOperationsApi';
 import type { AIExecutionDetailView, AIExecutionExplanation } from 'shared/types';
 
@@ -18,19 +19,21 @@ export default function AiOperationsExecutionDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
+  const load = async () => {
     if (!id) return;
-    void (async () => {
-      setLoading(true);
-      const [dRes, eRes] = await Promise.all([
-        aiOperationsApi.getExecution(id),
-        aiOperationsApi.getExplainability(id),
-      ]);
-      if (dRes.error) setError(dRes.error);
-      else setDetail(dRes.data ?? null);
-      if (eRes.data) setExplain(eRes.data);
-      setLoading(false);
-    })();
+    setLoading(true);
+    const [dRes, eRes] = await Promise.all([
+      aiOperationsApi.getExecution(id),
+      aiOperationsApi.getExplainability(id),
+    ]);
+    if (dRes.error) setError(dRes.error);
+    else setDetail(dRes.data ?? null);
+    if (eRes.data) setExplain(eRes.data);
+    setLoading(false);
+  };
+
+  useEffect(() => {
+    void load();
   }, [id]);
 
   return (
@@ -50,7 +53,14 @@ export default function AiOperationsExecutionDetailPage() {
           <div className="lg:col-span-2 space-y-v-4">
             <Card className="p-v-4">
               <h2 className="font-semibold mb-v-2">Summary</h2>
+              <p className="text-xs text-v-text-muted mb-v-2">
+                Observation delivery: Hybrid durable terminals (bounded) · at-least-once mid-events — not audit-WORM
+              </p>
               <p className="text-sm"><strong>Surface:</strong> {detail.record.surface}</p>
+              <p className="text-sm">
+                <strong>Observation state:</strong>{' '}
+                {detail.observationState ?? '—'}
+              </p>
               <p className="text-sm"><strong>Provider:</strong> {detail.record.provider ?? '—'} / {detail.record.model ?? '—'}</p>
               <p className="text-sm mt-v-2"><strong>Query:</strong> {detail.record.userQuery ?? detail.promptSummary ?? '—'}</p>
               <p className="text-sm mt-v-2"><strong>Response:</strong> {detail.record.aiResponseSummary ?? '—'}</p>
@@ -59,6 +69,22 @@ export default function AiOperationsExecutionDetailPage() {
               <h2 className="font-semibold mb-v-3">Timeline</h2>
               <ExecutionTimelinePanel events={detail.record.timeline} />
             </Card>
+            {detail.observationEvents && detail.observationEvents.length > 0 ? (
+              <Card className="p-v-4">
+                <h2 className="font-semibold mb-v-2">Observation events</h2>
+                <p className="text-xs text-v-text-muted mb-v-2">
+                  Live Runtime Observation Layer ({detail.observationEvents.length} events)
+                </p>
+                <ul className="text-sm space-y-v-1 font-mono">
+                  {detail.observationEvents.map((ev, i) => (
+                    <li key={`${ev.eventId ?? ev.type}-${ev.emittedAt ?? ev.timestamp}-${i}`}>
+                      {ev.emittedAt ?? ev.timestamp} · {ev.type}
+                      {ev.sourceComponent ? ` · ${ev.sourceComponent}` : ''}
+                    </li>
+                  ))}
+                </ul>
+              </Card>
+            ) : null}
             {detail.linkedActionExecutions.length > 0 ? (
               <Card className="p-v-4">
                 <h2 className="font-semibold mb-v-2">AIActionExecution</h2>
@@ -98,7 +124,7 @@ export default function AiOperationsExecutionDetailPage() {
               <h2 className="font-semibold mb-v-2">Evaluations ({detail.evaluations.length})</h2>
               {detail.evaluations.map((e) => (
                 <div key={e.id} className="text-sm border-t border-v-border py-v-2">
-                  <OperationsStatusBadge status={e.workflowStatus} />
+                  <OperationsStatusBadge status={e.lifecycleStatus ?? e.workflowStatus} />
                   <span className="ml-v-2">{e.labels.join(', ')}</span>
                 </div>
               ))}
@@ -112,6 +138,11 @@ export default function AiOperationsExecutionDetailPage() {
                 </div>
               ))}
             </Card>
+            <EvaluationWorkflowPanel
+              executionId={id}
+              detail={detail}
+              onRefresh={() => void load()}
+            />
           </div>
         </div>
       ) : null}

@@ -38,6 +38,7 @@ import {
   AmbientSuggestionValidationError,
   ambientSuggestionService,
 } from '../services/ambientSuggestionService';
+import { emitTwinObservation } from '../ai/observation/runtimeObservation';
 
 function parseOptionalQueryString(value: unknown): string | undefined {
   if (typeof value === 'string' && value.trim()) {
@@ -84,7 +85,7 @@ async function saveTwinQueryHistory(
   context: Record<string, unknown>,
   query: string,
   response: DigitalLifeTwinResponse
-): Promise<void> {
+): Promise<{ historyId: string; pipelineDiagnosticId: string | null }> {
   const history = await prisma.aIConversationHistory.create({
     data: {
       userId,
@@ -117,12 +118,53 @@ async function saveTwinQueryHistory(
     },
   });
 
+  let pipelineDiagnosticId: string | null = null;
   if (response.metadata?.pipelineTrace) {
-    void persistPipelineDiagnostic(response.metadata.pipelineTrace, {
-      conversationHistoryId: history.id,
-      source: 'twin',
-    });
+    try {
+      pipelineDiagnosticId = await persistPipelineDiagnostic(response.metadata.pipelineTrace, {
+        conversationHistoryId: history.id,
+        source: 'twin',
+      });
+    } catch (e: unknown) {
+      logSrvWarn('ai_pipeline_diagnostic_link_failed', 'Pipeline diagnostic persist failed', e);
+    }
   }
+
+  // Phase 5 — link history/diagnostic artifacts onto observation hub (fail-safe)
+  const requestId = response.metadata?.requestId;
+  if (typeof requestId === 'string' && requestId.trim() !== '') {
+    try {
+      const businessId =
+        typeof context.businessId === 'string' && context.businessId.trim() !== ''
+          ? context.businessId.trim()
+          : null;
+      const conversationId =
+        typeof context.conversationId === 'string' && context.conversationId.trim() !== ''
+          ? context.conversationId.trim()
+          : undefined;
+      emitTwinObservation({
+        requestId,
+        userId,
+        conversationId,
+        businessId,
+        type: 'ResponseReturned',
+        surface: 'TWIN',
+        metadata: {
+          conversationHistoryId: history.id,
+          pipelineDiagnosticId: pipelineDiagnosticId ?? undefined,
+          userQuery: query.slice(0, 500),
+          aiResponseSummary:
+            typeof response.response === 'string' ? response.response.slice(0, 500) : undefined,
+          provider: response.metadata.provider,
+          latencyMs: response.metadata.processingTime,
+        },
+      });
+    } catch {
+      /* observation must never fail history save */
+    }
+  }
+
+  return { historyId: history.id, pipelineDiagnosticId };
 }
 
 const router: express.Router = express.Router();
@@ -838,6 +880,17 @@ router.post('/transcribe', authenticateJWT, (req, res, next) => {
     const openai = new OpenAI({ apiKey });
     const ext = path.extname(file.originalname || '') || '.webm';
     const upload = await toFile(file.buffer, `audio${ext}`);
+    try {
+      const { shadowRouteForSpecializedPath } = await import('../ai/routing/shadowRouting');
+      shadowRouteForSpecializedPath({
+        capability: 'AUDIO_TRANSCRIPTION',
+        currentProvider: 'openai',
+        currentModel: 'whisper-1',
+        surface: 'WHISPER',
+      });
+    } catch {
+      /* shadow never blocks transcription */
+    }
     const transcription = await openai.audio.transcriptions.create({
       file: upload,
       model: 'whisper-1',
@@ -1516,6 +1569,25 @@ router.post('/approvals/:id/respond', authenticateJWT, async (req, res) => {
           data: { status: 'EXPIRED' },
         });
       }
+      const actionData =
+        approval.actionData && typeof approval.actionData === 'object'
+          ? (approval.actionData as Record<string, unknown>)
+          : {};
+      emitTwinObservation({
+        requestId:
+          typeof actionData.requestId === 'string' && actionData.requestId
+            ? actionData.requestId
+            : `approval:${id}`,
+        userId,
+        conversationId:
+          typeof actionData.conversationId === 'string' ? actionData.conversationId : undefined,
+        businessId: typeof actionData.businessId === 'string' ? actionData.businessId : null,
+        type: 'ApprovalExpired',
+        surface: 'GOVERNANCE',
+        sourceComponent: 'ai.approvals.respond',
+        idempotencyKey: `ApprovalExpired:${id}`,
+        metadata: { approvalId: id },
+      });
       return res.status(410).json({ error: 'Approval request has expired' });
     }
 
@@ -1570,6 +1642,33 @@ router.post('/approvals/:id/respond', authenticateJWT, async (req, res) => {
         }
       }
     });
+
+    {
+      const actionData =
+        approval.actionData && typeof approval.actionData === 'object'
+          ? (approval.actionData as Record<string, unknown>)
+          : {};
+      emitTwinObservation({
+        requestId:
+          typeof actionData.requestId === 'string' && actionData.requestId
+            ? actionData.requestId
+            : `approval:${id}`,
+        userId,
+        conversationId:
+          typeof actionData.conversationId === 'string' ? actionData.conversationId : undefined,
+        businessId: typeof actionData.businessId === 'string' ? actionData.businessId : null,
+        type: response === 'approve' ? 'ApprovalGranted' : 'ApprovalRejected',
+        surface: 'GOVERNANCE',
+        sourceComponent: 'ai.approvals.respond',
+        idempotencyKey: `ApprovalRespond:${id}:${response}`,
+        metadata: {
+          approvalId: id,
+          actionExecutionId:
+            typeof actionData.executionId === 'string' ? actionData.executionId : undefined,
+          tool: typeof actionData.tool === 'string' ? actionData.tool : undefined,
+        },
+      });
+    }
 
     let executionResult: Record<string, unknown> | undefined;
 

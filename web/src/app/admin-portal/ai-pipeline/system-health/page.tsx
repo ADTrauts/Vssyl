@@ -16,19 +16,23 @@ export default function AiPipelineSystemHealthPage() {
     status: string;
     observeOnly: boolean;
     replayExecutionEnabled?: boolean;
+    observation?: Record<string, unknown>;
   } | null>(null);
+  const [obsHealth, setObsHealth] = useState<Record<string, unknown> | null>(null);
   const [qualityNote, setQualityNote] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     void (async () => {
-      const [h, q] = await Promise.all([
+      const [h, q, oh] = await Promise.all([
         aiOperationsApi.getHealth(),
         adminApiService.getAiPipelineQualityStats(),
+        aiOperationsApi.getObservationHealth(),
       ]);
       if (h.error) setError(h.error);
       else setOpsHealth(h.data ?? null);
+      if (oh.data) setObsHealth(oh.data);
       if (q.data) {
         setQualityNote(
           `Quality stats loaded (${typeof q.data === 'object' ? 'pipeline telemetry available' : 'ok'}). See Quality & Diagnostics for details.`
@@ -63,6 +67,29 @@ export default function AiPipelineSystemHealthPage() {
             </>
           ) : (
             <p className="text-sm text-v-text-muted mt-v-2">Unavailable</p>
+          )}
+        </Card>
+        <Card className="p-v-4">
+          <h3 className="font-semibold">Runtime observation</h3>
+          {obsHealth ? (
+            <>
+              <p className="text-sm mt-v-2">
+                <strong>Status:</strong> {String(obsHealth.status ?? '—')}
+              </p>
+              <p className="text-sm mt-v-1">
+                <strong>Delivery:</strong> {String(obsHealth.deliveryGuarantee ?? '—')}
+              </p>
+              <p className="text-sm mt-v-1">
+                Emitted {String(obsHealth.emitted ?? 0)} · Persisted {String(obsHealth.persisted ?? 0)} ·
+                Failures {String(obsHealth.persistenceFailures ?? 0)}
+              </p>
+            </>
+          ) : (
+            <p className="text-sm text-v-text-muted mt-v-2">
+              {opsHealth?.observation
+                ? `Embedded: ${JSON.stringify(opsHealth.observation).slice(0, 120)}…`
+                : 'Unavailable'}
+            </p>
           )}
         </Card>
         <Card className="p-v-4">

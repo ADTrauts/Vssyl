@@ -50,6 +50,18 @@ export async function runNotebookAICompletion(params: {
   const model = process.env.NOTEBOOK_AI_MODEL?.trim() || 'gpt-4o-mini';
 
   try {
+    const { shadowRouteForSpecializedPath } = await import('../../ai/routing/shadowRouting');
+    shadowRouteForSpecializedPath({
+      capability: params.jsonMode ? 'STRUCTURED_SUMMARY' : 'STRUCTURED_SUMMARY',
+      currentProvider: 'openai',
+      currentModel: model,
+      surface: 'NOTEBOOK',
+    });
+  } catch {
+    /* shadow never blocks notebook */
+  }
+
+  try {
     const response = await client.chat.completions.create({
       model,
       temperature: 0.3,

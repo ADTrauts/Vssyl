@@ -192,7 +192,19 @@ Return a JSON object with a "facts" array in this format:
 
 If no important facts found, return { "facts": [] }.`;
 
-      // Call OpenAI with structured output
+      // Call OpenAI with structured output (production model unchanged — Phase 7 shadow only)
+      try {
+        const { shadowRouteForSpecializedPath } = await import('../ai/routing/shadowRouting');
+        shadowRouteForSpecializedPath({
+          capability: 'STRUCTURED_EXTRACTION',
+          currentProvider: 'openai',
+          currentModel: 'gpt-4o',
+          surface: 'FACT_EXTRACTION',
+        });
+      } catch {
+        /* shadow never blocks extraction */
+      }
+
       const response = await fetch('https://api.openai.com/v1/chat/completions', {
         method: 'POST',
         headers: {

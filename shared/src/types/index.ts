@@ -15,4 +15,6 @@ export * from './ai-orchestration-snapshot';
 export * from './ai-action-governance';
 export * from './ai-intelligence-platform';
 export * from './ai-operations-center';
+export * from './ai-runtime-observation';
+export * from './ai-model-routing';
 export * from './analyticsDashboardSummary';

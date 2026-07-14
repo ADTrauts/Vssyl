@@ -1,7 +1,8 @@
 /**
- * Phase 4B — Operator permissions for AI Pipeline intelligence workflows.
+ * Phase 4B/6 — Operator permissions for AI Pipeline intelligence workflows.
  * Uses canonical platform ADMIN auth. Does not invent a second role system.
- * Business-scoped operator UI is deferred; unverified headers cannot grant access.
+ * Phase 6: ADMIN may assume PLATFORM_OPERATOR / SUPPORT_ENGINEER / READ_ONLY_AUDITOR via header.
+ * Business-scoped operator UI remains deferred; unverified headers cannot grant cross-tenant access.
  */
 import type { Request } from 'express';
 import type { AIOperationsPermission, AIOperationsRole } from 'vssyl-shared';
@@ -36,6 +37,26 @@ const ADMIN_PERMISSIONS: AIOperationsPermission[] = [
   'settings:read',
 ];
 
+const OPERATOR_PERMISSIONS: AIOperationsPermission[] = ADMIN_PERMISSIONS.filter(
+  (p) => p !== 'settings:read'
+);
+
+const SUPPORT_PERMISSIONS: AIOperationsPermission[] = [
+  'operations:read',
+  'executions:read',
+  'executions:search',
+  'evaluations:read',
+  'evaluations:write',
+  'evaluations:assign',
+  'root_causes:read',
+  'root_causes:write',
+  'corrections:read',
+  'corrections:write',
+  'regressions:read',
+  'metrics:read',
+  'explainability:read',
+];
+
 const READ_ONLY_PERMISSIONS: AIOperationsPermission[] = [
   'operations:read',
   'executions:read',
@@ -48,9 +69,8 @@ const READ_ONLY_PERMISSIONS: AIOperationsPermission[] = [
 ];
 
 /**
- * Resolve operator role from JWT only.
- * Phase 4B: `x-ai-operations-business-id` / business-role headers do NOT grant access.
- * Testing override `x-ai-operations-role=READ_ONLY_AUDITOR` is allowed for ADMIN only.
+ * Resolve operator role from JWT + optional assumption header (ADMIN only).
+ * Future BUSINESS_REVIEWER requires membership-validated business scope — not header trust.
  */
 export function resolveOperationsRole(req: Request): AIOperationsRole {
   const user = req.user as { id: string; role: string } | undefined;
@@ -58,26 +78,38 @@ export function resolveOperationsRole(req: Request): AIOperationsRole {
     return 'READ_ONLY_AUDITOR';
   }
   const headerRole = req.headers['x-ai-operations-role'];
-  if (headerRole === 'READ_ONLY_AUDITOR') {
-    return 'READ_ONLY_AUDITOR';
-  }
+  if (headerRole === 'READ_ONLY_AUDITOR') return 'READ_ONLY_AUDITOR';
+  if (headerRole === 'PLATFORM_OPERATOR') return 'PLATFORM_OPERATOR';
+  if (headerRole === 'SUPPORT_ENGINEER') return 'SUPPORT_ENGINEER';
+  // BUSINESS_* roles deferred — never grant from unverified headers
   return 'PLATFORM_ADMIN';
+}
+
+export function permissionsForRole(role: AIOperationsRole): Set<AIOperationsPermission> {
+  switch (role) {
+    case 'PLATFORM_ADMIN':
+      return new Set(ADMIN_PERMISSIONS);
+    case 'PLATFORM_OPERATOR':
+      return new Set(OPERATOR_PERMISSIONS);
+    case 'SUPPORT_ENGINEER':
+      return new Set(SUPPORT_PERMISSIONS);
+    case 'READ_ONLY_AUDITOR':
+    case 'BUSINESS_ADMIN':
+    case 'BUSINESS_AI_MANAGER':
+    default:
+      return new Set(READ_ONLY_PERMISSIONS);
+  }
 }
 
 export function buildOperationsAuthContext(req: Request): OperationsAuthContext {
   const user = req.user as { id: string; role: string } | undefined;
   const operationsRole = resolveOperationsRole(req);
-  const permissions =
-    operationsRole === 'PLATFORM_ADMIN'
-      ? new Set(ADMIN_PERMISSIONS)
-      : new Set(READ_ONLY_PERMISSIONS);
   return {
     userId: user?.id ?? '',
     platformRole: user?.role ?? 'USER',
     operationsRole,
-    // Business scope intentionally omitted until membership-validated UI ships
     businessId: undefined,
-    permissions,
+    permissions: permissionsForRole(operationsRole),
   };
 }
 
@@ -98,14 +130,13 @@ export function requireOperationsPermission(
 }
 
 /**
- * Platform admins may access all records.
+ * Platform admins/operators may access all records.
  * Business-scoped filtering is deferred — never trust client business headers.
  */
 export function canAccessBusinessRecord(
   ctx: OperationsAuthContext,
   _businessId: string | null | undefined
 ): boolean {
-  return ctx.platformRole === 'ADMIN' && ctx.operationsRole === 'PLATFORM_ADMIN'
-    ? true
-    : ctx.platformRole === 'ADMIN';
+  void _businessId;
+  return ctx.platformRole === 'ADMIN';
 }

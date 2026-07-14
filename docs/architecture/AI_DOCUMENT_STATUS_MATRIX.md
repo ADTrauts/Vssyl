@@ -46,6 +46,11 @@ Status key: **Current** · **Supporting** · **Historical** · **Future** · **D
 | [`AI_PIPELINE_OPERATOR_RBAC.md`](./AI_PIPELINE_OPERATOR_RBAC.md) | Current | Operator RBAC (platform ADMIN) |
 | [`AI_OPERATIONS_CENTER_API.md`](./AI_OPERATIONS_CENTER_API.md) | Current | Intelligence workflow API (`/api/admin/ai/operations`) |
 | [`AI_PHASE4B_ADMIN_CONSOLIDATION_CLOSEOUT.md`](./AI_PHASE4B_ADMIN_CONSOLIDATION_CLOSEOUT.md) | Current | Phase 4B closeout |
+| [`AI_PLATFORM_ARCHITECTURE_CERTIFICATION.md`](./AI_PLATFORM_ARCHITECTURE_CERTIFICATION.md) | Current | Phase 6B platform certification |
+| [`AI_PLATFORM_SUBSYSTEM_INVENTORY.md`](./AI_PLATFORM_SUBSYSTEM_INVENTORY.md) | Current | Subsystem inventory + ownership + debt |
+| [`AI_PLATFORM_CANONICAL_DIAGRAM.md`](./AI_PLATFORM_CANONICAL_DIAGRAM.md) | Current | Canonical whole-platform Mermaid diagram |
+| [`AI_MODEL_ROUTING_READINESS.md`](./AI_MODEL_ROUTING_READINESS.md) | Current | Phase 7 readiness (no implementation) |
+| [`AI_PHASE6B_CLOSEOUT.md`](./AI_PHASE6B_CLOSEOUT.md) | Current | Phase 6B closeout |
 
 ### Future / design-only
 
@@ -53,6 +58,7 @@ Status key: **Current** · **Supporting** · **Historical** · **Future** · **D
 |----------|--------|------|
 | [`../ai-system-audit/AI_MODEL_ROUTING_TARGET_ARCHITECTURE.md`](../ai-system-audit/AI_MODEL_ROUTING_TARGET_ARCHITECTURE.md) | Future | Task-tier routing design — **not shipped** |
 | Industry Intelligence section in Intelligence Model | Future | Knowledge packs — **not shipped** |
+| [`../ai-knowledge/AI_CORRECTION_WORKFLOW.md`](../ai-knowledge/AI_CORRECTION_WORKFLOW.md) | Future / Design | End-user Teach Vssyl correction UX — **not** operator Phase 6 workflow |
 
 ### Historical (preserved; banners applied)
 
@@ -98,7 +104,9 @@ Status key: **Current** · **Supporting** · **Historical** · **Future** · **D
 | **Context Graph** | Current (platform capability) | Graph/neighborhoods; consumed by knowledge/retrieval | Equating to Twin itself |
 | **Provider** | Current | OpenAI / Anthropic / Local adapters | Hardcoding brand as product logic |
 | **Routing** | Current (limited) | providerRouting + prefs + vision | Assuming FAST/BALANCED/DEEP shipped |
-| **Model tiers** | Future wording | Design target only until Phase 3+ | Docs implying live tiers |
+| **Model tiers** | Future wording | Design target only until Model Routing ships | Docs implying live tiers |
+| **Operator correction workflow** | Current | `docs/architecture/AI_CORRECTION_WORKFLOW.md` (Phase 6) | Confusing with knowledge UX doc of same filename |
+| **Teach Vssyl correction UX** | Design only | `docs/ai-knowledge/AI_CORRECTION_WORKFLOW.md` | Claiming it is the operator Platform workflow |
 
 ---
 

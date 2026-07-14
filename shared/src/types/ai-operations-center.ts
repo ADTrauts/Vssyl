@@ -33,18 +33,75 @@ export type AIOperationsPermission =
   | 'settings:read';
 
 export type AIEvaluationWorkflowStatus =
+  // Phase 4 (retained)
   | 'PENDING'
   | 'REVIEWED'
   | 'ASSIGNED'
   | 'RESOLVED'
   | 'REJECTED'
-  | 'ARCHIVED';
+  | 'ARCHIVED'
+  // Phase 6 lifecycle (extends same field — no parallel system)
+  | 'NEW'
+  | 'TRIAGED'
+  | 'UNDER_REVIEW'
+  | 'ROOT_CAUSE_CONFIRMED'
+  | 'CORRECTION_CREATED'
+  | 'CORRECTION_APPROVED'
+  | 'IMPLEMENTED'
+  | 'REGRESSION_CREATED'
+  | 'VERIFIED'
+  | 'CLOSED'
+  | 'DUPLICATE'
+  | 'CANCELLED'
+  | 'DEFERRED'
+  | 'NEEDS_INFORMATION'
+  | 'NOT_REPRODUCIBLE';
+
+/** Normalize legacy Phase 4 statuses into Phase 6 lifecycle vocabulary for display. */
+export function normalizeEvaluationWorkflowStatus(
+  status: string
+): AIEvaluationWorkflowStatus {
+  if (status === 'PENDING') return 'NEW';
+  if (status === 'ASSIGNED') return 'TRIAGED';
+  if (status === 'REVIEWED') return 'UNDER_REVIEW';
+  if (status === 'RESOLVED') return 'CLOSED';
+  return status as AIEvaluationWorkflowStatus;
+}
 
 export type AIRootCauseReviewStatus = 'SUGGESTED' | 'APPROVED' | 'REJECTED';
 
 export type AICorrectionRoutingApprovalStatus = 'PENDING_REVIEW' | 'APPROVED' | 'REJECTED';
 
 export type AIOperationsPriority = 'LOW' | 'MEDIUM' | 'HIGH' | 'CRITICAL';
+
+/** Internal work-item kinds generated from accepted corrections (no external ticketing). */
+export type AICorrectionWorkItemKind =
+  | 'ENGINEERING'
+  | 'KNOWLEDGE_REVIEW'
+  | 'BUSINESS_REVIEW'
+  | 'CUSTOMER_REVIEW'
+  | 'PROMPT_REVIEW'
+  | 'PROVIDER_REVIEW'
+  | 'TOOL_REVIEW'
+  | 'GROUNDING_REVIEW'
+  | 'CONTEXT_PROVIDER_REVIEW'
+  | 'MEMORY_REVIEW'
+  | 'OPERATOR_TRIAGE';
+
+export type AICorrectionWorkItemStatus = 'OPEN' | 'IN_PROGRESS' | 'DONE' | 'CANCELLED';
+
+export interface AICorrectionWorkItemView {
+  id: string;
+  correctionRouteId: string;
+  kind: AICorrectionWorkItemKind;
+  destination: string;
+  status: AICorrectionWorkItemStatus;
+  title: string;
+  assignedOwnerId?: string;
+  history: AIOperationsAuditEntry[];
+  createdAt: string;
+  updatedAt: string;
+}
 
 export interface AIOperationsComment {
   id: string;
@@ -114,6 +171,12 @@ export interface AIExecutionDetailView {
   contextProviders?: string[];
   retrievedSources?: string[];
   diagnostics?: Record<string, unknown>;
+  /** Phase 5 — redacted observation event log (live from Runtime Observation Layer) */
+  observationEvents?: import('./ai-runtime-observation').AIObservationEvent[];
+  /** Phase 5B observation lifecycle state */
+  observationState?: string;
+  deliveryGuarantee?: string;
+  missingTerminalWarning?: boolean;
 }
 
 export interface AIOperationsActionExecutionSummary {
@@ -134,11 +197,15 @@ export interface AIOperationsEvaluationView {
   score?: number;
   notes?: string;
   workflowStatus: AIEvaluationWorkflowStatus;
+  /** Phase 6 display-normalized status */
+  lifecycleStatus?: AIEvaluationWorkflowStatus;
   assignedToUserId?: string;
   priority?: AIOperationsPriority;
   severity?: string;
   confidence?: number;
+  resolutionCode?: string;
   comments: AIOperationsComment[];
+  history: AIOperationsAuditEntry[];
   rootCauses: AIOperationsRootCauseView[];
   createdAt: string;
   updatedAt: string;
@@ -151,6 +218,8 @@ export interface AIOperationsRootCauseView {
   reviewStatus: AIRootCauseReviewStatus;
   reviewedByUserId?: string;
   reviewedAt?: string;
+  confidence?: number;
+  ownerUserId?: string;
   history: AIOperationsAuditEntry[];
 }
 
@@ -166,8 +235,25 @@ export interface AIOperationsCorrectionView {
   assignedOwnerId?: string;
   rationale?: string;
   comments: AIOperationsComment[];
+  history?: AIOperationsAuditEntry[];
+  workItems?: AICorrectionWorkItemView[];
   createdAt: string;
   updatedAt: string;
+  resolvedAt?: string;
+}
+
+export interface AIOperationsWorkflowReport {
+  window: { from: string; to: string };
+  openEvaluations: number;
+  evaluationsByStatus: Record<string, number>;
+  averageResolutionTimeHours: number | null;
+  correctionsByDestination: Record<string, number>;
+  correctionsByStatus: Record<string, number>;
+  rootCausesByCode: Record<string, number>;
+  labelTrends: Record<string, number>;
+  providerTrends: Record<string, number>;
+  workItemsOpen: number;
+  regressionsLinked: number;
 }
 
 export interface AIOperationsRegressionView {

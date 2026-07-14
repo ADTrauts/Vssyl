@@ -1,6 +1,57 @@
 # Block-on-Block Platform - Progress
 
-**Next:** Optional Business 1E (RWS-F1) · pattern annex (GOV-1) · WS-L3 readiness (separate wave).
+**Next:** Review / commit AI Architecture Phase 7 (shadow routing) · optional live cutover.
+
+---
+
+## AI Architecture Phase 7 — Model Routing Engine (July 2026) ✅
+
+**Status:** Complete (shadow mode; awaiting review; uncommitted).
+
+| Area | Delivery |
+|------|----------|
+| Capability model + tiers + catalog | `server/src/ai/routing/*` |
+| Router | `routeModelRequest` — decide only |
+| Shadow | Attached to `selectLlmProvider` + specialized paths |
+| Observation | `ModelRoutingShadowCompared` |
+| Pipeline UI | `/admin-portal/ai-pipeline/model-routing` |
+| Production behavior | **Unchanged** |
+
+**Closeout:** [`AI_PHASE7_CLOSEOUT.md`](../docs/architecture/AI_PHASE7_CLOSEOUT.md)
+
+---
+
+## AI Architecture Phase 6B — Platform Certification & Readiness (July 2026) ✅
+
+**Status:** Complete (awaiting review; uncommitted).
+
+| Metric | Value |
+|--------|-------|
+| Certification | **CERTIFIED_WITH_FINDINGS** |
+| Score | **86 / 100** |
+| Behavior changes | **None** |
+| Model Routing ready | **Yes** (at providerRouting / modelCatalog / factory) |
+| Tests | 206 passed (governance/observation/ops/intelligence/providers/pipeline/twin) |
+
+**Deliverables:** Certification · Subsystem inventory · Canonical diagram · Model Routing readiness · Phase 6B closeout
+
+---
+
+## AI Architecture Phase 6 — Evaluation & Correction Workflow (July 2026) ✅
+
+**Status:** Complete (awaiting review; uncommitted).
+
+| Area | Delivery |
+|------|----------|
+| Evaluation lifecycle | State machine + `historyJson` / `resolutionCode` |
+| Correction proposals | Approve → work items + optional `AIRegressionCase` |
+| Pipeline UI | `EvaluationWorkflowPanel` on execution detail; metrics workflow report |
+| API | Extended `/api/admin/ai/operations/*` (no new admin product) |
+| Notifications | Assignment, review, approval, regression, verification |
+| Tests | `evaluationWorkflowPhase6.test.ts` + RBAC extension |
+| Docs | Evaluation / correction / review / resolution workflows + closeout |
+
+**Closeout:** [`AI_PHASE6_CLOSEOUT.md`](../docs/architecture/AI_PHASE6_CLOSEOUT.md)
 
 ---
 

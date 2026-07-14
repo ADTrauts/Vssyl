@@ -102,6 +102,10 @@ Route SSOT          → web/src/lib/aiExperienceNavigation.ts
 Doc status / terms  → docs/architecture/AI_DOCUMENT_STATUS_MATRIX.md
 Onboarding textbook → docs/architecture/AI_SYSTEM_TEXTBOOK.md
 Historical deep-dive → docs/ai-knowledge/deep-dive/ (HISTORICAL — prefer audit)
+Observation / ops / routing → docs/architecture/AI_READING_GUIDE.md
+        (Phases 5–5B observation, 6–6B evaluation/certification, 7 shadow routing)
+        → AI_RUNTIME_OBSERVATION_ARCHITECTURE.md · AI_PHASE6_CLOSEOUT.md
+        → AI_PLATFORM_ARCHITECTURE_CERTIFICATION.md · AI_MODEL_ROUTER_ARCHITECTURE.md
 ```
 
 ---

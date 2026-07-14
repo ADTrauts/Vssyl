@@ -14,6 +14,7 @@ import {
   markAwaitingApproval,
 } from './aiActionExecutionService';
 import { hashToolArguments } from './aiActionIdempotency';
+import { emitGovernedObservation } from '../observation/runtimeObservation';
 
 export interface GovernedToolContext extends ToolExecutionContext {
   prisma: PrismaClient;
@@ -73,6 +74,22 @@ export async function executeGovernedTool(
         : false;
 
   const logBase = logFields(context, name, riskCategory, approvalRequired);
+
+  emitGovernedObservation({
+    requestId: context.requestId ?? `governed:${context.userId}:${name}`,
+    userId: context.userId,
+    conversationId: context.conversationId ?? undefined,
+    businessId: context.businessId,
+    type: 'ToolAuthorizationEvaluated',
+    sourceComponent: 'governedToolExecutor',
+    idempotencyKey: `ToolAuthorizationEvaluated:${name}:${context.approvalId ?? 'new'}`,
+    metadata: {
+      tool: name,
+      riskCategory,
+      approvalRequired,
+      authorized: true,
+    },
+  });
 
   // Read-only / non-mutating: execute without idempotency ledger
   if (!mutating) {
@@ -146,6 +163,21 @@ export async function executeGovernedTool(
           result: parsed as unknown as Record<string, unknown>,
           errorMessage: parsed.success ? undefined : parsed.message,
         });
+        emitGovernedObservation({
+          requestId: context.requestId ?? `governed:${pending.id}`,
+          userId: context.userId,
+          conversationId: context.conversationId ?? undefined,
+          businessId: context.businessId,
+          type: parsed.success ? 'ActionExecutionCompleted' : 'ActionExecutionFailed',
+          sourceComponent: 'governedToolExecutor',
+          idempotencyKey: `ActionExecutionTerminal:${pending.id}`,
+          metadata: {
+            actionExecutionId: pending.id,
+            tool: name,
+            riskCategory,
+            approvalId: context.approvalId ?? undefined,
+          },
+        });
         void logger.info('AI tool execute after approval', {
           ...logBase,
           executionId: pending.id,
@@ -206,6 +238,21 @@ export async function executeGovernedTool(
       executionId: begin.executionId,
       status: begin.status,
       idempotentReplay: true,
+    });
+    emitGovernedObservation({
+      requestId: context.requestId ?? `governed:${begin.executionId}`,
+      userId: context.userId,
+      conversationId: context.conversationId ?? undefined,
+      businessId: context.businessId,
+      type: 'ActionExecutionReplayed',
+      sourceComponent: 'governedToolExecutor',
+      idempotencyKey: `ActionExecutionReplayed:${begin.executionId}`,
+      metadata: {
+        actionExecutionId: begin.executionId,
+        tool: name,
+        idempotentReplay: true,
+        riskCategory,
+      },
     });
     // Still awaiting approval and caller has not been granted — return prior proposal payload
     if (begin.status === 'AWAITING_APPROVAL' && begin.resultJson && !context.approvalGranted) {
@@ -278,8 +325,41 @@ export async function executeGovernedTool(
       result: payload,
     });
 
+    emitGovernedObservation({
+      requestId: context.requestId ?? `governed:${executionId}`,
+      userId: context.userId,
+      conversationId: context.conversationId ?? undefined,
+      businessId: context.businessId,
+      type: 'ApprovalRequested',
+      sourceComponent: 'governedToolExecutor',
+      idempotencyKey: `ApprovalRequested:${approval.id}`,
+      metadata: {
+        approvalId: approval.id,
+        actionExecutionId: executionId,
+        tool: name,
+        riskCategory,
+        approvalRequired: true,
+      },
+    });
+
     return JSON.stringify(payload);
   }
+
+  emitGovernedObservation({
+    requestId: context.requestId ?? `governed:${executionId}`,
+    userId: context.userId,
+    conversationId: context.conversationId ?? undefined,
+    businessId: context.businessId,
+    type: 'ActionExecutionStarted',
+    sourceComponent: 'governedToolExecutor',
+    idempotencyKey: `ActionExecutionStarted:${executionId}`,
+    metadata: {
+      actionExecutionId: executionId,
+      tool: name,
+      riskCategory,
+      approvalId: context.approvalId ?? undefined,
+    },
+  });
 
   const raw = await executeTool(name, args, context);
   const parsed = parseToolJson(raw);
@@ -291,6 +371,23 @@ export async function executeGovernedTool(
     executed: parsed.success,
     result: parsed as unknown as Record<string, unknown>,
     errorMessage: parsed.success ? undefined : parsed.message,
+  });
+
+  emitGovernedObservation({
+    requestId: context.requestId ?? `governed:${executionId}`,
+    userId: context.userId,
+    conversationId: context.conversationId ?? undefined,
+    businessId: context.businessId,
+    type: parsed.success ? 'ActionExecutionCompleted' : 'ActionExecutionFailed',
+    sourceComponent: 'governedToolExecutor',
+    idempotencyKey: `ActionExecutionTerminal:${executionId}`,
+    metadata: {
+      actionExecutionId: executionId,
+      tool: name,
+      riskCategory,
+      approvalId: context.approvalId ?? undefined,
+      message: parsed.success ? undefined : parsed.message.slice(0, 500),
+    },
   });
 
   void logger.info('AI tool execute (mutating)', {

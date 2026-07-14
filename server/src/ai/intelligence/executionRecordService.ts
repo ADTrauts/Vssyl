@@ -56,10 +56,15 @@ export function buildExecutionRecordSnapshot(
     input.timeline ??
     buildSimpleTurnTimeline({
       startedAt: createdAt.toISOString(),
-      completedAt: (input.completedAt ?? createdAt).toISOString(),
+      completedAt: (input.completedAt ?? createdAt)?.toISOString() ?? createdAt.toISOString(),
       provider: input.provider ?? undefined,
       model: input.model ?? undefined,
     });
+
+  const completedAt =
+    input.completedAt === undefined
+      ? createdAt
+      : input.completedAt;
 
   return {
     id,
@@ -78,7 +83,7 @@ export function buildExecutionRecordSnapshot(
     diagnosticsSummary: input.diagnosticsSummary ?? undefined,
     learningSignalsSummary: input.learningSignals ?? undefined,
     createdAt: createdAt.toISOString(),
-    completedAt: (input.completedAt ?? createdAt).toISOString(),
+    completedAt: completedAt ? completedAt.toISOString() : undefined,
   };
 }
 
@@ -118,7 +123,8 @@ export async function createAIExecutionRecord(
       errorSummary: input.errorSummary ?? null,
       diagnosticsSummaryJson: input.diagnosticsSummary ? asJson(input.diagnosticsSummary) : undefined,
       learningSignalsJson: input.learningSignals ? asJson(input.learningSignals) : undefined,
-      completedAt: input.completedAt ?? new Date(),
+      // null = in-flight (Phase 5 observation); undefined defaults to now for legacy callers
+      completedAt: input.completedAt !== undefined ? input.completedAt : new Date(),
     },
   });
 

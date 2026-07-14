@@ -47,6 +47,16 @@ describe('Phase 4 operations RBAC', () => {
     expect(requireOperationsPermission(ctx, 'evaluations:write').ok).toBe(false);
   });
 
+  it('Phase 6 SUPPORT_ENGINEER can write evaluations but not settings', () => {
+    const ctx = buildOperationsAuthContext({
+      user: { id: 'u1', role: 'ADMIN' },
+      headers: { 'x-ai-operations-role': 'SUPPORT_ENGINEER' },
+    } as never);
+    expect(ctx.operationsRole).toBe('SUPPORT_ENGINEER');
+    expect(requireOperationsPermission(ctx, 'evaluations:write').ok).toBe(true);
+    expect(requireOperationsPermission(ctx, 'settings:read').ok).toBe(false);
+  });
+
   it('resolves platform admin from JWT ADMIN role', () => {
     const role = resolveOperationsRole({ user: { id: 'a', role: 'ADMIN' }, headers: {} } as never);
     expect(role).toBe('PLATFORM_ADMIN');

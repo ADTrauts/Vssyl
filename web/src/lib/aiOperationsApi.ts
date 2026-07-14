@@ -12,6 +12,7 @@ import type {
   AIOperationsOverview,
   AIOperationsPagination,
   AIOperationsRegressionView,
+  AIOperationsWorkflowReport,
   AIReplayPreparationPreview,
 } from 'shared/types';
 import { getSession } from 'next-auth/react';
@@ -66,6 +67,18 @@ export const aiOperationsApi = {
 
   getExecution: (id: string) => request<AIExecutionDetailView>(`/executions/${id}`),
 
+  getExecutionEvents: (id: string) => request<unknown[]>(`/executions/${id}/events`),
+
+  getExecutionTimeline: (id: string) => request<unknown[]>(`/executions/${id}/timeline`),
+
+  getExecutionArtifacts: (id: string) =>
+    request<Record<string, unknown>>(`/executions/${id}/artifacts`),
+
+  getObservationHealth: () => request<Record<string, unknown>>(`/observation/health`),
+
+  getObservationFailures: (limit?: number) =>
+    request<unknown[]>(`/observation/failures${limit ? `?limit=${limit}` : ''}`),
+
   getExplainability: (id: string) =>
     request<AIExecutionExplanation>(`/executions/${id}/explain`),
 
@@ -79,6 +92,24 @@ export const aiOperationsApi = {
 
   updateEvaluation: (id: string, body: Record<string, unknown>) =>
     request(`/evaluations/${id}`, { method: 'PATCH', body: JSON.stringify(body) }),
+
+  createEvaluation: (executionId: string, body: Record<string, unknown>) =>
+    request(`/executions/${executionId}/evaluations`, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+
+  addRootCauses: (evaluationId: string, body: Record<string, unknown>) =>
+    request(`/evaluations/${evaluationId}/root-causes`, {
+      method: 'POST',
+      body: JSON.stringify(body),
+    }),
+
+  reviewRootCause: (rootCauseId: string, body: Record<string, unknown>) =>
+    request(`/root-causes/${rootCauseId}`, {
+      method: 'PATCH',
+      body: JSON.stringify(body),
+    }),
 
   bulkUpdateEvaluations: (ids: string[], patch: Record<string, unknown>) =>
     request('/evaluations/bulk', { method: 'POST', body: JSON.stringify({ ids, patch }) }),
@@ -102,6 +133,45 @@ export const aiOperationsApi = {
     );
   },
 
+  updateRegression: (id: string, body: Record<string, unknown>) =>
+    request(`/regressions/${id}`, { method: 'PATCH', body: JSON.stringify(body) }),
+
+  getWorkflowReport: (from?: string, to?: string) => {
+    const qs = new URLSearchParams();
+    if (from) qs.set('from', from);
+    if (to) qs.set('to', to);
+    const q = qs.toString();
+    return request<AIOperationsWorkflowReport>(`/reports/workflow${q ? `?${q}` : ''}`);
+  },
+
+  getModelRoutingOverview: () =>
+    request<{
+      overview: import('shared/types').AIModelRoutingOpsOverview;
+      policyVersion: string;
+      capabilities: unknown[];
+      tiers: unknown[];
+      catalog: Array<{
+        catalogKey: string;
+        provider: string;
+        label: string;
+        tier: string;
+        capabilities: string[];
+        status: string;
+      }>;
+      fallbackDocumentation: string;
+      shadowMode: boolean;
+      productionRoutingUnchanged: boolean;
+    }>('/routing/overview'),
+
+  getModelRoutingShadow: (limit?: number) => {
+    const qs = new URLSearchParams();
+    if (limit) qs.set('limit', String(limit));
+    const q = qs.toString();
+    return request<{ items: import('shared/types').AIModelRoutingShadowComparison[] }>(
+      `/routing/shadow${q ? `?${q}` : ''}`
+    );
+  },
+
   getMetrics: (from?: string, to?: string) => {
     const qs = new URLSearchParams();
     if (from) qs.set('from', from);
@@ -116,5 +186,11 @@ export const aiOperationsApi = {
       body: JSON.stringify(body),
     }),
 
-  getHealth: () => request<{ status: string; observeOnly: boolean }>('/health'),
+  getHealth: () =>
+    request<{
+      status: string;
+      observeOnly: boolean;
+      replayExecutionEnabled?: boolean;
+      observation?: Record<string, unknown>;
+    }>('/health'),
 };

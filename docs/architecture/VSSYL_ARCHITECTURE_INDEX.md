@@ -159,6 +159,9 @@ Digital Life Twin, context system, retrieval, orchestration.
 | **AI architecture decisions** | [`AI_ARCHITECTURE_DECISION_RECORDS.md`](./AI_ARCHITECTURE_DECISION_RECORDS.md) | — | Accepted ADRs |
 | **AI platform constitution** | [`AI_PLATFORM_CONSTITUTION.md`](./AI_PLATFORM_CONSTITUTION.md) | — | Constitutional |
 | **AI platform overview** | [`AI_PLATFORM_OVERVIEW.md`](./AI_PLATFORM_OVERVIEW.md) | L2 | L3 deferred |
+| **AI platform certification (6B)** | [`AI_PLATFORM_ARCHITECTURE_CERTIFICATION.md`](./AI_PLATFORM_ARCHITECTURE_CERTIFICATION.md) | CwF 86 | Phase 6B |
+| **AI canonical diagram** | [`AI_PLATFORM_CANONICAL_DIAGRAM.md`](./AI_PLATFORM_CANONICAL_DIAGRAM.md) | — | Phase 6B |
+| **Model Routing readiness** | [`AI_MODEL_ROUTING_READINESS.md`](./AI_MODEL_ROUTING_READINESS.md) | — | Phase 7 prep (not shipped) |
 | **AI knowledge constitution** | [`../ai-knowledge/AI_KNOWLEDGE_CONSTITUTION.md`](../ai-knowledge/AI_KNOWLEDGE_CONSTITUTION.md) | — | Constitutional |
 | **AI context system** | [`../../memory-bank/aiContextSystem.md`](../../memory-bank/aiContextSystem.md) | — | Product + implementation |
 | **Digital Life Twin pipeline** | [`AI_TWIN_PROMPT_PIPELINE.md`](./AI_TWIN_PROMPT_PIPELINE.md) | — | Active |

@@ -306,6 +306,8 @@ export interface LlmProviderRoutingSummary {
   fallbackReason?: string;
   capabilityWarnings: string[];
   diagnostics: LlmProviderRoutingDiagnostic[];
+  /** Phase 7 shadow comparison (observe-only). */
+  shadowComparison?: Record<string, unknown>;
 }
 
 export interface PipelineConversationReasoningSummary {

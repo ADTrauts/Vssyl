@@ -1,5 +1,41 @@
 # Active Context - Vssyl Business Admin & AI Integration
 
+## AI Architecture Phase 7 — Model Routing Engine / Shadow Mode (July 2026) ✅
+
+**Status:** **COMPLETE** (awaiting review; not committed).
+
+**Outcome:** Canonical capability → tier → catalog Model Router shipped in **shadow mode**. Production `selectLlmProvider` behavior unchanged. Pipeline Model Routing page observe-only.
+
+**Key docs:** [`AI_MODEL_ROUTER_ARCHITECTURE.md`](../docs/architecture/AI_MODEL_ROUTER_ARCHITECTURE.md) · [`AI_PHASE7_CLOSEOUT.md`](../docs/architecture/AI_PHASE7_CLOSEOUT.md)
+
+**Next:** Review / commit · optional Phase 7B live cutover for specialized paths.
+
+---
+
+## AI Architecture Phase 6B — Platform Certification & Readiness (July 2026) ✅
+
+**Status:** **COMPLETE** (awaiting review; not committed).
+
+**Outcome:** **CERTIFIED_WITH_FINDINGS** (score 86/100). Platform ready for Phase 7 Model Routing at existing provider seams. No runtime behavior changes.
+
+**Key docs:** [`AI_PLATFORM_ARCHITECTURE_CERTIFICATION.md`](../docs/architecture/AI_PLATFORM_ARCHITECTURE_CERTIFICATION.md) · [`AI_PLATFORM_SUBSYSTEM_INVENTORY.md`](../docs/architecture/AI_PLATFORM_SUBSYSTEM_INVENTORY.md) · [`AI_PLATFORM_CANONICAL_DIAGRAM.md`](../docs/architecture/AI_PLATFORM_CANONICAL_DIAGRAM.md) · [`AI_MODEL_ROUTING_READINESS.md`](../docs/architecture/AI_MODEL_ROUTING_READINESS.md) · [`AI_PHASE6B_CLOSEOUT.md`](../docs/architecture/AI_PHASE6B_CLOSEOUT.md)
+
+**Next:** Review / commit Phase 5–6B AI work · Phase 7 Model Routing Engine.
+
+---
+
+## AI Architecture Phase 6 — Evaluation & Correction Workflow (July 2026) ✅
+
+**Status:** **COMPLETE** (awaiting review; not committed in this session).
+
+**Outcome:** Human ops loop on existing Pipeline / Operations substrate. Corrections remain governed proposals — no Twin runtime mutation. Single evaluation `workflowStatus` lifecycle extended; work items + optional regression linkage + notifications + workflow report.
+
+**Key docs:** [`AI_EVALUATION_WORKFLOW.md`](../docs/architecture/AI_EVALUATION_WORKFLOW.md) · [`AI_CORRECTION_WORKFLOW.md`](../docs/architecture/AI_CORRECTION_WORKFLOW.md) · [`AI_REVIEW_WORKFLOW.md`](../docs/architecture/AI_REVIEW_WORKFLOW.md) · [`AI_RESOLUTION_WORKFLOW.md`](../docs/architecture/AI_RESOLUTION_WORKFLOW.md) · [`AI_PHASE6_CLOSEOUT.md`](../docs/architecture/AI_PHASE6_CLOSEOUT.md)
+
+**Next:** Review / commit Phase 6 · optional Business Reviewer RBAC · regression CI (future).
+
+---
+
 ## Reference Workspace — Registration Review (June 2026) ✅
 
 **Status:** **COMPLETE** — inaugural registration review; governance only; no engineering.

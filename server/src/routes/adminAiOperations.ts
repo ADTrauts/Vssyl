@@ -22,9 +22,12 @@ import {
   bulkUpdateEvaluations,
   createOperatorEvaluation,
   createOperatorRegression,
+  listWorkItemsForCorrection,
   reviewRootCause,
   updateCorrectionRoute,
   updateEvaluationWorkflow,
+  updateRegressionCase,
+  updateWorkItemStatus,
 } from '../ai/operations/operationsWorkflowService';
 import {
   getOperationsMetrics,
@@ -33,6 +36,16 @@ import {
 import { buildReplayPreparationPreview } from '../ai/operations/replayPreparationService';
 import { buildExecutionExplanation } from '../ai/intelligence/explainability';
 import { getAIExecutionRecord } from '../ai/intelligence/executionRecordService';
+import {
+  getObservationCompleteness,
+  getObservationEvents,
+  getObservationHealthPayload,
+  getObservationLinkedArtifacts,
+  getObservationTimeline,
+  listObservationFailures,
+  purgeObservationRetention,
+  estimateObservationRetentionBacklog,
+} from '../ai/observation/observationApi';
 import type {
   AIEvaluationInput,
   AIRegressionCaseInput,
@@ -167,9 +180,9 @@ router.patch('/evaluations/:id', async (req, res) => {
   const ctx = authCtx(req);
   const gate = requireOperationsPermission(ctx, 'evaluations:write');
   if (!gate.ok) return res.status(gate.status).json({ success: false, error: gate.error });
-  const row = await updateEvaluationWorkflow(prisma, req.params.id, ctx.userId, req.body);
-  if (!row) return res.status(404).json({ success: false, error: 'Evaluation not found' });
-  return res.json({ success: true, data: row });
+  const result = await updateEvaluationWorkflow(prisma, req.params.id, ctx.userId, req.body);
+  if (!result.ok) return res.status(result.status).json({ success: false, error: result.error });
+  return res.json({ success: true, data: result.row });
 });
 
 router.post('/evaluations/bulk', async (req, res) => {
@@ -180,17 +193,21 @@ router.post('/evaluations/bulk', async (req, res) => {
   if (!Array.isArray(ids) || ids.length === 0) {
     return res.status(400).json({ success: false, error: 'ids required' });
   }
-  const updated = await bulkUpdateEvaluations(prisma, ctx.userId, ids, patch as never);
-  return res.json({ success: true, data: { updated } });
+  const data = await bulkUpdateEvaluations(prisma, ctx.userId, ids, patch as never);
+  return res.json({ success: true, data });
 });
 
 router.post('/evaluations/:id/root-causes', async (req, res) => {
   const ctx = authCtx(req);
   const gate = requireOperationsPermission(ctx, 'root_causes:write');
   if (!gate.ok) return res.status(gate.status).json({ success: false, error: gate.error });
-  const { codes, notes } = req.body as { codes: AIRootCauseCode[]; notes?: string };
+  const { codes, notes, confidence } = req.body as {
+    codes: AIRootCauseCode[];
+    notes?: string;
+    confidence?: number;
+  };
   if (!codes?.length) return res.status(400).json({ success: false, error: 'codes required' });
-  const created = await addRootCauses(prisma, req.params.id, ctx.userId, codes, notes);
+  const created = await addRootCauses(prisma, req.params.id, ctx.userId, codes, notes, confidence);
   return res.status(201).json({ success: true, data: created });
 });
 
@@ -198,9 +215,22 @@ router.patch('/root-causes/:id', async (req, res) => {
   const ctx = authCtx(req);
   const gate = requireOperationsPermission(ctx, 'root_causes:write');
   if (!gate.ok) return res.status(gate.status).json({ success: false, error: gate.error });
-  const { reviewStatus, notes } = req.body as { reviewStatus: 'APPROVED' | 'REJECTED'; notes?: string };
+  const { reviewStatus, notes, confidence, ownerUserId } = req.body as {
+    reviewStatus: 'APPROVED' | 'REJECTED';
+    notes?: string;
+    confidence?: number;
+    ownerUserId?: string | null;
+  };
   if (!reviewStatus) return res.status(400).json({ success: false, error: 'reviewStatus required' });
-  const row = await reviewRootCause(prisma, req.params.id, ctx.userId, reviewStatus, notes);
+  const row = await reviewRootCause(
+    prisma,
+    req.params.id,
+    ctx.userId,
+    reviewStatus,
+    notes,
+    confidence,
+    ownerUserId
+  );
   if (!row) return res.status(404).json({ success: false, error: 'Root cause not found' });
   return res.json({ success: true, data: row });
 });
@@ -217,9 +247,9 @@ router.patch('/corrections/:id', async (req, res) => {
   const ctx = authCtx(req);
   const gate = requireOperationsPermission(ctx, 'corrections:write');
   if (!gate.ok) return res.status(gate.status).json({ success: false, error: gate.error });
-  const row = await updateCorrectionRoute(prisma, req.params.id, ctx.userId, req.body);
-  if (!row) return res.status(404).json({ success: false, error: 'Correction not found' });
-  return res.json({ success: true, data: row });
+  const result = await updateCorrectionRoute(prisma, req.params.id, ctx.userId, req.body);
+  if (!result) return res.status(404).json({ success: false, error: 'Correction not found' });
+  return res.json({ success: true, data: result });
 });
 
 router.get('/regressions', async (req, res) => {
@@ -243,6 +273,48 @@ router.post('/regressions', async (req, res) => {
     ownerUserId: body.ownerUserId ?? ctx.userId,
   });
   return res.status(201).json({ success: true, data: result });
+});
+
+router.patch('/regressions/:id', async (req, res) => {
+  const ctx = authCtx(req);
+  const gate = requireOperationsPermission(ctx, 'regressions:write');
+  if (!gate.ok) return res.status(gate.status).json({ success: false, error: gate.error });
+  const row = await updateRegressionCase(prisma, req.params.id, ctx.userId, req.body);
+  if (!row) return res.status(404).json({ success: false, error: 'Regression not found' });
+  return res.json({ success: true, data: row });
+});
+
+router.get('/corrections/:id/work-items', async (req, res) => {
+  const ctx = authCtx(req);
+  const gate = requireOperationsPermission(ctx, 'corrections:read');
+  if (!gate.ok) return res.status(gate.status).json({ success: false, error: gate.error });
+  const data = await listWorkItemsForCorrection(prisma, req.params.id);
+  return res.json({ success: true, data });
+});
+
+router.patch('/work-items/:id', async (req, res) => {
+  const ctx = authCtx(req);
+  const gate = requireOperationsPermission(ctx, 'corrections:write');
+  if (!gate.ok) return res.status(gate.status).json({ success: false, error: gate.error });
+  const { status, assignedOwnerId } = req.body as {
+    status: 'OPEN' | 'IN_PROGRESS' | 'DONE' | 'CANCELLED';
+    assignedOwnerId?: string | null;
+  };
+  if (!status) return res.status(400).json({ success: false, error: 'status required' });
+  const row = await updateWorkItemStatus(prisma, req.params.id, ctx.userId, status, assignedOwnerId);
+  if (!row) return res.status(404).json({ success: false, error: 'Work item not found' });
+  return res.json({ success: true, data: row });
+});
+
+router.get('/reports/workflow', async (req, res) => {
+  const ctx = authCtx(req);
+  const gate = requireOperationsPermission(ctx, 'metrics:read');
+  if (!gate.ok) return res.status(gate.status).json({ success: false, error: gate.error });
+  const from = typeof req.query.from === 'string' ? req.query.from : undefined;
+  const to = typeof req.query.to === 'string' ? req.query.to : undefined;
+  const { getWorkflowReport } = await import('../ai/operations/operationsMetricsService');
+  const data = await getWorkflowReport(prisma, { from, to }, businessScope(ctx));
+  return res.json({ success: true, data });
 });
 
 router.get('/metrics', async (req, res) => {
@@ -282,6 +354,150 @@ router.get('/health', async (req, res) => {
       observeOnly: true,
       replayExecutionEnabled: false,
       productShell: 'ai-pipeline',
+      observation: getObservationHealthPayload(),
+    },
+  });
+});
+
+router.get('/observation/health', async (req, res) => {
+  const ctx = authCtx(req);
+  const gate = requireOperationsPermission(ctx, 'operations:read');
+  if (!gate.ok) return res.status(gate.status).json({ success: false, error: gate.error });
+  try {
+    await estimateObservationRetentionBacklog(prisma);
+  } catch {
+    /* non-fatal */
+  }
+  return res.json({ success: true, data: getObservationHealthPayload() });
+});
+
+router.post('/observation/retention/purge', async (req, res) => {
+  const ctx = authCtx(req);
+  const gate = requireOperationsPermission(ctx, 'operations:read');
+  if (!gate.ok) return res.status(gate.status).json({ success: false, error: gate.error });
+  const body = (req.body ?? {}) as {
+    dryRun?: boolean;
+    purgeAfterDays?: number;
+    batchLimit?: number;
+    includeHubs?: boolean;
+  };
+  // Default dry-run=true unless explicitly false
+  const data = await purgeObservationRetention(prisma, {
+    dryRun: body.dryRun !== false,
+    purgeAfterDays: body.purgeAfterDays,
+    batchLimit: body.batchLimit,
+    includeHubs: body.includeHubs === true,
+  });
+  return res.json({ success: true, data });
+});
+
+router.get('/executions/:id/completeness', async (req, res) => {
+  const ctx = authCtx(req);
+  const gate = requireOperationsPermission(ctx, 'executions:read');
+  if (!gate.ok) return res.status(gate.status).json({ success: false, error: gate.error });
+  const record = await getAIExecutionRecord(prisma, req.params.id);
+  if (!record) return res.status(404).json({ success: false, error: 'Execution not found' });
+  if (!canAccessBusinessRecord(ctx, record.businessId)) {
+    return res.status(403).json({ success: false, error: 'Business scope denied' });
+  }
+  const data = await getObservationCompleteness(prisma, req.params.id);
+  return res.json({ success: true, data });
+});
+
+router.get('/observation/failures', async (req, res) => {
+  const ctx = authCtx(req);
+  const gate = requireOperationsPermission(ctx, 'executions:search');
+  if (!gate.ok) return res.status(gate.status).json({ success: false, error: gate.error });
+  const limit = typeof req.query.limit === 'string' ? Number(req.query.limit) : undefined;
+  const data = await listObservationFailures(prisma, {
+    businessId: businessScope(ctx),
+    limit,
+  });
+  return res.json({ success: true, data });
+});
+
+router.get('/executions/:id/events', async (req, res) => {
+  const ctx = authCtx(req);
+  const gate = requireOperationsPermission(ctx, 'executions:read');
+  if (!gate.ok) return res.status(gate.status).json({ success: false, error: gate.error });
+  const record = await getAIExecutionRecord(prisma, req.params.id);
+  if (!record) return res.status(404).json({ success: false, error: 'Execution not found' });
+  if (!canAccessBusinessRecord(ctx, record.businessId)) {
+    return res.status(403).json({ success: false, error: 'Business scope denied' });
+  }
+  const data = await getObservationEvents(prisma, req.params.id);
+  return res.json({ success: true, data });
+});
+
+router.get('/executions/:id/timeline', async (req, res) => {
+  const ctx = authCtx(req);
+  const gate = requireOperationsPermission(ctx, 'executions:read');
+  if (!gate.ok) return res.status(gate.status).json({ success: false, error: gate.error });
+  const record = await getAIExecutionRecord(prisma, req.params.id);
+  if (!record) return res.status(404).json({ success: false, error: 'Execution not found' });
+  if (!canAccessBusinessRecord(ctx, record.businessId)) {
+    return res.status(403).json({ success: false, error: 'Business scope denied' });
+  }
+  const data = await getObservationTimeline(prisma, req.params.id);
+  return res.json({ success: true, data });
+});
+
+router.get('/executions/:id/artifacts', async (req, res) => {
+  const ctx = authCtx(req);
+  const gate = requireOperationsPermission(ctx, 'executions:read');
+  if (!gate.ok) return res.status(gate.status).json({ success: false, error: gate.error });
+  const record = await getAIExecutionRecord(prisma, req.params.id);
+  if (!record) return res.status(404).json({ success: false, error: 'Execution not found' });
+  if (!canAccessBusinessRecord(ctx, record.businessId)) {
+    return res.status(403).json({ success: false, error: 'Business scope denied' });
+  }
+  const data = await getObservationLinkedArtifacts(prisma, req.params.id);
+  return res.json({ success: true, data });
+});
+
+/** Phase 7 — Model Routing observe-only (shadow comparisons; no policy edits). */
+router.get('/routing/overview', async (req, res) => {
+  const ctx = authCtx(req);
+  const gate = requireOperationsPermission(ctx, 'metrics:read');
+  if (!gate.ok) return res.status(gate.status).json({ success: false, error: gate.error });
+  const { getShadowRoutingOverview, listCanonicalModels } = await import('../ai/routing');
+  const { AI_CAPABILITY_DEFINITIONS } = await import('../ai/routing/capabilityModel');
+  const { AI_ROUTING_TIER_DEFINITIONS } = await import('../ai/routing/routingTiers');
+  const { AI_MODEL_ROUTING_POLICY_VERSION } = await import('vssyl-shared');
+  const { FALLBACK_CHAIN_DOCUMENTATION } = await import('../ai/routing/routingPolicy');
+  return res.json({
+    success: true,
+    data: {
+      overview: getShadowRoutingOverview(),
+      policyVersion: AI_MODEL_ROUTING_POLICY_VERSION,
+      capabilities: Object.values(AI_CAPABILITY_DEFINITIONS),
+      tiers: Object.values(AI_ROUTING_TIER_DEFINITIONS),
+      catalog: listCanonicalModels().map((m) => ({
+        catalogKey: m.catalogKey,
+        provider: m.provider,
+        label: m.label,
+        tier: m.tier,
+        capabilities: m.capabilities,
+        status: m.status,
+        // providerModelId omitted from operator summary cards — adapters own native ids
+      })),
+      fallbackDocumentation: FALLBACK_CHAIN_DOCUMENTATION,
+      shadowMode: true,
+      productionRoutingUnchanged: true,
+    },
+  });
+});
+
+router.get('/routing/shadow', async (req, res) => {
+  const ctx = authCtx(req);
+  const gate = requireOperationsPermission(ctx, 'metrics:read');
+  if (!gate.ok) return res.status(gate.status).json({ success: false, error: gate.error });
+  const limit = typeof req.query.limit === 'string' ? Number(req.query.limit) : 50;
+  const { listRecentShadowComparisons } = await import('../ai/routing');
+  return res.json({
+    success: true,
+    data: {
+      items: listRecentShadowComparisons(Number.isFinite(limit) ? limit : 50),
     },
   });
 });

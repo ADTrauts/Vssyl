@@ -86,6 +86,27 @@ export async function registerPlatformCronJobs(): Promise<void> {
     description: 'Daily AI provider usage sync',
   });
 
+  // Phase 5B — observation retention (disabled unless explicitly enabled)
+  if (process.env.AI_OBSERVATION_RETENTION_CRON_ENABLED === 'true') {
+    registerPlatformJob({
+      id: 'ai_observation_retention_purge',
+      schedule: '30 5 * * *',
+      handler: async () => {
+        const { prisma } = await import('../lib/prisma');
+        const { purgeObservationRetention } = await import(
+          '../ai/observation/observationRetentionService'
+        );
+        await purgeObservationRetention(prisma, {
+          dryRun: process.env.AI_OBSERVATION_RETENTION_DRY_RUN !== 'false',
+          includeHubs: false,
+        });
+      },
+      tier: 'transitional',
+      operation: 'cron_ai_observation_retention',
+      description: 'Observation retention purge (opt-in via env)',
+    });
+  }
+
   try {
     const { ProviderSyncService } = await import('../services/aiProviderServices/providerSyncService');
     const providerSyncService = new ProviderSyncService();

@@ -7,7 +7,22 @@ import { OperationsStatusBadge } from '../../../../components/admin-portal/ai-op
 import { aiOperationsApi } from '../../../../lib/aiOperationsApi';
 import type { AIOperationsEvaluationView } from 'shared/types';
 
-const STATUSES = ['PENDING', 'ASSIGNED', 'REVIEWED', 'RESOLVED', 'REJECTED', 'ARCHIVED'] as const;
+const STATUSES = [
+  'NEW',
+  'TRIAGED',
+  'UNDER_REVIEW',
+  'ROOT_CAUSE_CONFIRMED',
+  'CORRECTION_CREATED',
+  'CORRECTION_APPROVED',
+  'IMPLEMENTED',
+  'VERIFIED',
+  'CLOSED',
+  'PENDING',
+  'ASSIGNED',
+  'REJECTED',
+  'DUPLICATE',
+  'DEFERRED',
+] as const;
 
 export default function AiOperationsEvaluationsPage() {
   const [items, setItems] = useState<AIOperationsEvaluationView[]>([]);

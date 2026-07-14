@@ -165,9 +165,16 @@ export type AICorrectionRouteStatus =
   | 'OPEN'
   | 'ROUTED'
   | 'IN_PROGRESS'
+  | 'IMPLEMENTED'
+  | 'VERIFIED'
   | 'RESOLVED'
   | 'DEFERRED'
-  | 'WONT_FIX';
+  | 'WONT_FIX'
+  | 'DUPLICATE'
+  | 'NOT_REPRODUCIBLE'
+  | 'NEEDS_INFORMATION'
+  | 'ARCHIVED'
+  | 'REJECTED';
 
 export interface AICorrectionRoutePlan {
   rootCause: AIRootCauseCode;

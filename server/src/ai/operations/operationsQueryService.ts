@@ -7,6 +7,7 @@ import type {
   AIOperationsPagination,
   AIExecutionListItem,
 } from 'vssyl-shared';
+import { normalizeEvaluationWorkflowStatus } from 'vssyl-shared';
 import { rowToSnapshot } from '../intelligence/executionRecordService';
 
 function parsePage(query: AIOperationsListQuery): { skip: number; take: number; page: number; pageSize: number } {
@@ -201,7 +202,9 @@ export function mapEvaluationRow(row: {
   priority: string | null;
   severity: string | null;
   confidence: number | null;
+  resolutionCode?: string | null;
   commentsJson: unknown;
+  historyJson?: unknown;
   createdAt: Date;
   updatedAt: Date;
   rootCauses: Array<{
@@ -211,6 +214,8 @@ export function mapEvaluationRow(row: {
     reviewStatus: string;
     reviewedByUserId: string | null;
     reviewedAt: Date | null;
+    confidence?: number | null;
+    ownerUserId?: string | null;
     historyJson: unknown;
   }>;
 }) {
@@ -222,11 +227,14 @@ export function mapEvaluationRow(row: {
     score: row.score ?? undefined,
     notes: row.notes ?? undefined,
     workflowStatus: row.workflowStatus,
+    lifecycleStatus: normalizeEvaluationWorkflowStatus(row.workflowStatus),
     assignedToUserId: row.assignedToUserId ?? undefined,
     priority: row.priority ?? undefined,
     severity: row.severity ?? undefined,
     confidence: row.confidence ?? undefined,
+    resolutionCode: row.resolutionCode ?? undefined,
     comments: Array.isArray(row.commentsJson) ? row.commentsJson : [],
+    history: Array.isArray(row.historyJson) ? row.historyJson : [],
     rootCauses: row.rootCauses.map((rc) => ({
       id: rc.id,
       code: rc.code,
@@ -234,6 +242,8 @@ export function mapEvaluationRow(row: {
       reviewStatus: rc.reviewStatus,
       reviewedByUserId: rc.reviewedByUserId ?? undefined,
       reviewedAt: rc.reviewedAt?.toISOString(),
+      confidence: rc.confidence ?? undefined,
+      ownerUserId: rc.ownerUserId ?? undefined,
       history: Array.isArray(rc.historyJson) ? rc.historyJson : [],
     })),
     createdAt: row.createdAt.toISOString(),
@@ -253,8 +263,22 @@ export function mapCorrectionRow(row: {
   assignedOwnerId: string | null;
   rationale: string | null;
   commentsJson: unknown;
+  historyJson?: unknown;
+  resolvedAt?: Date | null;
   createdAt: Date;
   updatedAt: Date;
+  workItems?: Array<{
+    id: string;
+    correctionRouteId: string;
+    kind: string;
+    destination: string;
+    status: string;
+    title: string;
+    assignedOwnerId: string | null;
+    historyJson: unknown;
+    createdAt: Date;
+    updatedAt: Date;
+  }>;
 }) {
   return {
     id: row.id,
@@ -270,8 +294,22 @@ export function mapCorrectionRow(row: {
     assignedOwnerId: row.assignedOwnerId ?? undefined,
     rationale: row.rationale ?? undefined,
     comments: Array.isArray(row.commentsJson) ? row.commentsJson : [],
+    history: Array.isArray(row.historyJson) ? row.historyJson : [],
+    workItems: row.workItems?.map((w) => ({
+      id: w.id,
+      correctionRouteId: w.correctionRouteId,
+      kind: w.kind,
+      destination: w.destination,
+      status: w.status,
+      title: w.title,
+      assignedOwnerId: w.assignedOwnerId ?? undefined,
+      history: Array.isArray(w.historyJson) ? w.historyJson : [],
+      createdAt: w.createdAt.toISOString(),
+      updatedAt: w.updatedAt.toISOString(),
+    })),
     createdAt: row.createdAt.toISOString(),
     updatedAt: row.updatedAt.toISOString(),
+    resolvedAt: row.resolvedAt?.toISOString(),
   };
 }
 

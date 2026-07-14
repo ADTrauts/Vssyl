@@ -1,6 +1,7 @@
 /**
  * LLM provider selection and fallback (Wave 1E).
- * Uses providerCapabilityMatrix as the single source of truth.
+ * Phase 7: attaches shadow Model Router comparison without changing production selection.
+ * Uses providerCapabilityMatrix as the single source of truth for live selection.
  */
 
 import { getModel } from './modelCatalog';
@@ -14,6 +15,8 @@ import {
   type ProviderCapabilityRequirements,
   PROVIDER_CAPABILITY_MATRIX_VERSION,
 } from './providerCapabilityMatrix';
+import { safeShadowRouteForTwinSelection } from '../routing/shadowRouting';
+import type { AIModelRoutingShadowComparison } from 'vssyl-shared';
 
 export type PreferredLlmProvider = 'auto' | 'openai' | 'anthropic';
 
@@ -48,6 +51,8 @@ export interface LlmProviderRoutingRecord {
   fallbackReason?: string;
   capabilityWarnings: string[];
   diagnostics: LlmProviderRoutingDiagnostic[];
+  /** Phase 7 — proposed route from Model Router (shadow; production selection unchanged). */
+  shadowComparison?: AIModelRoutingShadowComparison;
 }
 
 export interface ProviderSelectionInput {
@@ -165,6 +170,20 @@ export function selectLlmProvider(input: ProviderSelectionInput): ProviderSelect
   }
 
   record.selectedProvider = provider;
+
+  // Phase 7 shadow mode — propose capability-based route; do not alter `provider`.
+  const shadow = safeShadowRouteForTwinSelection({
+    query: input.query,
+    complexity: input.complexity,
+    preferredProvider: input.preferredProvider,
+    preferredModel: input.preferredModel,
+    currentProvider: provider,
+    currentModel: requestedModel,
+  });
+  if (shadow) {
+    record.shadowComparison = shadow;
+  }
+
   return { provider, routing: record };
 }
 
