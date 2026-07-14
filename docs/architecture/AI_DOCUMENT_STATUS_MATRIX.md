@@ -51,6 +51,24 @@ Status key: **Current** · **Supporting** · **Historical** · **Future** · **D
 | [`AI_PLATFORM_CANONICAL_DIAGRAM.md`](./AI_PLATFORM_CANONICAL_DIAGRAM.md) | Current | Canonical whole-platform Mermaid diagram |
 | [`AI_MODEL_ROUTING_READINESS.md`](./AI_MODEL_ROUTING_READINESS.md) | Current | Phase 7 readiness (no implementation) |
 | [`AI_PHASE6B_CLOSEOUT.md`](./AI_PHASE6B_CLOSEOUT.md) | Current | Phase 6B closeout |
+| [`AI_MODEL_ROUTER_ARCHITECTURE.md`](./AI_MODEL_ROUTER_ARCHITECTURE.md) | Current | Phase 7 Model Router (shadow) |
+| [`AI_MODEL_ROUTING_AUDIT.md`](./AI_MODEL_ROUTING_AUDIT.md) | Current | Phase 7 routing audit |
+| [`AI_CAPABILITY_MODEL.md`](./AI_CAPABILITY_MODEL.md) | Current | Capability taxonomy |
+| [`AI_ROUTING_TIERS.md`](./AI_ROUTING_TIERS.md) | Current | Routing tiers |
+| [`AI_MODEL_CATALOG.md`](./AI_MODEL_CATALOG.md) | Current | Canonical model catalog |
+| [`AI_ROUTING_POLICY.md`](./AI_ROUTING_POLICY.md) | Current | Routing policy |
+| [`AI_PHASE7_CLOSEOUT.md`](./AI_PHASE7_CLOSEOUT.md) | Current | Phase 7 closeout |
+| [`AI_SKILLS_ARCHITECTURE.md`](./AI_SKILLS_ARCHITECTURE.md) | Current | Phase 8 Skills Framework architecture |
+| [`AI_SKILL_CONTRACT.md`](./AI_SKILL_CONTRACT.md) | Current | `AISkillDefinition` field contract |
+| [`AI_SKILL_EXECUTION_MODEL.md`](./AI_SKILL_EXECUTION_MODEL.md) | Current | Selection, plan, runner boundaries |
+| [`AI_SKILL_REGISTRY.md`](./AI_SKILL_REGISTRY.md) | Current | Code-first registry |
+| [`AI_SKILL_LIFECYCLE.md`](./AI_SKILL_LIFECYCLE.md) | Current | Skill status machine |
+| [`AI_SKILL_CANDIDATE_AUDIT.md`](./AI_SKILL_CANDIDATE_AUDIT.md) | Current | Skill-like behavior audit |
+| [`AI_SKILL_PILOT_CATALOG.md`](./AI_SKILL_PILOT_CATALOG.md) | Current | Phase 8 pilot Skills |
+| [`AI_SKILL_CERTIFICATION_STANDARD.md`](./AI_SKILL_CERTIFICATION_STANDARD.md) | Current | Skill certification checklist |
+| [`AI_SKILL_SECURITY_MODEL.md`](./AI_SKILL_SECURITY_MODEL.md) | Current | Skill security boundaries |
+| [`AI_PHASE8_SKILLS_CERTIFICATION_MATRIX.md`](./AI_PHASE8_SKILLS_CERTIFICATION_MATRIX.md) | Current | Phase 8 certification matrix |
+| [`AI_PHASE8_CLOSEOUT.md`](./AI_PHASE8_CLOSEOUT.md) | Current | Phase 8 closeout |
 
 ### Future / design-only
 
@@ -58,6 +76,7 @@ Status key: **Current** · **Supporting** · **Historical** · **Future** · **D
 |----------|--------|------|
 | [`../ai-system-audit/AI_MODEL_ROUTING_TARGET_ARCHITECTURE.md`](../ai-system-audit/AI_MODEL_ROUTING_TARGET_ARCHITECTURE.md) | Future | Task-tier routing design — **not shipped** |
 | Industry Intelligence section in Intelligence Model | Future | Knowledge packs — **not shipped** |
+| AI Studio / customer-created Skills | Future | Phase 8 ships code-first pilots only |
 | [`../ai-knowledge/AI_CORRECTION_WORKFLOW.md`](../ai-knowledge/AI_CORRECTION_WORKFLOW.md) | Future / Design | End-user Teach Vssyl correction UX — **not** operator Phase 6 workflow |
 
 ### Historical (preserved; banners applied)
@@ -103,8 +122,11 @@ Status key: **Current** · **Supporting** · **Historical** · **Future** · **D
 | **Notebook AI** | Current specialized | OpenAI completion helper outside full Twin | Claiming full Twin parity |
 | **Context Graph** | Current (platform capability) | Graph/neighborhoods; consumed by knowledge/retrieval | Equating to Twin itself |
 | **Provider** | Current | OpenAI / Anthropic / Local adapters | Hardcoding brand as product logic |
-| **Routing** | Current (limited) | providerRouting + prefs + vision | Assuming FAST/BALANCED/DEEP shipped |
-| **Model tiers** | Future wording | Design target only until Model Routing ships | Docs implying live tiers |
+| **Routing** | Current (limited) | providerRouting + prefs + vision + Phase 7 shadow | Assuming live router cutover |
+| **Model tiers** | Current (shadow) | Phase 7 capability + tier taxonomy | Docs implying production tier routing |
+| **Skill** | Current | Governed task contract (`AISkillDefinition`) | Saved prompts, provider ids, or Twin fork |
+| **Intent (Skill)** | Current | `AISkillIntentType` selection hint | Executable without Skill key |
+| **Capability** | Current | `AIModelCapability` — provider-neutral | Provider model string in Skill contract |
 | **Operator correction workflow** | Current | `docs/architecture/AI_CORRECTION_WORKFLOW.md` (Phase 6) | Confusing with knowledge UX doc of same filename |
 | **Teach Vssyl correction UX** | Design only | `docs/ai-knowledge/AI_CORRECTION_WORKFLOW.md` | Claiming it is the operator Platform workflow |
 

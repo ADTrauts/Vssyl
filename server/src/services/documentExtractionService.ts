@@ -1,6 +1,8 @@
 /**
  * Document extraction service: extract structured data (e.g. invoice/receipt) from document text
  * using schema-guaranteed output. Validates with Zod.
+ *
+ * Phase 8B: product callers use Skill canonical entry. Domain implementation below is Skill-owned.
  */
 
 import { InvoiceExtractionSchema, type InvoiceExtraction, type DocumentType } from '../ai/types/documentExtraction';
@@ -9,11 +11,12 @@ import { logger } from '../lib/logger';
 const EXTRACTION_MODEL = 'gpt-4o';
 
 /**
- * Extract invoice/receipt data from document text using OpenAI with JSON output, then validate with Zod.
+ * Domain implementation (Skill runner observes/routers). Prefer Skill canonical entry for products.
  */
-export async function extractInvoiceOrReceipt(
+export async function extractInvoiceOrReceiptImplementation(
   documentText: string,
-  documentType: DocumentType
+  documentType: DocumentType,
+  options?: { skipShadowRouting?: boolean }
 ): Promise<{ success: true; data: InvoiceExtraction } | { success: false; error: string }> {
   if (!documentText || documentText.trim().length < 10) {
     return { success: false, error: 'Document text is too short to extract from.' };
@@ -43,16 +46,18 @@ ${documentText.slice(0, 12000)}
       return { success: false, error: 'OpenAI API key not configured.' };
     }
 
-    try {
-      const { shadowRouteForSpecializedPath } = await import('../ai/routing/shadowRouting');
-      shadowRouteForSpecializedPath({
-        capability: 'STRUCTURED_EXTRACTION',
-        currentProvider: 'openai',
-        currentModel: EXTRACTION_MODEL,
-        surface: 'DOCUMENT_EXTRACTION',
-      });
-    } catch {
-      /* shadow never blocks extraction */
+    if (!options?.skipShadowRouting) {
+      try {
+        const { shadowRouteForSpecializedPath } = await import('../ai/routing/shadowRouting');
+        shadowRouteForSpecializedPath({
+          capability: 'STRUCTURED_EXTRACTION',
+          currentProvider: 'openai',
+          currentModel: EXTRACTION_MODEL,
+          surface: 'DOCUMENT_EXTRACTION',
+        });
+      } catch {
+        /* shadow never blocks extraction */
+      }
     }
 
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -111,4 +116,29 @@ ${documentText.slice(0, 12000)}
     });
     return { success: false, error: message };
   }
+}
+
+/**
+ * @deprecated Prefer Skill canonical entry. Compatibility wrapper → Skill runner when userId known.
+ * Falls back to domain implementation only when Skill entry is unavailable (tests without user).
+ */
+export async function extractInvoiceOrReceipt(
+  documentText: string,
+  documentType: DocumentType,
+  opts?: { userId?: string; businessId?: string | null; preferSkill?: boolean }
+): Promise<{ success: true; data: InvoiceExtraction } | { success: false; error: string }> {
+  if (opts?.preferSkill !== false && opts?.userId) {
+    const { runStructuredDocumentExtractionSkill } = await import(
+      '../ai/skills/skillCanonicalEntry.js'
+    );
+    return runStructuredDocumentExtractionSkill({
+      documentText,
+      documentType,
+      userId: opts.userId,
+      businessId: opts.businessId,
+    });
+  }
+  return extractInvoiceOrReceiptImplementation(documentText, documentType, {
+    skipShadowRouting: false,
+  });
 }

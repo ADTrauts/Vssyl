@@ -4,12 +4,12 @@ import { describe, expect, it } from 'vitest';
 
 const controllerPath = join(process.cwd(), 'src/controllers/notebookAIController.ts');
 
-describe('notebookAIController contract', () => {
+describe('notebookAIController contract (Phase 8B)', () => {
   const source = readFileSync(controllerPath, 'utf8');
 
-  it('delegates to notebookAIActionService', () => {
-    expect(source).toMatch(/notebookAIActionService\.summarizePage/);
-    expect(source).toMatch(/notebookAIActionService\.extractActionItems/);
+  it('routes summary and extract through Skill canonical entry', () => {
+    expect(source).toMatch(/runNotebookPageSummarySkill/);
+    expect(source).toMatch(/runNotebookActionExtractionSkill/);
     expect(source).toMatch(/notebookAIActionService\.confirmExtractedActionItems/);
     expect(source).toMatch(/notebookAIActionService\.generateMeetingRecap/);
     expect(source).toMatch(/notebookAIActionService\.suggestLinks/);

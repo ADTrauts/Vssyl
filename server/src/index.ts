@@ -106,6 +106,7 @@ import orgChartRouter from './routes/org-chart';
 import businessAIRouter from './routes/businessAI';
 import adminBusinessAIRouter from './routes/adminBusinessAI';
 import adminAiOperationsRouter from './routes/adminAiOperations';
+import aiSkillsRouter from './routes/aiSkills';
 import aiContextDebugRouter from './routes/ai-context-debug';
 import { aiContextDebugTransitionalMiddleware } from './middleware/aiContextDebugTransitional';
 import aiConversationsRouter from './routes/aiConversations';
@@ -385,6 +386,7 @@ app.use('/api/calendar', authenticateJWT, calendarRouter);
 app.use('/api/business-ai', businessAIRouter);
 app.use('/api/admin/business-ai', adminBusinessAIRouter);
 app.use('/api/admin/ai/operations', adminAiOperationsRouter);
+  app.use('/api/ai/skills', authenticateJWT, aiSkillsRouter);
 app.use('/api/ai-context-debug', aiContextDebugTransitionalMiddleware, aiContextDebugRouter);
 app.use('/api/ai-conversations', authenticateJWT, aiConversationsRouter);
 app.use('/api/ai/memory/facts', authenticateJWT, userMemoryFactsRouter);
@@ -713,6 +715,17 @@ async function handleServerListening(): Promise<void> {
     const err = e as Error;
     void logger.error('Module registration startup failed (non-critical)', {
       operation: 'startup_module_registry',
+      error: { message: err.message, stack: err.stack },
+    }).catch(() => undefined);
+  }
+
+  try {
+    const { registerBuiltInSkills } = await import('./ai/skills/registerBuiltInSkills');
+    await registerBuiltInSkills();
+  } catch (e: unknown) {
+    const err = e as Error;
+    void logger.error('AI Skills registration failed (non-critical)', {
+      operation: 'startup_ai_skills_registry',
       error: { message: err.message, stack: err.stack },
     }).catch(() => undefined);
   }

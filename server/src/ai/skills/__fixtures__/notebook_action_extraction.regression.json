@@ -1,0 +1,40 @@
+{
+  "skillKey": "notebook_action_extraction",
+  "skillVersion": "1.0.0",
+  "evaluationProfileId": "eval.notebook_action_extraction.v1",
+  "description": "Planner + schema contract fixture for action extraction (propose-only)",
+  "cases": [
+    {
+      "id": "nae-valid",
+      "input": { "pageId": "page-fixture-2" },
+      "expectPlanOk": true,
+      "mockOutput": {
+        "proposals": [
+          { "title": "Follow up with stakeholders", "description": null, "dueDate": null, "priority": "MEDIUM" }
+        ],
+        "warnings": [],
+        "unresolvedQuestions": []
+      },
+      "expectOutputValid": true,
+      "assertNoMutationTools": true
+    },
+    {
+      "id": "nae-selected-text",
+      "input": { "pageId": "page-fixture-2", "selectedText": "Decide by Friday" },
+      "expectPlanOk": true,
+      "mockOutput": {
+        "proposals": [{ "title": "Decide by Friday", "description": null, "dueDate": null, "priority": null }],
+        "warnings": [],
+        "unresolvedQuestions": []
+      },
+      "expectOutputValid": true
+    },
+    {
+      "id": "nae-bad-output",
+      "input": { "pageId": "page-fixture-2" },
+      "expectPlanOk": true,
+      "mockOutput": { "oops": true },
+      "expectOutputValid": false
+    }
+  ]
+}

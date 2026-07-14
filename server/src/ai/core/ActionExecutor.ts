@@ -1107,11 +1107,13 @@ export class ActionExecutor {
 
     try {
       const {
-        summarizePage,
-        extractActionItems,
         generateMeetingRecap,
         suggestLinks,
       } = await import('../../services/notebook/notebookAIActionService.js');
+      const {
+        runNotebookPageSummarySkill,
+        runNotebookActionExtractionSkill,
+      } = await import('../skills/skillCanonicalEntry.js');
       const { loadGroundedAIContext } = await import(
         '../../services/notebook/notebookAIContextService.js'
       );
@@ -1130,7 +1132,15 @@ export class ActionExecutor {
 
       switch (operation) {
         case 'summarize_page': {
-          const data = await summarizePage(pageId, userContext.userId);
+          const businessId =
+            typeof userContext.dashboardContext?.businessId === 'string'
+              ? userContext.dashboardContext.businessId
+              : null;
+          const data = await runNotebookPageSummarySkill({
+            pageId,
+            userId: userContext.userId,
+            businessId,
+          });
           return this.notebookActionResult(
             action,
             startTime,
@@ -1144,10 +1154,15 @@ export class ActionExecutor {
         case 'extract_action_items': {
           const selectedText =
             parameters?.selectedText != null ? String(parameters.selectedText) : undefined;
-          const data = await extractActionItems({
+          const businessId =
+            typeof userContext.dashboardContext?.businessId === 'string'
+              ? userContext.dashboardContext.businessId
+              : null;
+          const data = await runNotebookActionExtractionSkill({
             pageId,
             userId: userContext.userId,
             selectedText,
+            businessId,
           });
           return this.notebookActionResult(
             action,

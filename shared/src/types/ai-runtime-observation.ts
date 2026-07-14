@@ -43,6 +43,17 @@ export type AIObservationEventType =
   | 'ProviderCompleted' // legacy Phase 5 alias retained
   /** Phase 7 — shadow router vs current selection (observe-only) */
   | 'ModelRoutingShadowCompared'
+  // Phase 8 — Skills framework
+  | 'SkillSelected'
+  | 'SkillSelectionFailed'
+  | 'SkillPlanCreated'
+  | 'SkillExecutionStarted'
+  | 'SkillContextResolved'
+  | 'SkillProviderCompleted'
+  | 'SkillOutputValidated'
+  | 'SkillToolProposed'
+  | 'SkillExecutionCompleted'
+  | 'SkillExecutionFailed'
   // Files / vision
   | 'FileAnalysisStarted'
   | 'FileAnalysisCompleted'
@@ -78,6 +89,7 @@ export type AIObservationSurface =
   | 'TEST_LAB'
   | 'BUSINESS_INTERACT'
   | 'GOVERNANCE'
+  | 'SKILL'
   | 'OTHER';
 
 export type AIObservationDeliveryClass = 'DURABLE_BOUNDED' | 'ASYNC_AT_LEAST_ONCE';

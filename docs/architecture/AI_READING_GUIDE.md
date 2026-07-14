@@ -56,6 +56,12 @@ Read in this order unless you already know the layer you need.
 **Phase 7 Provider-Neutral Model Routing (Shadow Mode):**  
 [`AI_MODEL_ROUTER_ARCHITECTURE.md`](./AI_MODEL_ROUTER_ARCHITECTURE.md) · [`AI_MODEL_ROUTING_AUDIT.md`](./AI_MODEL_ROUTING_AUDIT.md) · [`AI_CAPABILITY_MODEL.md`](./AI_CAPABILITY_MODEL.md) · [`AI_ROUTING_TIERS.md`](./AI_ROUTING_TIERS.md) · [`AI_MODEL_CATALOG.md`](./AI_MODEL_CATALOG.md) · [`AI_ROUTING_POLICY.md`](./AI_ROUTING_POLICY.md) · [`AI_PHASE7_CLOSEOUT.md`](./AI_PHASE7_CLOSEOUT.md)
 
+**Phase 8 AI Skills Framework:**  
+[`AI_SKILLS_ARCHITECTURE.md`](./AI_SKILLS_ARCHITECTURE.md) · [`AI_SKILL_CONTRACT.md`](./AI_SKILL_CONTRACT.md) · [`AI_SKILL_EXECUTION_MODEL.md`](./AI_SKILL_EXECUTION_MODEL.md) · [`AI_SKILL_REGISTRY.md`](./AI_SKILL_REGISTRY.md) · [`AI_SKILL_LIFECYCLE.md`](./AI_SKILL_LIFECYCLE.md) · [`AI_SKILL_CANDIDATE_AUDIT.md`](./AI_SKILL_CANDIDATE_AUDIT.md) · [`AI_SKILL_PILOT_CATALOG.md`](./AI_SKILL_PILOT_CATALOG.md) · [`AI_SKILL_CERTIFICATION_STANDARD.md`](./AI_SKILL_CERTIFICATION_STANDARD.md) · [`AI_SKILL_SECURITY_MODEL.md`](./AI_SKILL_SECURITY_MODEL.md) · [`AI_PHASE8_SKILLS_CERTIFICATION_MATRIX.md`](./AI_PHASE8_SKILLS_CERTIFICATION_MATRIX.md) · [`AI_PHASE8_CLOSEOUT.md`](./AI_PHASE8_CLOSEOUT.md)
+
+**Phase 8B Skill Productization (canonical product paths):**  
+[`AI_SKILL_PRODUCTIZATION.md`](./AI_SKILL_PRODUCTIZATION.md) · [`AI_SKILL_PRODUCTIZATION_AUDIT.md`](./AI_SKILL_PRODUCTIZATION_AUDIT.md) · [`AI_SKILL_CANONICAL_EXECUTION_MODEL.md`](./AI_SKILL_CANONICAL_EXECUTION_MODEL.md) · [`AI_SKILL_QUALITY_MODEL.md`](./AI_SKILL_QUALITY_MODEL.md) · [`AI_PHASE8B_CLOSEOUT.md`](./AI_PHASE8B_CLOSEOUT.md)
+
 **Always pair principles with law:**
 
 - Platform law → [`AI_PLATFORM_CONSTITUTION.md`](./AI_PLATFORM_CONSTITUTION.md)  
@@ -91,4 +97,5 @@ Do **not** delete historical documents.
 |-------|-------------|----------------------|
 | Conversational runtime | Twin + constitution + audit | — |
 | Model tiers FAST/BALANCED/DEEP | Phase 7 Model Router (shadow) + [`AI_ROUTING_TIERS.md`](./AI_ROUTING_TIERS.md) | Live cutover still future — production uses `selectLlmProvider` |
+| Governed Skills | Phase 8 Skills Framework + [`AI_SKILLS_ARCHITECTURE.md`](./AI_SKILLS_ARCHITECTURE.md) | AI Studio, Industry Packs, customer-created Skills |
 | Industry Intelligence | Slot in Intelligence Model | Not implemented |

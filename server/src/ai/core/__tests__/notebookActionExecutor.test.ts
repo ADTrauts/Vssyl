@@ -6,6 +6,7 @@ import { ActionExecutor } from '../ActionExecutor';
 import type { AIAction, UserContext } from '../DigitalLifeTwinService';
 import * as notebookAIActionService from '../../../services/notebook/notebookAIActionService';
 import * as notebookAIContextService from '../../../services/notebook/notebookAIContextService';
+import * as skillCanonicalEntry from '../../skills/skillCanonicalEntry';
 import * as actionExecutorRegistryModule from '../ActionExecutorRegistry';
 
 const executorSource = readFileSync(
@@ -13,7 +14,7 @@ const executorSource = readFileSync(
   'utf8'
 );
 
-describe('ActionExecutor notebook paths (Phase 7+)', () => {
+describe('ActionExecutor notebook paths (Phase 8B canonical Skills)', () => {
   const userContext: UserContext = {
     userId: 'user-1',
     personality: {},
@@ -44,7 +45,7 @@ describe('ActionExecutor notebook paths (Phase 7+)', () => {
 
   it('does not import notebook controllers', () => {
     expect(executorSource).not.toMatch(/controllers\/notebook/);
-    expect(executorSource).toMatch(/notebookAIActionService/);
+    expect(executorSource).toMatch(/skillCanonicalEntry/);
     expect(executorSource).toMatch(/notebookAIContextService/);
   });
 
@@ -57,8 +58,8 @@ describe('ActionExecutor notebook paths (Phase 7+)', () => {
     expect(block).not.toMatch(/mockRes/);
   });
 
-  it('executeAction summarize_page uses notebookAIActionService', async () => {
-    const spy = vi.spyOn(notebookAIActionService, 'summarizePage').mockResolvedValue({
+  it('executeAction summarize_page uses Skill canonical entry', async () => {
+    const spy = vi.spyOn(skillCanonicalEntry, 'runNotebookPageSummarySkill').mockResolvedValue({
       summary: 'Brief',
       keyDecisions: [],
       openTasks: [],
@@ -71,7 +72,9 @@ describe('ActionExecutor notebook paths (Phase 7+)', () => {
       userContext
     );
 
-    expect(spy).toHaveBeenCalledWith('page-1', 'user-1');
+    expect(spy).toHaveBeenCalledWith(
+      expect.objectContaining({ pageId: 'page-1', userId: 'user-1' })
+    );
     expect(result.success).toBe(true);
     expect(result.metadata?.module).toBe('notebook');
   });

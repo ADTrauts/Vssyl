@@ -5,6 +5,10 @@ import { NotesServiceError } from '../services/notes/notesErrors';
 import { NotebookAIServiceError } from '../services/notebook/notebookAIErrors';
 import * as notebookAIActionService from '../services/notebook/notebookAIActionService';
 import type { NotebookActionItemProposal } from '../services/notebook/notebookAIResultTypes';
+import {
+  runNotebookActionExtractionSkill,
+  runNotebookPageSummarySkill,
+} from '../ai/skills/skillCanonicalEntry';
 
 function mapError(res: Response, error: unknown): boolean {
   if (error instanceof NotebookAIServiceError) {
@@ -52,7 +56,7 @@ export async function postPageSummary(req: Request, res: Response): Promise<void
       res.status(400).json({ error: 'pageId is required' });
       return;
     }
-    const result = await notebookAIActionService.summarizePage(pageId, userId);
+    const result = await runNotebookPageSummarySkill({ pageId, userId });
     res.status(200).json(result);
   } catch (error: unknown) {
     if (mapError(res, error)) return;
@@ -79,7 +83,7 @@ export async function postExtractActionItems(req: Request, res: Response): Promi
     }
     const selectedText =
       typeof req.body?.selectedText === 'string' ? req.body.selectedText : undefined;
-    const result = await notebookAIActionService.extractActionItems({
+    const result = await runNotebookActionExtractionSkill({
       pageId,
       userId,
       selectedText,

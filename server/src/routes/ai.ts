@@ -757,8 +757,15 @@ router.post('/extract-document', authenticateJWT, async (req, res) => {
       });
     }
 
-    const { extractInvoiceOrReceipt } = await import('../services/documentExtractionService');
-    const result = await extractInvoiceOrReceipt(combinedText, type);
+    const { runStructuredDocumentExtractionSkill } = await import(
+      '../ai/skills/skillCanonicalEntry'
+    );
+    const result = await runStructuredDocumentExtractionSkill({
+      documentText: combinedText,
+      documentType: type,
+      userId,
+      businessId: typeof req.body?.businessId === 'string' ? req.body.businessId : null,
+    });
     if (!result.success) {
       return res.status(422).json({ success: false, error: result.error });
     }

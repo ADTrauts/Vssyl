@@ -31,7 +31,14 @@ function ensureReadable(ctx: Awaited<ReturnType<typeof loadGroundedAIContext>>):
   }
 }
 
-export async function summarizePage(
+/**
+ * Domain implementations for Notebook AI pilots.
+ * Product entry points must call Skill canonical helpers / compat wrappers — not these — so
+ * observation, evaluation linkage, and Model Router shadow stay owned by the Skill runner.
+ *
+ * `summarizePage` / `extractActionItems` remain as thin Phase 8B compatibility layers.
+ */
+export async function summarizePageImplementation(
   pageId: string,
   userId: string
 ): Promise<NotebookPageSummaryResult> {
@@ -45,6 +52,7 @@ export async function summarizePage(
     systemPrompt: system,
     userPrompt: user,
     jsonMode: true,
+    skipShadowRouting: true,
   });
 
   if (!completion.success) {
@@ -67,7 +75,20 @@ export async function summarizePage(
   };
 }
 
-export async function extractActionItems(params: {
+/**
+ * @deprecated Prefer Skill canonical entry. Compatibility wrapper → Skill runner.
+ */
+export async function summarizePage(
+  pageId: string,
+  userId: string
+): Promise<NotebookPageSummaryResult> {
+  const { runNotebookPageSummarySkill } = await import(
+    '../../ai/skills/skillCanonicalEntry.js'
+  );
+  return runNotebookPageSummarySkill({ pageId, userId });
+}
+
+export async function extractActionItemsImplementation(params: {
   pageId: string;
   userId: string;
   selectedText?: string;
@@ -81,6 +102,7 @@ export async function extractActionItems(params: {
     systemPrompt: system,
     userPrompt: user,
     jsonMode: true,
+    skipShadowRouting: true,
   });
 
   if (!completion.success) {
@@ -101,6 +123,20 @@ export async function extractActionItems(params: {
     })),
     warnings: mergeWarnings(ctx.warnings),
   };
+}
+
+/**
+ * @deprecated Prefer Skill canonical entry. Compatibility wrapper → Skill runner.
+ */
+export async function extractActionItems(params: {
+  pageId: string;
+  userId: string;
+  selectedText?: string;
+}): Promise<NotebookExtractActionItemsResult> {
+  const { runNotebookActionExtractionSkill } = await import(
+    '../../ai/skills/skillCanonicalEntry.js'
+  );
+  return runNotebookActionExtractionSkill(params);
 }
 
 export async function confirmExtractedActionItems(params: {

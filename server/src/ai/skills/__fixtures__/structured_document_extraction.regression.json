@@ -1,0 +1,36 @@
+{
+  "skillKey": "structured_document_extraction",
+  "skillVersion": "1.0.0",
+  "evaluationProfileId": "eval.structured_document_extraction.v1",
+  "description": "Planner + schema contract fixture for invoice/receipt extraction",
+  "cases": [
+    {
+      "id": "sde-valid-invoice",
+      "input": {
+        "documentText": "Invoice #100 from Acme Corp total $42.00 dated 2026-07-01",
+        "documentType": "invoice"
+      },
+      "expectPlanOk": true,
+      "mockOutput": {
+        "success": true,
+        "data": { "vendor": "Acme Corp", "amount": 42, "currency": "USD", "date": "2026-07-01" }
+      },
+      "expectOutputValid": true
+    },
+    {
+      "id": "sde-missing-type",
+      "input": { "documentText": "enough characters to pass length checks here" },
+      "expectPlanOk": false
+    },
+    {
+      "id": "sde-failed-extract",
+      "input": {
+        "documentText": "Invoice #100 from Acme Corp total $42.00 dated 2026-07-01",
+        "documentType": "receipt"
+      },
+      "expectPlanOk": true,
+      "mockOutput": { "success": false, "error": "Extraction did not match expected schema." },
+      "expectOutputValid": true
+    }
+  ]
+}

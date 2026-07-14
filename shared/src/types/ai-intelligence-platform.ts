@@ -14,6 +14,7 @@ export type AIExecutionSurface =
   | 'ACTION_EXECUTOR'
   | 'TEST_LAB'
   | 'BUSINESS_INTERACT'
+  | 'SKILL'
   | 'OTHER';
 
 /** Reconstructable timeline stages for one execution. */

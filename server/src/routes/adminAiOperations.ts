@@ -502,4 +502,157 @@ router.get('/routing/shadow', async (req, res) => {
   });
 });
 
+/** Phase 8/8B — Skill Registry (canonical productization observe). */
+router.get('/skills/overview', async (req, res) => {
+  const ctx = authCtx(req);
+  const gate = requireOperationsPermission(ctx, 'operations:read');
+  if (!gate.ok) return res.status(gate.status).json({ success: false, error: gate.error });
+  const {
+    listSkillDefinitions,
+    listSkillRegistryItems,
+  } = await import('../ai/skills/skillRegistry');
+  const { summarizeSkillMetrics } = await import('../ai/skills/skillMetrics');
+  const { listDurableSkillQuality } = await import('../ai/skills/skillDurableQuality');
+  const { fingerprintSkillBundle } = await import('../ai/skills/skillFingerprints');
+  const { getSkillDefinition } = await import('../ai/skills/skillRegistry');
+  const { AI_SKILLS_POLICY_VERSION } = await import('vssyl-shared');
+  const all = listSkillDefinitions();
+  const items = listSkillRegistryItems();
+  const processMetrics = summarizeSkillMetrics();
+  const durableBySkill = await listDurableSkillQuality(
+    prisma,
+    items.map((i) => i.key)
+  );
+  const bySkill: Record<string, number> = {};
+  for (const d of items) {
+    bySkill[d.key] =
+      durableBySkill[d.key]?.executionCount ?? summarizeSkillMetrics(d.key).executionCount;
+  }
+  const fingerprints: Record<string, string> = {};
+  for (const item of items) {
+    const def = getSkillDefinition(item.key);
+    if (def) fingerprints[`${def.key}@${def.version}`] = fingerprintSkillBundle(def).bundleHash;
+  }
+  return res.json({
+    success: true,
+    data: {
+      overview: {
+        policyVersion: AI_SKILLS_POLICY_VERSION,
+        skillCount: items.length,
+        activeCount: all.filter((d) => d.status === 'ACTIVE').length,
+        draftCount: all.filter((d) => d.status === 'DRAFT').length,
+        deprecatedCount: all.filter((d) => d.status === 'DEPRECATED').length,
+        recentExecutions: Object.values(durableBySkill).reduce(
+          (a, s) => a + s.executionCount,
+          0
+        ),
+        successCount: Object.values(durableBySkill).reduce((a, s) => a + s.successCount, 0),
+        failureCount: Object.values(durableBySkill).reduce((a, s) => a + s.failureCount, 0),
+        bySkill,
+      },
+      items,
+      metrics: processMetrics,
+      durableQuality: durableBySkill,
+      fingerprints,
+      productionRoutingUnchanged: true,
+      customerCreatedSkillsEnabled: false,
+      industryPacksEnabled: false,
+      canonicalProductization: true,
+    },
+  });
+});
+
+router.get('/skills/:key', async (req, res) => {
+  const ctx = authCtx(req);
+  const gate = requireOperationsPermission(ctx, 'operations:read');
+  if (!gate.ok) return res.status(gate.status).json({ success: false, error: gate.error });
+  const { getSkillDefinition, listVersionsForKey } = await import('../ai/skills/skillRegistry');
+  const { summarizeSkillMetrics } = await import('../ai/skills/skillMetrics');
+  const { getSkillInstructionAsset } = await import('../ai/skills/skillInstructionAssets');
+  const { getDurableSkillQualitySummary } = await import('../ai/skills/skillDurableQuality');
+  const { fingerprintSkillBundle, assertSkillFingerprintIntegrity } = await import(
+    '../ai/skills/skillFingerprints'
+  );
+  const def = getSkillDefinition(req.params.key);
+  if (!def) return res.status(404).json({ success: false, error: 'Skill not found' });
+  const durableQuality = await getDurableSkillQualitySummary(prisma, def.key);
+  const fingerprint = fingerprintSkillBundle(def);
+  const integrity = assertSkillFingerprintIntegrity(def);
+
+  const recentIds = durableQuality.recentExecutionIds;
+  let evaluations: unknown[] = [];
+  let corrections: unknown[] = [];
+  let regressions: unknown[] = [];
+  try {
+    [evaluations, corrections, regressions] = await Promise.all([
+      recentIds.length
+        ? prisma.aIEvaluation.findMany({
+            where: { executionRecordId: { in: recentIds } },
+            orderBy: { createdAt: 'desc' },
+            take: 20,
+            select: {
+              id: true,
+              executionRecordId: true,
+              workflowStatus: true,
+              score: true,
+              createdAt: true,
+            },
+          })
+        : Promise.resolve([]),
+      recentIds.length
+        ? prisma.aICorrectionRoute.findMany({
+            where: { executionRecordId: { in: recentIds } },
+            orderBy: { createdAt: 'desc' },
+            take: 20,
+            select: {
+              id: true,
+              executionRecordId: true,
+              status: true,
+              rootCauseCode: true,
+              createdAt: true,
+            },
+          })
+        : Promise.resolve([]),
+      recentIds.length
+        ? prisma.aIRegressionCase.findMany({
+            where: { executionRecordId: { in: recentIds } },
+            orderBy: { createdAt: 'desc' },
+            take: 20,
+            select: {
+              id: true,
+              executionRecordId: true,
+              status: true,
+              title: true,
+              createdAt: true,
+            },
+          })
+        : Promise.resolve([]),
+    ]);
+  } catch {
+    /* intelligence tables may be absent in some local DBs */
+  }
+
+  return res.json({
+    success: true,
+    data: {
+      definition: def,
+      versions: listVersionsForKey(req.params.key),
+      metrics: summarizeSkillMetrics(req.params.key),
+      durableQuality,
+      fingerprint,
+      integrity,
+      instructionAsset: getSkillInstructionAsset(def.instructionAssetKey) ?? null,
+      evaluationHistory: evaluations,
+      corrections,
+      regressions,
+      certification: {
+        status: def.status,
+        notes: def.certificationNotes ?? null,
+        evaluationProfileId: def.evaluationProfile.id,
+        activatedAt: def.activatedAt ?? null,
+      },
+    },
+  });
+});
+
 export default router;

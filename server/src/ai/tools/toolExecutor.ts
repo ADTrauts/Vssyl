@@ -86,8 +86,8 @@ export async function executeTool(
           result = { success: false, message: 'pageId is required.' };
           break;
         }
-        const { summarizePage } = await import('../../services/notebook/notebookAIActionService.js');
-        const summary = await summarizePage(pageId, userId);
+        const { runNotebookPageSummarySkill } = await import('../skills/skillCanonicalEntry.js');
+        const summary = await runNotebookPageSummarySkill({ pageId, userId });
         result = {
           success: true,
           message: summary.summary?.slice(0, 500) || 'Summary generated.',
@@ -102,8 +102,12 @@ export async function executeTool(
           break;
         }
         const selectedText = (args.selectedText as string) || undefined;
-        const { extractActionItems } = await import('../../services/notebook/notebookAIActionService.js');
-        const extracted = await extractActionItems({ pageId, userId, selectedText });
+        const { runNotebookActionExtractionSkill } = await import('../skills/skillCanonicalEntry.js');
+        const extracted = await runNotebookActionExtractionSkill({
+          pageId,
+          userId,
+          selectedText,
+        });
         result = {
           success: true,
           message: `Proposed ${extracted.proposals.length} action item(s). Confirm in Notebook to create tasks.`,

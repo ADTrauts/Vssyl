@@ -19,6 +19,7 @@ export const PIPELINE_OPERATOR_NAV: NavItem[] = [
   { href: '/admin-portal/ai-pipeline/regressions', label: 'Regressions' },
   { href: '/admin-portal/ai-pipeline/metrics', label: 'Metrics' },
   { href: '/admin-portal/ai-pipeline/model-routing', label: 'Model Routing' },
+  { href: '/admin-portal/ai-pipeline/skills', label: 'Skills' },
   { href: '/admin-portal/ai-pipeline/diagnostics', label: 'Diagnostics' },
   { href: '/admin-portal/ai-pipeline/test-lab', label: 'Test Lab' },
   { href: '/admin-portal/ai-pipeline/replay', label: 'Replay' },

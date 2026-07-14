@@ -1,14 +1,15 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import { executeTool } from '../toolExecutor';
+import * as skillCanonicalEntry from '../../skills/skillCanonicalEntry';
 import * as notebookAIActionService from '../../../services/notebook/notebookAIActionService';
 
-describe('toolExecutor notebook tools (Phase 7+)', () => {
+describe('toolExecutor notebook tools (Phase 8B canonical Skills)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it('summarize_notebook_page delegates to notebookAIActionService', async () => {
-    vi.spyOn(notebookAIActionService, 'summarizePage').mockResolvedValue({
+  it('summarize_notebook_page delegates to Skill canonical entry', async () => {
+    vi.spyOn(skillCanonicalEntry, 'runNotebookPageSummarySkill').mockResolvedValue({
       summary: 'Team sync',
       keyDecisions: [],
       openTasks: [],
@@ -23,15 +24,21 @@ describe('toolExecutor notebook tools (Phase 7+)', () => {
     );
     const parsed = JSON.parse(raw) as { success: boolean; data?: { pageId: string } };
 
+    expect(skillCanonicalEntry.runNotebookPageSummarySkill).toHaveBeenCalledWith({
+      pageId: 'page-abc',
+      userId: 'user-1',
+    });
     expect(parsed.success).toBe(true);
     expect(parsed.data?.pageId).toBe('page-abc');
   });
 
   it('extract_notebook_action_items does not create tasks', async () => {
-    const extractSpy = vi.spyOn(notebookAIActionService, 'extractActionItems').mockResolvedValue({
-      proposals: [{ title: 'Send recap', description: null, dueDate: null, priority: null }],
-      warnings: [],
-    });
+    const extractSpy = vi
+      .spyOn(skillCanonicalEntry, 'runNotebookActionExtractionSkill')
+      .mockResolvedValue({
+        proposals: [{ title: 'Send recap', description: null, dueDate: null, priority: null }],
+        warnings: [],
+      });
     const confirmSpy = vi.spyOn(notebookAIActionService, 'confirmExtractedActionItems');
 
     const raw = await executeTool(

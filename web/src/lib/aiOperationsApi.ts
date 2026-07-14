@@ -172,6 +172,42 @@ export const aiOperationsApi = {
     );
   },
 
+  getSkillsOverview: () =>
+    request<{
+      overview: import('shared/types').AISkillOpsOverview;
+      items: import('shared/types').AISkillRegistryListItem[];
+      metrics: {
+        executionCount: number;
+        successCount: number;
+        failureCount: number;
+        schemaValidationFailures: number;
+        groundingFailures: number;
+        averageLatencyMs: number;
+        routerShadowAgreementRate: number | null;
+      };
+      durableQuality?: Record<string, unknown>;
+      fingerprints?: Record<string, string>;
+      productionRoutingUnchanged: boolean;
+      customerCreatedSkillsEnabled: boolean;
+      industryPacksEnabled: boolean;
+      canonicalProductization?: boolean;
+    }>('/skills/overview'),
+
+  getSkillDetail: (key: string) =>
+    request<{
+      definition: import('shared/types').AISkillDefinition;
+      versions: import('shared/types').AISkillDefinition[];
+      metrics: Record<string, unknown>;
+      durableQuality?: Record<string, unknown>;
+      fingerprint?: Record<string, unknown>;
+      integrity?: Record<string, unknown>;
+      instructionAsset: unknown;
+      evaluationHistory?: unknown[];
+      corrections?: unknown[];
+      regressions?: unknown[];
+      certification?: Record<string, unknown>;
+    }>(`/skills/${encodeURIComponent(key)}`),
+
   getMetrics: (from?: string, to?: string) => {
     const qs = new URLSearchParams();
     if (from) qs.set('from', from);

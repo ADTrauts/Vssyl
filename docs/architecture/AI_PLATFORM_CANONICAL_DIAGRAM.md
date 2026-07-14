@@ -52,10 +52,18 @@ flowchart TB
 
   subgraph Providers["Providers"]
     Route[providerRouting + modelCatalog]
+    Shadow[Model Router shadow<br/>Phase 7]
     Fac[aiProviderFactory]
     OAI[OpenAI]
     Ant[Anthropic]
     Loc[Local / Fake]
+  end
+
+  subgraph SkillsLayer["Skills (Phase 8)"]
+    SkillAPI["/api/ai/skills"]
+    SkillRun[skillRunner]
+    SkillReg[skillRegistry]
+    SkillAdapters[Module adapters]
   end
 
   subgraph Intelligence["Observe → Improve"]
@@ -91,9 +99,19 @@ flowchart TB
 
   Core --> Route
   Route --> Fac
+  Route -.->|shadow observe| Shadow
   Fac --> OAI
   Fac --> Ant
   Fac --> Loc
+
+  PC --> SkillAPI
+  BA --> SkillAPI
+  SkillAPI --> SkillRun
+  SkillRun --> SkillReg
+  SkillRun --> SkillAdapters
+  SkillRun --> Obs
+  SkillRun -.->|shadow observe| Shadow
+  SkillAdapters --> Route
 
   Core --> Tools
   Tools --> Gov
@@ -116,7 +134,21 @@ flowchart TB
   Ops --> Corr
   Ops --> Reg
   Ops --> Obs
+  Hub --> SkillReg
 ```
+
+---
+
+## Skills relationship rules (Phase 8)
+
+| From | To | Rule |
+|------|----|------|
+| Skill runner | Twin Core | **No** invocation — dedicated execution path |
+| Skill runner | Module adapters | Wraps authorized SoR services |
+| Skill runner | Observation | `surface: SKILL` events + optional execution record |
+| Skill runner | Model Router shadow | Observe-only; production routing unchanged |
+| Intent type | Skill | Selection hint only — explicit `skillKey` authoritative on customer API |
+| Capability | Provider | Skills declare capability; adapters choose models today |
 
 ---
 
@@ -139,4 +171,5 @@ flowchart TB
 - Corrections do **not** write into Twin prompts or provider selection.  
 - Replay prepare does **not** re-execute production traffic.  
 - Admin Pipeline does **not** own module SoR data.  
+- Skills runner does **not** fork Twin Core or open tool mutation rounds (Phase 8 pilots).  
 - Analytics orphan scaffolds are **not** part of this diagram.

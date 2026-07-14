@@ -17,4 +17,5 @@ export * from './ai-intelligence-platform';
 export * from './ai-operations-center';
 export * from './ai-runtime-observation';
 export * from './ai-model-routing';
+export * from './ai-skills';
 export * from './analyticsDashboardSummary';

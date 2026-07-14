@@ -32,6 +32,8 @@ export async function runNotebookAICompletion(params: {
   systemPrompt: string;
   userPrompt: string;
   jsonMode?: boolean;
+  /** When true, Skill runner owns shadow Model Router observation (Phase 8B). */
+  skipShadowRouting?: boolean;
 }): Promise<NotebookAICompletionOutcome> {
   const apiKey = process.env.OPENAI_API_KEY?.trim();
   if (!apiKey) {
@@ -49,16 +51,18 @@ export async function runNotebookAICompletion(params: {
   const client = new OpenAI({ apiKey, timeout: 90000, maxRetries: 1 });
   const model = process.env.NOTEBOOK_AI_MODEL?.trim() || 'gpt-4o-mini';
 
-  try {
-    const { shadowRouteForSpecializedPath } = await import('../../ai/routing/shadowRouting');
-    shadowRouteForSpecializedPath({
-      capability: params.jsonMode ? 'STRUCTURED_SUMMARY' : 'STRUCTURED_SUMMARY',
-      currentProvider: 'openai',
-      currentModel: model,
-      surface: 'NOTEBOOK',
-    });
-  } catch {
-    /* shadow never blocks notebook */
+  if (!params.skipShadowRouting) {
+    try {
+      const { shadowRouteForSpecializedPath } = await import('../../ai/routing/shadowRouting');
+      shadowRouteForSpecializedPath({
+        capability: params.jsonMode ? 'STRUCTURED_SUMMARY' : 'STRUCTURED_SUMMARY',
+        currentProvider: 'openai',
+        currentModel: model,
+        surface: 'NOTEBOOK',
+      });
+    } catch {
+      /* shadow never blocks notebook */
+    }
   }
 
   try {

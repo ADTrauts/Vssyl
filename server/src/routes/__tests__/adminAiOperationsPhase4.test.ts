@@ -141,4 +141,20 @@ describe('Phase 4 admin AI operations API auth', () => {
       .set(createAuthHeader(regularUser))
       .expect(403);
   });
+
+  it('GET /api/admin/ai/operations/skills/overview returns registry shape', async () => {
+    const { resetAndRegisterBuiltInSkillsForTests } = await import(
+      '../../ai/skills/registerBuiltInSkills'
+    );
+    await resetAndRegisterBuiltInSkillsForTests();
+    const res = await request(app)
+      .get('/api/admin/ai/operations/skills/overview')
+      .set(createAuthHeader(adminUser))
+      .expect(200);
+    expect(res.body.success).toBe(true);
+    expect(res.body.data.overview.skillCount).toBeGreaterThanOrEqual(3);
+    expect(res.body.data.customerCreatedSkillsEnabled).toBe(false);
+    expect(res.body.data.productionRoutingUnchanged).toBe(true);
+    expect(Array.isArray(res.body.data.items)).toBe(true);
+  });
 });

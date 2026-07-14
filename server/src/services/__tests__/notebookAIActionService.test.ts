@@ -7,9 +7,9 @@ import * as todoAI from '../todoAIActionService';
 import * as notebookLinkService from '../notebook/notebookLinkService';
 import {
   confirmExtractedActionItems,
-  extractActionItems,
+  extractActionItemsImplementation,
   generateMeetingRecap,
-  summarizePage,
+  summarizePageImplementation,
 } from '../notebook/notebookAIActionService';
 
 const grounded = {
@@ -107,13 +107,14 @@ describe('notebookAIActionService', () => {
       }),
     });
 
-    const result = await summarizePage('page-1', 'u1');
+    const result = await summarizePageImplementation('page-1', 'u1');
 
     expect(result.summary).toBe('Short summary');
     expect(aiCompletion.runNotebookAICompletion).toHaveBeenCalledWith(
       expect.objectContaining({
         userId: 'u1',
         jsonMode: true,
+        skipShadowRouting: true,
       })
     );
   });
@@ -126,7 +127,7 @@ describe('notebookAIActionService', () => {
       }),
     });
 
-    const result = await extractActionItems({ pageId: 'page-1', userId: 'u1' });
+    const result = await extractActionItemsImplementation({ pageId: 'page-1', userId: 'u1' });
 
     expect(result.proposals).toHaveLength(1);
     expect(result.proposals[0].title).toBe('Email team');
@@ -212,6 +213,6 @@ describe('notebookAIActionService', () => {
       new NotesServiceError('Page not found', 'not_found', 404)
     );
 
-    await expect(summarizePage('missing', 'u1')).rejects.toBeInstanceOf(NotesServiceError);
+    await expect(summarizePageImplementation('missing', 'u1')).rejects.toBeInstanceOf(NotesServiceError);
   });
 });

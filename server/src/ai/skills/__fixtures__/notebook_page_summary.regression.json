@@ -1,0 +1,40 @@
+{
+  "skillKey": "notebook_page_summary",
+  "skillVersion": "1.0.0",
+  "evaluationProfileId": "eval.notebook_page_summary.v1",
+  "description": "Planner + schema contract fixture for notebook page summary (no provider calls)",
+  "cases": [
+    {
+      "id": "nps-valid-input",
+      "input": { "pageId": "page-fixture-1" },
+      "expectPlanOk": true,
+      "mockOutput": {
+        "summary": "A short grounded summary of the page.",
+        "keyDecisions": ["Ship Phase 8B"],
+        "openTasks": ["Wire Skill canonical entry"],
+        "risksAndFollowUps": ["Dual-path residual"],
+        "warnings": [],
+        "citedSources": ["notebook.page:page-fixture-1"],
+        "uncertainties": []
+      },
+      "expectOutputValid": true
+    },
+    {
+      "id": "nps-missing-page",
+      "input": {},
+      "expectPlanOk": false
+    },
+    {
+      "id": "nps-extra-field",
+      "input": { "pageId": "page-fixture-1", "evil": true },
+      "expectPlanOk": false
+    },
+    {
+      "id": "nps-malformed-output",
+      "input": { "pageId": "page-fixture-1" },
+      "expectPlanOk": true,
+      "mockOutput": { "summary": "incomplete" },
+      "expectOutputValid": false
+    }
+  ]
+}

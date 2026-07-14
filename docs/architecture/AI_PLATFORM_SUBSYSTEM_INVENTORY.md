@@ -14,7 +14,8 @@ Certification key: **CERTIFIED** · **CERTIFIED_WITH_LIMITATION** · **DESIGN_ON
 | Responsibility | Single owner | Notes |
 |----------------|--------------|-------|
 | Twin conversational orchestration | `DigitalLifeTwinCore` (via Service facade) | Business Twin wraps; does not fork runtime |
-| Provider selection (chat) | `providerRouting` + `modelCatalog` + `aiProviderFactory` | Phase 7 extends here |
+| Provider selection (chat) | `providerRouting` + `modelCatalog` + `aiProviderFactory` | Phase 7 shadow extends here |
+| Governed Skills | `server/src/ai/skills/*` | Phase 8; dedicated runner — not Twin |
 | Context provider fetch | `ContextProviderOrchestrator` | CrossModule is facade/entry |
 | Context assembly / budget | `AIContextAssembler` + budget manager | |
 | Grounding retrieval | `runPipelineGroundingRetrieval` (pipeline) | |
@@ -182,7 +183,7 @@ Certification key: **CERTIFIED** · **CERTIFIED_WITH_LIMITATION** · **DESIGN_ON
 | Purpose | LLM and modality adapters |
 | Owner | `server/src/ai/providers` (+ media routes) |
 | SoT | `docs/ai/PROVIDERS.md` |
-| Future | Phase 7 Model Routing |
+| Future | Phase 7 Model Routing (shadow shipped); live cutover future |
 | Certification | **CERTIFIED_WITH_LIMITATION** (hardcoded SPECIALIZED paths) |
 
 ### Notebook AI
@@ -192,6 +193,22 @@ Certification key: **CERTIFIED** · **CERTIFIED_WITH_LIMITATION** · **DESIGN_ON
 | Purpose | Page-scoped AI helpers |
 | Owner | Notebook module |
 | Certification | **CERTIFIED** (specialized; not Twin parity) |
+
+### AI Skills Framework (Phase 8)
+
+| Field | Value |
+|-------|-------|
+| Purpose | Governed task contracts — selection, plan, execute, observe |
+| Owner | `server/src/ai/skills` (`skillRunner`, `skillRegistry`) |
+| SoT | `docs/architecture/AI_SKILLS_ARCHITECTURE.md`, `shared/src/types/ai-skills.ts` |
+| Services | registry, selection, planner, runner, implementations, metrics, observation |
+| Models | In-process maps only — **no** Prisma skill executable tables |
+| APIs | `/api/ai/skills` (customer); `/api/admin/ai/operations/skills/*` (operator) |
+| UI | `/admin-portal/ai-pipeline/skills` |
+| Dependencies | Module adapters, observation, execution records, Phase 7 shadow routing |
+| Consumers | Module clients, operators, future governed task callers |
+| Future | Additional Skill candidates; intent API; durable metrics |
+| Certification | **CERTIFIED_WITH_LIMITATION** (three pilots; dual-path legacy routes) |
 
 ### Admin AI / Business AI / Personal AI
 
@@ -230,7 +247,7 @@ flowchart LR
 
 | Issue | Assessment |
 |-------|------------|
-| Tight coupling | Twin Core → many layers (expected hub; Phase 7 must not enlarge) |
+| Tight coupling | Twin Core → many layers (expected hub; Skills must not route through Core) |
 | Cycles | No hard runtime cycles found; learning async side-effects exist |
 | God objects | Twin Core, ActionExecutor |
 | Architecture violations | Orphan analytics engines; Core LearningEngine parallel path |
