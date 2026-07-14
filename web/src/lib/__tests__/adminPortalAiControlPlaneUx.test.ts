@@ -34,30 +34,24 @@ describe('adminPortalAiControlPlaneUx (0D-F)', () => {
     }
   });
 
-  it('ai-system launcher has only canonical destinations', () => {
+  it('ai-system is a legacy redirect to the canonical AI Pipeline hub', () => {
     const source = readFileSync(join(WEB_ROOT, 'app/admin-portal/ai-system/page.tsx'), 'utf8');
+    expect(source).toMatch(/redirect\(/);
+    expect(source).toMatch(/\/admin-portal\/ai-pipeline/);
     expect(source).not.toMatch(/\/admin-portal\/ai-context/);
     expect(source).not.toMatch(/context-debug/);
-    expect(source).toMatch(/\/admin-portal\/ai-pipeline/);
-    expect(source).toMatch(/\/admin-portal\/ai-pipeline\/test-lab/);
-    expect(source).toMatch(/#provider-governance/);
-    expect(source).toMatch(/\/admin-portal\/business-ai/);
+    expect(source).not.toMatch(/ProviderUsageView/);
+    expect(source).not.toMatch(/Quick Actions/);
   });
 
-  it('ai-system quick actions mirror canonical launcher set', () => {
+  it('ai-system does not embed a duplicate launcher card set', () => {
     const source = readFileSync(join(WEB_ROOT, 'app/admin-portal/ai-system/page.tsx'), 'utf8');
-    const quickSection = source.slice(source.indexOf('Quick Actions'));
-    expect(quickSection).not.toMatch(/\/admin-portal\/ai-context/);
-    expect(quickSection).not.toMatch(/business-intelligence/);
-    const destinations = [
-      '/admin-portal/ai-pipeline',
-      '/admin-portal/ai-pipeline/test-lab',
-      '/admin-portal/ai-pipeline#provider-governance',
-      '/admin-portal/business-ai',
-    ];
-    for (const dest of destinations) {
-      expect(quickSection).toContain(dest);
-    }
+    expect(source).not.toMatch(/id: 'ai-pipeline'/);
+    expect(source).not.toMatch(/id: 'provider-governance'/);
+    expect(source).not.toMatch(/id: 'test-lab'/);
+    expect(source).not.toMatch(/id: 'context-debug'/);
+    // Sub-destinations live on the Pipeline hub / subnav, not this redirect page
+    expect(source).toContain("redirect('/admin-portal/ai-pipeline')");
   });
 
   it('diagnostics page preserves userId deep-link query param', () => {

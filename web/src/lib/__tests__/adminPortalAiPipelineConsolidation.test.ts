@@ -18,18 +18,13 @@ describe('adminPortalAiPipelineConsolidation (0D-D)', () => {
     expect(layout).toContain('buildPlatformControllerNavigationSections');
   });
 
-  it('ai-system launcher has canonical destinations only (0D-F)', () => {
+  it('ai-system redirects to Pipeline hub (0D-F — no duplicate launcher)', () => {
     const aiSystem = readFileSync(join(WEB_ROOT, 'app/admin-portal/ai-system/page.tsx'), 'utf8');
-    const pipelineCards = (aiSystem.match(/id: 'ai-pipeline'/g) ?? []).length;
-    expect(pipelineCards).toBe(1);
-    expect(aiSystem).toMatch(/id: 'provider-governance'/);
-    expect(aiSystem).toMatch(/id: 'test-lab'/);
+    expect(aiSystem).toMatch(/redirect\(/);
+    expect(aiSystem).toContain("redirect('/admin-portal/ai-pipeline')");
     expect(aiSystem).not.toMatch(/id: 'context-debug'/);
     expect(aiSystem).not.toMatch(/\/admin-portal\/ai-context/);
-    const quickActions = aiSystem.slice(aiSystem.indexOf('Quick Actions'));
-    expect(quickActions).toMatch(/href="\/admin-portal\/ai-pipeline"/);
-    expect(quickActions).toMatch(/href="\/admin-portal\/ai-pipeline\/test-lab"/);
-    expect(quickActions).toMatch(/href="\/admin-portal\/ai-pipeline#provider-governance"/);
+    expect(aiSystem).not.toMatch(/Quick Actions/);
   });
 
   it('pipeline hub owns sub-capability navigation via PipelineHubToolSections', () => {

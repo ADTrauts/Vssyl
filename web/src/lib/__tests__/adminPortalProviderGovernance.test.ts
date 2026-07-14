@@ -25,14 +25,14 @@ describe('adminPortalProviderGovernance (0D-C)', () => {
     expect(sections).toContain('/admin-portal/ai-pipeline#provider-governance');
   });
 
-  it('ai-system links to pipeline hub without embedding provider charts', () => {
+  it('ai-system redirects to pipeline hub without embedding provider charts', () => {
     const aiSystem = readFileSync(
       join(WEB_ROOT, 'app/admin-portal/ai-system/page.tsx'),
       'utf8',
     );
     expect(aiSystem).not.toContain('ProviderUsageView');
     expect(aiSystem).not.toContain('Provider Usage Section');
-    expect(aiSystem).toContain("path: '/admin-portal/ai-pipeline'");
+    expect(aiSystem).toContain("redirect('/admin-portal/ai-pipeline')");
   });
 
   it('adminApiService has no orphaned per-provider expense helpers', () => {
