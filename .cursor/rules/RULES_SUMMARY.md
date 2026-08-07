@@ -1,6 +1,17 @@
 # Vssyl Application Rules — Quick Reference
 
-Quick index; each `.mdc` file is the source of truth for its topic. **Placement policy** for new rules/docs is at the end.
+Quick index for Cursor enforcement and procedures. Vssyl architecture/docs remain authoritative; Cursor configuration points to them rather than creating parallel governance.
+
+## Workflow layers
+
+| Layer | Use for | Project location |
+|-------|---------|------------------|
+| **Rules** | Non-negotiable must/must-not constraints | `.cursor/rules/` |
+| **Skills** | Reusable procedures that load when relevant | `.cursor/skills/` |
+| **Commands** | Explicit user-triggered workflows | `.cursor/commands/` |
+| **Hooks** | Deterministic tool safety enforcement | `.cursor/hooks.json`, `.cursor/hooks/` |
+
+Current procedures: `vssyl-architecture-discovery`, `vssyl-prisma-schema-change`, and `vssyl-cloud-agent-verify`. Explicit commands: `/architecture-audit` and `/verify`. The shell hook gates destructive Git, database, SQL, Google Cloud, and live-credential operations.
 
 ## Rule files (`.cursor/rules/`)
 
@@ -10,7 +21,7 @@ Quick index; each `.mdc` file is the source of truth for its topic. **Placement 
 | **`core.mdc`** | Plan/ACT, reuse-first, baseline reads | Memory Bank baseline |
 | **`memory-bank.mdc`** | Baseline reads; doc placement pointer | `docs/guides/DOCUMENTATION_PLACEMENT.md` |
 | **`coding-standards.mdc`** | Index to split standards below | — |
-| **`api-and-auth.mdc`** | URLs, env, auth, proxy, clients, tenancy, logging | — |
+| **`api-and-auth.mdc`** | API/auth/proxy/tenancy must/must-not constraints | — |
 | **`typescript-quality.mdc`** | `any` policy, routers, Prisma JSON | — |
 | **`database-prisma.mdc`** | Modular Prisma, migrations | `docs/guides/PRISMA_MIGRATION_DISCIPLINE.md` |
 | **`storage-and-ai-attachments.mdc`** | GCS, vision pipeline | — |
@@ -23,7 +34,7 @@ Quick index; each `.mdc` file is the source of truth for its topic. **Placement 
 | **`workspace-runtime.mdc`** | Module/widget contracts | `docs/architecture/WORKSPACE_RUNTIME_AND_MODULE_CONTRACTS.md` |
 | **`runtime-state-boundaries.mdc`** | No runtime state / context leakage | same architecture doc |
 | **`module-interoperability.mdc`** | `moduleSpecs.md` contract | `memory-bank/moduleSpecs.md` |
-| **`module-development.mdc`** | Hub, AI, trash, manifests | `docs/guides/MODULE_DEVELOPMENT_GUIDE.md` |
+| **`module-development.mdc`** | Module integration must/must-not constraints | `docs/guides/MODULE_DEVELOPMENT_GUIDE.md` |
 | **`third-party-modules.mdc`** | Marketplace modules | `docs/guides/THIRD_PARTY_MODULE_RULEBOOK.md` |
 | **`release-safety-gates.mdc`** | CI, deploy, health | — |
 | **`platform-standards.mdc`** | Runtime Kernel, tiers, read/write paths, drift | `docs/architecture/VSSYL_PLATFORM_STANDARDS_AND_MODULE_CONTRACT.md` |
@@ -79,15 +90,16 @@ Index: `docs/ux/README.md`
 | Marketplace / partner | `third-party-modules.mdc`, rulebook in `docs/guides/` |
 | Deploy / CI | `release-safety-gates.mdc` |
 
-## Rule placement policy (new rules and docs)
+## Cursor and documentation placement
 
 1. **Agent constraints** → `.cursor/rules/*.mdc` (short; target &lt; 60 lines; use `globs` when scoped).
-2. **Why, examples, anti-patterns, checklists** → `docs/architecture/` or `docs/guides/`.
-3. **Product intent / status** → `memory-bank/`.
-4. **Prefer updating** an existing focused rule before adding a new file.
-5. **New rule file** only for a **distinct platform concern**.
-6. **Cross-reference** long docs; do not paste templates into `.mdc`.
-7. **Update** this file and the relevant README indexes in the same change.
+2. **Reusable agent procedures** → `.cursor/skills/<name>/SKILL.md`; reference canonical docs instead of copying them.
+3. **Explicit repeatable workflows** → `.cursor/commands/*.md`; do not duplicate ordinary prompts.
+4. **Deterministic safety** → `.cursor/hooks.json` + `.cursor/hooks/`; hooks do not teach architecture.
+5. **Why, examples, anti-patterns, checklists** → `docs/architecture/` or `docs/guides/`.
+6. **Product intent / status** → `memory-bank/`.
+7. Prefer updating existing focused material; add a new Rule only for a distinct platform concern.
+8. Cross-reference long docs; update this index and relevant README indexes with workflow changes.
 
 ## Legacy / deprecated
 
@@ -97,4 +109,4 @@ Index: `docs/ux/README.md`
 | `docs/guides/MODULE_DEVELOPMENT_LONG_REFERENCE.md` | **Redirect** → `MODULE_DEVELOPMENT_GUIDE.md` |
 | `docs/guides/POLICY_ENGINE.md`, `docs/guides/DOMAIN_EVENTS.md` | **Redirect** → `docs/architecture/` |
 
-**Last updated:** 2026-06-03
+**Last updated:** 2026-08-07

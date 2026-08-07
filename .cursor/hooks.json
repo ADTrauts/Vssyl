@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "hooks": {
+    "beforeShellExecution": [
+      {
+        "command": "node .cursor/hooks/safety-shell.cjs",
+        "timeout": 5,
+        "failClosed": true
+      }
+    ]
+  }
+}

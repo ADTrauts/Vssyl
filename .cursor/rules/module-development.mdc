@@ -1,56 +1,38 @@
 ---
-description: Module checklist — interoperability, hub UI, AI context, trash, manifests, notifications
+description: Non-negotiable module interoperability, hub, AI, trash, manifest, and notification constraints
 alwaysApply: true
 ---
 
-# Module development (short rule)
+# Module development constraints
 
-**Full templates, examples, troubleshooting:** `docs/guides/MODULE_DEVELOPMENT_GUIDE.md`  
-**Certification / lifecycle:** `memory-bank/moduleSpecs.md` + `.cursor/rules/module-interoperability.mdc`  
-**AI system detail:** `memory-bank/aiContextSystem.md`  
-**Notification metadata:** `docs/guides/NOTIFICATION_METADATA_GUIDE.md`
+**Procedure and templates:** `docs/guides/MODULE_DEVELOPMENT_GUIDE.md`
+**Contract authority:** `memory-bank/moduleSpecs.md` + `module-interoperability.mdc`
 
 ## Interoperability (non-negotiable)
 
 - Same contract for built-in and marketplace modules: **`authorize → execute → emit normalized activity → notify/realtime`**; never emit on failed/unauthorized actions.
 - Tenant scope on every persisted path; activity vs analytics separated; realtime membership proven before join/emit.
-- Partner pipeline: `docs/guides/THIRD_PARTY_MODULE_DEVELOPER_GUIDE.md`, `docs/guides/THIRD_PARTY_MODULE_PIPELINE_SOURCE_OF_TRUTH.md`.
 
-## Business workspace hub (prevent dashboard fallback)
+## Product integration
 
-Every business module needs:
-
-1. **`[Module]WorkspaceLanding.tsx`** under `web/src/components/[module]/`.
-2. **Switch** in `web/src/components/business/BusinessWorkspaceContent.tsx` for `case '[moduleId]':`.
-3. **Icon + display name** in `web/src/components/BrandedWorkDashboard.tsx` (`getModuleIcon`, `getModuleName`).
-
-Build the **hub first**, then deep pages. See long reference for templates.
+- Every business module must provide a workspace landing and register its canonical workspace rendering, icon, and display name before adding deep pages. Follow the guide’s current paths.
+- User-facing deletes use **`trashedAt` soft delete**, exclude trashed records from lists, and integrate Global Trash; no hard delete except a documented exception.
+- Ship an accurate, complete manifest with permissions and dependencies plus AI/notification metadata when applicable.
 
 ## AI context
 
 - Every module **must** ship a real **`ModuleAIContext`** (purpose, category, keywords, patterns, concepts, entities, actions, **`contextProviders`**).
-- At least one **`/api/.../ai/context/...`** provider: auth’d, fast, bounded result sets — see `registerBuiltInModules.ts` patterns.
-
-## AI action executors
-
+- Provide at least one authenticated, fast, bounded `/api/.../ai/context/...` context provider.
 If the module supports AI-driven writes, register an executor / supported operations per platform patterns (see long reference). Read-only modules may omit.
 
 ## Notifications
 
 - Types: **`[module]_[event]`**; use **`NotificationService.createNotification`**; manifest **`notifications`** metadata required for discovery.
-- Update **`web/src/app/notifications/page.tsx`** and **`web/src/api/notifications.ts`** when adding types (see `NOTIFICATION_METADATA_GUIDE.md`).
+- Update **`web/src/app/notifications/page.tsx`** and **`web/src/api/notifications.ts`** when adding types (see `docs/guides/NOTIFICATION_METADATA_GUIDE.md`).
 
-## Global trash
+## Certification
 
-User-facing deletes: **`trashedAt` soft delete**, list queries exclude trashed, integrate **`trashController`** / **`useGlobalTrash`** — no hard delete for user data except documented exceptions. Details in long reference.
+- First-party and marketplace review must apply the `moduleSpecs.md` certification checklist.
+- Partner work must also follow `docs/guides/THIRD_PARTY_MODULE_PIPELINE_SOURCE_OF_TRUTH.md`.
 
-## Manifest
-
-Ship complete manifest including **`aiContext`** and **`notifications`** when applicable; permissions and dependencies accurate for marketplace.
-
-## Approval / review
-
-- **A)** `moduleSpecs.md` certification (permissions, scoping, activity events, realtime, notifications, AI when exposed).  
-- **B)** Product bar: hub works, providers fast, authZ, trash, tests, docs — long reference checklist.
-
-**Last updated:** 2026-05-16
+**Last updated:** 2026-08-07
