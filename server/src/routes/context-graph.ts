@@ -1,7 +1,7 @@
 import { Router } from 'express';
-import { authenticateJWT } from '../middleware/auth.js';
-import * as contextGraphController from '../controllers/contextGraphController.js';
-import * as contextGraphTagController from '../controllers/contextGraphTagController.js';
+import { authenticateJWT } from '../middleware/auth';
+import * as contextGraphController from '../controllers/contextGraphController';
+import * as contextGraphTagController from '../controllers/contextGraphTagController';
 
 const contextGraphRouter: Router = Router();
 
