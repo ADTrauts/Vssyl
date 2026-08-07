@@ -44,6 +44,7 @@ RUN apt-get update \
         fonts-liberation \
         fonts-noto-color-emoji \
         xvfb \
+        tmux \
     && rm -rf /var/lib/apt/lists/*
 
 # Allow password auth from localhost so Prisma can use the CI-parity DATABASE_URL.
