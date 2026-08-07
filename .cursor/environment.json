@@ -3,6 +3,6 @@
     "dockerfile": "Dockerfile",
     "context": ".."
   },
-  "install": "pnpm install --frozen-lockfile && pnpm run build:shared",
+  "install": "pnpm install --frozen-lockfile && pnpm run build:shared && pnpm prisma:generate",
   "terminals": []
 }
