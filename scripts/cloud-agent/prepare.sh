@@ -115,6 +115,12 @@ ensure_database() {
 }
 
 migrate_and_seed() {
+  log "Verifying DATABASE_URL is local Cloud Agent DB (localhost/127.0.0.1 + vssyl_ci)..."
+  if ! assert_cloud_agent_database_url "${DATABASE_URL}"; then
+    log "ERROR: Refusing to migrate/seed. Set DATABASE_URL to postgresql://…@localhost:5432/vssyl_ci (or 127.0.0.1)."
+    exit 1
+  fi
+
   log "Running Prisma migrate deploy (canonical CI workflow)..."
   pnpm prisma:migrate:deploy
 

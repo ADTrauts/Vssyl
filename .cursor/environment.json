@@ -5,11 +5,5 @@
   },
   "install": "pnpm install --frozen-lockfile && pnpm run build:shared && pnpm prisma:generate && pnpm exec playwright install chromium",
   "start": "bash scripts/cloud-agent/bootstrap.sh",
-  "terminals": [
-    {
-      "name": "vssyl",
-      "command": "bash scripts/cloud-agent/bootstrap.sh",
-      "description": "Ensure local Postgres, migrate, seed, and run pnpm dev"
-    }
-  ]
+  "terminals": []
 }

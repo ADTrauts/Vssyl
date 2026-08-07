@@ -32,6 +32,7 @@ export NEXT_PUBLIC_API_URL="${NEXT_PUBLIC_API_URL:-http://localhost:5000}"
 export STORAGE_PROVIDER="${STORAGE_PROVIDER:-local}"
 # Do not export PORT — Next.js and Express both honor it.
 
+# Defense in depth: refuse known production patterns.
 if [[ "${DATABASE_URL}" == *"cloudsql"* ]] \
   || [[ "${DATABASE_URL}" == *"vssyl_production"* ]] \
   || [[ "${DATABASE_URL}" == *"172.30."* ]]; then
@@ -42,3 +43,57 @@ if [[ "${STRIPE_SECRET_KEY:-}" == sk_live_* ]]; then
   echo "[cloud-agent-env] ERROR: Stripe live key detected." >&2
   return 1 2>/dev/null || exit 1
 fi
+
+# Primary safety: DATABASE_URL must be local Cloud Agent DB only (localhost/127.0.0.1 + vssyl_ci).
+assert_cloud_agent_database_url() {
+  local url="${1:-${DATABASE_URL:-}}"
+  if [[ -z "${url}" ]]; then
+    echo "[cloud-agent-env] ERROR: DATABASE_URL is empty." >&2
+    return 1
+  fi
+
+  if ! python3 - "$url" <<'PY'
+import sys
+from urllib.parse import urlparse, unquote
+
+url = sys.argv[1]
+try:
+    parsed = urlparse(url)
+except Exception as exc:  # noqa: BLE001 — fail closed on any parse error
+    print(f"[cloud-agent-env] ERROR: DATABASE_URL is unparsable: {exc}", file=sys.stderr)
+    sys.exit(1)
+
+scheme = (parsed.scheme or "").lower()
+if scheme not in ("postgresql", "postgres"):
+    print(
+        f"[cloud-agent-env] ERROR: DATABASE_URL scheme must be postgresql/postgres, got {scheme!r}.",
+        file=sys.stderr,
+    )
+    sys.exit(1)
+
+host = (parsed.hostname or "").lower()
+if host not in ("localhost", "127.0.0.1"):
+    print(
+        "[cloud-agent-env] ERROR: DATABASE_URL host must be localhost or 127.0.0.1 "
+        f"(got {host!r}). Refusing migrate/seed against a non-local database.",
+        file=sys.stderr,
+    )
+    sys.exit(1)
+
+# Path is "/vssyl_ci" (ignore empty segments / query already separated by urlparse).
+db_name = unquote((parsed.path or "").lstrip("/").split("/")[0])
+if db_name != "vssyl_ci":
+    print(
+        "[cloud-agent-env] ERROR: DATABASE_URL database must be exactly 'vssyl_ci' "
+        f"(got {db_name!r}). Refusing migrate/seed.",
+        file=sys.stderr,
+    )
+    sys.exit(1)
+
+sys.exit(0)
+PY
+  then
+    return 1
+  fi
+  return 0
+}
