@@ -1,9 +1,8 @@
 {
-    "$schema": "https://www.cursor.com/schemas/environment.schema.json",
-    "build": {
-      "dockerfile": "Dockerfile",
-      "context": ".."
-    },
-    "install": "pnpm install --frozen-lockfile && pnpm run build:shared",
-    "terminals": []
-  }
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": ".."
+  },
+  "install": "pnpm install --frozen-lockfile && pnpm run build:shared",
+  "terminals": []
+}

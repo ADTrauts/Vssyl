@@ -16,5 +16,3 @@ RUN apt-get update \
 
 RUN corepack enable \
     && corepack prepare pnpm@10.11.0 --activate
-
-WORKDIR /workspace
