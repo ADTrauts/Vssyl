@@ -1,28 +1,14 @@
 ---
-description: URLs, env hierarchy, auth, API proxy, clients, tenancy, validation, logging
+description: Non-negotiable API, auth, proxy, tenancy, validation, and logging constraints
 alwaysApply: true
 ---
 
-# API, environment, auth, and backend patterns
+# API, environment, auth, and backend constraints
 
-## Google Cloud production URLs (do not hardcode localhost)
+## Environment and URLs
 
-```typescript
-const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL ||
-  process.env.NEXT_PUBLIC_API_URL ||
-  'https://vssyl-server-235369681725.us-central1.run.app';
-```
-
-**Reference:** Frontend `https://vssyl.com`, backend `https://vssyl-server-235369681725.us-central1.run.app`, WebSocket `wss://vssyl-server-235369681725.us-central1.run.app/socket.io/`.
-
-**Infra:** Cloud Build `E2_HIGHCPU_8`, ~7–10 min builds, `us-central1`; Docker multi-stage; Prisma generate before TS compile; Node 20.x.
-
-## Environment variable hierarchy
-
-Use this order for WS and API base URLs (see `frontend-proxy-auth-consistency.mdc` for client patterns).
-
-**Rules:** Prefer `NEXT_PUBLIC_API_BASE_URL`; final fallback must be production URL; no localhost in code paths that can run in production; use env-specific `.env` files.
+- API/WS hierarchy: `NEXT_PUBLIC_API_BASE_URL` → `NEXT_PUBLIC_API_URL` → production backend (`https://vssyl-server-235369681725.us-central1.run.app`; WS uses `wss`).
+- Never hardcode localhost in production-capable paths; use environment-specific configuration.
 
 ## Authentication
 
@@ -43,7 +29,7 @@ Forward `/api/*` via `web/src/app/api/[...slug]/route.ts` using `BACKEND_URL` / 
 ## API clients (browser)
 
 - Use **native `fetch`** to `/api/...` with an `authHeaders(token)` helper — **no** `apiClient` import.
-- Use **relative** paths so you never double-prefix (`/api/chat/api/chat/...`).
+- Use relative paths; never double-prefix `/api`.
 - Throw if token missing; check `res.ok`; parse JSON with clear errors.
 
 ## Backend query parameters
@@ -63,6 +49,7 @@ Validate presence and `typeof param === 'string'` before use. Query values may b
 - Prefer Prisma; avoid raw SQL with string interpolation.
 - React: default escaping; avoid unsanitized `dangerouslySetInnerHTML`.
 - Rate-limit sensitive endpoints; HTTPS in production.
+- WebSocket connections require verified auth; never connect or join without it.
 
 ## Logging
 
@@ -70,29 +57,6 @@ Validate presence and `typeof param === 'string'` before use. Query values may b
 - **Errors:** `catch (error: unknown)`, cast to `Error`, log `{ message, stack }`, never log secrets.
 - **Legacy:** existing `console.log` is fine until the file is touched.
 
-## Common pitfalls
+**Related scoped rules:** `backend-trust-boundaries.mdc`, `frontend-proxy-auth-consistency.mdc`, `policy-engine.mdc`, `domain-events.mdc`.
 
-- **WebSocket:** require auth token; no connection without auth.
-- **Double `/api` paths** in clients tied to chat or other prefixed helpers.
-- **Browser cache** after deploy — hard refresh when debugging stale assets.
-
-## Development workflow
-
-- **Start:** `pnpm dev` from repo root (frontend ~3000, backend ~5000).
-- **Before commit:** `pnpm lint`, `pnpm type-check`; if schema changed: `pnpm prisma:build` / `pnpm prisma:generate` (see `database-prisma.mdc`).
-
-## Module platform requirements (pointers)
-
-- **AI context providers and notifications** for modules: `module-development.mdc`, `memory-bank/aiContextSystem.md`, `docs/guides/NOTIFICATION_METADATA_GUIDE.md` — do not skip for new modules.
-
-## Critical “do not” (API / env / tenancy)
-
-1. Hardcode localhost in production-capable code paths.  
-2. Bypass Next.js API proxy for normal client calls.  
-3. Double `/api` prefixes in clients.  
-4. Query without dashboard/business/household scoping.  
-5. Use non-existent shared import paths (see `ui-standards.mdc`).  
-6. Skip `req.user` checks on protected routes.  
-7. Log secrets.
-
-**Last updated:** 2026-05-05
+**Last updated:** 2026-08-07
