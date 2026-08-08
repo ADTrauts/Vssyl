@@ -21,7 +21,7 @@ const fixtures = [
   ['allow', 'DATABASE_URL=postgresql://postgres:postgres@127.0.0.1:5432/vssyl_ci pnpm --filter vssyl-server seed:test-data'],
   ['deny', 'git push --force origin main'],
   ['deny', 'git push -f origin feature/rewrite'],
-  ['ask', 'git push --force-with-lease origin feature/rewrite'],
+  ['deny', 'git push --force-with-lease origin feature/rewrite'],
   ['deny', 'git reset --hard HEAD~1'],
   ['deny', 'pnpm exec prisma migrate reset'],
   ['deny', 'psql -c "DROP DATABASE vssyl"'],
@@ -31,20 +31,30 @@ const fixtures = [
   ['deny', 'gcloud projects delete vssyl-production'],
   ['deny', 'gcloud sql instances delete vssyl-production'],
   ['deny', 'gcloud storage rm --recursive gs://critical-bucket'],
-  ['ask', 'gcloud secrets delete old-secret --project vssyl-staging'],
-  ['ask', 'gsutil rm gs://controlled-bucket/obsolete.txt'],
+  ['deny', 'gcloud secrets delete old-secret --project vssyl-staging'],
+  ['deny', 'gsutil rm gs://controlled-bucket/obsolete.txt'],
   ['deny', 'DATABASE_URL=postgresql://user:pass@prod-db.example.com:5432/vssyl pnpm prisma:migrate:deploy'],
-  ['ask', 'DATABASE_URL=postgresql://user:pass@staging-db.example.com:5432/vssyl pnpm prisma:migrate:deploy'],
+  ['deny', 'DATABASE_URL=postgresql://user:pass@staging-db.example.com:5432/vssyl pnpm prisma:migrate:deploy'],
   ['deny', 'DATABASE_URL=$PRODUCTION_DATABASE_URL pnpm --filter vssyl-server seed:test-data'],
   ['deny', 'STRIPE_SECRET_KEY=sk_live_example pnpm dev'],
 ];
 
 for (const [expected, command] of fixtures) {
+  assert.notEqual(
+    expected,
+    'ask',
+    'Fixture matrix must not depend on ask; Cloud Agent approval is not a safety boundary'
+  );
   const result = classify(command);
   assert.equal(
     result.permission,
     expected,
     `Expected ${expected} for ${JSON.stringify(command)}, received ${result.permission}`
+  );
+  assert.notEqual(
+    result.permission,
+    'ask',
+    `Classifier must not return ask for ${JSON.stringify(command)}`
   );
 }
 

@@ -2,6 +2,16 @@
 
 'use strict';
 
+/**
+ * Project beforeShellExecution safety gate.
+ *
+ * Approval-class (`ask`) commands are denied at this layer because Cloud Agent
+ * interactive approval was not reliably enforced during P0 verification.
+ * A human may execute an exceptional command manually outside the agent when
+ * appropriate. Do not reintroduce `ask` as a deterministic Cloud Agent safety
+ * boundary without re-verifying interactive enforcement.
+ */
+
 const { URL } = require('node:url');
 
 const ALLOW = Object.freeze({ permission: 'allow' });
@@ -110,9 +120,9 @@ function classify(command) {
     /\bgit(?:\s+-C\s+\S+)?\s+push\b[^;&|\n]*--force-with-lease(?:=|\s|$)/i.test(text)
   ) {
     return decision(
-      'ask',
-      'Approval required: force-with-lease rewrites remote Git history.',
-      'Proceed only after the user confirms the target branch and controlled reason.'
+      'deny',
+      'Blocked: force-with-lease rewrites remote Git history.',
+      'Use a normal push from the agent. A human may run an exceptional force-with-lease manually outside the agent when appropriate.'
     );
   }
 
@@ -124,7 +134,7 @@ function classify(command) {
     return decision(
       'deny',
       'Blocked: destructive Git force push.',
-      'Use a normal push, or use --force-with-lease only with explicit approval when history rewriting is justified.'
+      'Use a normal push from the agent. A human may rewrite history manually outside the agent when appropriate.'
     );
   }
 
@@ -175,9 +185,9 @@ function classify(command) {
     /\bbq\s+rm\b/i.test(text)
   ) {
     return decision(
-      'ask',
-      'Approval required: this Google Cloud command deletes a resource.',
-      'Confirm the exact project, resource, environment, and recovery plan before continuing.'
+      'deny',
+      'Blocked: this Google Cloud command deletes a resource.',
+      'Do not delete GCP resources through an agent shell. A human may run an exceptional delete manually outside the agent when appropriate.'
     );
   }
 
@@ -191,9 +201,9 @@ function classify(command) {
   }
   if (databaseTarget === 'remote') {
     return decision(
-      'ask',
-      'Approval required: database migration or seed targets a remote PostgreSQL host.',
-      'Confirm the environment and controlled migration procedure. Cloud Agent verification must use localhost and vssyl_ci.'
+      'deny',
+      'Blocked: database migration or seed targets a remote PostgreSQL host.',
+      'Cloud Agent verification must use localhost and vssyl_ci. A human may run a controlled remote migrate/seed manually outside the agent when appropriate.'
     );
   }
 
