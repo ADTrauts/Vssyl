@@ -7,7 +7,10 @@ import type { UserContext } from './CrossModuleContextEngine';
 import { logger } from '../../lib/logger';
 import type { AIResponseDensity, AIResponseMode } from '../types/structuredResponse';
 import { inferQueryIntent, type QueryIntent } from '../utils/queryIntent';
-import { inferStructuredResponseMode } from '../utils/structuredResponseMode';
+import {
+  inferStructuredResponseMode,
+  type InferStructuredResponseModeResult,
+} from '../utils/structuredResponseMode';
 import {
   applyContextProfile,
   contextBudgetTokensForProfile,
@@ -182,6 +185,11 @@ export interface AIContextAssemblyInput {
   }>;
   toneMode?: string;
   explicitStructuredMode?: string;
+  /**
+   * Pre-resolved structured response decision from DigitalLifeTwinCore (canonical Twin path).
+   * When set, assembler does not re-run inferStructuredResponseMode.
+   */
+  structuredResolution?: InferStructuredResponseModeResult;
   /** Resolved user communication / autonomy preferences (compact, no raw questionnaire). */
   effectivePreferencesContextBlock?: EffectivePreferencesContextBlock;
   /** Business workspace policies when chatting with businessId (separate from personal prefs). */
@@ -579,17 +587,19 @@ export function assembleAIContext(input: AIContextAssemblyInput): AIAssembledCon
   const hasHistoryEarly =
     Array.isArray(query.conversationHistory) && query.conversationHistory.length > 0;
   const intentEarly = inferIntent(query.query);
-  const structuredEarly = inferStructuredResponseMode({
-    query: query.query,
-    explicitMode: input.explicitStructuredMode,
-    toneMode: input.toneMode,
-    assembledIntent: intentEarly,
-    isFollowUp: hasHistoryEarly,
-    fileIds: ctx.fileIds,
-    businessId,
-    currentModule: typeof currentModule === 'string' ? currentModule : undefined,
-    hasAttachedFiles: Boolean(attachedFiles && attachedFiles.length > 0),
-  });
+  const structuredEarly =
+    input.structuredResolution ??
+    inferStructuredResponseMode({
+      query: query.query,
+      explicitMode: input.explicitStructuredMode,
+      toneMode: input.toneMode,
+      assembledIntent: intentEarly,
+      isFollowUp: hasHistoryEarly,
+      fileIds: ctx.fileIds,
+      businessId,
+      currentModule: typeof currentModule === 'string' ? currentModule : undefined,
+      hasAttachedFiles: Boolean(attachedFiles && attachedFiles.length > 0),
+    });
   const contextProfile = resolveContextProfile(structuredEarly.mode, {
     responseContract: structuredEarly.responseContract,
     requiresAuthoritativeContext: structuredEarly.requiresAuthoritativeContext,

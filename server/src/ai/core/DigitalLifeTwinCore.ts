@@ -36,6 +36,7 @@ import {
   selectLlmProvider,
 } from '../providers/providerRouting';
 import { assembleAIContext } from '../context/AIContextAssembler';
+import { resolveContextProfile } from '../context/contextProfile';
 import type { AIAssembledContext } from '../context/AIContextAssembler';
 import {
   synthesizeCrossModuleContext,
@@ -845,42 +846,8 @@ export class DigitalLifeTwinCore {
         });
       }
       
-      // 3. Get smart pattern analysis and predictions
-      let smartAnalysis: Record<string, unknown> = { patterns: [], predictions: [], suggestions: [] };
-      try {
-        smartAnalysis = await this.smartPatternEngine?.analyzeAndPredict(query.userId, {
-          currentQuery: query.query,
-          currentModule: query.context.currentModule,
-          urgency: query.context.urgency
-        }) || smartAnalysis;
-      } catch (error: unknown) {
-        const err = error instanceof Error ? error : new Error(String(error));
-        void logger.warn('Error getting smart pattern analysis', {
-          operation: 'digital_life_twin_smart_analysis_error',
-          error: { message: err.message, stack: err.stack },
-        });
-      }
-
-      // 4. Enhance query with semantic understanding
-      let semanticEnhancement: Record<string, unknown> = { 
-        originalQuery: query.query, 
-        enhancedContext: query.query, 
-        relatedQueries: [], 
-        confidenceBoost: 0, 
-        suggestedCategories: ['general'] 
-      };
-      try {
-        semanticEnhancement = await this.smartPatternEngine?.enhanceQueryWithSemantics(query.query, query.userId) || semanticEnhancement;
-      } catch (error: unknown) {
-        const err = error instanceof Error ? error : new Error(String(error));
-        void logger.warn('Error enhancing query with semantics', {
-          operation: 'digital_life_twin_semantics_error',
-          error: { message: err.message, stack: err.stack },
-        });
-      }
-
-      // 5. Analyze the query intent and determine response strategy (enhanced with patterns and semantics)
-      const queryAnalysis = await this.analyzeQuery(query, userContext, personality, smartAnalysis, semanticEnhancement);
+      // 3. Analyze the query intent and determine response strategy (legacy heuristics; Package D retirement)
+      const queryAnalysis = await this.analyzeQuery(query, userContext, personality);
       const responseMode = inferResponseMode({
         query: query.query,
         explicitMode: query.context.responseMode,
@@ -986,8 +953,6 @@ export class DigitalLifeTwinCore {
         userContext,
         personality,
         queryAnalysis,
-        smartAnalysis,
-        semanticEnhancement,
         userDefinedContext,
         globalPatterns,
         responseMode,
@@ -1427,8 +1392,6 @@ export class DigitalLifeTwinCore {
     userContext: UserContext, 
     personality: any, 
     analysis: any,
-    smartAnalysis?: any,
-    semanticEnhancement?: any,
     userDefinedContext?: Array<Record<string, unknown>>,
     globalPatterns?: Array<Record<string, unknown>>,
     responseMode?: AIResponseMode,
@@ -1474,6 +1437,56 @@ export class DigitalLifeTwinCore {
       structuredInference.responseContract ??
       (structuredResponseMode === 'conversation' ? 'conversation' : 'enterprise');
     const isActionRequest = structuredInference.isActionRequest === true;
+
+    const contextProfile = resolveContextProfile(structuredInference.mode, {
+      responseContract: structuredInference.responseContract,
+      requiresAuthoritativeContext: structuredInference.requiresAuthoritativeContext,
+    });
+    const shouldRunSmartPatternStages =
+      contextProfile === 'enterprise' && structuredInference.isActionRequest !== true;
+
+    let smartAnalysis: Record<string, unknown> | undefined;
+    let semanticEnhancement: Record<string, unknown> | undefined;
+    if (shouldRunSmartPatternStages) {
+      smartAnalysis = {
+        patterns: [],
+        predictions: [],
+        suggestions: [],
+      };
+      semanticEnhancement = {
+        originalQuery: query.query,
+        enhancedContext: query.query,
+        relatedQueries: [],
+        confidenceBoost: 0,
+        suggestedCategories: ['general'],
+      };
+      try {
+        smartAnalysis =
+          (await this.smartPatternEngine?.analyzeAndPredict(query.userId, {
+            currentQuery: query.query,
+            currentModule: query.context.currentModule,
+            urgency: query.context.urgency,
+          })) || smartAnalysis;
+      } catch (error: unknown) {
+        const err = error instanceof Error ? error : new Error(String(error));
+        void logger.warn('Error getting smart pattern analysis', {
+          operation: 'digital_life_twin_smart_analysis_error',
+          error: { message: err.message, stack: err.stack },
+        });
+      }
+
+      try {
+        semanticEnhancement =
+          (await this.smartPatternEngine?.enhanceQueryWithSemantics(query.query, query.userId)) ||
+          semanticEnhancement;
+      } catch (error: unknown) {
+        const err = error instanceof Error ? error : new Error(String(error));
+        void logger.warn('Error enhancing query with semantics', {
+          operation: 'digital_life_twin_semantics_error',
+          error: { message: err.message, stack: err.stack },
+        });
+      }
+    }
 
     // Live prompt path: assembleAIContext + options.userQuery + provider system prompts.
     // See docs/architecture/AI_TWIN_PROMPT_PIPELINE.md (legacy buildDigitalTwinPrompt removed Phase 0B).
@@ -1808,6 +1821,7 @@ export class DigitalLifeTwinCore {
         typeof query.context.structuredResponseMode === 'string'
           ? query.context.structuredResponseMode
           : structuredResponseMode,
+      structuredResolution: structuredInference,
       effectivePreferencesContextBlock: effectivePreferences?.contextBlock,
       businessWorkspaceBoundaries,
       vlinkPipelineContext: vlinkPipelineContextForAssembly,
