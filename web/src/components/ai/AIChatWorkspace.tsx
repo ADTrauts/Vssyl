@@ -2377,13 +2377,18 @@ export default function AIChatWorkspace({
                                     </details>
                                   )}
                                 {item.type === 'ai' && (item.content || '').trim().length > 0 && (
-                              <div className="mt-2 pt-2 border-t border-gray-100 dark:border-slate-700 flex flex-wrap gap-3">
+                              <div
+                                className="mt-2 pt-2 border-t border-gray-100 dark:border-slate-700 flex flex-wrap gap-3 select-none"
+                                role="toolbar"
+                                aria-label="Message actions"
+                              >
                                 <button
                                   type="button"
                                   onClick={() => setTeachModalOpen(true)}
                                   className="inline-flex items-center gap-1 text-xs text-gray-600 dark:text-gray-400 hover:text-purple-600"
+                                  aria-label="Improve answer"
                                 >
-                                  <Sparkles className="h-4 w-4" />
+                                  <Sparkles className="h-4 w-4" aria-hidden />
                                   <span>Improve answer</span>
                                 </button>
                                 {item.responseInfluence && (
@@ -2394,8 +2399,9 @@ export default function AIChatWorkspace({
                                       setExplainOpen(true);
                                     }}
                                     className="inline-flex items-center gap-1 text-xs text-gray-600 dark:text-gray-400 hover:text-purple-600"
+                                    aria-label="Why this answer"
                                   >
-                                    <HelpCircle className="h-4 w-4" />
+                                    <HelpCircle className="h-4 w-4" aria-hidden />
                                     <span>Why this answer</span>
                                   </button>
                                 )}
@@ -2403,12 +2409,13 @@ export default function AIChatWorkspace({
                                   type="button"
                                   onClick={() => handlePlayTTS(item)}
                                   className="inline-flex items-center gap-1 text-xs text-gray-600 dark:text-gray-400 hover:text-purple-600"
+                                  aria-label={playingAudioId === item.id ? 'Playing audio' : 'Listen to answer'}
                                   title="Listen"
                                 >
                                   {playingAudioId === item.id ? (
-                                    <Spinner size={12} />
+                                    <Spinner size={12} aria-hidden />
                                   ) : (
-                                    <Volume2 className="h-4 w-4" />
+                                    <Volume2 className="h-4 w-4" aria-hidden />
                                   )}
                                   <span>{playingAudioId === item.id ? 'Playing…' : 'Listen'}</span>
                                 </button>

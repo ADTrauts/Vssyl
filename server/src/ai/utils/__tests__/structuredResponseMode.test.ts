@@ -31,6 +31,75 @@ describe('inferQueryIntent', () => {
     expect(inferQueryIntent('Compare option A versus option B with pros and cons')).toBe('comparison');
   });
 
+  describe('general educational comparisons', () => {
+    it('does not route EBITDA explanation to enterprise comparison', () => {
+      expect(inferQueryIntent('Explain the difference between gross profit and EBITDA.')).toBe(
+        'conversation'
+      );
+      expect(
+        inferStructuredResponseMode({
+          query: 'Explain the difference between gross profit and EBITDA.',
+          toneMode: 'conversational',
+        }).mode
+      ).toBe('conversation');
+    });
+
+    it('does not route RAM vs storage explanation to enterprise comparison', () => {
+      expect(inferQueryIntent("What's the difference between RAM and storage?")).toBe('conversation');
+    });
+
+    it('does not route HTTP vs HTTPS explanation to enterprise comparison', () => {
+      expect(inferQueryIntent('Explain HTTP vs HTTPS.')).toBe('conversation');
+    });
+
+    it('routes casual preference comparisons to conversation', () => {
+      expect(
+        inferQueryIntent('Which is better for cooking, olive oil or avocado oil?')
+      ).toBe('conversation');
+      expect(
+        inferStructuredResponseMode({
+          query: 'Which is better for cooking, olive oil or avocado oil?',
+          toneMode: 'conversational',
+        }).mode
+      ).toBe('conversation');
+    });
+  });
+
+  describe('enterprise comparisons', () => {
+    it('routes business-data labor comparison to comparison', () => {
+      expect(
+        inferQueryIntent('Compare Q1 and Q2 labor performance using our business data.')
+      ).toBe('comparison');
+      expect(
+        inferStructuredResponseMode({
+          query: 'Compare Q1 and Q2 labor performance using our business data.',
+        }).mode
+      ).toBe('comparison');
+    });
+
+    it('routes uploaded vendor proposal comparison to comparison', () => {
+      expect(inferQueryIntent('Compare these two uploaded vendor proposals.')).toBe('comparison');
+    });
+
+    it('routes structured management comparison to comparison', () => {
+      expect(
+        inferQueryIntent(
+          'Give me a structured comparison of these three options for management.'
+        )
+      ).toBe('comparison');
+    });
+
+    it('routes budget variance comparison to comparison', () => {
+      expect(inferQueryIntent('Compare actual labor cost against budget.')).toBe('comparison');
+    });
+
+    it('routes department staffing metrics comparison to comparison', () => {
+      expect(
+        inferQueryIntent("Compare Department A and Department B's staffing metrics.")
+      ).toBe('comparison');
+    });
+  });
+
   it('routes roadmap prompts to action_plan', () => {
     expect(inferQueryIntent('Give me a step by step implementation plan for rollout')).toBe('action_plan');
   });

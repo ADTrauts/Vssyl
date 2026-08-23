@@ -64,6 +64,26 @@ export function buildProviderData(input: BuildProviderDataInput): Record<string,
     providerData.promptProfile = options.promptProfile;
   }
 
+  if (
+    options.responseContract === 'conversation' ||
+    options.responseContract === 'grounded_answer' ||
+    options.responseContract === 'enterprise'
+  ) {
+    providerData.responseContract = options.responseContract;
+  }
+
+  if (typeof options.requiresAuthoritativeContext === 'boolean') {
+    providerData.requiresAuthoritativeContext = options.requiresAuthoritativeContext;
+  }
+
+  if (typeof options.groundingSatisfied === 'boolean') {
+    providerData.groundingSatisfied = options.groundingSatisfied;
+  }
+
+  if (typeof options.contextProfile === 'string' && options.contextProfile.trim()) {
+    providerData.contextProfile = options.contextProfile;
+  }
+
   if (Array.isArray(options.conversationHistory) && options.conversationHistory.length > 0) {
     providerData.conversationHistory = options.conversationHistory;
   }

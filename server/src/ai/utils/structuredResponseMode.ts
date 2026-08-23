@@ -1,8 +1,10 @@
 /**
  * Determines structured JSON response mode: conversational vs enterprise deliverables.
+ * P3: also surfaces responseContract + requiresAuthoritativeContext (independent axes).
  */
 
 import type { AIResponseDensity, AIResponseMode } from '../types/structuredResponse';
+import { detectConversationObjective } from '../conversation/conversationObjective';
 import {
   CONVERSATION_CURIOSITY,
   CONVERSATION_EXPLORATION,
@@ -12,6 +14,15 @@ import {
   inferQueryIntent,
   queryIntentToStructuredMode,
 } from './queryIntent';
+import { shouldUseInformationalAnswerEscape } from './informationalAnswerEscape';
+import {
+  isActionMutationRequest,
+  requiresAuthoritativeContext,
+} from './requiresAuthoritativeContext';
+import {
+  resolveResponseContract,
+  type AIResponseContract,
+} from './responseContract';
 
 const STRUCTURED_MODES = new Set<string>([
   'conversation',
@@ -38,11 +49,24 @@ export interface InferStructuredResponseModeInput {
   assembledIntent?: string;
   /** Short follow-up in an ongoing thread. */
   isFollowUp?: boolean;
+  /** Optional request context for P2/P3 routing. */
+  fileIds?: unknown;
+  businessId?: string | null;
+  currentModule?: string | null;
+  hasAttachedFiles?: boolean;
 }
 
 export interface InferStructuredResponseModeResult {
   mode: AIResponseMode;
   responseDensity: AIResponseDensity;
+  /** True when residual `answer` was remapped to informational conversation (P2). */
+  informationalAnswerEscape?: boolean;
+  /** P3: needs Vssyl/user/workspace/live truth (independent of format). */
+  requiresAuthoritativeContext?: boolean;
+  /** P3: format/deliverable contract (independent of grounding). */
+  responseContract?: AIResponseContract;
+  /** P3: mutation/action ambition (not grounded factual read). */
+  isActionRequest?: boolean;
 }
 
 function densityForMode(mode: AIResponseMode): AIResponseDensity {
@@ -59,6 +83,38 @@ function normalizeExplicitMode(explicitMode?: string): AIResponseMode | undefine
   return undefined;
 }
 
+function attachRoutingAxes(
+  mode: AIResponseMode,
+  input: InferStructuredResponseModeInput,
+  extras?: { informationalAnswerEscape?: boolean }
+): InferStructuredResponseModeResult {
+  const authInput = {
+    query: input.query || '',
+    fileIds: input.fileIds,
+    businessId: input.businessId,
+    currentModule: input.currentModule,
+    hasAttachedFiles: input.hasAttachedFiles,
+  };
+  const isActionRequest = isActionMutationRequest(authInput.query);
+  const needsAuth = requiresAuthoritativeContext(authInput);
+  const informationalAnswerEscape = extras?.informationalAnswerEscape === true;
+  const responseContract = resolveResponseContract({
+    structuredResponseMode: mode,
+    informationalAnswerEscape,
+    requiresAuthoritativeContext: needsAuth,
+    isActionRequest,
+  });
+
+  return {
+    mode,
+    responseDensity: densityForMode(mode),
+    ...(informationalAnswerEscape ? { informationalAnswerEscape: true } : {}),
+    requiresAuthoritativeContext: needsAuth,
+    responseContract,
+    isActionRequest,
+  };
+}
+
 /**
  * Authoritative structured response mode for provider prompts and normalization.
  */
@@ -67,28 +123,28 @@ export function inferStructuredResponseMode(
 ): InferStructuredResponseModeResult {
   const explicit = normalizeExplicitMode(input.explicitMode);
   if (explicit) {
-    return { mode: explicit, responseDensity: densityForMode(explicit) };
+    return attachRoutingAxes(explicit, input);
   }
 
   const q = input.query || '';
 
   if (DEBUG_HINTS.test(q)) {
-    return { mode: 'analysis', responseDensity: 'deep' };
+    return attachRoutingAxes('analysis', input);
   }
 
   if (PLANNING_HINTS.test(q)) {
-    return { mode: 'action_plan', responseDensity: 'deep' };
+    return attachRoutingAxes('action_plan', input);
   }
 
   const tone = (input.toneMode || '').trim().toLowerCase();
   if (tone === 'executive_summary') {
-    return { mode: 'summary', responseDensity: 'balanced' };
+    return attachRoutingAxes('summary', input);
   }
   if (tone === 'analytical') {
-    return { mode: 'analysis', responseDensity: 'deep' };
+    return attachRoutingAxes('analysis', input);
   }
   if (tone === 'planning') {
-    return { mode: 'action_plan', responseDensity: 'deep' };
+    return attachRoutingAxes('action_plan', input);
   }
 
   const intentFromQuery = inferQueryIntent(q);
@@ -132,5 +188,23 @@ export function inferStructuredResponseMode(
     mode = 'conversation';
   }
 
-  return { mode, responseDensity: densityForMode(mode) };
+  // P2: residual answer → neutral informational conversation when no grounding/action signals.
+  if (mode === 'answer') {
+    const conversationObjective = detectConversationObjective(q);
+    if (
+      shouldUseInformationalAnswerEscape({
+        query: q,
+        provisionalMode: mode,
+        conversationObjective,
+        fileIds: input.fileIds,
+        businessId: input.businessId,
+        currentModule: input.currentModule,
+        hasAttachedFiles: input.hasAttachedFiles,
+      })
+    ) {
+      return attachRoutingAxes('conversation', input, { informationalAnswerEscape: true });
+    }
+  }
+
+  return attachRoutingAxes(mode, input);
 }

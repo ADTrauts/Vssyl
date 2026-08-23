@@ -62,6 +62,7 @@ import {
 import { runConversationReasoning } from '../conversation/conversationReasoningLayer';
 import type { ConversationReasoningResult } from '../conversation/conversationTypes';
 import { inferResponseMode, type AIResponseMode } from '../utils/responseMode';
+import { inferQueryIntent } from '../utils/queryIntent';
 import { inferStructuredResponseMode } from '../utils/structuredResponseMode';
 import { buildProviderData } from '../utils/buildProviderData';
 import type { AIResponseMode as StructuredAIResponseMode } from '../types/structuredResponse';
@@ -1443,6 +1444,7 @@ export class DigitalLifeTwinCore {
     crossModuleSynthesis?: ContextSynthesisResult,
     conversationReasoning?: ConversationReasoningResult
   ) {
+    const ctxForStructured = query.context as Record<string, unknown>;
     const structuredInference = inferStructuredResponseMode({
       query: query.query,
       explicitMode:
@@ -1451,9 +1453,27 @@ export class DigitalLifeTwinCore {
           : undefined,
       toneMode: responseMode,
       isFollowUp: Boolean(query.conversationHistory && query.conversationHistory.length > 0),
+      fileIds: ctxForStructured.fileIds,
+      businessId:
+        typeof ctxForStructured.businessId === 'string' ? ctxForStructured.businessId : undefined,
+      currentModule:
+        typeof ctxForStructured.currentModule === 'string'
+          ? ctxForStructured.currentModule
+          : undefined,
+      hasAttachedFiles: Boolean(
+        (attachedFiles && attachedFiles.length > 0) ||
+          (visionImageParts && visionImageParts.length > 0)
+      ),
     });
     const structuredResponseMode = structuredInference.mode;
     const responseDensity = structuredInference.responseDensity;
+    const informationalAnswerEscape = structuredInference.informationalAnswerEscape === true;
+    const requiresAuthoritativeContextFlag =
+      structuredInference.requiresAuthoritativeContext === true;
+    const responseContract =
+      structuredInference.responseContract ??
+      (structuredResponseMode === 'conversation' ? 'conversation' : 'enterprise');
+    const isActionRequest = structuredInference.isActionRequest === true;
 
     // Live prompt path: assembleAIContext + options.userQuery + provider system prompts.
     // See docs/architecture/AI_TWIN_PROMPT_PIPELINE.md (legacy buildDigitalTwinPrompt removed Phase 0B).
@@ -1819,10 +1839,44 @@ export class DigitalLifeTwinCore {
     options.responseDensity = assembledContext.responseDensity ?? responseDensity;
     options.responseMode = responseMode;
     options.userQuery = query.query;
-    const effectiveStructuredMode = assembledContext.structuredResponseMode ?? structuredResponseMode;
-    options.promptProfile = effectiveStructuredMode === 'conversation' ? 'conversation' : 'enterprise';
+    // P3: promptProfile remains binary (conversation | enterprise) for legacy wiring;
+    // responseContract independently selects thin grounded vs ENTERPRISE_V2 format.
+    options.responseContract = responseContract;
+    options.requiresAuthoritativeContext = requiresAuthoritativeContextFlag;
+    options.promptProfile =
+      responseContract === 'conversation' || responseContract === 'grounded_answer'
+        ? 'conversation'
+        : 'enterprise';
 
-    if (effectiveStructuredMode === 'conversation') {
+    const authoritativeSourceTypes = new Set([
+      'module',
+      'file',
+      'calendar',
+      'drive',
+      'business',
+    ]);
+    const hasAuthoritativeBlocks = (assembledContext.contextBlocks || []).some((b) =>
+      authoritativeSourceTypes.has(String(b.sourceType || ''))
+    );
+    const hasAuthoritativeEvidence = (assembledContext.evidence || []).some((e) =>
+      authoritativeSourceTypes.has(String(e.sourceType || ''))
+    );
+    const contextGroundingFailure = ctxRecord.contextGroundingFailure === true;
+    const groundingSatisfied =
+      !requiresAuthoritativeContextFlag ||
+      (!contextGroundingFailure &&
+        (hasAuthoritativeBlocks ||
+          hasAuthoritativeEvidence ||
+          (assembledContext.usedModules?.length ?? 0) > 0));
+    options.groundingSatisfied = groundingSatisfied;
+    options.contextProfile =
+      responseContract === 'grounded_answer'
+        ? 'grounded'
+        : responseContract === 'conversation'
+          ? 'conversation'
+          : 'enterprise';
+
+    if (responseContract === 'conversation' || responseContract === 'grounded_answer') {
       options.conversationHistory = query.conversationHistory ?? [];
       options.conversationThread = buildConversationThreadHints({
         latestUserMessage: query.query,
@@ -1864,7 +1918,49 @@ export class DigitalLifeTwinCore {
       responseMode: providerDataPreview.responseMode,
       responseDensity: providerDataPreview.responseDensity,
       promptProfile: providerDataPreview.promptProfile,
+      responseContract: providerDataPreview.responseContract,
       hasAssembledContext: Boolean(providerDataPreview.assembledContext),
+    });
+
+    const routingConversationId =
+      typeof options.conversationId === 'string' ? options.conversationId : traceContext?.conversationId;
+    const routingCurrentModule =
+      typeof ctxRecord.currentModule === 'string' ? ctxRecord.currentModule : undefined;
+    const routingFileIds = ctxRecord.fileIds;
+    const hasFileContext = Boolean(
+      (attachedFiles && attachedFiles.length > 0) ||
+        (visionImageParts && visionImageParts.length > 0) ||
+        (Array.isArray(routingFileIds) && routingFileIds.length > 0)
+    );
+    const hasPlatformContext = Boolean(
+      (assembledContext.usedModules?.length ?? 0) > 0 ||
+        (assembledContext.contextBlocks?.length ?? 0) > 0
+    );
+    const routingModel =
+      typeof options.modelOverride === 'string'
+        ? options.modelOverride
+        : resolvedModel ?? undefined;
+
+    void logger.info('AI response routing', {
+      operation: 'ai_response_routing',
+      requestId: traceContext?.requestId,
+      conversationId: routingConversationId,
+      responseMode: providerDataPreview.responseMode,
+      structuredResponseMode: providerDataPreview.structuredResponseMode,
+      promptProfile: providerDataPreview.promptProfile,
+      responseContract,
+      contextProfile: options.contextProfile,
+      informationalAnswerEscape,
+      requiresAuthoritativeContext: requiresAuthoritativeContextFlag,
+      groundingSatisfied,
+      isActionRequest,
+      inferredIntent: inferQueryIntent(query.query),
+      provider,
+      model: routingModel,
+      streaming: Boolean(streamOptions?.stream),
+      currentModule: routingCurrentModule,
+      hasPlatformContext,
+      hasFileContext,
     });
 
     // Phase 0.15: providerData trace before callAIProvider

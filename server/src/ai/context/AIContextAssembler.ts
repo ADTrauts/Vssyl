@@ -10,8 +10,7 @@ import { inferQueryIntent, type QueryIntent } from '../utils/queryIntent';
 import { inferStructuredResponseMode } from '../utils/structuredResponseMode';
 import {
   applyContextProfile,
-  CONVERSATION_CONTEXT_BUDGET_TOKENS,
-  ENTERPRISE_CONTEXT_BUDGET_TOKENS,
+  contextBudgetTokensForProfile,
   isSyntheticInsight,
   maxBlocksForProfile,
   resolveContextProfile,
@@ -586,8 +585,15 @@ export function assembleAIContext(input: AIContextAssemblyInput): AIAssembledCon
     toneMode: input.toneMode,
     assembledIntent: intentEarly,
     isFollowUp: hasHistoryEarly,
+    fileIds: ctx.fileIds,
+    businessId,
+    currentModule: typeof currentModule === 'string' ? currentModule : undefined,
+    hasAttachedFiles: Boolean(attachedFiles && attachedFiles.length > 0),
   });
-  const contextProfile = resolveContextProfile(structuredEarly.mode);
+  const contextProfile = resolveContextProfile(structuredEarly.mode, {
+    responseContract: structuredEarly.responseContract,
+    requiresAuthoritativeContext: structuredEarly.requiresAuthoritativeContext,
+  });
 
   if (attachedFiles && attachedFiles.length > 0) {
     const filePayload = attachedFiles.slice(0, MAX_ITEMS).map((f) => ({
@@ -1353,10 +1359,7 @@ export function assembleAIContext(input: AIContextAssemblyInput): AIAssembledCon
     contextProfile
   );
 
-  const contextBudget =
-    contextProfile === 'conversation'
-      ? CONVERSATION_CONTEXT_BUDGET_TOKENS
-      : ENTERPRISE_CONTEXT_BUDGET_TOKENS;
+  const contextBudget = contextBudgetTokensForProfile(contextProfile);
 
   const budgetResult = applyContextBudget({
     blocks: rankedContextBlocks,

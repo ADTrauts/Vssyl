@@ -19,20 +19,22 @@ describe('conversation recommendation richness prompts', () => {
     expect(CONVERSATION_RECOMMENDATION_RICHNESS_BLOCK).toMatch(/consider destinations like/i);
   });
 
-  it('structured format conversation block encourages comparative recommendations', () => {
+  it('structured format conversation block uses neutral base by default', () => {
     const block = buildStructuredResponseFormatInstructions('conversation');
-    expect(block).toMatch(/compare, rank/i);
-    expect(block).toMatch(/experiential/i);
-    expect(block).toMatch(/most useful and compelling/i);
+    expect(block).toMatch(/Answer naturally and directly/i);
+    expect(block).not.toMatch(/Lead with your best fit/i);
+    expect(block).not.toMatch(/Help the user decide/i);
   });
 
-  it('builds travel framing hints for vacation query', () => {
-    const hints = buildRecommendationFramingHints({ userQuery: VACATION_PROMPT });
-    expect(hints).toContain('Travel framing');
-    expect(hints).toContain('Budget framing');
+  it('structured format adds recommendation supplement when requested', () => {
+    const block = buildStructuredResponseFormatInstructions('conversation', {
+      includeRecommendationGuidance: true,
+    });
+    expect(block).toMatch(/RECOMMENDATION CONVERSATION/i);
+    expect(block).toMatch(/Lead with your best fit/i);
   });
 
-  it('provider user prompt includes richness for new conversation (no thread)', () => {
+  it('provider user prompt includes framing for vacation (richness is system-owned)', () => {
     const prompt = buildProviderUserPrompt({
       requestQuery: 'ignored',
       data: {
@@ -41,7 +43,7 @@ describe('conversation recommendation richness prompts', () => {
         userQuery: VACATION_PROMPT,
       },
     });
-    expect(prompt).toContain('RECOMMENDATION INTELLIGENCE');
+    expect(prompt).not.toContain('RECOMMENDATION INTELLIGENCE');
     expect(prompt).toContain('DECISION COACHING HINTS');
     expect(prompt).toContain(VACATION_PROMPT);
     expect(prompt).toContain('Never mention productivity scores');
@@ -67,7 +69,8 @@ describe('conversation recommendation richness prompts', () => {
     });
     expect(prompt).toContain('domestic');
     expect(prompt).toContain('CONVERSATION THREAD');
-    expect(prompt).toMatch(/refine|Compare/i);
+    expect(prompt).toMatch(/CONVERSATION MOMENTUM/i);
+    expect(prompt).not.toContain('RECOMMENDATION INTELLIGENCE');
   });
 
   it('enterprise mode prompt does not include recommendation richness block', () => {

@@ -1,5 +1,5 @@
 /**
- * Provider user-message builders (conversation vs enterprise).
+ * Provider user-message builders (conversation vs grounded factual vs enterprise).
  */
 
 import type { AIAssembledContext } from '../context/AIContextAssembler';
@@ -14,14 +14,37 @@ import {
 import type { ConversationReasoningResult } from '../conversation/conversationTypes';
 import {
   buildRecommendationFramingHints,
-  CONVERSATION_RECOMMENDATION_RICHNESS_BLOCK,
 } from './conversationRecommendationRichness';
+import {
+  inferConversationCoachingProfile,
+  type ConversationCoachingProfile,
+} from './conversationCoachingProfile';
 import { isConversationStructuredMode } from './structuredResponseFormat';
+import type { AIResponseContract } from '../utils/responseContract';
+
+export function resolveResponseContractFromProviderData(
+  data?: Record<string, unknown>
+): AIResponseContract {
+  const explicit = data?.responseContract;
+  if (explicit === 'grounded_answer' || explicit === 'conversation' || explicit === 'enterprise') {
+    return explicit;
+  }
+  if (isConversationProviderData(data)) return 'conversation';
+  return 'enterprise';
+}
 
 export function isConversationProviderData(data?: Record<string, unknown>): boolean {
   if (!data) return false;
+  if (data.responseContract === 'conversation') return true;
+  if (data.responseContract === 'grounded_answer' || data.responseContract === 'enterprise') {
+    return false;
+  }
   if (isConversationStructuredMode(data.structuredResponseMode as string | undefined)) return true;
   return (data.promptProfile as string) === 'conversation';
+}
+
+export function isGroundedAnswerProviderData(data?: Record<string, unknown>): boolean {
+  return resolveResponseContractFromProviderData(data) === 'grounded_answer';
 }
 
 function slimAssembledContextForConversation(assembled: AIAssembledContext): Record<string, unknown> {
@@ -36,6 +59,46 @@ function slimAssembledContextForConversation(assembled: AIAssembledContext): Rec
       relevanceScore: b.relevanceScore,
     })),
   };
+}
+
+/** Medium payload for grounded facts — keep blocks/evidence, omit enterprise report noise. */
+function slimAssembledContextForGrounded(assembled: AIAssembledContext): Record<string, unknown> {
+  return {
+    scope: assembled.scope,
+    intent: assembled.intent,
+    structuredResponseMode: assembled.structuredResponseMode,
+    usedModules: assembled.usedModules,
+    missingContext: assembled.missingContext,
+    evidence: assembled.evidence,
+    contextBlocks: (assembled.contextBlocks || []).slice(0, 10).map((b) => ({
+      title: b.title,
+      sourceType: b.sourceType,
+      content: b.content,
+      relevanceScore: b.relevanceScore,
+      priority: b.priority,
+    })),
+  };
+}
+
+function resolveCoachingProfile(data: Record<string, unknown>, userQuery: string): ConversationCoachingProfile {
+  const reasoning = data.conversationReasoning as ConversationReasoningResult | undefined;
+  const history = data.conversationHistory as ConversationHistoryItem[] | undefined;
+  const profile = inferConversationCoachingProfile({
+    userQuery,
+    conversationObjective: reasoning?.conversationObjective,
+    threadHints: data.conversationThread as ConversationThreadHints | undefined,
+    hasConversationHistory: Array.isArray(history) && history.length > 0,
+  });
+
+  if (reasoning && shouldSuppressRecommendationRichness(reasoning)) {
+    return {
+      style: 'informational',
+      includeRecommendationRichness: false,
+      includeRecommendationFraming: false,
+    };
+  }
+
+  return profile;
 }
 
 function buildThreadSection(data: Record<string, unknown>): string {
@@ -70,12 +133,18 @@ function buildThreadSection(data: Record<string, unknown>): string {
   return `${parts.join('\n\n')}\n\n`;
 }
 
+const GROUNDED_TRUTHFULNESS_BLOCK = `AUTHORITATIVE CONTEXT RULES:
+- This question requires Vssyl/user/workspace/live facts — not world knowledge about this user's organization, calendar, or files.
+- Answer only from PRIVATE CONTEXT below when stating current/user/business/file/calendar facts.
+- If the needed fact is absent, incomplete, or not attributable, say so naturally in summary. Do not invent budgets, attendees, sharers, sales figures, or other tenant-specific details.
+- Partial context is fine: state what is supported and what cannot be determined.`;
+
 export function buildProviderUserPrompt(input: {
   requestQuery: string;
   data: Record<string, unknown>;
 }): string {
   const { requestQuery, data } = input;
-  const conversation = isConversationProviderData(data);
+  const contract = resolveResponseContractFromProviderData(data);
   const userQuery =
     typeof data.userQuery === 'string' && data.userQuery.trim() ? data.userQuery.trim() : requestQuery;
 
@@ -83,35 +152,51 @@ export function buildProviderUserPrompt(input: {
   let assembledSection = '';
   if (assembled && typeof assembled === 'object') {
     const ac = assembled as AIAssembledContext;
-    const payload = conversation ? slimAssembledContextForConversation(ac) : assembled;
+    const payload =
+      contract === 'conversation'
+        ? slimAssembledContextForConversation(ac)
+        : contract === 'grounded_answer'
+          ? slimAssembledContextForGrounded(ac)
+          : assembled;
     assembledSection = `PRIVATE CONTEXT (use silently — do not cite scores, dashboards, or internal labels to the user):\n${JSON.stringify(payload, null, 2)}\n\n`;
   }
 
-  if (conversation) {
-    const threadSection = buildThreadSection(data);
+  if (contract === 'conversation') {
+    const coachingProfile = resolveCoachingProfile(data, userQuery);
     const reasoning = data.conversationReasoning as ConversationReasoningResult | undefined;
     const coachingBlock = reasoning ? buildConversationReasoningPromptBlock(reasoning) : '';
-    const suppressRichness = reasoning ? shouldSuppressRecommendationRichness(reasoning) : false;
-    const framingHints =
-      suppressRichness
-        ? ''
-        : buildRecommendationFramingHints({
-            userQuery,
-            threadHints: data.conversationThread as ConversationThreadHints | undefined,
-          });
-    const richnessSection =
-      suppressRichness || threadSection.includes('RECOMMENDATION INTELLIGENCE')
-        ? ''
-        : `${CONVERSATION_RECOMMENDATION_RICHNESS_BLOCK}\n\n`;
+    const threadSection = buildThreadSection(data);
+    const framingHints = coachingProfile.includeRecommendationFraming
+      ? buildRecommendationFramingHints({
+          userQuery,
+          threadHints: data.conversationThread as ConversationThreadHints | undefined,
+        })
+      : '';
     const framingSection = framingHints ? `${framingHints}\n\n` : '';
     const continuityNote = threadSection
       ? 'Respond as a continuing conversation. Build on the thread above.'
-      : suppressRichness
-        ? 'Respond as a thoughtful coach: understand before advising.'
-        : 'Respond as a smart conversational guide helping the user make a real decision.';
-    return `${coachingBlock}${threadSection}${richnessSection}${framingSection}${assembledSection}USER'S LATEST MESSAGE:\n${userQuery}
+      : coachingProfile.includeRecommendationRichness
+        ? 'Respond as a smart conversational guide helping the user make a real decision.'
+        : 'Answer naturally and directly. Use the amount of explanation appropriate to the question. Do not assume the user is making a decision unless they asked for one.';
+    return `${coachingBlock}${threadSection}${framingSection}${assembledSection}USER'S LATEST MESSAGE:\n${userQuery}
 
 ${continuityNote} Use private context only when it genuinely helps. Never mention productivity scores, work-life balance, dashboards, or internal analytics unless explicitly asked.`;
+  }
+
+  if (contract === 'grounded_answer') {
+    const groundingNote =
+      data.groundingSatisfied === false
+        ? `\nGROUNDING STATUS: Authoritative context for this request appears incomplete or unavailable. Do not fabricate the missing fact.\n`
+        : data.groundingSatisfied === true
+          ? `\nGROUNDING STATUS: Authoritative context was assembled; prefer it over speculation.\n`
+          : '\n';
+    const threadSection = buildThreadSection(data);
+    return `${GROUNDED_TRUTHFULNESS_BLOCK}
+${groundingNote}
+${threadSection}${assembledSection}USER'S LATEST MESSAGE:
+${userQuery}
+
+Answer naturally and directly from authoritative private context only. Do not produce an enterprise report (no key insights, risks, or recommended actions).`;
   }
 
   return `USER REQUEST: ${userQuery}
@@ -124,4 +209,20 @@ REQUEST CONTEXT:
 - Module Context: ${(data.currentModule as string) || 'Cross-module'}
 
 Please respond as Vssyl's AI assistant using the full context above. Follow the v2 JSON response format from your instructions.`;
+}
+
+/** Exposed for provider system prompts and tests. */
+export function resolveConversationCoachingForProviderData(
+  data?: Record<string, unknown>
+): ConversationCoachingProfile {
+  if (!data) {
+    return {
+      style: 'informational',
+      includeRecommendationRichness: false,
+      includeRecommendationFraming: false,
+    };
+  }
+  const userQuery =
+    typeof data.userQuery === 'string' && data.userQuery.trim() ? data.userQuery.trim() : '';
+  return resolveCoachingProfile(data, userQuery);
 }

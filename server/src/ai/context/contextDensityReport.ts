@@ -8,6 +8,7 @@ import type { AIAssembledContext, AIContextTier } from './AIContextAssembler';
 import {
   CONVERSATION_CONTEXT_BUDGET_TOKENS,
   ENTERPRISE_CONTEXT_BUDGET_TOKENS,
+  GROUNDED_CONTEXT_BUDGET_TOKENS,
 } from './contextProfile';
 import { allocateTierBudget } from './ContextBudgetManager';
 
@@ -221,7 +222,9 @@ export function buildContextDensityReport(
     metrics?.contextBudgetTokens ??
     (input.assembled.structuredResponseMode === 'conversation'
       ? CONVERSATION_CONTEXT_BUDGET_TOKENS
-      : ENTERPRISE_CONTEXT_BUDGET_TOKENS);
+      : input.assembled.structuredResponseMode === 'answer'
+        ? GROUNDED_CONTEXT_BUDGET_TOKENS
+        : ENTERPRISE_CONTEXT_BUDGET_TOKENS);
 
   const byTier: ContextDensityTierUsage[] = tiers.map((tier) => {
     const tierBlocks = injectedBlocks.filter((b) => b.tier === tier);

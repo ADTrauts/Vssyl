@@ -3,12 +3,16 @@ import { AIRequest, AIResponse, UserContext } from '../core/DigitalLifeTwinServi
 import { normalizeAIResponse } from '../utils/normalizeAIResponse';
 import type { AIResponseMode } from '../types/structuredResponse';
 import { buildStructuredResponseFormatInstructions } from '../prompts/structuredResponseFormat';
-import { CONVERSATION_SYSTEM_PRESENCE } from '../prompts/conversationMomentum';
+import {
+  CONVERSATION_SYSTEM_PRESENCE,
+  CONVERSATION_SYSTEM_PRESENCE_RECOMMENDATION,
+} from '../prompts/conversationMomentum';
 import {
   CONVERSATION_ASSISTANT_IDENTITY,
+  CONVERSATION_ASSISTANT_IDENTITY_RECOMMENDATION,
   CONVERSATION_RECOMMENDATION_RICHNESS_BLOCK,
 } from '../prompts/conversationRecommendationRichness';
-import { buildProviderUserPrompt } from '../prompts/providerUserPrompt';
+import { buildProviderUserPrompt, resolveConversationCoachingForProviderData } from '../prompts/providerUserPrompt';
 import { logger } from '../../lib/logger';
 import type { ResolvedEffectivePreferences } from '../preferences/preferenceTypes';
 import {
@@ -196,6 +200,12 @@ export class OpenAIProvider {
         }
         const normalized = normalizeAIResponse(parsed, {
           structuredResponseMode: data.structuredResponseMode as AIResponseMode | undefined,
+          responseContract:
+            data.responseContract === 'grounded_answer' ||
+            data.responseContract === 'conversation' ||
+            data.responseContract === 'enterprise'
+              ? data.responseContract
+              : undefined,
         });
         return {
           id: this.generateResponseId(),
@@ -259,6 +269,12 @@ export class OpenAIProvider {
         }
         const normalized = normalizeAIResponse(parsed, {
           structuredResponseMode: data.structuredResponseMode as AIResponseMode | undefined,
+          responseContract:
+            data.responseContract === 'grounded_answer' ||
+            data.responseContract === 'conversation' ||
+            data.responseContract === 'enterprise'
+              ? data.responseContract
+              : undefined,
         });
         const inputTokens = 0; // streaming doesn't give us token counts easily
         const outputTokens = 0;
@@ -441,6 +457,12 @@ export class OpenAIProvider {
       }
       const normalized = normalizeAIResponse(parsed, {
         structuredResponseMode: data.structuredResponseMode as AIResponseMode | undefined,
+        responseContract:
+          data.responseContract === 'grounded_answer' ||
+          data.responseContract === 'conversation' ||
+          data.responseContract === 'enterprise'
+            ? data.responseContract
+            : undefined,
       });
 
       const inputTokens = completion.usage?.prompt_tokens || 0;
@@ -665,8 +687,21 @@ export class OpenAIProvider {
    */
   private buildSystemPrompt(context: UserContext, data?: Record<string, unknown>): string {
     const structuredResponseMode = data?.structuredResponseMode as AIResponseMode | undefined;
-    const formatBlock = buildStructuredResponseFormatInstructions(structuredResponseMode);
-    const conversationMode = structuredResponseMode === 'conversation';
+    const responseContract =
+      data?.responseContract === 'grounded_answer' ||
+      data?.responseContract === 'conversation' ||
+      data?.responseContract === 'enterprise'
+        ? data.responseContract
+        : structuredResponseMode === 'conversation'
+          ? 'conversation'
+          : 'enterprise';
+    const conversationMode = responseContract === 'conversation';
+    const groundedMode = responseContract === 'grounded_answer';
+    const coachingProfile = conversationMode ? resolveConversationCoachingForProviderData(data) : null;
+    const formatBlock = buildStructuredResponseFormatInstructions(structuredResponseMode, {
+      includeRecommendationGuidance: coachingProfile?.includeRecommendationRichness,
+      responseContract,
+    });
     const resolved = data?.resolvedEffectivePreferences as ResolvedEffectivePreferences | undefined;
 
     const preferenceBlock = resolved
@@ -681,14 +716,25 @@ export class OpenAIProvider {
       : null;
 
     const conversationRichness =
-      conversationMode && richnessOverride
-        ? `${CONVERSATION_RECOMMENDATION_RICHNESS_BLOCK}\n${richnessOverride}`
-        : conversationMode
-          ? CONVERSATION_RECOMMENDATION_RICHNESS_BLOCK
-          : '';
+      conversationMode && coachingProfile?.includeRecommendationRichness
+        ? richnessOverride
+          ? `${CONVERSATION_RECOMMENDATION_RICHNESS_BLOCK}\n${richnessOverride}`
+          : CONVERSATION_RECOMMENDATION_RICHNESS_BLOCK
+        : '';
 
-    return `You are Vssyl's AI assistant${conversationMode ? '' : '. You help the user understand their personal, business, and module context'}. You may represent the user's context accurately, but you must not claim to be the user. Be helpful, clear, and grounded in the data and instructions provided.
-${conversationMode ? `\n${CONVERSATION_ASSISTANT_IDENTITY}\n${CONVERSATION_SYSTEM_PRESENCE}\n${conversationRichness}\n` : ''}
+    const conversationIdentity = coachingProfile?.includeRecommendationRichness
+      ? CONVERSATION_ASSISTANT_IDENTITY_RECOMMENDATION
+      : CONVERSATION_ASSISTANT_IDENTITY;
+    const conversationPresence = coachingProfile?.includeRecommendationRichness
+      ? CONVERSATION_SYSTEM_PRESENCE_RECOMMENDATION
+      : CONVERSATION_SYSTEM_PRESENCE;
+
+    const groundedIdentity = groundedMode
+      ? `\n${CONVERSATION_ASSISTANT_IDENTITY}\n${CONVERSATION_SYSTEM_PRESENCE}\n`
+      : '';
+
+    return `You are Vssyl's AI assistant${conversationMode || groundedMode ? '' : '. You help the user understand their personal, business, and module context'}. You may represent the user's context accurately, but you must not claim to be the user. Be helpful, clear, and grounded in the data and instructions provided.
+${conversationMode ? `\n${conversationIdentity}\n${conversationPresence}\n${conversationRichness ? `${conversationRichness}\n` : ''}` : ''}${groundedIdentity}
 
 ${preferenceBlock}
 
@@ -713,7 +759,8 @@ GUIDELINES:
 - Consider how actions affect others and require approval when needed
 - Adapt to the personality profile for tone only; do not role-play as the user
 - Provide insights that span multiple aspects of the user's life when relevant
-- Use short paragraphs in "summary" and section "content"; use "bullets" inside sections when listing`;
+- Use short paragraphs in "summary" and section "content"; use "bullets" inside sections when listing
+${groundedMode ? '- For factual current-state questions, never invent tenant-specific facts missing from private context\n' : ''}`;
   }
 
   /**

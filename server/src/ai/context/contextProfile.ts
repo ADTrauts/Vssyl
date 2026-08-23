@@ -1,10 +1,12 @@
 /**
- * Context profiles: conversation (quiet, small budget) vs enterprise (full assembly).
+ * Context profiles: conversation (quiet) vs grounded (medium authoritative) vs enterprise (full).
+ * Independent of response contract / prompt formatting (P3).
  */
 
 import type { AIAssembledContext } from './AIContextAssembler';
+import type { AIResponseContract } from '../utils/responseContract';
 
-export type ContextProfile = 'conversation' | 'enterprise';
+export type ContextProfile = 'conversation' | 'grounded' | 'enterprise';
 
 export type ContextVisibility =
   | 'silent'
@@ -13,6 +15,8 @@ export type ContextVisibility =
   | 'enterprise_only';
 
 export const CONVERSATION_CONTEXT_BUDGET_TOKENS = 1000;
+/** P3: medium budget for authoritative module/file/calendar/business blocks without full enterprise dump. */
+export const GROUNDED_CONTEXT_BUDGET_TOKENS = 3500;
 export const ENTERPRISE_CONTEXT_BUDGET_TOKENS = 6000;
 
 const ENTERPRISE_ONLY_BLOCK_TITLES = new Set([
@@ -36,7 +40,28 @@ export interface ContextProfileBlockMeta {
   reasonIncluded?: string;
 }
 
-export function resolveContextProfile(structuredResponseMode?: string): ContextProfile {
+export interface ResolveContextProfileInput {
+  structuredResponseMode?: string;
+  responseContract?: AIResponseContract;
+  requiresAuthoritativeContext?: boolean;
+}
+
+/**
+ * Context capacity / block filtering — not the response format contract.
+ */
+export function resolveContextProfile(
+  structuredResponseMode?: string,
+  options?: Omit<ResolveContextProfileInput, 'structuredResponseMode'>
+): ContextProfile {
+  if (options?.responseContract === 'grounded_answer') {
+    return 'grounded';
+  }
+  if (
+    options?.requiresAuthoritativeContext &&
+    (structuredResponseMode || '').trim().toLowerCase() === 'answer'
+  ) {
+    return 'grounded';
+  }
   return (structuredResponseMode || '').trim().toLowerCase() === 'conversation'
     ? 'conversation'
     : 'enterprise';
@@ -101,6 +126,23 @@ export function applyContextProfile(input: ApplyContextProfileInput): ApplyConte
     };
   }
 
+  // grounded: keep authoritative module/file/calendar/business blocks; drop synthetic insight noise
+  if (profile === 'grounded') {
+    const kept: AIAssembledContext['contextBlocks'] = [];
+    for (const block of blocks) {
+      if (ENTERPRISE_ONLY_BLOCK_TITLES.has(block.title)) {
+        excludedTitles.push(block.title);
+        continue;
+      }
+      includedTitles.push(block.title);
+      kept.push({
+        ...block,
+        inclusionReason: block.inclusionReason ?? 'grounded profile — authoritative context retained',
+      });
+    }
+    return { blocks: kept, includedTitles, excludedTitles };
+  }
+
   const kept: AIAssembledContext['contextBlocks'] = [];
 
   for (const block of blocks) {
@@ -138,5 +180,13 @@ export function conversationRankFilter(
 }
 
 export function maxBlocksForProfile(profile: ContextProfile): number {
-  return profile === 'conversation' ? 6 : 12;
+  if (profile === 'conversation') return 6;
+  if (profile === 'grounded') return 10;
+  return 12;
+}
+
+export function contextBudgetTokensForProfile(profile: ContextProfile): number {
+  if (profile === 'conversation') return CONVERSATION_CONTEXT_BUDGET_TOKENS;
+  if (profile === 'grounded') return GROUNDED_CONTEXT_BUDGET_TOKENS;
+  return ENTERPRISE_CONTEXT_BUDGET_TOKENS;
 }

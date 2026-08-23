@@ -30,6 +30,8 @@ const ALLOWED_STRUCTURED_MODES = new Set<AIResponseMode>([
 export interface NormalizeAIResponseOptions {
   /** When set, enforces thin conversation shape even if the model over-produced report fields. */
   structuredResponseMode?: AIResponseMode;
+  /** P3: thin grounded answer keeps evidence, strips report scaffolding. */
+  responseContract?: 'conversation' | 'grounded_answer' | 'enterprise';
 }
 
 /**
@@ -63,6 +65,37 @@ export function applyConversationModeShape(structured: StructuredAIResponse): St
       ? { level: structured.confidence.level }
       : { level: 'medium' },
     style: { tone: 'warm', format: 'standard' },
+    metadata: {
+      ...(structured.metadata || {}),
+      responseVersion: AI_RESPONSE_VERSION,
+      responseDensity: structured.metadata?.responseDensity ?? 'light',
+    },
+  };
+}
+
+/**
+ * P3: thin grounded factual shape — keep evidence/provenance, drop report scaffolding.
+ */
+export function applyGroundedAnswerShape(structured: StructuredAIResponse): StructuredAIResponse {
+  const parts: string[] = [];
+  if (structured.summary?.trim()) {
+    parts.push(structured.summary.trim());
+  }
+  for (const section of structured.sections || []) {
+    const content = (section.content || '').trim();
+    if (content) parts.push(content);
+  }
+  const summary = parts.join('\n\n').trim() || structured.summary?.trim() || 'No content';
+
+  return {
+    mode: 'answer',
+    summary,
+    type: 'answer',
+    evidence: structured.evidence,
+    confidence: structured.confidence?.level
+      ? { level: structured.confidence.level }
+      : { level: 'medium' },
+    style: { tone: 'clear', format: 'standard' },
     metadata: {
       ...(structured.metadata || {}),
       responseVersion: AI_RESPONSE_VERSION,
@@ -388,12 +421,17 @@ export function normalizeAIResponse(
         : undefined,
       metadata: {
         responseVersion: AI_RESPONSE_VERSION,
-        ...(options?.structuredResponseMode === 'conversation' ? { responseDensity: 'light' as const } : {}),
+        ...(options?.structuredResponseMode === 'conversation' ||
+        options?.responseContract === 'grounded_answer'
+          ? { responseDensity: 'light' as const }
+          : {}),
       },
     };
 
     if (mode === 'conversation' || options?.structuredResponseMode === 'conversation') {
       structured = applyConversationModeShape(structured);
+    } else if (options?.responseContract === 'grounded_answer') {
+      structured = applyGroundedAnswerShape(structured);
     }
 
     const response = plainTextFromStructured(structured);

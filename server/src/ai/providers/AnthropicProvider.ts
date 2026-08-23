@@ -3,12 +3,16 @@ import { AIRequest, AIResponse, UserContext } from '../core/DigitalLifeTwinServi
 import { normalizeAIResponse } from '../utils/normalizeAIResponse';
 import type { AIResponseMode } from '../types/structuredResponse';
 import { buildStructuredResponseFormatInstructions } from '../prompts/structuredResponseFormat';
-import { CONVERSATION_SYSTEM_PRESENCE } from '../prompts/conversationMomentum';
+import {
+  CONVERSATION_SYSTEM_PRESENCE,
+  CONVERSATION_SYSTEM_PRESENCE_RECOMMENDATION,
+} from '../prompts/conversationMomentum';
 import {
   CONVERSATION_ASSISTANT_IDENTITY,
+  CONVERSATION_ASSISTANT_IDENTITY_RECOMMENDATION,
   CONVERSATION_RECOMMENDATION_RICHNESS_BLOCK,
 } from '../prompts/conversationRecommendationRichness';
-import { buildProviderUserPrompt } from '../prompts/providerUserPrompt';
+import { buildProviderUserPrompt, resolveConversationCoachingForProviderData } from '../prompts/providerUserPrompt';
 import { logger } from '../../lib/logger';
 import type { ResolvedEffectivePreferences } from '../preferences/preferenceTypes';
 import {
@@ -206,6 +210,12 @@ export class AnthropicProvider {
       }
       const normalized = normalizeAIResponse(parsed, {
         structuredResponseMode: data.structuredResponseMode as AIResponseMode | undefined,
+        responseContract:
+          data.responseContract === 'grounded_answer' ||
+          data.responseContract === 'conversation' ||
+          data.responseContract === 'enterprise'
+            ? data.responseContract
+            : undefined,
       });
 
       const inputTokens = response.usage.input_tokens;
@@ -303,8 +313,21 @@ export class AnthropicProvider {
    */
   private buildSystemPrompt(context: UserContext, data?: Record<string, unknown>): string {
     const structuredResponseMode = data?.structuredResponseMode as AIResponseMode | undefined;
-    const formatBlock = buildStructuredResponseFormatInstructions(structuredResponseMode);
-    const conversationMode = structuredResponseMode === 'conversation';
+    const responseContract =
+      data?.responseContract === 'grounded_answer' ||
+      data?.responseContract === 'conversation' ||
+      data?.responseContract === 'enterprise'
+        ? data.responseContract
+        : structuredResponseMode === 'conversation'
+          ? 'conversation'
+          : 'enterprise';
+    const conversationMode = responseContract === 'conversation';
+    const groundedMode = responseContract === 'grounded_answer';
+    const coachingProfile = conversationMode ? resolveConversationCoachingForProviderData(data) : null;
+    const formatBlock = buildStructuredResponseFormatInstructions(structuredResponseMode, {
+      includeRecommendationGuidance: coachingProfile?.includeRecommendationRichness,
+      responseContract,
+    });
     const resolved = data?.resolvedEffectivePreferences as ResolvedEffectivePreferences | undefined;
 
     const preferenceBlock = resolved
@@ -319,13 +342,20 @@ export class AnthropicProvider {
       : null;
 
     const conversationRichness =
-      conversationMode && richnessOverride
-        ? `${CONVERSATION_RECOMMENDATION_RICHNESS_BLOCK}\n${richnessOverride}`
-        : conversationMode
-          ? CONVERSATION_RECOMMENDATION_RICHNESS_BLOCK
-          : '';
+      conversationMode && coachingProfile?.includeRecommendationRichness
+        ? richnessOverride
+          ? `${CONVERSATION_RECOMMENDATION_RICHNESS_BLOCK}\n${richnessOverride}`
+          : CONVERSATION_RECOMMENDATION_RICHNESS_BLOCK
+        : '';
 
-    return `You are Vssyl's AI assistant${conversationMode ? '' : ', with strong analytical depth'}. You help the user understand their personal, business, and module context${conversationMode ? '' : ' through reasoning and pattern awareness'}. You may represent the user's context accurately, but you must not claim to be the user.
+    const conversationIdentity = coachingProfile?.includeRecommendationRichness
+      ? CONVERSATION_ASSISTANT_IDENTITY_RECOMMENDATION
+      : CONVERSATION_ASSISTANT_IDENTITY;
+    const conversationPresence = coachingProfile?.includeRecommendationRichness
+      ? CONVERSATION_SYSTEM_PRESENCE_RECOMMENDATION
+      : CONVERSATION_SYSTEM_PRESENCE;
+
+    return `You are Vssyl's AI assistant${conversationMode || groundedMode ? '' : ', with strong analytical depth'}. You help the user understand their personal, business, and module context${conversationMode || groundedMode ? '' : ' through reasoning and pattern awareness'}. You may represent the user's context accurately, but you must not claim to be the user.
 
 ${preferenceBlock}
 
@@ -334,7 +364,7 @@ CURRENT CONTEXT:
 - Recent Activity: ${context.recentActivity?.length || 0} recent actions
 - Module Context: ${context.currentModule || 'Cross-module'}
 
-${conversationMode ? `${CONVERSATION_ASSISTANT_IDENTITY}\n${CONVERSATION_SYSTEM_PRESENCE}\n${conversationRichness}\n` : `ANALYTICAL CAPABILITIES:
+${conversationMode ? `${conversationIdentity}\n${conversationPresence}\n${conversationRichness ? `${conversationRichness}\n` : ''}` : groundedMode ? `${CONVERSATION_ASSISTANT_IDENTITY}\n${CONVERSATION_SYSTEM_PRESENCE}\n` : `ANALYTICAL CAPABILITIES:
 - Deep understanding of user behavior patterns across all modules
 - Analysis of relationships and interpersonal dynamics
 - Ethical reasoning for actions affecting others
@@ -345,7 +375,7 @@ ${conversationMode ? `${CONVERSATION_ASSISTANT_IDENTITY}\n${CONVERSATION_SYSTEM_
 
 ${formatBlock}
 
-${conversationMode ? '' : `ANALYTICAL APPROACH:
+${conversationMode || groundedMode ? '' : `ANALYTICAL APPROACH:
 - Consider long-term implications of decisions and actions
 - Analyze patterns across time and modules
 - Understand emotional and social context
@@ -354,7 +384,7 @@ ${conversationMode ? '' : `ANALYTICAL APPROACH:
 - Identify optimization opportunities across the user's digital life
 - Consider work-life balance and personal well-being in recommendations
 `}
-
+${groundedMode ? 'For factual current-state questions, never invent tenant-specific facts missing from private context.\n' : ''}
 FORMATTING: Keep "summary" and section "content" readable (short paragraphs); use "bullets" inside sections for lists only when appropriate.`;
   }
 
@@ -363,12 +393,19 @@ FORMATTING: Keep "summary" and section "content" readable (short paragraphs); us
    */
   private buildUserPrompt(request: AIRequest, data: Record<string, unknown>): string {
     const safeData = this.sanitizeDataForPrompt(data);
-    const conversationMode = (data.structuredResponseMode as string | undefined) === 'conversation';
+    const contract =
+      data.responseContract === 'grounded_answer' ||
+      data.responseContract === 'conversation' ||
+      data.responseContract === 'enterprise'
+        ? data.responseContract
+        : (data.structuredResponseMode as string | undefined) === 'conversation'
+          ? 'conversation'
+          : 'enterprise';
     const base = buildProviderUserPrompt({
       requestQuery: request.query,
       data: { ...safeData, priority: request.priority },
     });
-    if (conversationMode) {
+    if (contract === 'conversation' || contract === 'grounded_answer') {
       return base;
     }
     return `${base}
