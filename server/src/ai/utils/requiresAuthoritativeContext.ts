@@ -47,7 +47,33 @@ const PERSONAL_POSSESSION_OR_LIVE_STATE = new RegExp(
 
 /** Workspace / business operational current-state. */
 const WORKSPACE_CURRENT_STATE =
-  /\b(our|my team(?:'s)?|company(?:'s)?|department(?:'s)?|this department)\b.{0,80}\b(labor|budget|sales|revenue|headcount|staffing|utilization|payroll|kpi|metrics|employees?|workforce|manager|org chart)\b|\b(labor|budget|sales|revenue|headcount|staffing|payroll)\b.{0,40}\b(our|current|today|yesterday|this week|tomorrow)\b|\bhow many employees\b|\bwho is scheduled\b|\bwho is the manager\b|\bmanager of (this |the |our )?department\b/i;
+  /\b(our|my team(?:'s)?|company(?:'s)?|department(?:'s)?|this department)\b.{0,80}\b(labor|budget|sales|revenue|headcount|staffing|staffed|utilization|payroll|kpi|metrics|employees?|workforce|manager|org chart)\b|\b(labor|budget|sales|revenue|headcount|staffing|staffed|payroll)\b.{0,40}\b(our|current|today|yesterday|this week|tomorrow)\b|\bhow many employees\b|\bwho is scheduled\b|\bwho is the manager\b|\bmanager of (this |the |our )?department\b/i;
+
+/**
+ * Active-business live operational state (requires businessId).
+ * we/our + evaluation/temporal staffing, budget, absence, or performance — not broad discovery.
+ */
+const BUSINESS_SCOPED_LIVE_STATE = new RegExp(
+  [
+    // Budget / labor-cost actual state
+    String.raw`\b(?:are we|are (?:our|the))(?:\s+\w+){0,8}\s*(?:over|under|on)\s+(?:our\s+)?budget\b`,
+    String.raw`\bare (?:our|the)?\s*labor costs?\b.{0,40}\b(?:high|low|over|under)\b`,
+    String.raw`\bare labor costs?\b.{0,40}\b(?:high|low|over|under)\b`,
+    // Staffing state (staffed / understaffed / short-staffed morphological variants)
+    String.raw`\bare we (?:fully|under|over)[\s-]?staffed\b`,
+    String.raw`\bare we staff(?:ed|ing)\b`,
+    String.raw`\bare we short[\s-]?staffed\b`,
+    String.raw`\bdo we have enough staff\b`,
+    String.raw`\bare we meeting (?:our )?staffing needs\b`,
+    // Absence / time off
+    String.raw`\b(?:is|are) (?:anyone|anybody) (?:out|off|absent)\b`,
+    String.raw`\bdo we have (?:anyone|anybody) (?:out|off)\b`,
+    // Performance / how are we doing
+    String.raw`\bhow (?:are|did|was) we (?:doing|perform(?:ing)?)\b`,
+    String.raw`\bhow was (?:our )?performance\b`,
+  ].join('|'),
+  'i'
+);
 
 /**
  * Authenticated caller's own identity (User.name / User.email) — not definitional "what is an email".
@@ -88,12 +114,16 @@ const SPECIFIC_USER_RELATIVE_HISTORY = new RegExp(
   'i'
 );
 
-/** Definitional / how-to language — must not trip historical-person patterns alone. */
+/** Definitional / how-to / advisory language — must not trip live-state patterns alone. */
 const GENERAL_CONCEPT_CUE =
-  /\b(?:what does|what is|what means|what makes|how does|how do|how should|why do|why does|meaning of)\b/i;
+  /\b(?:what does|what is|what means|what makes|what causes|what should|how does|how do|how should|how can|why do|why does|why is|meaning of|explain the concept)\b/i;
 
 function hasFileIds(fileIds: unknown): boolean {
   return Array.isArray(fileIds) && fileIds.length > 0;
+}
+
+function hasBusinessScope(input: AuthoritativeContextInput): boolean {
+  return typeof input.businessId === 'string' && input.businessId.trim() !== '';
 }
 
 /**
@@ -167,15 +197,19 @@ export function requiresAuthoritativeContext(input: AuthoritativeContextInput): 
     return true;
   }
 
-  // Operational business-scope cues — not bare "manager"/"department" (definitional false positives).
-  if (
-    typeof input.businessId === 'string' &&
-    input.businessId.trim() !== '' &&
-    /\b(our|team|labor|budget|employees?|staffing|payroll|utilization|sales|revenue|headcount)\b/i.test(
-      q
-    )
-  ) {
-    return true;
+  // B1: active-business live operational state — requires businessId; no tenant auto-selection.
+  if (hasBusinessScope(input) && !GENERAL_CONCEPT_CUE.test(q)) {
+    if (BUSINESS_SCOPED_LIVE_STATE.test(q)) {
+      return true;
+    }
+    // Explicit our/team operational metrics (e.g. labor budget) — not definitional/advisory.
+    if (
+      /\b(our|team|labor|budget|employees?|staffing|staffed|payroll|utilization|sales|revenue|headcount)\b/i.test(
+        q
+      )
+    ) {
+      return true;
+    }
   }
 
   return false;
