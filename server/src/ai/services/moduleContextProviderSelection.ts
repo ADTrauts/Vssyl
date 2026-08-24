@@ -115,6 +115,7 @@ export function selectContextProvider(
       if (/\b(count|how many)\b/.test(q) && names.has('file_count')) {
         return pick('file_count');
       }
+      // Explicit shared/owner/access queries stay on enriched recent_files (D2).
       return pick('recent_files') ?? providers[0];
 
     case 'todo':
@@ -238,7 +239,7 @@ export function buildSuggestedContextProviders(
 export function buildModuleContextFetchParams(
   moduleId: string,
   userId: string,
-  scope?: { businessId?: string; dashboardId?: string }
+  scope?: { businessId?: string; dashboardId?: string; query?: string }
 ): Record<string, unknown> {
   const params: Record<string, unknown> = { userId };
 
@@ -248,6 +249,10 @@ export function buildModuleContextFetchParams(
 
   if (scope?.businessId) {
     params.businessId = scope.businessId;
+  }
+
+  if (typeof scope?.query === 'string' && scope.query.trim().length > 0) {
+    params.query = scope.query.trim();
   }
 
   if (requiresBusinessId(moduleId) && !params.businessId) {

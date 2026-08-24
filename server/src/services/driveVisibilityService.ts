@@ -484,7 +484,42 @@ export const DRIVE_SEARCH_VISIBILITY_MODEL = {
     'Same as browse: owner OR FolderPermission; Policy Engine file:read on folder; trashed excluded.',
 } as const;
 
-/** Row shape for Drive AI context providers (recent files endpoint). */
+/** Row shape for Drive AI context providers (recent / shared files). */
+export function driveAIContextFileSelectForUser(userId: string) {
+  return {
+    id: true,
+    name: true,
+    type: true,
+    size: true,
+    createdAt: true,
+    updatedAt: true,
+    starred: true,
+    folderId: true,
+    dashboardId: true,
+    userId: true,
+    user: {
+      select: {
+        id: true,
+        name: true,
+      },
+    },
+    folder: {
+      select: {
+        id: true,
+        name: true,
+      },
+    },
+    permissions: {
+      where: { userId },
+      select: {
+        canRead: true,
+        canWrite: true,
+      },
+    },
+  } as const;
+}
+
+/** @deprecated Prefer driveAIContextFileSelectForUser — kept for call-site discovery. */
 export const driveAIContextFileSelect = {
   id: true,
   name: true,
@@ -513,7 +548,10 @@ export type DriveAIContextFileRow = {
   starred: boolean;
   folderId: string | null;
   dashboardId: string | null;
+  userId: string;
+  user: { id: string; name: string | null };
   folder: { id: string; name: string } | null;
+  permissions: Array<{ canRead: boolean; canWrite: boolean }>;
 };
 
 export interface DriveAIContextListInput {
@@ -537,7 +575,63 @@ function buildAccessibleActiveFileWhere(
 }
 
 /**
+ * Product shared-files query — same semantics as GET /api/drive/shared files branch.
+ * Owner included; share grantor is not stored on FilePermission.
+ */
+export async function listSharedFilesWithOwner(userId: string) {
+  return prisma.file.findMany({
+    where: {
+      trashedAt: null,
+      permissions: {
+        some: {
+          userId,
+          canRead: true,
+        },
+      },
+    },
+    include: {
+      user: {
+        select: { id: true, name: true, email: true },
+      },
+      permissions: {
+        where: { userId },
+        select: { canRead: true, canWrite: true },
+      },
+    },
+    orderBy: { updatedAt: 'desc' },
+  });
+}
+
+/**
+ * Product shared-folders query — same semantics as GET /api/drive/shared folders branch.
+ */
+export async function listSharedFoldersWithOwner(userId: string) {
+  return prisma.folder.findMany({
+    where: {
+      trashedAt: null,
+      permissions: {
+        some: {
+          userId,
+          canRead: true,
+        },
+      },
+    },
+    include: {
+      user: {
+        select: { id: true, name: true, email: true },
+      },
+      permissions: {
+        where: { userId },
+        select: { canRead: true, canWrite: true },
+      },
+    },
+    orderBy: { updatedAt: 'desc' },
+  });
+}
+
+/**
  * Recent files for AI context — owned + shared, PE-gated, excludes trashed (Wave 1C).
+ * Includes owner + current-user permission rows for share/owner truth (D2).
  */
 export async function listAccessibleRecentFilesForAIContext(
   input: DriveAIContextListInput
@@ -545,7 +639,36 @@ export async function listAccessibleRecentFilesForAIContext(
   const { userId, dashboardId, limit = 10 } = input;
   const candidates = await prisma.file.findMany({
     where: buildAccessibleActiveFileWhere(userId, dashboardId),
-    select: driveAIContextFileSelect,
+    select: driveAIContextFileSelectForUser(userId),
+    orderBy: [{ updatedAt: 'desc' }, { createdAt: 'desc' }],
+    take: Math.min(Math.max(limit, 1), 50),
+  });
+  return filterFilesByReadPolicy(userId, candidates);
+}
+
+/**
+ * Shared-with-me files for AI — authorization-first (FilePermission + PE), excludes trashed.
+ * Does not assert share grantor (schema has no grantor field).
+ */
+export async function listSharedFilesForAIContext(
+  input: DriveAIContextListInput
+): Promise<DriveAIContextFileRow[]> {
+  const { userId, dashboardId, limit = 25 } = input;
+  const where: Prisma.FileWhereInput = {
+    trashedAt: null,
+    permissions: {
+      some: {
+        userId,
+        canRead: true,
+      },
+    },
+  };
+  if (dashboardId !== undefined && dashboardId !== null) {
+    where.dashboardId = dashboardId;
+  }
+  const candidates = await prisma.file.findMany({
+    where,
+    select: driveAIContextFileSelectForUser(userId),
     orderBy: [{ updatedAt: 'desc' }, { createdAt: 'desc' }],
     take: Math.min(Math.max(limit, 1), 50),
   });

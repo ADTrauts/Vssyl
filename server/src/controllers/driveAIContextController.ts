@@ -20,6 +20,13 @@ function parseOptionalDashboardId(req: Request): string | null | undefined {
   return typeof raw === 'string' ? raw : undefined;
 }
 
+function parseOptionalQuery(req: Request): string | undefined {
+  const raw = req.query.query ?? req.query.q;
+  if (typeof raw !== 'string') return undefined;
+  const trimmed = raw.trim();
+  return trimmed.length > 0 ? trimmed : undefined;
+}
+
 /**
  * GET /api/drive/ai/context/recent
  */
@@ -34,7 +41,9 @@ export async function getRecentFilesContext(req: Request, res: Response) {
       });
     }
 
-    const payload = await buildRecentFilesAIContext(userId, parseOptionalDashboardId(req));
+    const payload = await buildRecentFilesAIContext(userId, parseOptionalDashboardId(req), {
+      query: parseOptionalQuery(req),
+    });
 
     res.json({
       success: true,

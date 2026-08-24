@@ -21,9 +21,9 @@ export const ACTION_MUTATION =
 const PERSONAL_CALENDAR_STATE =
   /\b(meetings?|calendar|agenda|schedule|who am i meeting|who am i seeing|am i free|what(?:'s| is) on my (?:calendar|schedule))\b/i;
 
-/** Drive / file personal current-state (shares, personal drive, document currency). */
+/** Drive / file personal current-state (shares, ownership, personal drive, document currency). */
 const PERSONAL_FILE_STATE =
-  /\b(files?|documents?|folders?)\b.{0,40}\b(shared|sent|gave)\b|\b(shared|sent|gave)\b.{0,40}\b(files?|documents?)\b|\b(my|our)\s+(files?|documents?|drive)\b|\bwhat files?\b|\b(this|the|that)\s+(document|file|doc)\b.{0,40}\b(last\s+)?(updated|modified|changed|edited)\b|\bwhen was (this|the|that)\s+(document|file|doc)\b/i;
+  /\b(files?|documents?|folders?)\b.{0,60}\b(shared|accessible|own(?:s|ed)?)\b|\b(shared|accessible)\b.{0,40}\b(files?|documents?)\b|\b(my|our)\s+(files?|documents?|drive)\b|\bwhat files?\b|\bwho owns\b|\bwho shared\b.{0,80}\bwith me\b|\bfiles?\s+(?:owned by|from)\b|\b(?:owned by)\b.{0,60}\b(?:that )?I can access\b|\bshow me (?:the )?(?:file|document)s?\b|\b(this|the|that)\s+(document|file|doc)\b.{0,40}\b(last\s+)?(updated|modified|changed|edited)\b|\bwhen was (this|the|that)\s+(document|file|doc)\b/i;
 
 /** Workspace / business operational current-state. */
 const WORKSPACE_CURRENT_STATE =

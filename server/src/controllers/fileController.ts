@@ -29,7 +29,11 @@ import {
   emitFileMovedEvent,
   emitFileRenamedEvent,
 } from '../events/domainEventEmitters';
-import { listAccessibleDriveFilesForBrowse } from '../services/driveVisibilityService';
+import {
+  listAccessibleDriveFilesForBrowse,
+  listSharedFilesWithOwner,
+  listSharedFoldersWithOwner,
+} from '../services/driveVisibilityService';
 import { createDriveFile, DriveUploadError } from '../services/driveUploadService';
 import { getActivityForEntity } from '../services/platform/platformActivityQueryService';
 import { toNormalizedModuleActivityLogRow } from '../services/platform/platformActivityDriveMapper';
@@ -955,47 +959,10 @@ export async function getSharedItems(req: Request, res: Response) {
       userId
     });
 
-    // Get files that have been shared with this user
-    let sharedFiles: Array<{
-      id: string;
-      name: string;
-      type: string;
-      size: number;
-      url: string;
-      path: string | null;
-      folderId: string | null;
-      dashboardId: string | null;
-      userId: string;
-      starred: boolean;
-      trashedAt: Date | null;
-      createdAt: Date;
-      updatedAt: Date;
-      order: number;
-      user: { id: string; name: string | null; email: string };
-      permissions: Array<{ canRead: boolean; canWrite: boolean }>;
-    }> = [];
+    // Domain helper shared with Drive AI context (owner ≠ grantor; grantor not stored).
+    let sharedFiles: Awaited<ReturnType<typeof listSharedFilesWithOwner>> = [];
     try {
-      sharedFiles = await prisma.file.findMany({
-        where: {
-          trashedAt: null,
-          permissions: {
-            some: {
-              userId: userId,
-              canRead: true
-            }
-          }
-        },
-        include: {
-          user: {
-            select: { id: true, name: true, email: true }
-          },
-          permissions: {
-            where: { userId: userId },
-            select: { canRead: true, canWrite: true }
-          }
-        },
-        orderBy: { updatedAt: 'desc' }
-      });
+      sharedFiles = await listSharedFilesWithOwner(userId);
     } catch (fileError: unknown) {
       const err = fileError as Error;
       await logger.error('Error fetching shared files', {
@@ -1007,47 +974,12 @@ export async function getSharedItems(req: Request, res: Response) {
         },
         userId
       });
-      // Continue with empty array - don't fail the entire request
       sharedFiles = [];
     }
 
-    // Get folders that have been shared with this user
-    let sharedFolders: Array<{
-      id: string;
-      name: string;
-      parentId: string | null;
-      dashboardId: string | null;
-      userId: string;
-      starred: boolean;
-      trashedAt: Date | null;
-      createdAt: Date;
-      updatedAt: Date;
-      order: number;
-      user: { id: string; name: string | null; email: string };
-      permissions: Array<{ canRead: boolean; canWrite: boolean }>;
-    }> = [];
+    let sharedFolders: Awaited<ReturnType<typeof listSharedFoldersWithOwner>> = [];
     try {
-      sharedFolders = await prisma.folder.findMany({
-        where: {
-          trashedAt: null,
-          permissions: {
-            some: {
-              userId: userId,
-              canRead: true
-            }
-          }
-        },
-        include: {
-          user: {
-            select: { id: true, name: true, email: true }
-          },
-          permissions: {
-            where: { userId: userId },
-            select: { canRead: true, canWrite: true }
-          }
-        },
-        orderBy: { updatedAt: 'desc' }
-      });
+      sharedFolders = await listSharedFoldersWithOwner(userId);
     } catch (folderError: unknown) {
       const err = folderError as Error;
       await logger.error('Error fetching shared folders', {
@@ -1059,7 +991,6 @@ export async function getSharedItems(req: Request, res: Response) {
         },
         userId
       });
-      // Continue with empty array - don't fail the entire request
       sharedFolders = [];
     }
 

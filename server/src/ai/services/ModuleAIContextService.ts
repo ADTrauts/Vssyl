@@ -467,11 +467,12 @@ export class ModuleAIContextService {
       const cacheDuration = provider.cacheDuration || 900000; // Default 15 minutes
       const scopeKey = resolveScopeKey(parameters);
       const cacheKey = buildProviderCacheKey(providerName, scopeKey);
-      const cachedEntry = readProviderCache(
-        installation?.contextProviderCache,
-        cacheKey,
-        cacheDuration
-      );
+      // Query-scoped fetches (e.g. Drive share/owner focus) must not reuse unscoped cache.
+      const queryScoped =
+        typeof parameters?.query === 'string' && parameters.query.trim().length > 0;
+      const cachedEntry = queryScoped
+        ? null
+        : readProviderCache(installation?.contextProviderCache, cacheKey, cacheDuration);
 
       if (cachedEntry) {
         console.log(`✅ Cache hit for ${moduleId}.${providerName} (${cacheKey})`);
@@ -505,6 +506,7 @@ export class ModuleAIContextService {
           typeof parameters?.businessId === 'string' ? parameters.businessId : undefined,
         dashboardId:
           typeof parameters?.dashboardId === 'string' ? parameters.dashboardId : undefined,
+        query: typeof parameters?.query === 'string' ? parameters.query : undefined,
       });
 
       const response = await axios.get(endpoint, {
@@ -516,20 +518,21 @@ export class ModuleAIContextService {
         timeout: 5000, // 5 second timeout
       });
 
-      const nextProviderCache = writeProviderCache(
-        installation?.contextProviderCache,
-        cacheKey,
-        response.data
-      );
-
-      await prisma.moduleInstallation.update({
-        where: {
-          moduleId_userId: { moduleId, userId },
-        },
-        data: {
-          contextProviderCache: nextProviderCache as Prisma.InputJsonValue,
-        },
-      });
+      if (!queryScoped) {
+        const nextProviderCache = writeProviderCache(
+          installation?.contextProviderCache,
+          cacheKey,
+          response.data
+        );
+        await prisma.moduleInstallation.update({
+          where: {
+            moduleId_userId: { moduleId, userId },
+          },
+          data: {
+            contextProviderCache: nextProviderCache as Prisma.InputJsonValue,
+          },
+        });
+      }
 
       const latency = Date.now() - startTime;
 

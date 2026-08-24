@@ -7,7 +7,6 @@ import { classifyProviderFailure } from './contextDensityReport';
 import type {
   AIContextProviderResult,
   AIContextProviderRetrieveInput,
-  AIContextFreshness,
 } from '../../../../shared/src/types/ai-context-provider-contract';
 import type { RegisteredContextProvider } from './contextProviderRegistry';
 import { buildModuleContextFetchParams } from '../services/moduleContextProviderSelection';
@@ -33,6 +32,7 @@ export async function fetchRegisteredProviderContext(
     const fetchParams = buildModuleContextFetchParams(provider.moduleId, input.userId, {
       businessId: input.businessId,
       dashboardId: input.dashboardId,
+      query: input.query,
     });
 
     const response = await moduleAIContextService.fetchModuleContext(
