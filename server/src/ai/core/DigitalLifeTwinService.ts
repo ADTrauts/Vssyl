@@ -11,6 +11,11 @@ import { CrossModuleContextEngine } from '../context/CrossModuleContextEngine';
 import { DigitalLifeTwinCore, LifeTwinQuery, DigitalLifeTwinResponse, type ConversationHistoryItem } from './DigitalLifeTwinCore';
 import type { StructuredAIResponse } from '../types/structuredResponse';
 import type { ConversationContinuityState, ActiveTopicState } from '../utils/conversationContinuity';
+import { inferResponseMode, type AIResponseMode } from '../utils/responseMode';
+import {
+  inferStructuredResponseMode,
+  type InferStructuredResponseModeResult,
+} from '../utils/structuredResponseMode';
 import { getRecentConversationMemory } from '../../services/aiConversationMemoryService';
 import { hasExplicitRecallIntent, recallRelevantMessages } from '../../services/aiMessageRecallService';
 import { memoryRetrievalService } from '../memory/MemoryRetrievalService';
@@ -133,6 +138,8 @@ export class DigitalLifeTwinService {
       conversationId?: string;
       fileIds?: string[];
       businessId?: string;
+      responseMode?: AIResponseMode;
+      structuredResponseMode?: string;
       pipelineOptions?: {
         adminDryRun?: boolean;
         skipLearning?: boolean;
@@ -196,6 +203,12 @@ export class DigitalLifeTwinService {
         console.warn('Failed to load conversation history for twin:', err);
       }
     }
+
+    const { resolvedResponseMode, structuredResolution } = this.resolveCanonicalTwinRouting(
+      query,
+      context,
+      conversationHistory
+    );
 
     let recentConversationMemory: Awaited<ReturnType<typeof getRecentConversationMemory>> = [];
     try {
@@ -266,6 +279,8 @@ export class DigitalLifeTwinService {
       ...continuityContext,
       preferredProvider: context.preferredProvider,
       preferredModel: context.preferredModel,
+      resolvedResponseMode,
+      structuredResolution,
     };
 
     return await this.digitalLifeTwinCore.processAsDigitalTwin(lifeTwinQuery);
@@ -289,6 +304,8 @@ export class DigitalLifeTwinService {
       conversationId?: string;
       fileIds?: string[];
       businessId?: string;
+      responseMode?: AIResponseMode;
+      structuredResponseMode?: string;
       pipelineOptions?: {
         adminDryRun?: boolean;
         skipLearning?: boolean;
@@ -348,6 +365,12 @@ export class DigitalLifeTwinService {
         console.warn('Failed to load conversation history for twin (streaming):', err);
       }
     }
+
+    const { resolvedResponseMode, structuredResolution } = this.resolveCanonicalTwinRouting(
+      query,
+      context,
+      conversationHistory
+    );
 
     let recentConversationMemory: Awaited<ReturnType<typeof getRecentConversationMemory>> = [];
     try {
@@ -418,6 +441,8 @@ export class DigitalLifeTwinService {
       ...continuityContext,
       preferredProvider: context.preferredProvider,
       preferredModel: context.preferredModel,
+      resolvedResponseMode,
+      structuredResolution,
     };
     res.setHeader('Content-Type', 'text/event-stream');
     res.setHeader('Cache-Control', 'no-cache');
@@ -441,6 +466,51 @@ export class DigitalLifeTwinService {
     } finally {
       res.end();
     }
+  }
+
+  /**
+   * Resolve canonical response routing once per Twin turn (Package C2).
+   * Runs after current-thread history load; inputs must not depend on memory/orchestration.
+   */
+  private resolveCanonicalTwinRouting(
+    query: string,
+    context: {
+      currentModule?: string;
+      fileIds?: string[];
+      businessId?: string;
+      responseMode?: AIResponseMode;
+      structuredResponseMode?: string;
+    },
+    conversationHistory: ConversationHistoryItem[]
+  ): {
+    resolvedResponseMode: AIResponseMode;
+    structuredResolution: InferStructuredResponseModeResult;
+  } {
+    const resolvedResponseMode = inferResponseMode({
+      query,
+      explicitMode: context.responseMode,
+    });
+    const fileIds = context.fileIds;
+    const structuredResolution = inferStructuredResponseMode({
+      query,
+      explicitMode:
+        typeof context.structuredResponseMode === 'string'
+          ? context.structuredResponseMode
+          : undefined,
+      toneMode: resolvedResponseMode,
+      isFollowUp: conversationHistory.length > 0,
+      fileIds,
+      businessId:
+        typeof context.businessId === 'string' && context.businessId.trim() !== ''
+          ? context.businessId.trim()
+          : undefined,
+      currentModule:
+        typeof context.currentModule === 'string' && context.currentModule.trim() !== ''
+          ? context.currentModule.trim()
+          : undefined,
+      hasAttachedFiles: Array.isArray(fileIds) && fileIds.length > 0,
+    });
+    return { resolvedResponseMode, structuredResolution };
   }
 
   /**

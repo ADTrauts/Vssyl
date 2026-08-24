@@ -64,7 +64,10 @@ import { runConversationReasoning } from '../conversation/conversationReasoningL
 import type { ConversationReasoningResult } from '../conversation/conversationTypes';
 import { inferResponseMode, type AIResponseMode } from '../utils/responseMode';
 import { inferQueryIntent } from '../utils/queryIntent';
-import { inferStructuredResponseMode } from '../utils/structuredResponseMode';
+import {
+  inferStructuredResponseMode,
+  type InferStructuredResponseModeResult,
+} from '../utils/structuredResponseMode';
 import { buildProviderData } from '../utils/buildProviderData';
 import type { AIResponseMode as StructuredAIResponseMode } from '../types/structuredResponse';
 import { PreferenceResolver } from '../preferences/PreferenceResolver';
@@ -282,6 +285,10 @@ export interface LifeTwinQuery {
   preferredProvider?: 'auto' | 'openai' | 'anthropic';
   /** Optional model id override (e.g. gpt-4o-mini). Validated in Core against modelCatalog. */
   preferredModel?: string;
+  /** Canonical Twin path: resolved once in DigitalLifeTwinService before memory retrieval. */
+  resolvedResponseMode?: AIResponseMode;
+  /** Canonical Twin path: authoritative structured routing from Service (Package C2). */
+  structuredResolution?: InferStructuredResponseModeResult;
 }
 
 const MAX_CONTEXT_GENERATIONS_PER_REQUEST = 2;
@@ -848,10 +855,12 @@ export class DigitalLifeTwinCore {
       
       // 3. Analyze the query intent and determine response strategy (legacy heuristics; Package D retirement)
       const queryAnalysis = await this.analyzeQuery(query, userContext, personality);
-      const responseMode = inferResponseMode({
-        query: query.query,
-        explicitMode: query.context.responseMode,
-      });
+      const responseMode =
+        query.resolvedResponseMode ??
+        inferResponseMode({
+          query: query.query,
+          explicitMode: query.context.responseMode,
+        });
       const continuityUpdate = updateConversationContinuityState({
         latestUserMessage: query.query,
         recentMessages: query.conversationHistory ?? [],
@@ -1403,26 +1412,28 @@ export class DigitalLifeTwinCore {
     crossModuleSynthesis?: ContextSynthesisResult
   ) {
     const ctxForStructured = query.context as Record<string, unknown>;
-    const structuredInference = inferStructuredResponseMode({
-      query: query.query,
-      explicitMode:
-        typeof query.context.structuredResponseMode === 'string'
-          ? query.context.structuredResponseMode
-          : undefined,
-      toneMode: responseMode,
-      isFollowUp: Boolean(query.conversationHistory && query.conversationHistory.length > 0),
-      fileIds: ctxForStructured.fileIds,
-      businessId:
-        typeof ctxForStructured.businessId === 'string' ? ctxForStructured.businessId : undefined,
-      currentModule:
-        typeof ctxForStructured.currentModule === 'string'
-          ? ctxForStructured.currentModule
-          : undefined,
-      hasAttachedFiles: Boolean(
-        (attachedFiles && attachedFiles.length > 0) ||
-          (visionImageParts && visionImageParts.length > 0)
-      ),
-    });
+    const structuredInference =
+      query.structuredResolution ??
+      inferStructuredResponseMode({
+        query: query.query,
+        explicitMode:
+          typeof query.context.structuredResponseMode === 'string'
+            ? query.context.structuredResponseMode
+            : undefined,
+        toneMode: responseMode,
+        isFollowUp: Boolean(query.conversationHistory && query.conversationHistory.length > 0),
+        fileIds: ctxForStructured.fileIds,
+        businessId:
+          typeof ctxForStructured.businessId === 'string' ? ctxForStructured.businessId : undefined,
+        currentModule:
+          typeof ctxForStructured.currentModule === 'string'
+            ? ctxForStructured.currentModule
+            : undefined,
+        hasAttachedFiles: Boolean(
+          (attachedFiles && attachedFiles.length > 0) ||
+            (visionImageParts && visionImageParts.length > 0)
+        ),
+      });
     const structuredResponseMode = structuredInference.mode;
     const responseDensity = structuredInference.responseDensity;
     const informationalAnswerEscape = structuredInference.informationalAnswerEscape === true;
