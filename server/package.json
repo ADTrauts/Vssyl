@@ -26,6 +26,8 @@
     "seed:pricing": "ts-node src/scripts/seedPricing.ts",
     "seed:place": "ts-node src/scripts/seedPlaceDemoData.ts",
     "seed:test-data": "ts-node scripts/seed-test-data.ts",
+    "seed:ai-truth": "ts-node scripts/seed-ai-truth-fixture.ts",
+    "verify:ai-truth": "ts-node scripts/verify-ai-truth-fixture.ts",
     "seed:reset-place-tester-password": "ts-node scripts/reset-test-user-password.ts",
     "ensure:calendars": "ts-node scripts/ensure-personal-calendars.ts",
     "smtp:smoke": "ts-node scripts/smtp-smoke-test.ts",
