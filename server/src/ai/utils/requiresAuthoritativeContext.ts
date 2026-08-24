@@ -17,6 +17,49 @@ export interface AuthoritativeContextInput {
 export const ACTION_MUTATION =
   /\b(move|reschedule|cancel|delete|remove|share|create|add|update|send|book|remind|assign|invite|publish|upload|rename)\b.{0,50}\b(meeting|event|file|task|todo|message|invite|calendar|schedule)\b|\b(share this file|share\s+.+?\.(?:pdf|docx?|xlsx?|txt|pptx?)|create a (?:todo|task)|add a (?:todo|task)|schedule a meeting|move my .{0,30} meeting)\b/i;
 
+/** Person name for imperative communication targets (not pronouns/history refs). */
+const ACTION_PERSON_REF = '[A-Za-z][\\w\'-]{1,40}(?:\\s+[A-Za-z][\\w\'-]{1,40})?';
+
+/**
+ * Direct communication / notify imperatives — message/tell/reply without requiring a second entity noun.
+ */
+const COMMUNICATION_ACTION = new RegExp(
+  [
+    // "Message Sarah." / "Please message Sarah." / "Can you message Sarah?"
+    String.raw`\b(?:please\s+|can you\s+|could you\s+|i want you to\s+|i(?:'d| would) like you to\s+)?message\s+${ACTION_PERSON_REF}\b`,
+    String.raw`\bsend\s+(?:${ACTION_PERSON_REF}\s+)?a\s+message\b`,
+    String.raw`\bsend\s+a\s+message\s+to\s+${ACTION_PERSON_REF}\b`,
+    // "Tell Sarah I'll be late." — not "tell me my …"
+    String.raw`\b(?:please\s+|can you\s+|could you\s+|i want you to\s+|i(?:'d| would) like you to\s+)?tell\s+(?!me\b)${ACTION_PERSON_REF}\b`,
+    String.raw`\b(?:please\s+|can you\s+|could you\s+)?let\s+${ACTION_PERSON_REF}\s+know\b`,
+    String.raw`\b(?:please\s+|can you\s+|could you\s+)?notify\s+${ACTION_PERSON_REF}\b`,
+    String.raw`\b(?:please\s+|can you\s+|could you\s+)?ask\s+${ACTION_PERSON_REF}\b.{0,40}\b(?:if|whether|about|when|where|why|how|available)\b`,
+    String.raw`\b(?:reply|respond)\s+to\s+${ACTION_PERSON_REF}\b`,
+  ].join('|'),
+  'i'
+);
+
+/**
+ * Share/send/grant imperatives with referential object ("this/that/it") — resource may be unresolved.
+ */
+const SHARE_SEND_REFERENTIAL_ACTION =
+  /\b(?:please\s+|can you\s+|could you\s+)?(?:share|send)\s+(?:this|that|it|the\s+(?:file|document))\b.{0,60}\b(?:with|to)\b|\b(?:give|grant)\s+[A-Za-z][\w'-]{1,40}(?:\s+[A-Za-z][\w'-]{1,40})?\s+access\b/i;
+
+/**
+ * Historical / interrogative reads about past sends/shares/messages — not mutations.
+ */
+const ACTION_HISTORICAL_READ_GUARD = new RegExp(
+  [
+    String.raw`\b(?:what|who|when|which)\s+(?:did|was|were|has|have)\b`,
+    String.raw`\bexplain\s+what\b`,
+    String.raw`\bwhat\s+(?:file|document|message|doc)s?\s+did\b`,
+    String.raw`\bwho\s+(?:shared|sent|messaged|message)\b`,
+    String.raw`\bwhat\s+did\s+i\s+send\b`,
+    String.raw`\bwhat\s+(?:was\s+(?:the\s+)?(?:last\s+)?(?:thing\s+)?)?(?:she|he|they|my\s+(?:manager|boss|supervisor)|${ACTION_PERSON_REF})\s+(?:sent|shared|said|told|assigned|gave)\b`,
+  ].join('|'),
+  'i'
+);
+
 /** Personal calendar / schedule current-state. */
 const PERSONAL_CALENDAR_STATE =
   /\b(meetings?|calendar|agenda|schedule|scheduled|who am i meeting|who am i seeing|am i free|what(?:'s| is) on my (?:calendar|schedule)|(?:what do i have|do i have (?:anything )?)\s*scheduled)\b/i;
@@ -130,7 +173,28 @@ function hasBusinessScope(input: AuthoritativeContextInput): boolean {
  * True when the user is asking to mutate / execute (not a factual read).
  */
 export function isActionMutationRequest(query: string): boolean {
-  return ACTION_MUTATION.test((query || '').trim());
+  const q = (query || '').trim();
+  if (!q) return false;
+
+  if (GENERAL_CONCEPT_CUE.test(q)) {
+    return false;
+  }
+
+  if (ACTION_HISTORICAL_READ_GUARD.test(q) || SPECIFIC_USER_RELATIVE_HISTORY.test(q)) {
+    return false;
+  }
+
+  if (ACTION_MUTATION.test(q)) {
+    return true;
+  }
+  if (COMMUNICATION_ACTION.test(q)) {
+    return true;
+  }
+  if (SHARE_SEND_REFERENTIAL_ACTION.test(q)) {
+    return true;
+  }
+
+  return false;
 }
 
 /**
