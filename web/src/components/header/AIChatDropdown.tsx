@@ -3,7 +3,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { createPortal } from 'react-dom';
 import { Brain, Send, X, Sparkles, Bot, User, Search, Plus, Settings, History, ExternalLink, Zap, Lightbulb, TrendingUp, Clock, MoreVertical, Share2, Edit, Archive, Pin, Trash2, Check, Paperclip } from 'lucide-react';
-import { useRouter, usePathname } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { authenticatedApiCall } from '../../lib/apiUtils';
 import { buildAIConversationItemFromTwinData, buildAddMessagePayloadFromTwinData, buildErrorConversationItem, normalizeStoredAIMessage } from '../../lib/aiResponseHandler';
@@ -34,6 +34,7 @@ import { uploadFile, uploadFileWithProgress, listFiles, type File as DriveFile }
 import { getSuggestions, acceptSuggestion, dismissSuggestion, type AISuggestionItem } from '../../api/aiSuggestions';
 import AmbientSuggestionCard from '../ai/AmbientSuggestionCard';
 import AIExperienceNavLinks from '../ai/AIExperienceNavLinks';
+import { resolveHeaderTwinCurrentModule } from '../../lib/aiTwinHeaderContext';
 
 const MAX_ATTACHMENTS = 10;
 
@@ -56,6 +57,8 @@ interface AIChatDropdownProps {
   isOpen: boolean;
   onClose: () => void;
   position: { top: number; left: number; width: number };
+  /** Active module from workspace navigation resolver (personal or business). */
+  workspaceModuleId?: string | null;
   moduleContext?: ModuleContext;
 }
 
@@ -110,20 +113,19 @@ export default function AIChatDropdown({
   isOpen, 
   onClose, 
   position,
-  moduleContext
+  workspaceModuleId,
+  moduleContext,
 }: AIChatDropdownProps) {
   const { data: session } = useSession();
   const router = useRouter();
-  const pathname = usePathname();
   const { trashItem } = useGlobalTrash();
   const { currentDashboard } = useDashboard();
-  
-  // Fallback: Detect module from pathname if moduleContext not provided
-  const effectiveModuleContext = moduleContext || (pathname?.includes('/todo') || pathname?.includes('/tasks') ? {
-    module: 'todo' as const,
-    dashboardId,
-    businessId: undefined,
-  } : undefined);
+
+  const effectiveModuleContext = moduleContext;
+  const headerTwinCurrentModule = resolveHeaderTwinCurrentModule({
+    workspaceModuleId,
+    moduleContextModule: effectiveModuleContext?.module,
+  });
   const [conversation, setConversation] = useState<ConversationItem[]>([]);
   const [inputValue, setInputValue] = useState('');
   const [isAILoading, setIsAILoading] = useState(false);
@@ -607,7 +609,7 @@ export default function AIChatDropdown({
             provider: selectedProvider,
             ...(selectedModel && { model: selectedModel }),
             context: {
-              currentModule: effectiveModuleContext?.module || 'search',
+              currentModule: headerTwinCurrentModule,
               dashboardId: dashboardId ?? currentDashboard?.id,
               dashboardType,
               dashboardName,
@@ -1230,7 +1232,7 @@ export default function AIChatDropdown({
         {/* Main Chat Area */}
         <div className={`flex-1 flex flex-col ${showHistory ? 'w-3/5' : 'w-full'} transition-all duration-300`}>
           {/* Quick Actions for To-Do Module - Always visible */}
-          {effectiveModuleContext?.module === 'todo' && conversation.length > 0 && (
+          {headerTwinCurrentModule === 'todo' && conversation.length > 0 && (
             <div className="px-4 pt-4 pb-2 border-b border-gray-100">
               <p className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-2">Quick actions:</p>
               <div className="flex flex-wrap gap-2">
@@ -1303,7 +1305,7 @@ export default function AIChatDropdown({
                 )}
 
                 {/* To-Do module-specific prompts */}
-                {effectiveModuleContext?.module === 'todo' && (
+                {headerTwinCurrentModule === 'todo' && (
                   <div className="mt-6 space-y-2">
                     <p className="text-xs font-medium text-gray-700 dark:text-gray-300 mb-3">Quick actions for tasks:</p>
                     {/* Debug: Uncomment to verify moduleContext */}

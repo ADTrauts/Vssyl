@@ -162,6 +162,7 @@ export function DashboardLayoutInner({ children }: { children: React.ReactNode }
       setPathname(window.location.pathname);
     }
   }, [nextPathname]);
+  const personalWorkspaceModuleId = resolvePersonalDashboardModule(pathname || '/');
   const isMobile = usePlatformHeaderMobile();
   const [showCustomizationModal, setShowCustomizationModal] = useState(false);
   const [modules, setModules] = useState<ModuleConfig[]>([]);
@@ -926,6 +927,7 @@ export function DashboardLayoutInner({ children }: { children: React.ReactNode }
             dashboardId={currentDashboardId || undefined}
             dashboardType={currentDashboard ? getDashboardType(currentDashboard) : 'personal'}
             dashboardName={currentDashboard ? getDashboardDisplayName(currentDashboard) : 'Dashboard'}
+            workspaceModuleId={personalWorkspaceModuleId}
           />
         }
           />

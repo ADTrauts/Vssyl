@@ -2,7 +2,7 @@
 
 import React, { useEffect, useState, useRef } from 'react';
 import { LayoutDashboard, Home, Briefcase, GraduationCap } from 'lucide-react';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useSession } from 'next-auth/react';
 import { useDashboard } from '../contexts/DashboardContext';
 import { useGlobalBranding } from '../contexts/GlobalBrandingContext';
@@ -12,6 +12,7 @@ import { useBusinessConfiguration } from '../contexts/BusinessConfigurationConte
 import { getBusiness } from '../api/business';
 import { getSuggestions } from '../api/aiSuggestions';
 import { resolveBusinessIdFromDashboard } from '../lib/resolveBusinessIdFromDashboard';
+import { resolveBusinessWorkspaceModule } from '../lib/businessWorkspaceNavigation';
 import {
   PlatformHeader,
   PlatformHeaderBrand,
@@ -32,6 +33,7 @@ function getDashboardIcon(name: string, type?: string) {
 
 export default function GlobalHeaderTabs() {
   const pathname = usePathname();
+  const searchParams = useSearchParams();
   const router = useRouter();
   const { data: session } = useSession();
 
@@ -205,6 +207,9 @@ export default function GlobalHeaderTabs() {
   };
 
   const isBusinessWorkspace = pathname?.startsWith('/business/');
+  const businessWorkspaceModuleId = isBusinessWorkspace
+    ? resolveBusinessWorkspaceModule(pathname || '/', searchParams)
+    : null;
   const workActive = isBusinessWorkspace || showWorkTab;
 
   if (loading || !mainPersonalDashboard) {
@@ -326,6 +331,7 @@ export default function GlobalHeaderTabs() {
           dashboardId={currentDashboardId || undefined}
           dashboardType={currentDashboard ? getDashboardType(currentDashboard) : 'personal'}
           dashboardName={currentDashboard ? getDashboardDisplayName(currentDashboard) : 'Dashboard'}
+          workspaceModuleId={businessWorkspaceModuleId}
           moduleContext={
             isInScheduling
               ? {
