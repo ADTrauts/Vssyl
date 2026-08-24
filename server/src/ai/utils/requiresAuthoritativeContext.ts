@@ -19,11 +19,31 @@ export const ACTION_MUTATION =
 
 /** Personal calendar / schedule current-state. */
 const PERSONAL_CALENDAR_STATE =
-  /\b(meetings?|calendar|agenda|schedule|who am i meeting|who am i seeing|am i free|what(?:'s| is) on my (?:calendar|schedule))\b/i;
+  /\b(meetings?|calendar|agenda|schedule|scheduled|who am i meeting|who am i seeing|am i free|what(?:'s| is) on my (?:calendar|schedule)|(?:what do i have|do i have (?:anything )?)\s*scheduled)\b/i;
 
 /** Drive / file personal current-state (shares, ownership, personal drive, document currency). */
 const PERSONAL_FILE_STATE =
-  /\b(files?|documents?|folders?)\b.{0,60}\b(share(?:d)?|sent|accessible|own(?:s|ed)?)\b|\b(shared|accessible)\b.{0,40}\b(files?|documents?)\b|\b(my|our)\s+(files?|documents?|drive)\b|\bwhat files?\b|\bwho owns\b|\bwho shared\b.{0,80}\bwith me\b|\bfiles?\s+(?:owned by|from)\b|\b(?:owned by)\b.{0,60}\b(?:that )?I can access\b|\bshow me (?:the )?(?:file|document)s?\b|\b(this|the|that)\s+(document|file|doc)\b.{0,40}\b(last\s+)?(updated|modified|changed|edited)\b|\bwhen was (this|the|that)\s+(document|file|doc)\b/i;
+  /\b(files?|documents?|folders?)\b.{0,60}\b(share(?:d)?|sent|accessible|own(?:s|ed)?)\b|\b(shared|accessible)\b.{0,40}\b(files?|documents?)\b|\b(my|our)\s+(files?|documents?|drive)\b|\bwhat files?\b|\bwho owns\b|\bwho shared\b.{0,80}\bwith me\b|\bfiles?\s+(?:owned by|from)\b|\b(?:owned by)\b.{0,60}\b(?:that )?I can access\b|\bshow me (?:the )?(?:file|document)s?\b|\b(this|the|that)\s+(document|file|doc)\b.{0,40}\b(last\s+)?(updated|modified|changed|edited)\b|\bwhen was (this|the|that)\s+(document|file|doc)\b|\bwhat do i have in (?:my )?drive\b|\bwhat (?:files?|documents?) do i have\b|\bwhat (?:did i upload|have i uploaded)\b/i;
+
+/**
+ * Caller's own possession / inventory / current or recent personal activity.
+ * Self-relative only — not business we/our operational discovery, not idioms like "what do I have to lose".
+ */
+const PERSONAL_POSSESSION_OR_LIVE_STATE = new RegExp(
+  [
+    // Due / waiting / tasks (user-relative)
+    String.raw`\bwhat\s+do\s+i\s+have\s+(?:due|waiting)\b`,
+    String.raw`\bwhat\s+do\s+i\s+have\s+waiting\s+(?:for\s+)?me\b`,
+    String.raw`\b(?:what\s+)?tasks?\s+(?:are\s+)?waiting\s+(?:for\s+)?me\b`,
+    String.raw`\bwhat\s+tasks?\s+(?:do\s+i\s+have\s+)?due\b`,
+    // Notifications inventory
+    String.raw`\bwhat\s+notifications?\s+(?:do\s+i\s+have|are\s+(?:there\s+)?(?:waiting\s+)?(?:for\s+)?me)\b`,
+    // Recent self activity (source may remain unresolved)
+    String.raw`\bwhat\s+was\s+i\s+working\s+on\b`,
+    String.raw`\bwhat\s+changed\s+for\s+me\b`,
+  ].join('|'),
+  'i'
+);
 
 /** Workspace / business operational current-state. */
 const WORKSPACE_CURRENT_STATE =
@@ -60,7 +80,8 @@ const SPECIFIC_USER_RELATIVE_HISTORY = new RegExp(
     // "Explain what Sarah sent me." / "Explain what she shared with me."
     String.raw`\bexplain\s+what\s+${HISTORY_PERSON_REF}\s+(?:sent|shared|said|told|assigned|gave)\b.{0,60}\b(?:me|to\s+me)\b`,
     // Past tense without "did": "What Sarah sent me" / "What she told me"
-    String.raw`\bwhat\s+${HISTORY_PERSON_REF}\s+(?:sent|shared|said|told|assigned|gave)\b.{0,40}\b(?:me|to\s+me)\b`,
+    // Also: "What was the last thing Sarah gave me?" (intervening phrase before person)
+    String.raw`\bwhat\s+(?:was\s+(?:the\s+)?(?:last\s+)?(?:thing\s+)?)?${HISTORY_PERSON_REF}\s+(?:sent|shared|said|told|assigned|gave)\b.{0,40}\b(?:me|to\s+me)\b`,
     // Explicit typed objects: "What file/document/message did Sarah send/share…"
     String.raw`\bwhat\s+(?:file|document|message|doc)s?\s+did\s+${HISTORY_PERSON_REF}\s+(?:send|share|say|tell|assign|give)\b`,
   ].join('|'),
@@ -110,12 +131,22 @@ export function requiresAuthoritativeContext(input: AuthoritativeContextInput): 
     return true;
   }
 
-  if (PERSONAL_CALENDAR_STATE.test(q)) {
-    return true;
-  }
-
-  if (PERSONAL_FILE_STATE.test(q)) {
-    return true;
+  // Live personal calendar/file/possession state — not definitional how-to / why-do.
+  // Exception: "What is on my calendar?" embeds "what is" but is live retrieval.
+  if (GENERAL_CONCEPT_CUE.test(q)) {
+    if (/\bwhat(?:'s| is) on my (?:calendar|schedule)\b/i.test(q)) {
+      return true;
+    }
+  } else {
+    if (PERSONAL_CALENDAR_STATE.test(q)) {
+      return true;
+    }
+    if (PERSONAL_FILE_STATE.test(q)) {
+      return true;
+    }
+    if (PERSONAL_POSSESSION_OR_LIVE_STATE.test(q)) {
+      return true;
+    }
   }
 
   // Specific person/history directed at the caller — source may still be unresolved.
