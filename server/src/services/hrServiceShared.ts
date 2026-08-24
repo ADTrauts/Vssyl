@@ -140,6 +140,82 @@ export const findActiveEmployeePositionId = async (
   return position?.id ?? null;
 };
 
+/**
+ * Employee → manager via Position.reportsTo → active manager EmployeePosition → User.
+ * Business-scoped; does not guess when reportsTo or active occupant is missing.
+ */
+export type ManagerOccupancyResult =
+  | {
+      status: 'assigned';
+      user: { userId: string; name: string | null; email: string };
+    }
+  | { status: 'no_reports_to' }
+  | { status: 'no_active_occupant' }
+  | { status: 'employee_position_not_found' };
+
+export const resolveManagerOccupancyForEmployeePosition = async (
+  employeePositionId: string,
+  businessId: string
+): Promise<ManagerOccupancyResult> => {
+  const employeePosition = await prisma.employeePosition.findFirst({
+    where: { id: employeePositionId, businessId },
+    select: {
+      position: {
+        select: {
+          reportsToId: true,
+          reportsTo: {
+            select: {
+              employeePositions: {
+                where: { businessId, active: true },
+                take: 1,
+                select: {
+                  userId: true,
+                  user: { select: { name: true, email: true } },
+                },
+              },
+            },
+          },
+        },
+      },
+    },
+  });
+
+  if (!employeePosition?.position) {
+    return { status: 'employee_position_not_found' };
+  }
+
+  if (!employeePosition.position.reportsToId) {
+    return { status: 'no_reports_to' };
+  }
+
+  const occupant = employeePosition.position.reportsTo?.employeePositions?.[0];
+  const user = occupant?.user;
+  if (!occupant || !user?.email) {
+    return { status: 'no_active_occupant' };
+  }
+
+  return {
+    status: 'assigned',
+    user: {
+      userId: occupant.userId,
+      name: user.name,
+      email: user.email,
+    },
+  };
+};
+
+/** Manager userId for an employee's active position assignment (attendance / notifications). */
+export const resolveManagerUserId = async (
+  employeePositionId: string,
+  businessId: string
+): Promise<string | null> => {
+  const occupancy = await resolveManagerOccupancyForEmployeePosition(
+    employeePositionId,
+    businessId
+  );
+  return occupancy.status === 'assigned' ? occupancy.user.userId : null;
+};
+
 export interface ManagerContext {
   managerPositionId: string | null;
   directReportPositionIds: string[];

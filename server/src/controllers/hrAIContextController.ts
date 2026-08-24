@@ -9,6 +9,7 @@ import {
   HrAiContextError,
   buildHrHeadcountContext,
   buildHrOverviewContext,
+  buildHrSelfEmploymentContext,
   buildHrTimeOffSummaryContext,
   verifyHrAiContextAccess,
 } from '../services/hrAiContextService.js';
@@ -48,6 +49,24 @@ export async function getHROverviewContext(req: Request, res: Response) {
     return res.json({ success: true, ...payload });
   } catch (error: unknown) {
     return mapError(error, res, 'Failed to fetch HR overview context');
+  }
+}
+
+export async function getSelfEmploymentContext(req: Request, res: Response) {
+  try {
+    const userId = getUserFromRequest(req)?.id;
+    const { businessId } = req.query;
+    if (!userId) {
+      return res.status(401).json({ success: false, message: 'Authentication required' });
+    }
+    if (!businessId || typeof businessId !== 'string') {
+      return res.status(400).json({ success: false, message: 'businessId is required' });
+    }
+    await verifyHrAiContextAccess(userId, businessId);
+    const payload = await buildHrSelfEmploymentContext(businessId, userId);
+    return res.json({ success: true, ...payload });
+  } catch (error: unknown) {
+    return mapError(error, res, 'Failed to fetch HR self employment context');
   }
 }
 

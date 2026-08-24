@@ -4,6 +4,8 @@
  */
 
 import { prisma } from '../lib/prisma';
+import { getOwnHrData } from './hrEmployeeService';
+import { resolveManagerOccupancyForEmployeePosition } from './hrServiceShared';
 
 export class HrAiContextError extends Error {
   constructor(
@@ -23,6 +25,96 @@ export async function verifyHrAiContextAccess(userId: string, businessId: string
   if (!member?.isActive) {
     throw new HrAiContextError(403, 'Access denied to this business');
   }
+}
+
+export type HrSelfManagerStatus =
+  | 'assigned'
+  | 'no_reports_to'
+  | 'no_active_occupant'
+  | 'no_position';
+
+/**
+ * Compact self employment/org facts for the authenticated member in one business.
+ * Does not return directory dumps or full HR profiles.
+ */
+export async function buildHrSelfEmploymentContext(businessId: string, userId: string) {
+  const own = await getOwnHrData(businessId, userId);
+  const employee = own.employee;
+
+  const empty = (managerStatus: HrSelfManagerStatus) => ({
+    context: {
+      employmentAvailable: false as const,
+      positionTitle: null as string | null,
+      department: null as string | null,
+      managerName: null as string | null,
+      managerEmail: null as string | null,
+      managerStatus,
+    },
+    metadata: {
+      provider: 'hr',
+      endpoint: 'selfEmployment',
+      businessId,
+      timestamp: new Date().toISOString(),
+      source: 'Position reporting relationship → active manager occupant',
+    },
+  });
+
+  if (!employee || (employee as { stub?: boolean }).stub || !('position' in employee)) {
+    return empty('no_position');
+  }
+
+  const position = employee.position as
+    | {
+        title?: string | null;
+        department?: { name?: string | null } | null;
+      }
+    | null
+    | undefined;
+
+  if (!position?.title) {
+    return empty('no_position');
+  }
+
+  const positionTitle = position.title;
+  const department = position.department?.name ?? null;
+  const employeePositionId = (employee as { id: string }).id;
+
+  const occupancy = await resolveManagerOccupancyForEmployeePosition(
+    employeePositionId,
+    businessId
+  );
+
+  let managerStatus: HrSelfManagerStatus;
+  let managerName: string | null = null;
+  let managerEmail: string | null = null;
+
+  if (occupancy.status === 'assigned') {
+    managerStatus = 'assigned';
+    managerName = occupancy.user.name;
+    managerEmail = occupancy.user.email;
+  } else if (occupancy.status === 'no_active_occupant') {
+    managerStatus = 'no_active_occupant';
+  } else {
+    managerStatus = 'no_reports_to';
+  }
+
+  return {
+    context: {
+      employmentAvailable: true as const,
+      positionTitle,
+      department,
+      managerName,
+      managerEmail,
+      managerStatus,
+    },
+    metadata: {
+      provider: 'hr',
+      endpoint: 'selfEmployment',
+      businessId,
+      timestamp: new Date().toISOString(),
+      source: 'Position reporting relationship → active manager occupant',
+    },
+  };
 }
 
 export async function buildHrOverviewContext(businessId: string) {

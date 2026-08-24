@@ -871,6 +871,25 @@ export class DigitalLifeTwinCore {
       let effectivePreferences: ResolvedEffectivePreferences | undefined;
       let sessionPreferenceAdjustments: SessionSoftPreferenceOverrides | undefined;
       let businessWorkspaceBoundaries: BusinessWorkspaceBoundaryBlock | undefined;
+      let authenticatedIdentity: { name: string | null; email: string } | undefined;
+      try {
+        const identityRow = await this.prisma.user.findUnique({
+          where: { id: query.userId },
+          select: { name: true, email: true },
+        });
+        if (identityRow?.email) {
+          authenticatedIdentity = {
+            name: identityRow.name,
+            email: identityRow.email,
+          };
+        }
+      } catch (error: unknown) {
+        const err = error instanceof Error ? error : new Error(String(error));
+        void logger.warn('Error loading authenticated user identity for Twin context', {
+          operation: 'digital_life_twin_identity_load_error',
+          error: { message: err.message, stack: err.stack },
+        });
+      }
       try {
         const ctxRecord = query.context as Record<string, unknown>;
         const businessId =
@@ -966,7 +985,8 @@ export class DigitalLifeTwinCore {
         moduleContextsForAssembly,
         effectivePreferences,
         businessWorkspaceBoundaries,
-        crossModuleSynthesis
+        crossModuleSynthesis,
+        authenticatedIdentity
       );
       const t_provider_ms = Date.now() - t0_provider;
       const t_total_ms = Date.now() - startTime;
@@ -1409,7 +1429,8 @@ export class DigitalLifeTwinCore {
     moduleContexts?: Record<string, unknown>,
     effectivePreferences?: ResolvedEffectivePreferences,
     businessWorkspaceBoundaries?: BusinessWorkspaceBoundaryBlock,
-    crossModuleSynthesis?: ContextSynthesisResult
+    crossModuleSynthesis?: ContextSynthesisResult,
+    authenticatedIdentity?: { name: string | null; email: string }
   ) {
     const ctxForStructured = query.context as Record<string, unknown>;
     const structuredInference =
@@ -1841,6 +1862,7 @@ export class DigitalLifeTwinCore {
       structuredResolution: structuredInference,
       effectivePreferencesContextBlock: effectivePreferences?.contextBlock,
       businessWorkspaceBoundaries,
+      authenticatedIdentity,
       vlinkPipelineContext: vlinkPipelineContextForAssembly,
       graphBundlePipelineContext: graphBundlePipelineContextForAssembly,
     });

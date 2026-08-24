@@ -17,6 +17,7 @@ import { prisma } from '../lib/prisma';
 import { logger } from '../lib/logger';
 import { NotificationService } from './notificationService';
 import { recordAttendanceExceptionCreated } from './hrActivityService';
+import { resolveManagerUserId } from './hrServiceShared';
 
 type JsonInput = Prisma.InputJsonValue | null | undefined;
 
@@ -321,32 +322,6 @@ async function resolveEmployeeUserId(employeePositionId: string): Promise<string
     select: { userId: true },
   });
   return position?.userId ?? null;
-}
-
-async function resolveManagerUserId(
-  employeePositionId: string,
-  businessId: string
-): Promise<string | null> {
-  const employeePosition = await prisma.employeePosition.findFirst({
-    where: { id: employeePositionId, businessId },
-    include: {
-      position: {
-        include: {
-          reportsTo: {
-            include: {
-              employeePositions: {
-                where: { businessId, active: true },
-                take: 1,
-                select: { userId: true },
-              },
-            },
-          },
-        },
-      },
-    },
-  });
-
-  return employeePosition?.position?.reportsTo?.employeePositions?.[0]?.userId ?? null;
 }
 
 async function notifyAttendanceExceptionStakeholders(

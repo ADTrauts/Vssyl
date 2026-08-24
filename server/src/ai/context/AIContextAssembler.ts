@@ -194,6 +194,14 @@ export interface AIContextAssemblyInput {
   effectivePreferencesContextBlock?: EffectivePreferencesContextBlock;
   /** Business workspace policies when chatting with businessId (separate from personal prefs). */
   businessWorkspaceBoundaries?: BusinessWorkspaceBoundaryBlock;
+  /**
+   * Authenticated account identity (User.name / User.email only).
+   * Not HR employment facts — those come from module ContextProviders.
+   */
+  authenticatedIdentity?: {
+    name: string | null;
+    email: string;
+  };
   /** Confirmed V_Link pipeline context (first-class source; excludes unapproved suggestions). */
   vlinkPipelineContext?: VLinkPipelineContextResult;
   /** Formal Context Graph bundles via Tier 0 provider (ContextBundleDescriptor). */
@@ -553,6 +561,7 @@ export function assembleAIContext(input: AIContextAssemblyInput): AIAssembledCon
     userMemoryFacts,
     effectivePreferencesContextBlock,
     businessWorkspaceBoundaries,
+    authenticatedIdentity,
     vlinkPipelineContext,
     graphBundlePipelineContext,
   } = input;
@@ -626,6 +635,26 @@ export function assembleAIContext(input: AIContextAssemblyInput): AIAssembledCon
         confidence: f.summary && f.summary.trim().length > 20 ? 'high' : 'medium',
       });
     }
+  }
+
+  if (authenticatedIdentity?.email) {
+    contextBlocks.push({
+      title: 'Authenticated identity',
+      sourceType: 'personal',
+      content: {
+        name: authenticatedIdentity.name,
+        email: authenticatedIdentity.email,
+      },
+      priority: 'high',
+      tier: 'tier3_profile',
+      inclusionReason: 'authenticated User account name and email',
+    });
+    evidence.push({
+      label: 'Authenticated user identity (User.name / User.email)',
+      sourceType: 'personal',
+      detail: authenticatedIdentity.email,
+      confidence: 'high',
+    });
   }
 
   contextBlocks.push({

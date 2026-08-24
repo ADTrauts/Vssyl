@@ -422,6 +422,11 @@ router.get('/me/pay-stubs',
 router.get('/ai/context/overview', checkHRPolicy(POLICY_ACTIONS.HR_EMPLOYEE_READ), hrController.getHROverviewContext);
 router.get('/ai/context/headcount', checkHRPolicy(POLICY_ACTIONS.HR_EMPLOYEE_READ), hrController.getHeadcountContext);
 router.get('/ai/context/time-off', checkHRPolicy(POLICY_ACTIONS.HR_TIME_OFF_READ), hrController.getTimeOffContext);
+router.get(
+  '/ai/context/self-employment',
+  checkHRPolicy(POLICY_ACTIONS.HR_EMPLOYEE_READ),
+  hrController.getSelfEmploymentContext
+);
 
 // ============================================================================
 // HEALTH CHECK

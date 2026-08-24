@@ -1755,7 +1755,8 @@ export const updateOwnHRData = async (req: Request, res: Response) => {
 export {
   getHROverviewContext,
   getEmployeeHeadcountContext as getHeadcountContext,
-  getTimeOffSummaryContext as getTimeOffContext
+  getTimeOffSummaryContext as getTimeOffContext,
+  getSelfEmploymentContext,
 } from './hrAIContextController';
 
 // ============================================================================
