@@ -67,6 +67,12 @@ export interface InferStructuredResponseModeResult {
   responseContract?: AIResponseContract;
   /** P3: mutation/action ambition (not grounded factual read). */
   isActionRequest?: boolean;
+  /**
+   * F-GUARD: thread continuation signal from Service (conversationHistory.length > 0).
+   * Future C3 must not skip ContextProvider orchestration when true.
+   * Not a product continuity / source-inheritance flag.
+   */
+  isFollowUp?: boolean;
 }
 
 function densityForMode(mode: AIResponseMode): AIResponseDensity {
@@ -112,6 +118,7 @@ function attachRoutingAxes(
     requiresAuthoritativeContext: needsAuth,
     responseContract,
     isActionRequest,
+    ...(input.isFollowUp === true ? { isFollowUp: true } : {}),
   };
 }
 
