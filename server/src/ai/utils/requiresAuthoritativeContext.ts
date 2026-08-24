@@ -119,6 +119,29 @@ const BUSINESS_SCOPED_LIVE_STATE = new RegExp(
 );
 
 /**
+ * Explicit HR / org queries (requires businessId) — overview, absence lists, dept manager, headcount phrasing.
+ * Distinct from TM1 self-employment ("my manager") and B1 live-state ("is anyone out").
+ */
+const EXPLICIT_HR_ORG_STATE = new RegExp(
+  [
+    String.raw`\b(?:give me|show me|get me)\s+(?:an?\s+)?(?:overview of\s+)?hr\b`,
+    String.raw`\b(?:what(?:'s| is)|show me)\s+(?:our|the)\s+hr\s+(?:overview|status)\b`,
+    String.raw`\bhr\s+overview\b`,
+    String.raw`\bwho(?:'s| is)\s+(?:off|out|on leave|absent)\b`,
+    String.raw`\bwho has pto\b`,
+    String.raw`\bwho(?:'s| is)\s+on pto\b`,
+    String.raw`\bwho (?:manages|runs)\s+(?:the\s+)?[A-Za-z][\w\s'-]+(?:\s+department)?\b`,
+    String.raw`\bwho is the manager of\s+(?:the\s+)?[A-Za-z][\w\s'-]+\b`,
+    String.raw`\bmanager of\s+(?:the\s+)?[A-Za-z][\w\s'-]+\s+department\b`,
+  ].join('|'),
+  'i'
+);
+
+/** Tenant-scoped PTO policy (business truth; not general "what is PTO"). */
+const TENANT_PTO_POLICY =
+  /\b(?:what(?:'s| is)\s+)?our\s+pto\s+policy\b/i;
+
+/**
  * Authenticated caller's own identity (User.name / User.email) — not definitional "what is an email".
  */
 const SELF_IDENTITY_STATE =
@@ -261,18 +284,27 @@ export function requiresAuthoritativeContext(input: AuthoritativeContextInput): 
     return true;
   }
 
-  // B1: active-business live operational state — requires businessId; no tenant auto-selection.
-  if (hasBusinessScope(input) && !GENERAL_CONCEPT_CUE.test(q)) {
-    if (BUSINESS_SCOPED_LIVE_STATE.test(q)) {
+  // B1 + H1: active-business scope — requires businessId; no tenant auto-selection.
+  if (hasBusinessScope(input)) {
+    // H1: our PTO policy embeds "what is" but is tenant-specific truth.
+    if (TENANT_PTO_POLICY.test(q)) {
       return true;
     }
-    // Explicit our/team operational metrics (e.g. labor budget) — not definitional/advisory.
-    if (
-      /\b(our|team|labor|budget|employees?|staffing|staffed|payroll|utilization|sales|revenue|headcount)\b/i.test(
-        q
-      )
-    ) {
-      return true;
+    if (!GENERAL_CONCEPT_CUE.test(q)) {
+      if (BUSINESS_SCOPED_LIVE_STATE.test(q)) {
+        return true;
+      }
+      if (EXPLICIT_HR_ORG_STATE.test(q)) {
+        return true;
+      }
+      // Explicit our/team operational metrics (e.g. labor budget) — not definitional/advisory.
+      if (
+        /\b(our|team|labor|budget|employees?|staffing|staffed|payroll|utilization|sales|revenue|headcount)\b/i.test(
+          q
+        )
+      ) {
+        return true;
+      }
     }
   }
 

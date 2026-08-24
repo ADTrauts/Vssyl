@@ -184,10 +184,34 @@ export function selectContextProvider(
       ) {
         return pick('self_employment');
       }
-      if (/\b(headcount|employee count|head count)\b/.test(q) && names.has('employee_count')) {
+      if (
+        /\b(?:give me|show me|get me|what(?:'s| is))\s+(?:an?\s+)?(?:overview of\s+)?hr\b|\bhr\s+overview\b|\b(?:our|the)\s+hr\s+(?:overview|status)\b/i.test(
+          q
+        ) &&
+        names.has('hr_overview')
+      ) {
+        return pick('hr_overview');
+      }
+      if (
+        (/\bhow many employees\b|\bemployee count\b|\bhow many people work\b|\b(?:headcount|head count)\b/i.test(
+          q
+        ) ||
+          /\bhow many employees are in\b/i.test(q)) &&
+        names.has('employee_count')
+      ) {
         return pick('employee_count');
       }
-      if (/\b(time off|pto|vacation|leave)\b/.test(q) && names.has('time_off_summary')) {
+      if (
+        /\b(?:who(?:'s| is)|who has)\s+(?:off|out|on leave|pto|absent)\b/i.test(q) &&
+        names.has('time_off_summary')
+      ) {
+        return pick('time_off_summary');
+      }
+      if (
+        /\b(time off|pto|vacation|leave)\b/i.test(q) &&
+        !/\b(?:policy|policies|rule|rules)\b/i.test(q) &&
+        names.has('time_off_summary')
+      ) {
         return pick('time_off_summary');
       }
       return pick('hr_overview') ?? providers[0];
