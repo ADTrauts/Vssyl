@@ -70,13 +70,14 @@ describe('D2 — Drive shared/owner authoritative routing', () => {
   }
 
   for (const q of ambiguousDeferred) {
-    it(`ambiguous sent-me stays deferred: ${q}`, () => {
-      expect(requiresAuthoritativeContext({ query: q })).toBe(false);
+    it(`ambiguous sent-me is authoritative but not Drive-focused: ${q}`, () => {
+      // A1: truth required; D2: do not invent Drive focus without file/document cues.
+      expect(requiresAuthoritativeContext({ query: q })).toBe(true);
       expect(resolveDriveRecentFilesFocus(q).mode).toBe('recent');
       const inferred = inferStructuredResponseMode({ query: q, toneMode: 'conversational' });
-      expect(inferred.requiresAuthoritativeContext).not.toBe(true);
-      // C3 remains blocked: do not force Drive; escape/ambiguity is acceptable.
-      expect(inferred.responseContract).not.toBe('grounded_answer');
+      expect(inferred.requiresAuthoritativeContext).toBe(true);
+      expect(inferred.informationalAnswerEscape).not.toBe(true);
+      expect(inferred.responseContract).toBe('grounded_answer');
     });
   }
 });

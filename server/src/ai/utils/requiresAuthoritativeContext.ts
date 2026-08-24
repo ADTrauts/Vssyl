@@ -15,7 +15,7 @@ export interface AuthoritativeContextInput {
 
 /** Action / mutation ambition (tools/permissions) — not a grounded factual read. */
 export const ACTION_MUTATION =
-  /\b(move|reschedule|cancel|delete|remove|share|create|add|update|send|book|remind|assign|invite|publish|upload|rename)\b.{0,50}\b(meeting|event|file|task|todo|message|invite|calendar|schedule)\b|\b(share this file|create a (?:todo|task)|add a (?:todo|task)|schedule a meeting|move my .{0,30} meeting)\b/i;
+  /\b(move|reschedule|cancel|delete|remove|share|create|add|update|send|book|remind|assign|invite|publish|upload|rename)\b.{0,50}\b(meeting|event|file|task|todo|message|invite|calendar|schedule)\b|\b(share this file|share\s+.+?\.(?:pdf|docx?|xlsx?|txt|pptx?)|create a (?:todo|task)|add a (?:todo|task)|schedule a meeting|move my .{0,30} meeting)\b/i;
 
 /** Personal calendar / schedule current-state. */
 const PERSONAL_CALENDAR_STATE =
@@ -23,7 +23,7 @@ const PERSONAL_CALENDAR_STATE =
 
 /** Drive / file personal current-state (shares, ownership, personal drive, document currency). */
 const PERSONAL_FILE_STATE =
-  /\b(files?|documents?|folders?)\b.{0,60}\b(shared|accessible|own(?:s|ed)?)\b|\b(shared|accessible)\b.{0,40}\b(files?|documents?)\b|\b(my|our)\s+(files?|documents?|drive)\b|\bwhat files?\b|\bwho owns\b|\bwho shared\b.{0,80}\bwith me\b|\bfiles?\s+(?:owned by|from)\b|\b(?:owned by)\b.{0,60}\b(?:that )?I can access\b|\bshow me (?:the )?(?:file|document)s?\b|\b(this|the|that)\s+(document|file|doc)\b.{0,40}\b(last\s+)?(updated|modified|changed|edited)\b|\bwhen was (this|the|that)\s+(document|file|doc)\b/i;
+  /\b(files?|documents?|folders?)\b.{0,60}\b(share(?:d)?|sent|accessible|own(?:s|ed)?)\b|\b(shared|accessible)\b.{0,40}\b(files?|documents?)\b|\b(my|our)\s+(files?|documents?|drive)\b|\bwhat files?\b|\bwho owns\b|\bwho shared\b.{0,80}\bwith me\b|\bfiles?\s+(?:owned by|from)\b|\b(?:owned by)\b.{0,60}\b(?:that )?I can access\b|\bshow me (?:the )?(?:file|document)s?\b|\b(this|the|that)\s+(document|file|doc)\b.{0,40}\b(last\s+)?(updated|modified|changed|edited)\b|\bwhen was (this|the|that)\s+(document|file|doc)\b/i;
 
 /** Workspace / business operational current-state. */
 const WORKSPACE_CURRENT_STATE =
@@ -41,6 +41,36 @@ const SELF_IDENTITY_STATE =
 const SELF_EMPLOYMENT_STATE =
   /\b(?:what(?:'s| is)|tell me|show me)\s+my\s+(?:job\s+)?(?:title|position|department)\b|\bmy\s+(?:job\s+)?(?:title|position|department|manager|boss|supervisor)\b|\bwhat\s+(?:job\s+)?(?:title|position|department)\s+am\s+i\s+(?:in|holding)\b|\bwhich\s+department\s+do\s+i\s+work\s+in\b|\bwho\s+(?:is\s+my\s+(?:manager|boss|supervisor)|do\s+i\s+report\s+to)\b/i;
 
+/**
+ * Referent for a specific person/role (not definitional "people"/"managers").
+ * Includes pronouns for follow-ups ("explain what she sent me").
+ */
+const HISTORY_PERSON_REF =
+  '(?:she|he|they|my\\s+(?:manager|boss|supervisor)|[A-Za-z][\\w\'-]{1,40}(?:\\s+[A-Za-z][\\w\'-]{1,40})?)';
+
+/**
+ * Specific user-relative historical / referential truth.
+ * Truth YES + source may be unresolved (Drive / Chat / other).
+ * Does not invent a module — only marks authoritative context required.
+ */
+const SPECIFIC_USER_RELATIVE_HISTORY = new RegExp(
+  [
+    // "What did Sarah send me?" / "What did my manager share with me yesterday?"
+    String.raw`\b(?:explain\s+)?what\s+did\s+${HISTORY_PERSON_REF}\s+(?:send|share|say|tell|assign|give)\b.{0,60}\b(?:me|to\s+me)\b`,
+    // "Explain what Sarah sent me." / "Explain what she shared with me."
+    String.raw`\bexplain\s+what\s+${HISTORY_PERSON_REF}\s+(?:sent|shared|said|told|assigned|gave)\b.{0,60}\b(?:me|to\s+me)\b`,
+    // Past tense without "did": "What Sarah sent me" / "What she told me"
+    String.raw`\bwhat\s+${HISTORY_PERSON_REF}\s+(?:sent|shared|said|told|assigned|gave)\b.{0,40}\b(?:me|to\s+me)\b`,
+    // Explicit typed objects: "What file/document/message did Sarah send/share…"
+    String.raw`\bwhat\s+(?:file|document|message|doc)s?\s+did\s+${HISTORY_PERSON_REF}\s+(?:send|share|say|tell|assign|give)\b`,
+  ].join('|'),
+  'i'
+);
+
+/** Definitional / how-to language — must not trip historical-person patterns alone. */
+const GENERAL_CONCEPT_CUE =
+  /\b(?:what does|what is|what means|what makes|how does|how do|how should|why do|why does|meaning of)\b/i;
+
 function hasFileIds(fileIds: unknown): boolean {
   return Array.isArray(fileIds) && fileIds.length > 0;
 }
@@ -57,6 +87,7 @@ export function isActionMutationRequest(query: string): boolean {
  * (as opposed to general model knowledge).
  *
  * Separates "requires authoritative data" from "authoritative data exists."
+ * Separates truth requirement from source/module resolution.
  */
 export function requiresAuthoritativeContext(input: AuthoritativeContextInput): boolean {
   const q = (input.query || '').trim();
@@ -84,6 +115,11 @@ export function requiresAuthoritativeContext(input: AuthoritativeContextInput): 
   }
 
   if (PERSONAL_FILE_STATE.test(q)) {
+    return true;
+  }
+
+  // Specific person/history directed at the caller — source may still be unresolved.
+  if (SPECIFIC_USER_RELATIVE_HISTORY.test(q) && !GENERAL_CONCEPT_CUE.test(q)) {
     return true;
   }
 

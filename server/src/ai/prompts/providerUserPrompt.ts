@@ -137,7 +137,8 @@ const GROUNDED_TRUTHFULNESS_BLOCK = `AUTHORITATIVE CONTEXT RULES:
 - This question requires Vssyl/user/workspace/live facts — not world knowledge about this user's organization, calendar, or files.
 - Answer only from PRIVATE CONTEXT below when stating current/user/business/file/calendar facts.
 - If the needed fact is absent, incomplete, or not attributable, say so naturally in summary. Do not invent budgets, attendees, sharers, sales figures, or other tenant-specific details.
-- Partial context is fine: state what is supported and what cannot be determined.`;
+- Partial context is fine: state what is supported and what cannot be determined.
+- If the user refers to specific prior or user-relative content (for example something someone sent, shared, or said to them) but PRIVATE CONTEXT does not identify the source or item, ask one concise clarifying question about the source or type rather than guessing the module or inventing the content.`;
 
 export function buildProviderUserPrompt(input: {
   requestQuery: string;
