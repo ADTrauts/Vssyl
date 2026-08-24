@@ -25,6 +25,7 @@ import {
 } from './contextProviderSelection';
 import { fetchRegisteredProviderContext } from './fetchModuleContextProvider';
 import { detectMultiModuleIntent } from '../services/moduleContextProviderSelection';
+import { resolveActiveModuleShorthand } from '../utils/requiresAuthoritativeContext';
 import { logger } from '../../lib/logger';
 import { buildStaleContextWarnings } from './contextProviderFreshness';
 import { getProvidersForPipelineSource } from './pipelineSourceProviderMap';
@@ -39,6 +40,8 @@ export interface OrchestrateContextScope {
   dashboardId?: string;
   householdId?: string;
   requestId?: string;
+  /** Active UI module hint (W1) — used only as bounded shorthand retrieval candidate. */
+  currentModule?: string;
   /** Phase B.5 — always emit orchestration snapshot (admin dry-run). */
   snapshotForce?: boolean;
   conversationId?: string;
@@ -233,6 +236,13 @@ export async function orchestrateContextRetrieval(
       ? new Set(input.sourceFilter)
       : undefined;
 
+  const preferredModuleId =
+    resolveActiveModuleShorthand({
+      query: input.query,
+      currentModule: input.scope?.currentModule,
+      businessId: input.scope?.businessId,
+    }) ?? undefined;
+
   const plan = buildProviderSelectionPlan({
     query: input.query,
     analysis,
@@ -245,6 +255,7 @@ export async function orchestrateContextRetrieval(
     optionalSourceIds,
     sourceFilter: sourceFilterSet,
     includeQueryMatchedModules: input.includeQueryMatchedModules,
+    preferredModuleId,
     budget: {
       maxLatencyMs: DEFAULT_MAX_LATENCY_MS,
       maxOptionalProviders: DEFAULT_MAX_OPTIONAL_PROVIDERS,

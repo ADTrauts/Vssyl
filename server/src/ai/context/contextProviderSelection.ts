@@ -230,6 +230,11 @@ export function buildProviderSelectionPlan(input: {
   sourceFilter?: Set<string>;
   /** When false, skip keyword/@mention module matches (grounding-only pass). */
   includeQueryMatchedModules?: boolean;
+  /**
+   * W1: preferred module when query is active-module shorthand and analysis found no strong source.
+   * Explicit query/module matches still win — only used when modulesToFetch would otherwise be empty.
+   */
+  preferredModuleId?: string;
 }): ProviderSelectionPlan {
   const diagnostics: ProviderSelectionDiagnostic[] = [];
   const required: ProviderSelectionCandidate[] = [];
@@ -237,10 +242,36 @@ export function buildProviderSelectionPlan(input: {
   const moduleChosen = new Set<string>();
 
   const matchedModules = input.analysis.matchedModules as MatchedModuleInput[];
-  const modulesToFetch =
+  let modulesToFetch =
     input.includeQueryMatchedModules === false
       ? []
       : resolveModulesToFetch(matchedModules, input.query);
+
+  // W1: if analysis has no strong/explicit module to fetch, use preferred currentModule candidate.
+  if (
+    input.preferredModuleId &&
+    modulesToFetch.length === 0 &&
+    input.includeQueryMatchedModules !== false &&
+    input.installedModuleIds.includes(input.preferredModuleId)
+  ) {
+    modulesToFetch = [
+      {
+        moduleId: input.preferredModuleId,
+        moduleName: input.preferredModuleId,
+        confidence: 1,
+        matchedKeywords: [],
+        matchedPatterns: ['active_module_shorthand'],
+        relevance: 'high',
+      },
+    ];
+    pushDiagnostic(diagnostics, {
+      providerId: buildProviderId(input.preferredModuleId, 'unknown'),
+      moduleId: input.preferredModuleId,
+      providerName: 'unknown',
+      phase: 'considered',
+      reason: 'active_module_shorthand',
+    });
+  }
 
   const addCandidate = (
     provider: RegisteredContextProvider,

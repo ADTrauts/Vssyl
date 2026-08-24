@@ -196,7 +196,9 @@ export function selectContextProvider(
         (/\bhow many employees\b|\bemployee count\b|\bhow many people work\b|\b(?:headcount|head count)\b/i.test(
           q
         ) ||
-          /\bhow many employees are in\b/i.test(q)) &&
+          /\bhow many employees are in\b/i.test(q) ||
+          // W1: module-relative headcount shorthand (only when this module is already HR).
+          /\bhow many(?:\s+(?:are there|employees?|people))?\b/i.test(q)) &&
         names.has('employee_count')
       ) {
         return pick('employee_count');

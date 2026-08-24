@@ -184,12 +184,66 @@ const SPECIFIC_USER_RELATIVE_HISTORY = new RegExp(
 const GENERAL_CONCEPT_CUE =
   /\b(?:what does|what is|what means|what makes|what causes|what should|how does|how do|how should|how can|why do|why does|why is|meaning of|explain the concept)\b/i;
 
+/**
+ * W1 — active-module shorthand (Calendar / HR / Drive only).
+ * Module-relative live-state cues; not definitional how-to.
+ * "What is next?" embeds "what is" but is calendar shorthand — handled via resolveActiveModuleShorthand.
+ */
+const CALENDAR_ACTIVE_SHORTHAND =
+  /\b(?:what(?:'s| is)\s+next(?:\s+today)?|what(?:'s| is)\s+coming\s+up|anything\s+coming\s+up)\b/i;
+
+const HR_ACTIVE_SHORTHAND =
+  /\b(?:how\s+many(?:\s+(?:are\s+there|employees?|people))?\b|who(?:'s| is)\s+(?:out|off)\b)/i;
+
+const DRIVE_ACTIVE_SHORTHAND =
+  /\b(?:what(?:'s| is)\s+new(?:\s+recently)?|anything\s+new|any\s+new\s+files?)\b/i;
+
+export type ActiveModuleShorthandModule = 'calendar' | 'hr' | 'drive';
+
 function hasFileIds(fileIds: unknown): boolean {
   return Array.isArray(fileIds) && fileIds.length > 0;
 }
 
 function hasBusinessScope(input: AuthoritativeContextInput): boolean {
   return typeof input.businessId === 'string' && input.businessId.trim() !== '';
+}
+
+/**
+ * W1: when currentModule is a real audited module and the query is bounded module-relative shorthand,
+ * return that module id for truth + preferred retrieval candidate.
+ * Does not apply to ai-chat / search / unaudited modules.
+ */
+export function resolveActiveModuleShorthand(
+  input: AuthoritativeContextInput
+): ActiveModuleShorthandModule | null {
+  const q = (input.query || '').trim();
+  if (!q) return null;
+
+  const module = (input.currentModule || '').trim().toLowerCase();
+  if (!module || module === 'ai-chat' || module === 'search') {
+    return null;
+  }
+
+  // Calendar shorthand may embed "what is" (e.g. "What is next?") — allow when pattern matches.
+  if (module === 'calendar' && CALENDAR_ACTIVE_SHORTHAND.test(q)) {
+    return 'calendar';
+  }
+
+  if (
+    module === 'hr' &&
+    hasBusinessScope(input) &&
+    HR_ACTIVE_SHORTHAND.test(q) &&
+    !GENERAL_CONCEPT_CUE.test(q)
+  ) {
+    return 'hr';
+  }
+
+  // Drive shorthand may embed "what is" (e.g. "What is new?") — allow when pattern matches.
+  if (module === 'drive' && DRIVE_ACTIVE_SHORTHAND.test(q)) {
+    return 'drive';
+  }
+
+  return null;
 }
 
 /**
@@ -279,8 +333,14 @@ export function requiresAuthoritativeContext(input: AuthoritativeContextInput): 
   if (
     module &&
     ['calendar', 'drive', 'hr', 'scheduling', 'workforce_comms', 'business'].includes(module) &&
+    !GENERAL_CONCEPT_CUE.test(q) &&
     /\b(my|our|today|tomorrow|this week|yesterday|current|scheduled|shared|document|file)\b/i.test(q)
   ) {
+    return true;
+  }
+
+  // W1: module-scoped shorthand (calendar / hr / drive) — independent of the keyword clause above.
+  if (resolveActiveModuleShorthand(input)) {
     return true;
   }
 

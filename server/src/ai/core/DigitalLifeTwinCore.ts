@@ -402,6 +402,10 @@ export class DigitalLifeTwinCore {
           householdId: householdIdForContext,
           requestId,
           conversationId: conversationIdForContext,
+          currentModule:
+            ctx && typeof ctx.currentModule === 'string' && ctx.currentModule.trim() !== ''
+              ? ctx.currentModule.trim()
+              : undefined,
         });
         
         // Convert smart context to UserContext format for backward compatibility
