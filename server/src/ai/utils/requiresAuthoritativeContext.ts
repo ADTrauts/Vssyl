@@ -29,6 +29,18 @@ const PERSONAL_FILE_STATE =
 const WORKSPACE_CURRENT_STATE =
   /\b(our|my team(?:'s)?|company(?:'s)?|department(?:'s)?|this department)\b.{0,80}\b(labor|budget|sales|revenue|headcount|staffing|utilization|payroll|kpi|metrics|employees?|workforce|manager|org chart)\b|\b(labor|budget|sales|revenue|headcount|staffing|payroll)\b.{0,40}\b(our|current|today|yesterday|this week|tomorrow)\b|\bhow many employees\b|\bwho is scheduled\b|\bwho is the manager\b|\bmanager of (this |the |our )?department\b/i;
 
+/**
+ * Authenticated caller's own identity (User.name / User.email) — not definitional "what is an email".
+ */
+const SELF_IDENTITY_STATE =
+  /\b(?:what(?:'s| is)|tell me|show me)\s+my\s+(?:email|name)\b|\bmy\s+(?:email|name)\b(?:\s+address)?\b|\bwhat\s+email\s+address\s+is\s+on\s+my\s+account\b|\b(?:email|name)\s+(?:address\s+)?(?:is\s+)?on\s+my\s+account\b/i;
+
+/**
+ * Caller's own employment/org facts — independent of whether businessId is currently supplied.
+ */
+const SELF_EMPLOYMENT_STATE =
+  /\b(?:what(?:'s| is)|tell me|show me)\s+my\s+(?:job\s+)?(?:title|position|department)\b|\bmy\s+(?:job\s+)?(?:title|position|department|manager|boss|supervisor)\b|\bwhat\s+(?:job\s+)?(?:title|position|department)\s+am\s+i\s+(?:in|holding)\b|\bwhich\s+department\s+do\s+i\s+work\s+in\b|\bwho\s+(?:is\s+my\s+(?:manager|boss|supervisor)|do\s+i\s+report\s+to)\b/i;
+
 function hasFileIds(fileIds: unknown): boolean {
   return Array.isArray(fileIds) && fileIds.length > 0;
 }
@@ -59,6 +71,14 @@ export function requiresAuthoritativeContext(input: AuthoritativeContextInput): 
     return true;
   }
 
+  if (SELF_IDENTITY_STATE.test(q)) {
+    return true;
+  }
+
+  if (SELF_EMPLOYMENT_STATE.test(q)) {
+    return true;
+  }
+
   if (PERSONAL_CALENDAR_STATE.test(q)) {
     return true;
   }
@@ -75,17 +95,16 @@ export function requiresAuthoritativeContext(input: AuthoritativeContextInput): 
   if (
     module &&
     ['calendar', 'drive', 'hr', 'scheduling', 'workforce_comms', 'business'].includes(module) &&
-    /\b(my|our|today|tomorrow|this week|yesterday|current|scheduled|shared|manager|department|document|file)\b/i.test(
-      q
-    )
+    /\b(my|our|today|tomorrow|this week|yesterday|current|scheduled|shared|document|file)\b/i.test(q)
   ) {
     return true;
   }
 
+  // Operational business-scope cues — not bare "manager"/"department" (definitional false positives).
   if (
     typeof input.businessId === 'string' &&
     input.businessId.trim() !== '' &&
-    /\b(our|team|labor|budget|employees?|staffing|payroll|utilization|sales|revenue|manager|department)\b/i.test(
+    /\b(our|team|labor|budget|employees?|staffing|payroll|utilization|sales|revenue|headcount)\b/i.test(
       q
     )
   ) {

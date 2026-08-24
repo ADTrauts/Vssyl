@@ -204,50 +204,34 @@ describe.skipIf(!hasDb)('AI truth self-identity + HR self-org retrieval', () => 
     expect(selectContextProvider('hr', 'Who is off today on PTO?', providers)?.name).toBe(
       'time_off_summary'
     );
-    // Explicit: self_employment is never default-selected by current matching
-    expect(selectContextProvider('hr', 'Who is my manager?', providers)?.name).toBe('hr_overview');
-    expect(selectContextProvider('hr', "What's my job title?", providers)?.name).toBe('hr_overview');
+    expect(selectContextProvider('hr', 'Who is my manager?', providers)?.name).toBe(
+      'self_employment'
+    );
+    expect(selectContextProvider('hr', "What's my job title?", providers)?.name).toBe(
+      'self_employment'
+    );
+    expect(selectContextProvider('hr', 'What department am I in?', providers)?.name).toBe(
+      'self_employment'
+    );
   });
 
-  it('routing signals remain unchanged for self identity/org queries', () => {
+  it('routing signals for self identity/org are grounded after TM1', () => {
     const biz = FIXTURE_BUSINESS_ID;
-    const email = inferStructuredResponseMode({
-      query: 'What is my email?',
-      toneMode: 'conversational',
-      businessId: biz,
-    });
-    expect(email.requiresAuthoritativeContext).toBe(false);
-    expect(email.responseContract).toBe('conversation');
-
-    const title = inferStructuredResponseMode({
-      query: "What's my job title?",
-      toneMode: 'conversational',
-      businessId: biz,
-    });
-    expect(title.requiresAuthoritativeContext).toBe(false);
-    expect(title.responseContract).toBe('conversation');
-
-    const dept = inferStructuredResponseMode({
-      query: 'What department am I in?',
-      toneMode: 'conversational',
-      businessId: biz,
-    });
-    expect(dept.requiresAuthoritativeContext).toBe(true);
-    expect(dept.responseContract).toBe('grounded_answer');
-
-    const manager = inferStructuredResponseMode({
-      query: 'Who is my manager?',
-      toneMode: 'conversational',
-      businessId: biz,
-    });
-    expect(manager.requiresAuthoritativeContext).toBe(true);
-    expect(manager.responseContract).toBe('grounded_answer');
-
-    expect(requiresAuthoritativeContext({ query: 'What is my email?', businessId: biz })).toBe(
-      false
-    );
-    expect(
-      requiresAuthoritativeContext({ query: "What's my job title?", businessId: biz })
-    ).toBe(false);
+    for (const q of [
+      'What is my email?',
+      "What's my job title?",
+      'What department am I in?',
+      'Who is my manager?',
+    ]) {
+      const inf = inferStructuredResponseMode({
+        query: q,
+        toneMode: 'conversational',
+        businessId: biz,
+      });
+      expect(inf.requiresAuthoritativeContext).toBe(true);
+      expect(inf.responseContract).toBe('grounded_answer');
+      expect(inf.informationalAnswerEscape).not.toBe(true);
+      expect(requiresAuthoritativeContext({ query: q, businessId: biz })).toBe(true);
+    }
   });
 });

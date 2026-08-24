@@ -175,6 +175,14 @@ export function selectContextProvider(
       return pick('upcoming_events') ?? providers[0];
 
     case 'hr':
+      if (
+        /\b(?:my (?:job )?title|my (?:position|department|manager|boss|supervisor)|what (?:job )?(?:title|position|department) am i in|which department do i work in|who (?:is my (?:manager|boss|supervisor)|do i report to))\b/.test(
+          q
+        ) &&
+        names.has('self_employment')
+      ) {
+        return pick('self_employment');
+      }
       if (/\b(headcount|employee count|head count)\b/.test(q) && names.has('employee_count')) {
         return pick('employee_count');
       }

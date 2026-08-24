@@ -1914,12 +1914,25 @@ export class DigitalLifeTwinCore {
     const hasAuthoritativeEvidence = (assembledContext.evidence || []).some((e) =>
       authoritativeSourceTypes.has(String(e.sourceType || ''))
     );
+    // Authenticated User identity only — not generic personal prefs/memory blocks.
+    const hasAuthenticatedIdentityGrounding = (assembledContext.contextBlocks || []).some(
+      (b) => String(b.title || '') === 'Authenticated identity'
+    ) ||
+      (assembledContext.evidence || []).some((e) => {
+        const label = String(e.label || '').toLowerCase();
+        return (
+          e.sourceType === 'personal' &&
+          (label.includes('authenticated user identity') ||
+            label.includes('authenticated identity'))
+        );
+      });
     const contextGroundingFailure = ctxRecord.contextGroundingFailure === true;
     const groundingSatisfied =
       !requiresAuthoritativeContextFlag ||
       (!contextGroundingFailure &&
         (hasAuthoritativeBlocks ||
           hasAuthoritativeEvidence ||
+          hasAuthenticatedIdentityGrounding ||
           (assembledContext.usedModules?.length ?? 0) > 0));
     options.groundingSatisfied = groundingSatisfied;
     options.contextProfile =

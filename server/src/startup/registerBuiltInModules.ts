@@ -384,7 +384,11 @@ const BUILT_IN_MODULES: Array<{ moduleId: string; moduleName: string; aiContext:
         'payroll', 'salary', 'compensation', 'pay', 'wage', 'bonus',
         'performance', 'review', 'evaluation', 'feedback', 'goal',
         'recruitment', 'hiring', 'applicant', 'candidate', 'interview', 'job posting',
-        'benefits', 'insurance', 'enrollment', '401k', 'retirement'
+        'benefits', 'insurance', 'enrollment', '401k', 'retirement',
+        // Self-employment / org (prefer phrase keywords — avoid bare "manager")
+        'my manager', 'my boss', 'my supervisor', 'my job title', 'my title',
+        'my position', 'my department', 'report to',
+        'department am i', 'position am i',
       ],
       patterns: [
         'hr (system|module|dashboard)',
@@ -397,14 +401,20 @@ const BUILT_IN_MODULES: Array<{ moduleId: string; moduleName: string; aiContext:
         'performance reviews? due',
         'upcoming reviews?',
         'open positions',
-        'recruitment pipeline'
+        'recruitment pipeline',
+        'my (job )?title',
+        'my (position|department|manager|boss|supervisor)',
+        'what (department|position) am i in',
+        'which department do i work in',
+        'who (is my (manager|boss|supervisor)|do i report to)',
       ],
       concepts: [
         'employee lifecycle management',
         'human capital management',
         'workforce administration',
         'performance management',
-        'compensation and benefits'
+        'compensation and benefits',
+        'self employment context',
       ],
       entities: [
         { 

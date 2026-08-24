@@ -18,6 +18,27 @@ describe('requiresAuthoritativeContext (P3)', () => {
     );
   });
 
+  it('marks self identity and employment as requiring authoritative context', () => {
+    expect(requiresAuthoritativeContext({ query: 'What is my email?' })).toBe(true);
+    expect(requiresAuthoritativeContext({ query: "What's my job title?" })).toBe(true);
+    expect(requiresAuthoritativeContext({ query: 'Who is my manager?' })).toBe(true);
+  });
+
+  it('does not mark definitional manager/department as authoritative with businessId', () => {
+    expect(
+      requiresAuthoritativeContext({
+        query: 'What does a manager do?',
+        businessId: 'biz-1',
+      })
+    ).toBe(false);
+    expect(
+      requiresAuthoritativeContext({
+        query: 'What does a department do?',
+        businessId: 'biz-1',
+      })
+    ).toBe(false);
+  });
+
   it('marks document last-updated as requiring authoritative context', () => {
     expect(
       requiresAuthoritativeContext({ query: 'When was this document last updated?' })
@@ -55,6 +76,10 @@ describe('grounded factual routing (P3)', () => {
     'When was this document last updated?',
     'Who am I meeting tomorrow?',
     'What files did Sarah share with me?',
+    'What is my email?',
+    "What's my job title?",
+    'What department am I in?',
+    'Who is my manager?',
   ];
 
   for (const query of groundedQueries) {

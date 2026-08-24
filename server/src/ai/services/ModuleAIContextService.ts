@@ -31,6 +31,61 @@ import {
   MODULE_MENTION_ALIASES,
   type ContextProviderConfig,
 } from './moduleContextProviderSelection';
+
+/** Tokens ignored when scoring query words against module display names (substring). */
+const MODULE_NAME_SCORE_STOPWORDS = new Set([
+  'a',
+  'an',
+  'the',
+  'i',
+  'am',
+  'is',
+  'are',
+  'was',
+  'were',
+  'be',
+  'to',
+  'of',
+  'in',
+  'on',
+  'for',
+  'and',
+  'or',
+  'my',
+  'me',
+  'do',
+  'does',
+  'did',
+  'what',
+  'who',
+  'which',
+  'how',
+  'why',
+  'when',
+  'where',
+  'at',
+  'by',
+  'as',
+  'it',
+]);
+
+const MIN_MODULE_NAME_TOKEN_LEN = 3;
+
+/**
+ * Whether a query token may contribute module-name substring score.
+ * Guards against "i" → File Hub and "an" → HR Management false matches.
+ */
+export function shouldScoreModuleNameToken(word: string): boolean {
+  const w = (word || '').trim().toLowerCase();
+  if (w.length < MIN_MODULE_NAME_TOKEN_LEN) return false;
+  if (MODULE_NAME_SCORE_STOPWORDS.has(w)) return false;
+  return true;
+}
+
+export function queryTokenMatchesModuleName(word: string, moduleName: string): boolean {
+  if (!shouldScoreModuleNameToken(word)) return false;
+  return moduleName.toLowerCase().includes(word.toLowerCase());
+}
 import {
   buildProviderCacheKey,
   readProviderCache,
@@ -317,8 +372,8 @@ export class ModuleAIContextService {
             }
           });
 
-          // Check if any query words match module name
-          if (words.some((word) => entry.moduleName.toLowerCase().includes(word))) {
+          // Check if meaningful query words match module name (ignore stopwords / short tokens)
+          if (words.some((word) => queryTokenMatchesModuleName(word, entry.moduleName))) {
             score += 20;
           }
 
