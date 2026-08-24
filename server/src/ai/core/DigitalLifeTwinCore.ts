@@ -859,14 +859,6 @@ export class DigitalLifeTwinCore {
         previousTopic: query.activeTopic,
       });
 
-      const conversationReasoning = runConversationReasoning({
-        query: query.query,
-        conversationHistory: query.conversationHistory,
-        continuityState: continuityUpdate.continuity,
-        activeTopic: continuityUpdate.activeTopic,
-        responseMode,
-      });
-
       let effectivePreferences: ResolvedEffectivePreferences | undefined;
       let sessionPreferenceAdjustments: SessionSoftPreferenceOverrides | undefined;
       let businessWorkspaceBoundaries: BusinessWorkspaceBoundaryBlock | undefined;
@@ -965,8 +957,7 @@ export class DigitalLifeTwinCore {
         moduleContextsForAssembly,
         effectivePreferences,
         businessWorkspaceBoundaries,
-        crossModuleSynthesis,
-        conversationReasoning
+        crossModuleSynthesis
       );
       const t_provider_ms = Date.now() - t0_provider;
       const t_total_ms = Date.now() - startTime;
@@ -1284,7 +1275,12 @@ export class DigitalLifeTwinCore {
             ),
           }),
           ...(response.pipelineTrace && { pipelineTrace: response.pipelineTrace }),
-          conversationReasoning,
+          ...((() => {
+            const reasoning = (query.context as Record<string, unknown>).conversationReasoning;
+            return reasoning && typeof reasoning === 'object' && !Array.isArray(reasoning)
+              ? { conversationReasoning: reasoning as ConversationReasoningResult }
+              : {};
+          })()),
           ...(Array.isArray((response as { pendingToolApprovals?: unknown }).pendingToolApprovals) &&
             ((response as { pendingToolApprovals: unknown[] }).pendingToolApprovals.length > 0) && {
               pendingToolApprovals: (response as {
@@ -1404,8 +1400,7 @@ export class DigitalLifeTwinCore {
     moduleContexts?: Record<string, unknown>,
     effectivePreferences?: ResolvedEffectivePreferences,
     businessWorkspaceBoundaries?: BusinessWorkspaceBoundaryBlock,
-    crossModuleSynthesis?: ContextSynthesisResult,
-    conversationReasoning?: ConversationReasoningResult
+    crossModuleSynthesis?: ContextSynthesisResult
   ) {
     const ctxForStructured = query.context as Record<string, unknown>;
     const structuredInference = inferStructuredResponseMode({
@@ -1437,6 +1432,17 @@ export class DigitalLifeTwinCore {
       structuredInference.responseContract ??
       (structuredResponseMode === 'conversation' ? 'conversation' : 'enterprise');
     const isActionRequest = structuredInference.isActionRequest === true;
+
+    let conversationReasoning: ConversationReasoningResult | undefined;
+    if (responseContract === 'conversation') {
+      conversationReasoning = runConversationReasoning({
+        query: query.query,
+        conversationHistory: query.conversationHistory,
+        continuityState,
+        activeTopic,
+        responseMode,
+      });
+    }
 
     const contextProfile = resolveContextProfile(structuredInference.mode, {
       responseContract: structuredInference.responseContract,

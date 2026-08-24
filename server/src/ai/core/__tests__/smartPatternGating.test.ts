@@ -75,8 +75,7 @@ type GenerateLifeTwinResponse = (
   moduleContexts?: Record<string, unknown>,
   effectivePreferences?: unknown,
   businessWorkspaceBoundaries?: unknown,
-  crossModuleSynthesis?: unknown,
-  conversationReasoning?: unknown
+  crossModuleSynthesis?: unknown
 ) => Promise<Record<string, unknown>>;
 
 async function runGenerateWithQuery(
