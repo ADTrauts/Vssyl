@@ -329,17 +329,8 @@ export function requiresAuthoritativeContext(input: AuthoritativeContextInput): 
     return true;
   }
 
-  const module = (input.currentModule || '').trim().toLowerCase();
-  if (
-    module &&
-    ['calendar', 'drive', 'hr', 'scheduling', 'workforce_comms', 'business'].includes(module) &&
-    !GENERAL_CONCEPT_CUE.test(q) &&
-    /\b(my|our|today|tomorrow|this week|yesterday|current|scheduled|shared|document|file)\b/i.test(q)
-  ) {
-    return true;
-  }
-
-  // W1: module-scoped shorthand (calendar / hr / drive) — independent of the keyword clause above.
+  // W1: bounded active-module shorthand only (calendar / hr / drive).
+  // Module location does not imply question domain — no broad currentModule+possessive fallback.
   if (resolveActiveModuleShorthand(input)) {
     return true;
   }

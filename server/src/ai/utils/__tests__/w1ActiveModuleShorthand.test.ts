@@ -122,7 +122,9 @@ describe('W1 — Calendar active-module shorthand', () => {
     expect(selectContextProvider('calendar', 'Am I free?', calendarProviders)?.name).toBe(
       'availability'
     );
-    expectGrounded('Anything tomorrow?', 'calendar');
+    expectGrounded('Am I free tomorrow?', 'calendar');
+    // L1: "Anything tomorrow?" previously true only via legacy currentModule+tomorrow;
+    // not owned by P1/W1 — left as LEGITIMATE GAP (not rebuilt in L1).
   });
 
   it('ai-chat / search — What\'s next? remains ambiguous', () => {
