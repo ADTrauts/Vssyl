@@ -68,6 +68,7 @@ import {
   inferStructuredResponseMode,
   type InferStructuredResponseModeResult,
 } from '../utils/structuredResponseMode';
+import { shouldRetrieveModuleContext } from '../utils/shouldRetrieveModuleContext';
 import { buildProviderData } from '../utils/buildProviderData';
 import type { AIResponseMode as StructuredAIResponseMode } from '../types/structuredResponse';
 import { PreferenceResolver } from '../preferences/PreferenceResolver';
@@ -396,18 +397,45 @@ export class DigitalLifeTwinCore {
           ctx && typeof ctx.conversationId === 'string' && ctx.conversationId.trim() !== ''
             ? ctx.conversationId.trim()
             : undefined;
-        smartContext = await this.contextEngine?.getContextForAIQuery(query.userId, query.query, {
-          businessId,
-          dashboardId: dashboardIdForContext,
-          householdId: householdIdForContext,
-          requestId,
-          conversationId: conversationIdForContext,
-          currentModule:
-            ctx && typeof ctx.currentModule === 'string' && ctx.currentModule.trim() !== ''
-              ? ctx.currentModule.trim()
-              : undefined,
-        });
-        
+        const hasAttachedFileRequirement =
+          Array.isArray(ctx?.fileIds) &&
+          ctx.fileIds.some(
+            (id): id is string => typeof id === 'string' && id.trim() !== ''
+          );
+
+        // C3: skip MODULE ContextProvider orchestration for safe conversation turns.
+        // Does not skip history/memory/prefs/identity, V_Link, grounding prepass, or tools.
+        if (
+          shouldRetrieveModuleContext(query.structuredResolution, hasAttachedFileRequirement)
+        ) {
+          smartContext = await this.contextEngine?.getContextForAIQuery(query.userId, query.query, {
+            businessId,
+            dashboardId: dashboardIdForContext,
+            householdId: householdIdForContext,
+            requestId,
+            conversationId: conversationIdForContext,
+            currentModule:
+              ctx && typeof ctx.currentModule === 'string' && ctx.currentModule.trim() !== ''
+                ? ctx.currentModule.trim()
+                : undefined,
+          });
+        } else {
+          smartContext = {
+            query: query.query,
+            moduleContexts: {},
+            relevantModuleCount: 0,
+            fullContext: this.createFallbackUserContext(query.userId),
+            moduleContextRetrieval: {
+              status: 'skipped',
+              reason: 'pure_conversation',
+            },
+          };
+          void logger.info('Module context retrieval skipped for pure conversation', {
+            operation: 'digital_life_twin_module_context_skip',
+            reason: 'pure_conversation',
+          });
+        }
+
         // Convert smart context to UserContext format for backward compatibility
         userContext = (smartContext as any)?.fullContext || await this.contextEngine?.getUserContext(query.userId) || this.createFallbackUserContext(query.userId);
 
@@ -428,6 +456,15 @@ export class DigitalLifeTwinCore {
               typeof (sc as { relevantModuleCount?: unknown } | null)?.relevantModuleCount === 'number'
                 ? (sc as { relevantModuleCount: number }).relevantModuleCount
                 : undefined,
+            ...(sc &&
+            typeof sc.moduleContextRetrieval === 'object' &&
+            sc.moduleContextRetrieval !== null &&
+            (sc.moduleContextRetrieval as { status?: unknown }).status === 'skipped'
+              ? {
+                  moduleContextSkipped: true,
+                  moduleContextSkipReason: 'pure_conversation',
+                }
+              : {}),
           },
         });
 
