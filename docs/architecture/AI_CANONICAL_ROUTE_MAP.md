@@ -1,16 +1,60 @@
 # AI Canonical Route Map
 
-**Wave:** AI Platform **1A** — Route consolidation & legacy path retirement audit  
-**Status:** Active planning artifact  
-**Last updated:** 2026-06-10 (Wave **1B** implemented)  
-**Parent:** [AI_PLATFORM_OVERVIEW.md](./AI_PLATFORM_OVERVIEW.md), [AI_PLATFORM_BOUNDARY_MODEL.md](./AI_PLATFORM_BOUNDARY_MODEL.md)  
-**Evidence:** [AI_LEGACY_DUPLICATION_REGISTER.md](./audits/AI_LEGACY_DUPLICATION_REGISTER.md), [AI_PLATFORM_CONSTITUTIONAL_AUDIT.md](./audits/AI_PLATFORM_CONSTITUTIONAL_AUDIT.md)
+**Wave:** AI Platform **1A** — Route consolidation & legacy path retirement audit
+**Status:** Active — HTTP inventory + **shipped Twin runtime flow** (reconciled 2026-08-25)
+**Last updated:** 2026-08-25 (Digital Life Twin documentation reconciliation)
+**Parent:** [AI_PLATFORM_OVERVIEW.md](./AI_PLATFORM_OVERVIEW.md), [AI_SYSTEM_MENTAL_MODEL.md](./AI_SYSTEM_MENTAL_MODEL.md), [AI_PLATFORM_BOUNDARY_MODEL.md](./AI_PLATFORM_BOUNDARY_MODEL.md)
+**Evidence:** Code on `main` (`DigitalLifeTwinService` / `DigitalLifeTwinCore`); [AI_LEGACY_DUPLICATION_REGISTER.md](./audits/AI_LEGACY_DUPLICATION_REGISTER.md)
 
-**Scope:** Documentation only. No routes removed or remounted in Wave 1A.
+**Scope:** Architecture documentation. HTTP inventory below is historical Wave 1A/1B evidence; **§ Canonical Twin runtime** is the current conversational path.
 
 ---
 
-## Summary counts
+## Canonical Twin runtime (shipped)
+
+**HTTP owner:** `POST /api/ai/twin` → `DigitalLifeTwinService` → `DigitalLifeTwinCore`.
+
+Business-scoped turns use the **same** path with `context.businessId` (membership enforced on the route).
+`POST /api/business-ai/:businessId/interact` is **noncanonical** (mock conversational intelligence) — see Business AI inventory note below.
+
+```
+USER REQUEST
+    ↓
+DigitalLifeTwinService
+    ├─ current-thread history
+    ├─ resolveCanonicalTwinRouting  (inferStructuredResponseMode + axes)
+    ├─ recent conversation memory
+    ├─ recallRelevantMessages (if recall intent)
+    └─ MemoryRetrievalService / UserMemoryFact
+    ↓
+DigitalLifeTwinCore
+    ├─ C3: shouldRetrieveModuleContext?
+    │     ├─ required/unsafe → CrossModuleContextEngine → ContextProviderOrchestrator
+    │     └─ safe conversation → skip MODULE orchestration (not “LLM-only”)
+    ├─ V_Link / entity linking / files (as applicable)
+    ├─ preferences + business policy overlay
+    ├─ grounding/source/tool prepass (runPipelineGroundingRetrieval) when policy requires
+    ├─ AIContextAssembler + coaching / response contract
+    ├─ provider/model (+ governed tools)
+    └─ post-turn learning / observation
+```
+
+| Axis | Owner (code) | Notes |
+|------|--------------|-------|
+| Outcome / structured mode | `inferStructuredResponseMode`, `inferQueryIntent` | Resolved once in Service before memory/orchestration |
+| Response contract | `resolveResponseContract` | `conversation` \| `grounded_answer` \| `enterprise` |
+| Authoritative truth need | `requiresAuthoritativeContext` | Coarse; module/file/platform strongest |
+| Action | `isActionMutationRequest` | Imperative mutation ≠ historical read |
+| Module ContextProviders | `shouldRetrieveModuleContext` (C3) | Conditional |
+| Personal recall | `recallIntent` + message recall + memory facts | Independent of C3 / often `reqAuth=false` |
+| Context budget | `contextProfile` + `AIContextAssembler` | What enters the prompt |
+| Pipeline | `runPipelineGroundingRetrieval` | Source/grounding/tool policy — not primary outcome router |
+
+Mental model detail: [`AI_SYSTEM_MENTAL_MODEL.md`](./AI_SYSTEM_MENTAL_MODEL.md).
+
+---
+
+## Summary counts (Wave 1A inventory)
 
 | Metric | Count | Notes |
 |--------|------:|-------|
@@ -68,8 +112,8 @@
 
 ## Route inventory — User-defined context (`/api/ai/user-context`)
 
-**Router:** `server/src/routes/ai-user-context.ts`  
-**Canonical mount:** `/api/ai/user-context` (Wave 1B)  
+**Router:** `server/src/routes/ai-user-context.ts`
+**Canonical mount:** `/api/ai/user-context` (Wave 1B)
 **Legacy mount:** `/api/ai/context` (migration only — `GET /` still twin aggregate on `ai.ts`)
 
 | Route | Purpose | Canonical owner | Active? | Deprecated? | Duplicate? | Retirement candidate? |
@@ -82,8 +126,8 @@
 | `PUT /api/ai/context/:id` | Update entry | `userAIContextController` | Yes‡ | No | Partial | P1 |
 | `DELETE /api/ai/context/:id` | Delete entry | `userAIContextController` | Yes‡ | No | Partial | P1 |
 
-\* `pending` not shadowed by `ai.ts` (no matching route).  
-† `GET /api/ai/context/:module` in `ai.ts` may capture UUID-shaped ids as module names.  
+\* `pending` not shadowed by `ai.ts` (no matching route).
+† `GET /api/ai/context/:module` in `ai.ts` may capture UUID-shaped ids as module names.
 ‡ POST/PUT/DELETE reach `ai-user-context` when `ai.ts` has no matching method.
 
 **Web clients affected:** `web/src/components/ai/CustomContext.tsx`, `AIMemoriesView.tsx`, `web/src/api/aiContextLearning.ts`.
@@ -211,16 +255,18 @@ Admin-only; overlaps diagnostics (P-03). **Fence** from user twin; consolidate f
 
 | Mount | Count | Purpose | Canonical | Retire? |
 |-------|------:|---------|-----------|---------|
-| `/api/business-ai` | 9 | Business-scoped AI config + interact | `businessAI` | No |
+| `/api/business-ai` | 9 | Business AI **config** + legacy interact | Config: yes; interact: **no** | Interact = deprecate candidate |
 | `/api/admin/business-ai` | 5 | Admin business AI ops | `adminBusinessAI` | No |
 
-**Note:** `POST /api/business-ai/:businessId/interact` is a **separate** conversational path from twin — document fence (not duplicate of `/api/ai/twin`).
+**Canonical business conversational path:** `POST /api/ai/twin` + `context.businessId` (shared Digital Life Twin + policy overlay).
+
+**`POST /api/business-ai/:businessId/interact`:** **NONCANONICAL / LEGACY / MOCK** — `BusinessAIDigitalTwinService.processEmployeeInteraction` does not call Twin Core. Do not delete in docs-only work; do not treat as architecture owner. Config/init/analytics routes on `/api/business-ai` remain useful.
 
 ---
 
 ## Route inventory — Centralized AI scaffold (`/api/centralized-ai`)
 
-**Router:** `server/src/routes/ai-centralized.ts` — **97 routes**, ~3494 LOC.  
+**Router:** `server/src/routes/ai-centralized.ts` — **97 routes**, ~3494 LOC.
 **Disposition (R-01):** Fenced **admin/scaffold** only (Wave **1D**): mount `requireAdmin`; `POST /learning/event` and `/models/*` return **410**. Not canonical twin path.
 
 **Categories (representative):**
@@ -261,7 +307,8 @@ Admin-only; overlaps diagnostics (P-03). **Fence** from user twin; consolidate f
 flowchart TD
   Q[Incoming AI HTTP request]
   Q --> T{Twin conversational?}
-  T -->|Yes| Twin["POST /api/ai/twin"]
+  T -->|Yes — personal or businessId scope| Twin["POST /api/ai/twin"]
+  T -->|Legacy business interact| LegacyBiz["POST /api/business-ai/.../interact<br/>NONCANONICAL mock"]
   T -->|No| U{User CRUD context?}
   U -->|Yes — after 1B| UC["/api/ai/user-context/*"]
   U -->|No| M{Module grounding read?}

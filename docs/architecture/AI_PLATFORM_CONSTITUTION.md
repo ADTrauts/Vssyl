@@ -1,9 +1,9 @@
 # AI Platform Constitution
 
-**Version:** 1.0.0  
-**Status:** Active — constitutional authority for AI Platform modernization  
-**Last updated:** 2026-06-04  
-**Phase:** Governance Wave **G0** (framework only; no runtime changes)
+**Version:** 1.0.0
+**Status:** Active — constitutional authority for AI Platform modernization
+**Last updated:** 2026-08-25 (Digital Life Twin documentation reconciliation — Twin path §6.1)
+**Phase:** Governance Wave **G0** (framework); runtime truth follows GitHub `main`
 
 **Authorities (read together):**
 
@@ -24,10 +24,10 @@
 
 The **AI Platform** is the cross-cutting runtime that:
 
-1. Assembles **authorized, tenant-scoped context** from modules and platform sources.  
-2. Runs the **Digital Life Twin** conversational pipeline (grounding, reasoning, generation, enforcement).  
-3. Executes **governed tools and actions** only through module canonical services or registered partner executors.  
-4. Emits **observable diagnostics** (pipeline trace, orchestration snapshots) for admins and additive user metadata.  
+1. Assembles **authorized, tenant-scoped context** from modules and platform sources.
+2. Runs the **Digital Life Twin** conversational pipeline (grounding, reasoning, generation, enforcement).
+3. Executes **governed tools and actions** only through module canonical services or registered partner executors.
+4. Emits **observable diagnostics** (pipeline trace, orchestration snapshots) for admins and additive user metadata.
 5. Operates **parallel non-twin paths** (ambient suggestions, query billing) without bypassing authorization.
 
 The AI Platform is **not** a product `moduleId`. It does not own domain entities (files, tasks, events, listings). It **orchestrates** and **governs** access to them.
@@ -68,9 +68,9 @@ The AI Platform is **not** a product `moduleId`. It does not own domain entities
 
 ### 2.3 AI Platform must not own
 
-- File folders, chat messages, calendar events, tasks, notebook pages, place graphs, HR records, or scheduling shifts.  
-- Product analytics aggregates (tenant dashboards).  
-- Business Workspace shell layout or module install state (runtime only **consumes** scope).  
+- File folders, chat messages, calendar events, tasks, notebook pages, place graphs, HR records, or scheduling shifts.
+- Product analytics aggregates (tenant dashboards).
+- Business Workspace shell layout or module install state (runtime only **consumes** scope).
 - Marketplace module business logic inside the twin process (partner code via registry/webhook only).
 
 See [AI_PLATFORM_BOUNDARY_MODEL.md](./AI_PLATFORM_BOUNDARY_MODEL.md) for the five-surface matrix.
@@ -81,11 +81,11 @@ See [AI_PLATFORM_BOUNDARY_MODEL.md](./AI_PLATFORM_BOUNDARY_MODEL.md) for the fiv
 
 Every twin request must satisfy:
 
-1. **Authentication** — `req.user` verified before any AI path.  
-2. **Tenant scope** — `dashboardId`, and `businessId` / `householdId` when in that context; never cross-tenant provider fetch.  
-3. **Order of operations** — `authorize → execute → emit → notify/realtime` for **writes** initiated by tools or actions; never emit activity for failed/unauthorized AI operations.  
-4. **Grounding** — Pipeline catalog + `runPipelineGroundingRetrieval`; unapproved V_Link suggestions never ground responses.  
-5. **Traceability** — Successful twin turns produce additive `pipelineTrace` (and evidence for admins when persisted).  
+1. **Authentication** — `req.user` verified before any AI path.
+2. **Tenant scope** — `dashboardId`, and `businessId` / `householdId` when in that context; never cross-tenant provider fetch.
+3. **Order of operations** — `authorize → execute → emit → notify/realtime` for **writes** initiated by tools or actions; never emit activity for failed/unauthorized AI operations.
+4. **Grounding** — Pipeline catalog + `runPipelineGroundingRetrieval`; unapproved V_Link suggestions never ground responses.
+5. **Traceability** — Successful twin turns produce additive `pipelineTrace` (and evidence for admins when persisted).
 6. **Separation** — Ambient suggestions and centralized admin learning do not auto-execute privileged mutations on the twin path.
 
 ---
@@ -133,39 +133,49 @@ A change **violates** this constitution when it:
 ### 6.1 Twin path (canonical)
 
 ```
-POST /api/ai/twin
+POST /api/ai/twin   (+ optional context.businessId for business scope)
   → DigitalLifeTwinService
+      resolveCanonicalTwinRouting (outcome / truth need / action / contract / …)
+      conversation history + personal recall + UserMemoryFact
   → DigitalLifeTwinCore
-  → memory / preferences / ContextProviderOrchestrator
-  → V_Link (confirmed) / entity linking / grounding prepass
-  → assembleAIContext
-  → runConversationReasoning
-  → provider + tool rounds (executeTool → module services)
-  → buildPipelineTrace + applyPipelineEnforcement
+      C3: shouldRetrieveModuleContext?
+        ├─ retrieve → CrossModuleContextEngine → ContextProviderOrchestrator
+        └─ skip MODULE orchestration on safe conversation (not LLM-only)
+      V_Link (confirmed) / entity linking / files / preferences / business policy
+      optional runPipelineGroundingRetrieval (source/grounding/tool policy)
+      assembleAIContext
+      coaching / structured response format
+      provider + tool rounds (executeTool → module services)
+      post-turn learning / observation
+      buildPipelineTrace + applyPipelineEnforcement
 ```
+
+**Noncanonical:** `POST /api/business-ai/:businessId/interact` (mock) — not this path.
+
+Plain-English model: [`AI_SYSTEM_MENTAL_MODEL.md`](./AI_SYSTEM_MENTAL_MODEL.md). Runtime map: [`AI_CANONICAL_ROUTE_MAP.md`](./AI_CANONICAL_ROUTE_MAP.md).
 
 ### 6.2 Context provider pattern
 
-- Registry metadata in `moduleAIContextRegistry`.  
-- HTTP fetch via `fetchModuleContextProvider` with cache + freshness warnings.  
-- Controller: auth → scope → **visibility/read service** → JSON DTO.  
+- Registry metadata in `moduleAIContextRegistry`.
+- HTTP fetch via `fetchModuleContextProvider` with cache + freshness warnings.
+- Controller: auth → scope → **visibility/read service** → JSON DTO.
 - Pipeline `pipelineSourceIds` aligned with catalog.
 
 ### 6.3 Tool pattern
 
-- Definition in `toolDefinitions.ts` + catalog tool policy.  
-- `executeTool` → dynamic import of `*AIActionService` or platform visibility service.  
+- Definition in `toolDefinitions.ts` + catalog tool policy.
+- `executeTool` → dynamic import of `*AIActionService` or platform visibility service.
 - No controller imports; no Prisma for domain tables in `toolExecutor`.
 
 ### 6.4 Action pattern (post-response / approval)
 
-- `ActionExecutor.executeByModule` → `*AIActionService` for built-ins.  
-- `requiresApproval` honored before execute.  
+- `ActionExecutor.executeByModule` → `*AIActionService` for built-ins.
+- `requiresApproval` honored before execute.
 - Third-party: `ActionExecutorRegistry` only (webhook or signed in-process).
 
 ### 6.5 Diagnostics pattern
 
-- `mapOrchestrationToPipelineTraceInput` + `buildPipelineEvidenceBundle`.  
+- `mapOrchestrationToPipelineTraceInput` + `buildPipelineEvidenceBundle`.
 - Admin: `/admin-portal/ai-pipeline/diagnostics` — not mixed into product Analytics module.
 
 ### 6.6 Ambient pattern
@@ -217,9 +227,9 @@ All implementation waves must cite this constitution and update [AI_PLATFORM_OPE
 
 ## 10. Amendment process
 
-1. Propose change via PR updating this file + operation matrix.  
-2. Architecture sign-off for any new **forbidden pattern** or **blocking violation**.  
-3. Update `AI_PLATFORM_CERTIFICATION_STRATEGY.md` exit criteria if levels affected.  
+1. Propose change via PR updating this file + operation matrix.
+2. Architecture sign-off for any new **forbidden pattern** or **blocking violation**.
+3. Update `AI_PLATFORM_CERTIFICATION_STRATEGY.md` exit criteria if levels affected.
 4. Update Memory Bank `activeContext.md` / `progress.md` on promotion.
 
 ---

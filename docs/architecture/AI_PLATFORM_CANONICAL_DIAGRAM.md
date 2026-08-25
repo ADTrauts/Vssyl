@@ -1,11 +1,11 @@
 # AI Platform Canonical Diagram
 
-**Program:** AI Architecture Phase 6B  
-**Date:** 2026-07-13  
-**Status:** Active — **canonical** whole-platform relationship diagram  
-**Owner:** AI Platform / Architecture council  
-**Source of Truth for:** One-page AI Platform topology  
-**Companion:** [`AI_PLATFORM_ARCHITECTURE_CERTIFICATION.md`](./AI_PLATFORM_ARCHITECTURE_CERTIFICATION.md) · [`AI_PLATFORM_OVERVIEW.md`](./AI_PLATFORM_OVERVIEW.md)
+**Program:** AI Architecture Phase 6B (reconciled 2026-08-25)
+**Date:** 2026-08-25
+**Status:** Active — **canonical** whole-platform relationship diagram
+**Owner:** AI Platform / Architecture council
+**Source of Truth for:** One-page AI Platform topology
+**Companion:** [`AI_SYSTEM_MENTAL_MODEL.md`](./AI_SYSTEM_MENTAL_MODEL.md) · [`AI_CANONICAL_ROUTE_MAP.md`](./AI_CANONICAL_ROUTE_MAP.md) · [`AI_PLATFORM_ARCHITECTURE_CERTIFICATION.md`](./AI_PLATFORM_ARCHITECTURE_CERTIFICATION.md)
 
 ---
 
@@ -14,69 +14,62 @@
 ```mermaid
 flowchart TB
   subgraph Actors
-    U[User / Personal]
-    B[Business Member]
+    U[User / Personal scope]
+    B[Business member / Business scope]
     Op[Platform Operator / Admin]
   end
 
   subgraph Surfaces
     PC[Personal AI Chat / Twin UI]
-    BA[Business AI UI]
+    BA[Business-scoped Twin UI]
     Hub[AI Pipeline Hub<br/>/admin-portal/ai-pipeline]
   end
 
-  subgraph TwinRuntime["Shared Twin Runtime"]
+  subgraph TwinRuntime["Shared Digital Life Twin"]
+    Route[Routing axes<br/>outcome · truth need · action<br/>contract · coaching · budget]
     Svc[DigitalLifeTwinService]
     Core[DigitalLifeTwinCore]
-    Biz[BusinessAIDigitalTwinService]
-    Reason[Conversation Reasoning]
   end
 
-  subgraph ContextLayer["Context & Knowledge"]
+  subgraph PersonalCtx["Personal context"]
+    Hist[Conversation history]
+    Recall[Message recall]
+    Mem[UserMemoryFact]
+    Prefs[Preferences / identity]
+  end
+
+  subgraph ModuleCtx["Module ContextProviders — CONDITIONAL C3"]
     Orch[ContextProviderOrchestrator]
-    Asm[AIContextAssembler]
-    Mem[User Memory Facts]
-    KE[Knowledge Engine<br/>server/src/knowledge]
-    Graph[Context Graph]
-    Ground[Pipeline Grounding]
   end
 
-  subgraph ExecutionLayer["Execution & Safety"]
-    Tools[toolExecutor]
-    Gov[governedToolExecutor]
-    Risk[aiToolRiskRegistry]
-    Appr[Approvals]
-    AE[ActionExecutor<br/>post-hoc / bridged]
-    Ledger[AIActionExecution]
+  subgraph GraphLayer["Relationships & composition"]
+    VL[V_Link]
+    Graph[Context Graph]
+    CK[Connected Knowledge]
+  end
+
+  subgraph GroundTools["Grounding / tools"]
+    Ground[Pipeline grounding / source policy]
+    Tools[Governed tools / actions]
+  end
+
+  subgraph Assembly["Prompt assembly"]
+    Asm[AIContextAssembler]
   end
 
   subgraph Providers["Providers"]
-    Route[providerRouting + modelCatalog]
-    Shadow[Model Router shadow<br/>Phase 7]
-    Fac[aiProviderFactory]
+    Fac[aiProviderFactory / adapters]
     OAI[OpenAI]
     Ant[Anthropic]
     Loc[Local / Fake]
   end
 
-  subgraph SkillsLayer["Skills (Phase 8)"]
-    SkillAPI["/api/ai/skills"]
-    SkillRun[skillRunner]
-    SkillReg[skillRegistry]
-    SkillAdapters[Module adapters]
+  subgraph Learning["Post-turn"]
+    Learn[Learning / observation]
   end
 
-  subgraph Intelligence["Observe → Improve"]
-    Obs[Observation Events]
-    Rec[AIExecutionRecord]
-    Eval[Evaluation Workflow]
-    Corr[Correction Proposals]
-    Reg[Regression Library]
-    Replay[Replay Prepare only]
-  end
-
-  subgraph OpsAPI["Operations API"]
-    Ops[/api/admin/ai/operations]
+  subgraph Legacy["Noncanonical"]
+    BizLegacy[BusinessAIDigitalTwinService /interact<br/>MOCK — do not use as Twin]
   end
 
   U --> PC
@@ -84,58 +77,68 @@ flowchart TB
   Op --> Hub
 
   PC --> Svc
-  BA --> Biz
-  Biz --> Core
+  BA --> Svc
+  Svc --> Route
+  Route --> Svc
   Svc --> Core
 
-  Core --> Reason
-  Core --> Orch
-  Core --> Asm
-  Core --> Ground
-  Core --> Mem
-  Orch --> KE
-  KE --> Graph
-  Ground --> Graph
+  Svc --> Hist
+  Svc --> Recall
+  Svc --> Mem
+  Core --> Prefs
 
-  Core --> Route
-  Route --> Fac
-  Route -.->|shadow observe| Shadow
+  Core -->|C3 retrieve| Orch
+  Core -.->|C3 skip module orch| Asm
+  Orch --> Asm
+  Hist --> Asm
+  Recall --> Asm
+  Mem --> Asm
+  Prefs --> Asm
+
+  Core --> VL
+  VL --> Asm
+  Ground --> Asm
+  Graph -.-> CK
+  Core --> Ground
+  Core --> Tools
+  Core --> Asm
+  Asm --> Fac
   Fac --> OAI
   Fac --> Ant
   Fac --> Loc
+  Core --> Learn
 
-  PC --> SkillAPI
-  BA --> SkillAPI
-  SkillAPI --> SkillRun
-  SkillRun --> SkillReg
-  SkillRun --> SkillAdapters
-  SkillRun --> Obs
-  SkillRun -.->|shadow observe| Shadow
-  SkillAdapters --> Route
-
-  Core --> Tools
-  Tools --> Gov
-  Gov --> Risk
-  Gov --> Ledger
-  Gov --> Appr
-  Core --> AE
-  AE -.->|bridge| Gov
-
-  Core --> Obs
-  Obs --> Rec
-  Rec --> Eval
-  Eval --> Corr
-  Corr --> Reg
-  Rec --> Replay
-
-  Hub --> Ops
-  Ops --> Rec
-  Ops --> Eval
-  Ops --> Corr
-  Ops --> Reg
-  Ops --> Obs
-  Hub --> SkillReg
+  BizLegacy -.->|not Twin| Core
 ```
+
+---
+
+## Relationship rules (canonical)
+
+| From | To | Rule |
+|------|----|------|
+| Personal / Business UI | `DigitalLifeTwinService` | **One** conversational runtime; scopes differ |
+| Routing axes | Core orchestration | Independent decisions — not one giant domain class |
+| Module ContextProviders | Core | **Conditional (C3)** — not every turn |
+| Personal memory / history | Assembler | Independent of C3 module skip |
+| Pipeline grounding | Twin | Source/evidence/enforcement — not primary outcome router |
+| V_Link / Graph / Connected Knowledge | Twin | Alongside / downstream of discovery — not memory or routing replacements |
+| Business `/interact` | Twin | **Noncanonical mock** — use `/api/ai/twin` + `businessId` |
+| Observation / Learning | Runtime | Post-turn; Learning ≠ general intelligence |
+| Providers | Product logic | Adapters only |
+| Live External Truth / `web_search` | Twin | **NOT SHIPPED** |
+
+---
+
+## Non-relationships (intentional)
+
+- C3 skip is **not** “LLM-only mode.”
+- `businessId` is **not** business intent.
+- `currentModule` is **not** global query domain.
+- Recommendation coaching is **not** automatically `enterprise`.
+- `conversation` contract is **not** “ungrounded.”
+- Corrections do **not** auto-mutate Twin prompts or provider selection.
+- Skills runner does **not** fork Twin Core (Phase 8 pilots).
 
 ---
 
@@ -146,30 +149,4 @@ flowchart TB
 | Skill runner | Twin Core | **No** invocation — dedicated execution path |
 | Skill runner | Module adapters | Wraps authorized SoR services |
 | Skill runner | Observation | `surface: SKILL` events + optional execution record |
-| Skill runner | Model Router shadow | Observe-only; production routing unchanged |
 | Intent type | Skill | Selection hint only — explicit `skillKey` authoritative on customer API |
-| Capability | Provider | Skills declare capability; adapters choose models today |
-
----
-
-## Relationship rules (canonical)
-
-| From | To | Rule |
-|------|----|------|
-| Modules | Context providers | Modules expose data; Twin orchestrates |
-| Knowledge Engine | Answers | Composition may influence; does not own Twin |
-| Observation | Runtime | Emit-only; never changes Twin behavior |
-| Evaluation / Correction | Runtime | Proposals only; never auto-mutate prompts/routing/tools |
-| Pipeline Hub | Operations API | One operator product; redirects preserve old URLs |
-| Business Twin | Core | Scoped policy wrapper over shared runtime |
-| Providers | Product logic | Adapters only; policy belongs to Vssyl |
-
----
-
-## Non-relationships (intentional)
-
-- Corrections do **not** write into Twin prompts or provider selection.  
-- Replay prepare does **not** re-execute production traffic.  
-- Admin Pipeline does **not** own module SoR data.  
-- Skills runner does **not** fork Twin Core or open tool mutation rounds (Phase 8 pilots).  
-- Analytics orphan scaffolds are **not** part of this diagram.

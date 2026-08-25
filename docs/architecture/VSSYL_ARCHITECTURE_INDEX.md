@@ -1,13 +1,13 @@
 # Vssyl Architecture Index
 
-**Program:** Architecture Consolidation — Phase 0A  
-**Date:** 2026-06-29 (AI section updated 2026-07-12 — Phase 0)  
-**Status:** Canonical entry point — **supersedes informal navigation via scattered READMEs**  
+**Program:** Architecture Consolidation — Phase 0A
+**Date:** 2026-06-29 (AI section updated 2026-08-25 — Digital Life Twin documentation reconciliation)
+**Status:** Canonical entry point — **supersedes informal navigation via scattered READMEs**
 **Audience:** Engineers, architects, AI agents, program owners
 
-> **Start here.** This index answers: *"Where is the source of truth for this topic?"*  
-> For ownership rules, see [`ARCHITECTURE_SOURCE_OF_TRUTH.md`](./ARCHITECTURE_SOURCE_OF_TRUTH.md).  
-> For domain topology, see [`ARCHITECTURE_DOMAIN_MAP.md`](./ARCHITECTURE_DOMAIN_MAP.md).  
+> **Start here.** This index answers: *"Where is the source of truth for this topic?"*
+> For ownership rules, see [`ARCHITECTURE_SOURCE_OF_TRUTH.md`](./ARCHITECTURE_SOURCE_OF_TRUTH.md).
+> For domain topology, see [`ARCHITECTURE_DOMAIN_MAP.md`](./ARCHITECTURE_DOMAIN_MAP.md).
 > For health and consolidation backlog, see [`ARCHITECTURE_HEALTH_REPORT.md`](./ARCHITECTURE_HEALTH_REPORT.md).
 
 ---
@@ -152,7 +152,7 @@ Digital Life Twin, context system, retrieval, orchestration.
 
 | Topic | Canonical document | Cert | Status |
 |-------|-------------------|------|--------|
-| **AI mental model** | [`AI_SYSTEM_MENTAL_MODEL.md`](./AI_SYSTEM_MENTAL_MODEL.md) | — | Phase 0 constitutional explanation |
+| **AI mental model** | [`AI_SYSTEM_MENTAL_MODEL.md`](./AI_SYSTEM_MENTAL_MODEL.md) | — | Six-decision model; scopes; C3; contracts |
 | **AI intelligence model** | [`AI_INTELLIGENCE_MODEL.md`](./AI_INTELLIGENCE_MODEL.md) | — | Four scopes; Knowledge vs Intelligence |
 | **AI reading / doc status** | [`AI_READING_GUIDE.md`](./AI_READING_GUIDE.md) · [`AI_DOCUMENT_STATUS_MATRIX.md`](./AI_DOCUMENT_STATUS_MATRIX.md) | — | Phase 0 |
 | **AI system audit (analysis)** | [`../ai-system-audit/README.md`](../ai-system-audit/README.md) | — | Official whole-system analysis |
@@ -160,7 +160,11 @@ Digital Life Twin, context system, retrieval, orchestration.
 | **AI platform constitution** | [`AI_PLATFORM_CONSTITUTION.md`](./AI_PLATFORM_CONSTITUTION.md) | — | Constitutional |
 | **AI platform overview** | [`AI_PLATFORM_OVERVIEW.md`](./AI_PLATFORM_OVERVIEW.md) | L2 | L3 deferred |
 | **AI platform certification (6B)** | [`AI_PLATFORM_ARCHITECTURE_CERTIFICATION.md`](./AI_PLATFORM_ARCHITECTURE_CERTIFICATION.md) | CwF 86 | Phase 6B |
-| **AI canonical diagram** | [`AI_PLATFORM_CANONICAL_DIAGRAM.md`](./AI_PLATFORM_CANONICAL_DIAGRAM.md) | — | Phase 6B |
+| **AI canonical Twin runtime map** | [`AI_CANONICAL_ROUTE_MAP.md`](./AI_CANONICAL_ROUTE_MAP.md) | — | Shipped Service→Core flow |
+| **AI canonical diagram** | [`AI_PLATFORM_CANONICAL_DIAGRAM.md`](./AI_PLATFORM_CANONICAL_DIAGRAM.md) | — | Topology |
+| **AI context assembly** | [`AI_CONTEXT_ASSEMBLY.md`](./AI_CONTEXT_ASSEMBLY.md) | — | Acquisition vs assembly; C3 |
+| **AI subsystem inventory** | [`AI_PLATFORM_SUBSYSTEM_INVENTORY.md`](./AI_PLATFORM_SUBSYSTEM_INVENTORY.md) | — | Status + ownership |
+| **Business / personal Twin boundaries** | [`AI_BUSINESS_PERSONAL_TWIN_BOUNDARIES.md`](./AI_BUSINESS_PERSONAL_TWIN_BOUNDARIES.md) | — | Scopes; canonical path |
 | **Model Routing readiness** | [`AI_MODEL_ROUTING_READINESS.md`](./AI_MODEL_ROUTING_READINESS.md) | — | Phase 7 prep (not shipped) |
 | **AI knowledge constitution** | [`../ai-knowledge/AI_KNOWLEDGE_CONSTITUTION.md`](../ai-knowledge/AI_KNOWLEDGE_CONSTITUTION.md) | — | Constitutional |
 | **AI context system** | [`../../memory-bank/aiContextSystem.md`](../../memory-bank/aiContextSystem.md) | — | Product + implementation |

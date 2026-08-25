@@ -1,11 +1,23 @@
 # AI Platform Constitutional Audit
 
-**System:** Vssyl AI Platform Layer (cross-cutting)  
-**Phase:** **Wave 0 — Inventory, duplication audit, constitutional map** (2026-06-04)  
-**Certification status:** **Not certifiable as product module** — platform system + admin observability  
-**Date:** 2026-06-04  
-**Benchmarks:** Reference modules #1–5 (File Hub, Chat, Calendar, Todo, Place); Notebook L3 composition  
+**System:** Vssyl AI Platform Layer (cross-cutting)
+**Phase:** **Wave 0 — Inventory, duplication audit, constitutional map** (2026-06-04)
+**Certification status:** **Not certifiable as product module** — platform system + admin observability
+**Date:** 2026-06-04
+**Benchmarks:** Reference modules #1–5 (File Hub, Chat, Calendar, Todo, Place); Notebook L3 composition
 **Related:** [AI_PLATFORM_CONSTITUTION.md](../AI_PLATFORM_CONSTITUTION.md) (G0 authority), [AI_TOOL_ACTION_COMPLIANCE_MATRIX](./AI_TOOL_ACTION_COMPLIANCE_MATRIX.md), [AI_CONTEXT_PROVIDER_MATRIX](./AI_CONTEXT_PROVIDER_MATRIX.md), [AI_ADMIN_ANALYTICS_BOUNDARY_REVIEW](./AI_ADMIN_ANALYTICS_BOUNDARY_REVIEW.md), [AI_LEGACY_DUPLICATION_REGISTER](./AI_LEGACY_DUPLICATION_REGISTER.md), [CERTIFICATION_LEDGER.md](../CERTIFICATION_LEDGER.md), [AI_PLATFORM_OVERVIEW.md](../AI_PLATFORM_OVERVIEW.md)
+
+---
+
+⚠️ **Architecture Notice**
+
+This Wave 0 audit is retained for historical evidence. Twin runtime order, C3 conditional ContextProviders, and response-contract semantics are owned by:
+
+[`AI_SYSTEM_MENTAL_MODEL.md`](../AI_SYSTEM_MENTAL_MODEL.md) · [`AI_CANONICAL_ROUTE_MAP.md`](../AI_CANONICAL_ROUTE_MAP.md) · [`AI_PLATFORM_CONSTITUTION.md`](../AI_PLATFORM_CONSTITUTION.md) §6.1
+
+Do not treat the 2026-06-04 flow sketch in this file as current runtime SoT.
+
+---
 
 > **Scope:** Discovery and governance only. No runtime code changed. Do not re-audit certified module AI extraction (Chat, Calendar, Todo, Notebook, Place, File Hub tools).
 
@@ -171,11 +183,11 @@ User prompt
 
 ### 2.3 Obsolete paths
 
-- `POST /api/ai/chat` — legacy chat shim  
-- `GET/PUT /api/ai/personality`, `/autonomy` — deprecated; use split routers  
-- `/api/ai/autonomous/*` — deprecated autonomy scaffolding  
-- `/api/centralized-ai/*` — not on twin path; admin/legacy collective learning  
-- `AutonomousActionExecutor` — direct Prisma for conversation/learning side effects  
+- `POST /api/ai/chat` — legacy chat shim
+- `GET/PUT /api/ai/personality`, `/autonomy` — deprecated; use split routers
+- `/api/ai/autonomous/*` — deprecated autonomy scaffolding
+- `/api/centralized-ai/*` — not on twin path; admin/legacy collective learning
+- `AutonomousActionExecutor` — direct Prisma for conversation/learning side effects
 
 ---
 
@@ -236,9 +248,9 @@ See [AI_ADMIN_ANALYTICS_BOUNDARY_REVIEW.md](./AI_ADMIN_ANALYTICS_BOUNDARY_REVIEW
 
 **Decision:** **D — Multiple surfaces needing explicit separation**
 
-- **A** — `analytics` product module (tenant dashboards)  
-- **B** — Admin portal AI pipeline / learning / business AI  
-- **C** — Platform observability (`pipelineTrace`, orchestration snapshots)  
+- **A** — `analytics` product module (tenant dashboards)
+- **B** — Admin portal AI pipeline / learning / business AI
+- **C** — Platform observability (`pipelineTrace`, orchestration snapshots)
 
 ---
 
@@ -253,12 +265,12 @@ See [AI_ADMIN_ANALYTICS_BOUNDARY_REVIEW.md](./AI_ADMIN_ANALYTICS_BOUNDARY_REVIEW
 
 **Recommended tracks (no implementation in Wave 0):**
 
-1. **AI Platform constitutional hardening** — P0 mock/Prisma elimination in platform executors  
-2. **AI Tool Compliance Wave (1B)** — align with CERTIFICATION_LEDGER row  
-3. **AI Context Provider Wave (1C)** — Drive + dashboard + HR/scheduling  
-4. **AI Diagnostics / Admin truth alignment (1D)**  
-5. **Provider routing matrix (1E)**  
-6. **AI Platform Level 2 readiness** — after 1A–1E; not Level 3 product certification  
+1. **AI Platform constitutional hardening** — P0 mock/Prisma elimination in platform executors
+2. **AI Tool Compliance Wave (1B)** — align with CERTIFICATION_LEDGER row
+3. **AI Context Provider Wave (1C)** — Drive + dashboard + HR/scheduling
+4. **AI Diagnostics / Admin truth alignment (1D)**
+5. **Provider routing matrix (1E)**
+6. **AI Platform Level 2 readiness** — after 1A–1E; not Level 3 product certification
 
 ---
 

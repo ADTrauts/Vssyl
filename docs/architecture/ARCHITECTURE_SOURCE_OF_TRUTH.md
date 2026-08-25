@@ -1,8 +1,8 @@
 # Architecture Source of Truth
 
-**Program:** Architecture Consolidation — Phase 0A  
-**Date:** 2026-06-29  
-**Status:** Canonical ownership registry — defines which document owns each architectural decision  
+**Program:** Architecture Consolidation — Phase 0A
+**Date:** 2026-06-29 (AI ownership rows updated 2026-08-25)
+**Status:** Canonical ownership registry — defines which document owns each architectural decision
 **Companion:** [`VSSYL_ARCHITECTURE_INDEX.md`](./VSSYL_ARCHITECTURE_INDEX.md) · [`ARCHITECTURE_DOMAIN_MAP.md`](./ARCHITECTURE_DOMAIN_MAP.md)
 
 ---
@@ -86,17 +86,29 @@ Before creating or editing architecture documentation:
 
 | Topic | Source of Truth | Supporting (living) | Historical / read-only | Never edit for truth |
 |-------|-----------------|---------------------|------------------------|----------------------|
-| **AI mental model (plain English)** | [`AI_SYSTEM_MENTAL_MODEL.md`](./AI_SYSTEM_MENTAL_MODEL.md) | [`AI_READING_GUIDE.md`](./AI_READING_GUIDE.md) | — | — |
+| **AI mental model (plain English)** | [`AI_SYSTEM_MENTAL_MODEL.md`](./AI_SYSTEM_MENTAL_MODEL.md) | [`AI_READING_GUIDE.md`](./AI_READING_GUIDE.md), [`AI_CANONICAL_ROUTE_MAP.md`](./AI_CANONICAL_ROUTE_MAP.md) | — | — |
+| **Canonical Twin runtime / route flow** | [`AI_CANONICAL_ROUTE_MAP.md`](./AI_CANONICAL_ROUTE_MAP.md) § Canonical Twin runtime + code | Mental Model, [`AI_TWIN_PROMPT_PIPELINE.md`](./AI_TWIN_PROMPT_PIPELINE.md) | Wave 1A inventory counts (HTTP) | Do not treat legacy `/interact` as Twin SoT |
+| **Query outcome / Twin routing axes** | Code: `inferStructuredResponseMode` (+ related utils); explained in Mental Model | Route map, Constitution §6.1 | — | Pipeline intent policies are **not** outcome SoT |
+| **Response contract** | Code: `responseContract.ts`; explained in Mental Model | Route map | — | Do not equate with “business topic” |
+| **Truth / authoritative need** | Code: `requiresAuthoritativeContext`; explained in Mental Model | Context assembly | — | Not a full source planner; personal recall is separate |
+| **Module ContextProvider retrieval (incl. C3)** | [`AI_CONTEXT_ASSEMBLY.md`](./AI_CONTEXT_ASSEMBLY.md) + code `shouldRetrieveModuleContext` | `memory-bank/aiContextSystem.md`, Constitution §6.2 | — | Do not claim every Twin turn always orchestrates |
+| **Context assembly / budget** | [`AI_CONTEXT_ASSEMBLY.md`](./AI_CONTEXT_ASSEMBLY.md) | Twin prompt pipeline, contextProfile | — | Distinct from acquisition |
+| **Personal memory / recall** | Mental Model (P-TRUTH) + code (`recallIntent`, `MemoryRetrievalService`) | Context assembly memory section | — | Not model knowledge; often `reqAuth=false` today |
 | **AI intelligence scopes** | [`AI_INTELLIGENCE_MODEL.md`](./AI_INTELLIGENCE_MODEL.md) | Mental Model | Industry packs (future only) | — |
 | **AI document status / terminology** | [`AI_DOCUMENT_STATUS_MATRIX.md`](./AI_DOCUMENT_STATUS_MATRIX.md) | Reading Guide, Nav Guide | — | — |
 | **AI whole-system analysis** | [`../ai-system-audit/README.md`](../ai-system-audit/README.md) | Audit package docs | [`../ai-knowledge/deep-dive/`](../ai-knowledge/deep-dive/) | Do not fork parallel inventories |
 | **AI accepted architecture decisions** | [`AI_ARCHITECTURE_DECISION_RECORDS.md`](./AI_ARCHITECTURE_DECISION_RECORDS.md) | [`../ai-system-audit/AI_ARCHITECTURE_DECISION_REGISTER.md`](../ai-system-audit/AI_ARCHITECTURE_DECISION_REGISTER.md), [`AI_AUDIT_RECOMMENDATION_DISPOSITIONS.md`](./AI_AUDIT_RECOMMENDATION_DISPOSITIONS.md) | — | — |
 | **AI platform (constitutional)** | [`AI_PLATFORM_CONSTITUTION.md`](./AI_PLATFORM_CONSTITUTION.md) | [`AI_PLATFORM_OVERVIEW.md`](./AI_PLATFORM_OVERVIEW.md), Platform Standards §6 | L2 certification review | — |
+| **AI platform topology diagram** | [`AI_PLATFORM_CANONICAL_DIAGRAM.md`](./AI_PLATFORM_CANONICAL_DIAGRAM.md) | Subsystem inventory | — | — |
+| **AI subsystem status** | [`AI_PLATFORM_SUBSYSTEM_INVENTORY.md`](./AI_PLATFORM_SUBSYSTEM_INVENTORY.md) | Certification | — | — |
 | **AI knowledge (constitutional)** | [`../ai-knowledge/AI_KNOWLEDGE_CONSTITUTION.md`](../ai-knowledge/AI_KNOWLEDGE_CONSTITUTION.md) | Decision Model, Transition Model, Engine Spec | deep-dive set | — |
-| **AI knowledge ingress philosophy** | [`../ai-knowledge/AI_KNOWLEDGE_DECISION_MODEL.md`](../ai-knowledge/AI_KNOWLEDGE_DECISION_MODEL.md) | Transition Model, Observation matrix | — | — |
-| **AI context providers** | [`memory-bank/aiContextSystem.md`](../../memory-bank/aiContextSystem.md) | [`AI_CONTEXT_ASSEMBLY.md`](./AI_CONTEXT_ASSEMBLY.md), module manifests | — | — |
-| **Digital Life Twin pipeline** | [`AI_TWIN_PROMPT_PIPELINE.md`](./AI_TWIN_PROMPT_PIPELINE.md) | [`AI_CONVERSATION_REASONING.md`](./AI_CONVERSATION_REASONING.md) | — | — |
-| **AI business/personal boundaries** | [`AI_BUSINESS_PERSONAL_TWIN_BOUNDARIES.md`](./AI_BUSINESS_PERSONAL_TWIN_BOUNDARIES.md) | Intelligence Model (Business scope) | — | — |
+| **AI knowledge ingress philosophy** | [`../ai-knowledge/AI_KNOWLEDGE_DECISION_MODEL.md`](../ai-knowledge/AI_KNOWLEDGE_DECISION_MODEL.md) | Transition Model, Observation matrix | — | Learning ≠ general intelligence |
+| **AI context providers (product)** | [`memory-bank/aiContextSystem.md`](../../memory-bank/aiContextSystem.md) | [`AI_CONTEXT_ASSEMBLY.md`](./AI_CONTEXT_ASSEMBLY.md), module manifests | — | Providers ≠ entire Twin context |
+| **Digital Life Twin prompt pipeline** | [`AI_TWIN_PROMPT_PIPELINE.md`](./AI_TWIN_PROMPT_PIPELINE.md) | [`AI_CONVERSATION_REASONING.md`](./AI_CONVERSATION_REASONING.md) | — | Supporting to Route map + Mental Model for runtime order |
+| **AI business/personal boundaries** | [`AI_BUSINESS_PERSONAL_TWIN_BOUNDARIES.md`](./AI_BUSINESS_PERSONAL_TWIN_BOUNDARIES.md) | Intelligence Model (Business scope), Mental Model | — | Interact mock is noncanonical |
+| **Tools / actions (Twin)** | [`AI_EXECUTION_ARCHITECTURE.md`](./AI_EXECUTION_ARCHITECTURE.md) + tool risk / approval docs | Constitution §6.3–6.4 | — | — |
+| **Grounding / source / pipeline policy** | Pipeline catalog + [`AI_PIPELINE_ADMIN_TOOLS.md`](./AI_PIPELINE_ADMIN_TOOLS.md) + retrieval constitution | `runPipelineGroundingRetrieval` | — | Not primary user-outcome router |
+| **Live External Truth / web_search** | Mental Model + Pipeline admin tools (NOT SHIPPED) | Catalog stubs | — | Do not document as live |
 | **AI retrieval (constitutional)** | [`../ai/retrieval/AI_RETRIEVAL_CONSTITUTION.md`](../ai/retrieval/AI_RETRIEVAL_CONSTITUTION.md) | [`../ai/retrieval/AI_RETRIEVAL_OPERATION_MATRIX.md`](../ai/retrieval/AI_RETRIEVAL_OPERATION_MATRIX.md) | Phase 2A closeout | — |
 | **AI experience routes** | `web/src/lib/aiExperienceNavigation.ts` | [`../ux/patterns/AI_EXPERIENCE_PATTERNS.md`](../ux/patterns/AI_EXPERIENCE_PATTERNS.md) | — | — |
 | **Connected Knowledge** | [`../connected-knowledge/KNOWLEDGE_CONSTITUTION.md`](../connected-knowledge/KNOWLEDGE_CONSTITUTION.md) | Provenance, trust, consumption docs in same folder | Phase 0A summaries | — |

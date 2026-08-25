@@ -1,11 +1,11 @@
 # AI Intelligence Model
 
-**Program:** AI Architecture Phase 0  
-**Date:** 2026-07-12  
-**Status:** Active — constitutional model for intelligence scopes  
-**Owner:** AI Platform / Architecture council  
-**Source of Truth for:** Personal / Business / Industry / Global intelligence scopes; Knowledge vs Intelligence distinction  
-**Supporting:** [`AI_SYSTEM_MENTAL_MODEL.md`](./AI_SYSTEM_MENTAL_MODEL.md) · [`../ai-knowledge/AI_KNOWLEDGE_CONSTITUTION.md`](../ai-knowledge/AI_KNOWLEDGE_CONSTITUTION.md) · [`AI_PLATFORM_CONSTITUTION.md`](./AI_PLATFORM_CONSTITUTION.md)  
+**Program:** AI Architecture Phase 0
+**Date:** 2026-07-12
+**Status:** Active — constitutional model for intelligence scopes
+**Owner:** AI Platform / Architecture council
+**Source of Truth for:** Personal / Business / Industry / Global intelligence scopes; Knowledge vs Intelligence distinction
+**Supporting:** [`AI_SYSTEM_MENTAL_MODEL.md`](./AI_SYSTEM_MENTAL_MODEL.md) · [`../ai-knowledge/AI_KNOWLEDGE_CONSTITUTION.md`](../ai-knowledge/AI_KNOWLEDGE_CONSTITUTION.md) · [`AI_PLATFORM_CONSTITUTION.md`](./AI_PLATFORM_CONSTITUTION.md)
 **Implementation note:** Industry Intelligence is **future architecture**. Do not treat as shipped.
 
 ---
@@ -30,7 +30,7 @@ This document does **not** implement industry packs, global training, or new ser
 
 **Rule:** Improving Global Platform Intelligence must **not** mean copying personal or business knowledge into a shared corpus.
 
-Knowledge ingress philosophy: [`../ai-knowledge/AI_KNOWLEDGE_DECISION_MODEL.md`](../ai-knowledge/AI_KNOWLEDGE_DECISION_MODEL.md).  
+Knowledge ingress philosophy: [`../ai-knowledge/AI_KNOWLEDGE_DECISION_MODEL.md`](../ai-knowledge/AI_KNOWLEDGE_DECISION_MODEL.md).
 Knowledge composition runtime: Knowledge Engine under `server/src/knowledge/` (see audit + Knowledge Constitution).
 
 ---
@@ -67,7 +67,7 @@ Shared runtime + **scoped knowledge**. Intelligence scopes change *what is eligi
 | Learns | The individual — with governance |
 | Includes | Personal memory, preferences, relationships the user owns, private taught knowledge |
 | Boundary | Must not leak into other users or other businesses |
-| Runtime | Personal Twin surfaces over shared runtime |
+| Runtime | Personal Twin surfaces over shared Digital Life Twin runtime |
 | Status | **Active** (maturity varies by surface) |
 
 ---
@@ -81,8 +81,8 @@ Shared runtime + **scoped knowledge**. Intelligence scopes change *what is eligi
 | Learns | The organization — under admin and membership rules |
 | Includes | Protected business knowledge, business AI policies, workflows, employee assistance context |
 | Boundary | Business-scoped; employees see only what membership and policy allow |
-| Runtime | Business Twin wrapper over shared runtime |
-| Status | **Active** (control center + employee interact) |
+| Runtime | Shared Digital Life Twin with `businessId` scope + business policy overlay |
+| Status | **Active** (control center config; canonical chat = `/api/ai/twin` + `businessId`; `/interact` is noncanonical mock) |
 
 Business protection is a first-class requirement: isolation, policy blocks, and no silent promotion of personal knowledge into business knowledge (or the reverse) without explicit product rules.
 

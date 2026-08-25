@@ -1,11 +1,11 @@
 # AI Platform Subsystem Inventory
 
-**Program:** AI Architecture Phase 6B  
-**Date:** 2026-07-13  
-**Status:** Active — complete subsystem inventory + ownership + debt  
-**Companion:** [`AI_PLATFORM_ARCHITECTURE_CERTIFICATION.md`](./AI_PLATFORM_ARCHITECTURE_CERTIFICATION.md)
+**Program:** AI Architecture Phase 6B (reconciled 2026-08-25)
+**Date:** 2026-08-25
+**Status:** Active — complete subsystem inventory + ownership + debt
+**Companion:** [`AI_PLATFORM_ARCHITECTURE_CERTIFICATION.md`](./AI_PLATFORM_ARCHITECTURE_CERTIFICATION.md) · [`AI_SYSTEM_MENTAL_MODEL.md`](./AI_SYSTEM_MENTAL_MODEL.md)
 
-Certification key: **CERTIFIED** · **CERTIFIED_WITH_LIMITATION** · **DESIGN_ONLY** · **LEGACY** · **ORPHAN**
+Certification key: **CERTIFIED** · **CERTIFIED_WITH_LIMITATION** · **DESIGN_ONLY** · **LEGACY** · **ORPHAN** · **STUB / NOT SHIPPED**
 
 ---
 
@@ -13,16 +13,19 @@ Certification key: **CERTIFIED** · **CERTIFIED_WITH_LIMITATION** · **DESIGN_ON
 
 | Responsibility | Single owner | Notes |
 |----------------|--------------|-------|
-| Twin conversational orchestration | `DigitalLifeTwinCore` (via Service facade) | Business Twin wraps; does not fork runtime |
-| Provider selection (chat) | `providerRouting` + `modelCatalog` + `aiProviderFactory` | Phase 7 shadow extends here |
-| Governed Skills | `server/src/ai/skills/*` | Phase 8; dedicated runner — not Twin |
-| Context provider fetch | `ContextProviderOrchestrator` | CrossModule is facade/entry |
-| Context assembly / budget | `AIContextAssembler` + budget manager | |
-| Grounding retrieval | `runPipelineGroundingRetrieval` (pipeline) | |
-| Conversation understanding | `conversationReasoningLayer` | |
+| Twin conversational orchestration | `DigitalLifeTwinCore` (via `DigitalLifeTwinService` facade) | **CANONICAL** shared runtime; Personal/Business are scopes |
+| Query outcome / routing axes | `inferStructuredResponseMode` (+ `inferQueryIntent`, related utils) resolved in Service | Not pipeline intent policies |
+| Response contract | `resolveResponseContract` | `conversation` \| `grounded_answer` \| `enterprise` |
+| Authoritative truth need | `requiresAuthoritativeContext` | Coarse boolean; not full source planner |
+| Module ContextProvider retrieval | `shouldRetrieveModuleContext` → `ContextProviderOrchestrator` | **CANONICAL, CONDITIONAL (C3)** |
+| Context assembly / budget | `AIContextAssembler` + budget manager / `contextProfile` | What enters the prompt |
+| Personal memory / recall | Service recall path + `MemoryRetrievalService` / `UserMemoryFact` | Independent of C3 |
+| Grounding / source policy | `runPipelineGroundingRetrieval` + pipeline catalog | Not primary outcome router |
+| Provider selection (chat) | `providerRouting` + `modelCatalog` + `aiProviderFactory` | Orthogonal to turn outcome routing |
+| Governed Skills | `server/src/ai/skills/*` | Dedicated runner — not Twin |
+| Conversation understanding / coaching | `conversationReasoningLayer` + coaching profiles | |
 | Knowledge composition | `server/src/knowledge/*` | Not `server/src/ai/knowledge` |
-| Memory facts | `userMemoryFactService` / memory module | |
-| Learning (canonical twin path) | `AdvancedLearningEngine` (+ Centralized persistence) | Core `LearningEngine` = legacy |
+| Learning (canonical twin path) | `AdvancedLearningEngine` (+ Centralized persistence) | Post-turn; ≠ general intelligence |
 | Tool risk policy | `aiToolRiskRegistry` | |
 | Twin tool execution | `governedToolExecutor` | |
 | Post-hoc LifeTwin actions | `ActionExecutor` (+ bridge to governed) | Dual channel — intentional lifecycle split |
@@ -41,6 +44,8 @@ Certification key: **CERTIFIED** · **CERTIFIED_WITH_LIMITATION** · **DESIGN_ON
 | Reporting / metrics | `operationsMetricsService` + platform metrics | |
 | Notebook AI | Notebook module services | Specialized exemption |
 | Media (Whisper / image) | `routes/ai.ts` media endpoints | Specialized exemption |
+| Live External Truth / `web_search` | — | **STUB / NOT SHIPPED** |
+| Legacy business interact chat | `BusinessAIDigitalTwinService` | **NONCANONICAL / LEGACY / MOCK** |
 
 ---
 
@@ -107,34 +112,71 @@ Certification key: **CERTIFIED** · **CERTIFIED_WITH_LIMITATION** · **DESIGN_ON
 | Future | Retire Core `LearningEngine`; remove ContinuousLearning scaffolds |
 | Certification | **CERTIFIED_WITH_LIMITATION** (dual stack) |
 
-### Digital Twin / Business Twin
+### Digital Life Twin (canonical)
 
 | Field | Value |
 |-------|-------|
-| Purpose | Conversational AI over shared runtime |
-| Owner | Twin Service/Core; BusinessAIDigitalTwinService (scope) |
-| SoT | Twin prompt pipeline, business/personal boundaries |
-| APIs | `POST /api/ai/twin`, `/api/business-ai/*` |
+| Purpose | Shared conversational AI runtime; Personal/Business are scopes of authorized reality |
+| Owner | `DigitalLifeTwinService` → `DigitalLifeTwinCore` |
+| SoT | [`AI_SYSTEM_MENTAL_MODEL.md`](./AI_SYSTEM_MENTAL_MODEL.md), [`AI_CANONICAL_ROUTE_MAP.md`](./AI_CANONICAL_ROUTE_MAP.md), business/personal boundaries |
+| APIs | **`POST /api/ai/twin`** (+ `businessId` for business scope) |
+| Status | **CANONICAL** |
 | Certification | **CERTIFIED_WITH_LIMITATION** (god-object size) |
+
+### BusinessAIDigitalTwinService conversational path
+
+| Field | Value |
+|-------|-------|
+| Purpose | Historical business interact API |
+| Owner | `BusinessAIDigitalTwinService` |
+| APIs | `POST /api/business-ai/:businessId/interact` |
+| Status | **NONCANONICAL / LEGACY / MOCK** — does not call Twin Core |
+| Note | Business **config** records still used as policy overlay on canonical Twin |
 
 ### Context System / Providers
 
 | Field | Value |
 |-------|-------|
 | Purpose | Module-scoped context for Twin |
-| Owner | ContextProviderOrchestrator (+ CrossModule facade) |
+| Owner | `ContextProviderOrchestrator` (+ CrossModule facade) |
 | SoT | `AI_CONTEXT_ASSEMBLY.md`, `memory-bank/aiContextSystem.md` |
-| Models | ModuleAIContextRegistry, caches |
+| Status | **CANONICAL, CONDITIONAL (C3)** — not every Twin turn |
 | Certification | **CERTIFIED** |
+
+### Response contracts / routing axes
+
+| Field | Value |
+|-------|-------|
+| Purpose | Outcome, truth need, action, contract, coaching, budget decisions |
+| Owner | `structuredResponseMode` / `responseContract` / related utils |
+| Status | **CANONICAL** |
+| SoT | Mental Model + code |
+
+### Broad discovery
+
+| Field | Value |
+|-------|-------|
+| Purpose | Safety signal blocking C3 module skip for unscoped attention queries |
+| Owner | `isBroadDiscoveryQuery` |
+| Status | **SAFETY SIGNAL ONLY — NOT A PRODUCT ENGINE** |
+
+### Live External Truth / web_search
+
+| Field | Value |
+|-------|-------|
+| Purpose | Future live external retrieval |
+| Status | **STUB / NOT SHIPPED** — catalog + failed-attempt telemetry only |
+| Owner | Future — must fit existing tool/source architecture |
 
 ### Pipeline / Grounding / Reasoning
 
 | Field | Value |
 |-------|-------|
-| Purpose | Catalog, grounding, enforcement, understanding |
+| Purpose | Catalog, grounding, enforcement, diagnostics, capability/tool planning |
 | Owner | `server/src/ai/pipeline`, `conversation/*` |
 | SoT | Pipeline admin tools, retrieval constitution, conversation reasoning |
 | Models | AIPipeline* |
+| Note | **Not** the primary owner of Twin user-outcome / response-contract classification |
 | Certification | **CERTIFIED** |
 
 ### Execution / Action Platform

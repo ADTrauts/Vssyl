@@ -1,34 +1,44 @@
-# Digital Life Twin — prompt pipeline (canonical)
+# Digital Life Twin — prompt pipeline
 
-**Last updated:** 2026-05-23 (V_Link pipeline + full trace path)
+**Last updated:** 2026-08-25
+**Status:** Supporting — prompt/assembly detail on the Twin path
+**Runtime order SoT:** [`AI_CANONICAL_ROUTE_MAP.md`](./AI_CANONICAL_ROUTE_MAP.md) § Canonical Twin runtime · [`AI_SYSTEM_MENTAL_MODEL.md`](./AI_SYSTEM_MENTAL_MODEL.md)
 
-**Hub diagram:** [AI_PLATFORM_OVERVIEW.md](./AI_PLATFORM_OVERVIEW.md)  
+**Hub diagram:** [AI_PLATFORM_OVERVIEW.md](./AI_PLATFORM_OVERVIEW.md)
 **Assembly detail:** [AI_CONTEXT_ASSEMBLY.md](./AI_CONTEXT_ASSEMBLY.md)
 
 ## Single live path (chat / twin)
 
 User messages on `/api/ai/twin` (and streaming) follow this pipeline:
 
-1. **`DigitalLifeTwinService.processAsDigitalLifeTwin`** — recall, memory facts, conversation history.
+1. **`DigitalLifeTwinService.processAsDigitalLifeTwin`**
+   - Current-thread history
+   - **`resolveCanonicalTwinRouting`** (`inferStructuredResponseMode` + response contract / truth / action axes)
+   - Recent conversation memory, recall (if intent), `UserMemoryFact` retrieval
 2. **`DigitalLifeTwinCore.processAsDigitalTwin`**
-   - Module context fetch + **`fetchVLinkPipelineContext`** (when catalog source `vlink` enabled)
-   - **`linkEntitiesAcrossModules`** + optional synthesis
-   - **`PreferenceResolver.resolve`**
-   - **`runPipelineGroundingRetrieval`** (location, Place, memory prepass)
+   - **C3:** `shouldRetrieveModuleContext` → optional `CrossModuleContextEngine` / ContextProviderOrchestrator (not every turn)
+   - **`fetchVLinkPipelineContext`** (when catalog source `vlink` enabled) + entity linking / optional synthesis
+   - Attached files; **`PreferenceResolver.resolve`**; business policy overlay when `businessId` set
+   - Optional **`runPipelineGroundingRetrieval`** (source/grounding/tool policy — independent of C3)
 3. **`generateLifeTwinResponse`**
-   - **`assembleAIContext`** — bounded context blocks (files, memory, modules, V_Link, preferences, business policies, thread).
-   - **`applyResolvedPreferencesToProviderOptions`** — `personalityForProvider`, `autonomyBoundariesForProvider`, `resolvedEffectivePreferences`.
-   - **`options.userQuery = query.query`** — **this is what the model sees as the user message** (via `buildProviderUserPrompt`).
-4. **`callAIProvider`** — passes assembled context + preference payloads to OpenAI/Anthropic **`buildSystemPrompt`** / **`buildProviderUserPrompt`**.
-5. **`buildPipelineTrace`** + **`applyPipelineEnforcement`** — diagnostics, grounding gating, metadata on response.
+   - **`assembleAIContext`** — bounded context blocks (files, memory, modules when retrieved, V_Link, preferences, business policies, thread)
+   - Coaching / structured response format per contract
+   - **`applyResolvedPreferencesToProviderOptions`**
+   - **`options.userQuery = query.query`** — what the model sees as the user message (`buildProviderUserPrompt`)
+4. **`callAIProvider`** — assembled context + preference payloads → OpenAI/Anthropic adapters
+5. Post-turn learning / observation; **`buildPipelineTrace`** + **`applyPipelineEnforcement`**
 
 ```mermaid
 flowchart TB
   Query["User query POST /api/ai/twin"] --> Svc["DigitalLifeTwinService"]
+  Svc --> Route["resolveCanonicalTwinRouting"]
+  Svc --> Mem["History / recall / UserMemoryFact"]
   Svc --> Core["DigitalLifeTwinCore"]
 
+  Core --> C3{shouldRetrieveModuleContext?}
+  C3 -->|yes| ModCtx["ContextProviderOrchestrator"]
+  C3 -->|no| Skip["Skip MODULE orch"]
   Core --> Prefs["PreferenceResolver.resolve"]
-  Core --> ModCtx["Module context fetch"]
   Core --> VLink["fetchVLinkPipelineContext"]
   Core --> Link["linkEntitiesAcrossModules"]
   ModCtx --> Link
@@ -39,7 +49,9 @@ flowchart TB
   Link --> Asm["assembleAIContext"]
   Ground --> Asm
   Prefs --> Asm
+  Mem --> Asm
   ModCtx --> Asm
+  Skip --> Asm
   VLink --> Asm
 
   Gen --> Asm
@@ -55,27 +67,25 @@ flowchart TB
   Enforce --> Response["Twin response + metadata.pipelineTrace"]
 ```
 
-## Full request flow (with grounding gate)
+## Grounding gate (pipeline layer)
 
-Vertical view from UI to rendered response. Matches the detailed twin pipeline diagram used in onboarding.
+Pipeline catalog intents, sources, and grounding rules drive **retrieval policy, evidence, enforcement, and diagnostics**. They are **not** the primary owner of Twin user-outcome / response-contract classification (that is Service routing).
 
 ```mermaid
 flowchart TD
   Prompt["User prompt"] --> UI["AI Chat UI"]
   UI --> Route["POST /api/ai/twin"]
-  Route --> Core["DigitalLifeTwinCore.processAsDigitalTwin"]
+  Route --> Svc["DigitalLifeTwinService + routing axes"]
+  Svc --> Core["DigitalLifeTwinCore"]
 
-  Core --> Intent["inferPipelineIntents"]
-  Intent --> Catalog["getEffectivePipelineCatalog"]
-  Catalog --> Reconcile["reconcileSystemPipelineGroundingRules"]
-  Reconcile --> Policy["Grounding rule policy"]
-
-  Policy --> Sources{"Required context sources"}
-  Sources --> Mod["Module context providers"]
-  Sources --> Mem["MemoryRetrievalService"]
+  Core --> Policy["Grounding / source policy when required"]
+  Policy --> Sources{"Context sources as needed"}
+  Sources --> Mod["Module ContextProviders C3-gated"]
+  Sources --> Mem["Memory / recall"]
   Sources --> Prefs["PreferenceResolver"]
   Sources --> Files["Attached file context"]
-  Sources --> VL["V_Link / semantic links confirmed only"]
+  Sources --> VL["V_Link confirmed"]
+  Sources --> Web["web_search — NOT SHIPPED stub"]
 
   Mod --> Asm["Assembled AI context"]
   Mem --> Asm
@@ -84,22 +94,11 @@ flowchart TD
   VL --> Asm
 
   Asm --> GroundOK{"Grounding sufficient?"}
-  GroundOK -->|"No"| Fail["Pipeline diagnostics GROUNDING_FAILURE / generic risk"]
-  Fail --> Safe["Safe clarification or grounded failure response"]
+  GroundOK -->|"No"| Fail["Pipeline diagnostics / safe clarification"]
   GroundOK -->|"Yes"| Builder["Prompt builder + provider options"]
-
-  Builder --> Router["Provider router"]
-  Router --> OpenAI["OpenAI"]
-  Router --> Anthropic["Anthropic"]
-  Router --> Local["Local summaries only"]
-
-  OpenAI --> Norm["Structured response normalization v2"]
-  Anthropic --> Norm
-  Local --> Norm
-
-  Norm --> Guard["AI response quality guardrails"]
-  Guard --> Render["Structured AI response renderer"]
-  Render --> Answer["User sees response"]
+  Builder --> Providers["Provider adapters"]
+  Providers --> Norm["Structured response normalization"]
+  Norm --> Answer["User sees response"]
 ```
 
 **Provider errors:** `RATE_LIMITED` / `TEMP_UNAVAILABLE` trigger one OpenAI ↔ Anthropic fallback retry before normalization. See [../ai/PROVIDERS.md](../ai/PROVIDERS.md).
@@ -118,8 +117,9 @@ flowchart TD
 
 | Concern | Canonical | Legacy (delegates, deprecated) |
 |--------|-----------|-------------------------------|
+| Twin chat | `POST /api/ai/twin` (+ optional `businessId`) | `POST /api/business-ai/:id/interact` (mock) |
 | Autonomy settings | `GET/PUT /api/ai/autonomy/settings` | `GET/PUT /api/ai/autonomy` on `/api/ai` router |
-| Personality profile | `GET/POST/DELETE /api/ai/personality/profile` | `GET/PUT /api/ai/personality` (GET = engine shape; PUT = interaction feedback only) |
+| Personality profile | `GET/POST/DELETE /api/ai/personality/profile` | `GET/PUT /api/ai/personality` |
 | Effective preview | `GET /api/ai/effective-preferences` | — |
 | Autonomous actions | — | `/api/ai/autonomous/*`, `AutonomyManager` (deprecated) |
 
@@ -127,18 +127,17 @@ New UI and integrations should use **canonical** routes only.
 
 ## Business workspace context (`businessId`)
 
-When `context.businessId` is present on `/api/ai/twin`, the personal pipeline still runs, but **`assembleAIContext`** also injects policies from **`BusinessAIDigitalTwin`** (admin Business AI Control Center). See **[AI_BUSINESS_PERSONAL_TWIN_BOUNDARIES.md](./AI_BUSINESS_PERSONAL_TWIN_BOUNDARIES.md)**.
-
-- Personal: `PreferenceResolver` + “User communication and AI preference settings” block  
-- Business: “Business workspace AI policies” block (`sourceType: business`)
+When `context.businessId` is present on `/api/ai/twin`, the shared Twin pipeline still runs, and **`assembleAIContext`** also injects policies from **`BusinessAIDigitalTwin`**. `businessId` is scope — not automatic business intent. See **[AI_BUSINESS_PERSONAL_TWIN_BOUNDARIES.md](./AI_BUSINESS_PERSONAL_TWIN_BOUNDARIES.md)**.
 
 ## Personal Intelligence hub (Control Center)
 
-Learning review lives under **`/ai` → Learning**; optional analytics live under **More → Insights** (`?tab=more&section=insights`). See **[AI_INTELLIGENCE_HUB.md](./AI_INTELLIGENCE_HUB.md)** (Insights).
+Learning review lives under **`/ai` → Learning**; optional analytics live under **More → Insights**. See **[AI_INTELLIGENCE_HUB.md](./AI_INTELLIGENCE_HUB.md)**.
 
 ## Related code
 
+- [`DigitalLifeTwinService`](../../server/src/ai/core/DigitalLifeTwinService.ts)
 - [`DigitalLifeTwinCore`](../../server/src/ai/core/DigitalLifeTwinCore.ts)
+- [`shouldRetrieveModuleContext`](../../server/src/ai/utils/shouldRetrieveModuleContext.ts)
 - [`PreferenceResolver`](../../server/src/ai/preferences/PreferenceResolver.ts)
 - [`AIContextAssembler`](../../server/src/ai/context/AIContextAssembler.ts)
 - [`vlinkPipelineContextService`](../../server/src/ai/context/vlinkPipelineContextService.ts)

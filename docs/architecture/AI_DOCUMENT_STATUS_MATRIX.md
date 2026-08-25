@@ -1,10 +1,10 @@
 # AI Document Status Matrix
 
-**Program:** AI Architecture Phase 0  
-**Date:** 2026-07-12  
-**Status:** Active — status of AI documentation and terminology  
-**Owner:** AI Platform / Architecture council  
-**Source of Truth for:** Which AI docs are Current / Supporting / Historical / Future; terminology status  
+**Program:** AI Architecture Phase 0
+**Date:** 2026-07-12
+**Status:** Active — status of AI documentation and terminology
+**Owner:** AI Platform / Architecture council
+**Source of Truth for:** Which AI docs are Current / Supporting / Historical / Future; terminology status
 **Companion:** [`AI_READING_GUIDE.md`](./AI_READING_GUIDE.md)
 
 Status key: **Current** · **Supporting** · **Historical** · **Future** · **Deprecated wording**
@@ -104,25 +104,33 @@ Status key: **Current** · **Supporting** · **Historical** · **Future** · **D
 
 | Term | Status | Correct use | Avoid |
 |------|--------|-------------|-------|
-| **Digital Life Twin / Personal Twin** | Current | Conversational personal AI over shared runtime | Calling every LLM call a Twin |
-| **Business Twin** | Current | Business-scoped wrapper + policy | Separate unrelated AI stack |
+| **Digital Life Twin** | Current | Shared conversational runtime (`/api/ai/twin`) | Calling every LLM call a Twin |
+| **Personal / Business scope** | Current | Scopes of authorized reality over shared Twin | Separate intelligence engines |
+| **Business Twin (product language)** | Current careful | Business-scoped Twin + policy overlay | Equating to `BusinessAIDigitalTwinService` `/interact` |
+| **BusinessAIDigitalTwinService `/interact`** | Noncanonical / legacy / mock | Config record may still feed Twin policy | Canonical conversational Business Twin |
 | **Shared AI Runtime** | Current | Twin Service→Core orchestration | — |
+| **Response contract** | Current | `conversation` \| `grounded_answer` \| `enterprise` (answer *shape*) | Equating `enterprise` with “business topic”; equating `conversation` with ungrounded |
+| **C3 / shouldRetrieveModuleContext** | Current | Conditional MODULE ContextProvider skip | “LLM-only mode” |
+| **requiresAuthoritativeContext** | Current | Coarse non–base-model / platform-truth need | Complete source planner; personal-recall synonym |
+| **Broad discovery** | Current | C3 safety signal only | Cross-module attention product |
+| **Live External Truth / web_search** | Not shipped | Future capability; stub/trace only | Claiming live web access |
 | **Centralized AI** | Deprecated wording | Historical/fenced `/api/centralized-ai` | Describing current architecture |
 | **Knowledge** | Current | Governed information that may influence answers | Synonym for “intelligence” |
 | **Intelligence** | Current | Reasoning/routing/quality capability (four scopes) | “Intelligence” as a private fact dump |
 | **Knowledge Engine** | Current | Composition runtime in `server/src/knowledge/` | Assuming code under `server/src/ai/knowledge/` |
 | **Knowledge Decision Model** | Current | Ingress philosophy (docs) | Treating as a microservice |
-| **Learning Engine** | Legacy / careful | Prefer naming AdvancedLearningEngine / review flows specifically | “ContinuousLearning” as live platform |
+| **Learning Engine** | Legacy / careful | Prefer naming AdvancedLearningEngine / review flows specifically | “ContinuousLearning” as live platform; Learning as general intelligence |
 | **ContinuousLearning** | Deprecated wording | Orphan scaffold only | Product feature claims |
 | **Context Engine / CrossModuleContextEngine** | Legacy name, current facade | Facade over ContextProviderOrchestrator | Second competing orchestrator |
-| **ContextProviderOrchestrator** | Current | Canonical provider fetch | — |
+| **ContextProviderOrchestrator** | Current | Canonical MODULE provider fetch (C3-gated) | Universal context system (memory/history/web) |
 | **Autonomy** | Current settings; deprecated autopilot | Settings / boundary copy | Silent auto-execution on Twin |
 | **Approval** | Current (dual paths) | Twin approvals + autonomy ApprovalManager | Assuming one UI owns all |
-| **AI Pipeline** | Current | Catalog, grounding, enforcement, admin diagnostics | Synonym for Twin chat UI |
+| **AI Pipeline** | Current | Catalog, grounding, enforcement, admin diagnostics | Synonym for Twin chat UI; primary user-outcome router |
 | **Notebook AI** | Current specialized | OpenAI completion helper outside full Twin | Claiming full Twin parity |
 | **Context Graph** | Current (platform capability) | Graph/neighborhoods; consumed by knowledge/retrieval | Equating to Twin itself |
+| **V_Link** | Current | Persisted cross-module relationship layer | Replacement for memory or ContextProviders |
 | **Provider** | Current | OpenAI / Anthropic / Local adapters | Hardcoding brand as product logic |
-| **Routing** | Current (limited) | providerRouting + prefs + vision + Phase 7 shadow | Assuming live router cutover |
+| **Routing (provider)** | Current (limited) | providerRouting + prefs + vision + Phase 7 shadow | Assuming live router cutover; conflating with Twin outcome routing |
 | **Model tiers** | Current (shadow) | Phase 7 capability + tier taxonomy | Docs implying production tier routing |
 | **Skill** | Current | Governed task contract (`AISkillDefinition`) | Saved prompts, provider ids, or Twin fork |
 | **Intent (Skill)** | Current | `AISkillIntentType` selection hint | Executable without Skill key |
