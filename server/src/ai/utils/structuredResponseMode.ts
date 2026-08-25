@@ -23,6 +23,7 @@ import {
   resolveResponseContract,
   type AIResponseContract,
 } from './responseContract';
+import { isBroadDiscoveryQuery } from './isBroadDiscoveryQuery';
 
 const STRUCTURED_MODES = new Set<string>([
   'conversation',
@@ -73,6 +74,12 @@ export interface InferStructuredResponseModeResult {
    * Not a product continuity / source-inheritance flag.
    */
   isFollowUp?: boolean;
+  /**
+   * B′: unscoped broad current-state / attention discovery.
+   * Future C3 must not skip ContextProvider orchestration when true.
+   * Does not imply requiresAuthoritativeContext or a product attention answer.
+   */
+  isBroadDiscovery?: boolean;
 }
 
 function densityForMode(mode: AIResponseMode): AIResponseDensity {
@@ -111,6 +118,8 @@ function attachRoutingAxes(
     isActionRequest,
   });
 
+  const isBroadDiscovery = isBroadDiscoveryQuery(input.query || '');
+
   return {
     mode,
     responseDensity: densityForMode(mode),
@@ -119,6 +128,7 @@ function attachRoutingAxes(
     responseContract,
     isActionRequest,
     ...(input.isFollowUp === true ? { isFollowUp: true } : {}),
+    ...(isBroadDiscovery ? { isBroadDiscovery: true } : {}),
   };
 }
 
