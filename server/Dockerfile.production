@@ -52,7 +52,8 @@ RUN cd shared && pnpm build
 COPY server/ ./server/
 
 # Build server (this layer rebuilds when server code changes)
-RUN cd server && pnpm build
+# @googlemaps/places protos increase tsc memory; raise heap for CI/Kaniko builds.
+RUN cd server && NODE_OPTIONS=--max-old-space-size=4096 pnpm build
 
 # Production stage - minimal image
 FROM node:20-alpine AS production
