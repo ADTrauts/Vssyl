@@ -4,7 +4,7 @@ import * as structuredResponseMode from '../../utils/structuredResponseMode';
 import { inferStructuredResponseMode } from '../../utils/structuredResponseMode';
 import type { UserContext } from '../CrossModuleContextEngine';
 
-const baseUserContext: UserContext = {
+const baseUserContext = {
   userId: 'u1',
   activeModules: ['ai-chat'],
   currentFocus: { module: 'ai-chat' },
@@ -12,7 +12,7 @@ const baseUserContext: UserContext = {
   patterns: [],
   relationships: [],
   crossModuleInsights: [],
-};
+} as unknown as UserContext;
 
 describe('Package A — structuredResolution pass-through', () => {
   const cases = [

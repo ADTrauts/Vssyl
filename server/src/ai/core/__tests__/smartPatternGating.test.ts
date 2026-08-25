@@ -1,8 +1,9 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { describe, expect, it, vi, beforeEach, type MockInstance } from 'vitest';
 import { DigitalLifeTwinCore } from '../DigitalLifeTwinCore';
 import type { UserContext } from '../../context/CrossModuleContextEngine';
 import * as structuredResponseMode from '../../utils/structuredResponseMode';
 import * as AIContextAssembler from '../../context/AIContextAssembler';
+import type { AIContextAssemblyInput } from '../../context/AIContextAssembler';
 
 const mockPipelineCatalog = vi.hoisted(() => ({
   enforcement: { enforcementEnabled: false, enforcementMode: 'off' as const },
@@ -46,7 +47,7 @@ vi.mock('../../pipeline/buildPipelineTrace', () => ({
   })),
 }));
 
-const baseUserContext: UserContext = {
+const baseUserContext = {
   userId: 'user-gate-test',
   activeModules: ['ai-chat'],
   currentFocus: { module: 'ai-chat' },
@@ -54,7 +55,7 @@ const baseUserContext: UserContext = {
   patterns: [],
   relationships: [],
   crossModuleInsights: [],
-};
+} as unknown as UserContext;
 
 type GenerateLifeTwinResponse = (
   query: Parameters<DigitalLifeTwinCore['processAsDigitalTwin']>[0] extends never
@@ -112,10 +113,10 @@ async function runGenerateWithQuery(
 
 describe('Package B — SmartPattern / semantic gating', () => {
   let core: DigitalLifeTwinCore;
-  let analyzeSpy: ReturnType<typeof vi.fn>;
-  let enhanceSpy: ReturnType<typeof vi.fn>;
-  let structuredModeSpy: ReturnType<typeof vi.spyOn>;
-  let assembleSpy: ReturnType<typeof vi.spyOn>;
+  let analyzeSpy: MockInstance<(...args: unknown[]) => Promise<unknown>>;
+  let enhanceSpy: MockInstance<(...args: unknown[]) => Promise<unknown>>;
+  let structuredModeSpy: MockInstance<typeof structuredResponseMode.inferStructuredResponseMode>;
+  let assembleSpy: MockInstance<typeof AIContextAssembler.assembleAIContext>;
 
   beforeEach(() => {
     core = new DigitalLifeTwinCore();
@@ -225,18 +226,17 @@ describe('Package B — SmartPattern / semantic gating', () => {
     expect(analyzeSpy).toHaveBeenCalledTimes(0);
     expect(enhanceSpy).toHaveBeenCalledTimes(0);
 
-    const assemblyInput = assembleSpy.mock.calls[0]?.[0];
+    const assemblyInput = assembleSpy.mock.calls[0]?.[0] as AIContextAssemblyInput | undefined;
     expect(assemblyInput?.smartAnalysis).toBeUndefined();
     expect(assemblyInput?.semanticEnhancement).toBeUndefined();
 
-    const titles = (assemblyInput ? assembleSpy.mock.results[0]?.value : undefined)?.contextBlocks?.map(
-      (b: { title: string }) => b.title
-    ) ?? [];
+    const assembled = assembleSpy.mock.results[0]?.value;
+    const titles = assembled?.contextBlocks?.map((b: { title: string }) => b.title) ?? [];
     expect(titles).not.toContain('Smart pattern analysis');
     expect(titles).not.toContain('Semantic enhancement');
 
     const evidenceLabels =
-      assembleSpy.mock.results[0]?.value?.evidence?.map((e: { label: string }) => e.label) ?? [];
+      assembled?.evidence?.map((e: { label: string }) => e.label) ?? [];
     expect(evidenceLabels).not.toContain('Smart pattern engine output');
     expect(evidenceLabels).not.toContain('Semantic query enhancement');
   });
@@ -251,18 +251,18 @@ describe('Package B — SmartPattern / semantic gating', () => {
     expect(analyzeSpy).toHaveBeenCalledTimes(1);
     expect(enhanceSpy).toHaveBeenCalledTimes(1);
 
-    const assemblyInput = assembleSpy.mock.calls[0]?.[0];
+    const assemblyInput = assembleSpy.mock.calls[0]?.[0] as AIContextAssemblyInput | undefined;
     expect(assemblyInput?.smartAnalysis).toBeDefined();
     expect(assemblyInput?.semanticEnhancement).toBeDefined();
 
-    const titles = assembleSpy.mock.results[0]?.value?.contextBlocks?.map(
-      (b: { title: string }) => b.title
-    ) ?? [];
-    expect(titles).toContain('Smart pattern analysis');
+    const assembledCompare = assembleSpy.mock.results[0]?.value;
+    const titlesCompare =
+      assembledCompare?.contextBlocks?.map((b: { title: string }) => b.title) ?? [];
+    expect(titlesCompare).toContain('Smart pattern analysis');
 
-    const evidenceLabels =
-      assembleSpy.mock.results[0]?.value?.evidence?.map((e: { label: string }) => e.label) ?? [];
-    expect(evidenceLabels).toContain('Smart pattern engine output');
-    expect(evidenceLabels).toContain('Semantic query enhancement');
+    const evidenceLabelsCompare =
+      assembledCompare?.evidence?.map((e: { label: string }) => e.label) ?? [];
+    expect(evidenceLabelsCompare).toContain('Smart pattern engine output');
+    expect(evidenceLabelsCompare).toContain('Semantic query enhancement');
   });
 });

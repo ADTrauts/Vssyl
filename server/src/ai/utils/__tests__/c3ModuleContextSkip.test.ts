@@ -2,7 +2,7 @@
  * C3 — Skip MODULE ContextProvider orchestration for safe conversation turns.
  * Mechanical eligibility + Core call-count proof. Does not change contracts/routing.
  */
-import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { describe, expect, it, vi, beforeEach, type MockInstance } from 'vitest';
 import { shouldRetrieveModuleContext } from '../shouldRetrieveModuleContext';
 import { inferStructuredResponseMode } from '../structuredResponseMode';
 import { DigitalLifeTwinCore } from '../../core/DigitalLifeTwinCore';
@@ -218,7 +218,7 @@ describe('C3 — Core getContextForAIQuery call counts', () => {
   } as unknown as CrossModuleContextEngine;
 
   let core: DigitalLifeTwinCore;
-  let groundingSpy: ReturnType<typeof vi.spyOn>;
+  let groundingSpy: MockInstance<typeof pipelineGrounding.runPipelineGroundingRetrieval>;
 
   beforeEach(() => {
     getContextForAIQuery.mockClear();

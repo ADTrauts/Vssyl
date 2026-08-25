@@ -1,4 +1,4 @@
-import { describe, expect, it, vi, beforeEach } from 'vitest';
+import { describe, expect, it, vi, beforeEach, type MockInstance } from 'vitest';
 import { DigitalLifeTwinCore } from '../DigitalLifeTwinCore';
 import type { UserContext } from '../../context/CrossModuleContextEngine';
 import * as structuredResponseMode from '../../utils/structuredResponseMode';
@@ -47,7 +47,7 @@ vi.mock('../../pipeline/buildPipelineTrace', () => ({
   })),
 }));
 
-const baseUserContext: UserContext = {
+const baseUserContext = {
   userId: 'user-reasoning-gate',
   activeModules: ['ai-chat'],
   currentFocus: { module: 'ai-chat' },
@@ -55,7 +55,7 @@ const baseUserContext: UserContext = {
   patterns: [],
   relationships: [],
   crossModuleInsights: [],
-};
+} as unknown as UserContext;
 
 const BURNOUT_EXPLORE =
   "I'm feeling burnt out lately but I can't tell if I actually need rest or just a change of pace.";
@@ -114,9 +114,9 @@ async function runGenerateWithQuery(
 
 describe('Package C1 — conversation reasoning gating', () => {
   let core: DigitalLifeTwinCore;
-  let reasoningSpy: ReturnType<typeof vi.spyOn>;
-  let structuredModeSpy: ReturnType<typeof vi.spyOn>;
-  let buildProviderDataSpy: ReturnType<typeof vi.spyOn>;
+  let reasoningSpy: MockInstance<typeof conversationReasoningLayer.runConversationReasoning>;
+  let structuredModeSpy: MockInstance<typeof structuredResponseMode.inferStructuredResponseMode>;
+  let buildProviderDataSpy: MockInstance<typeof buildProviderDataModule.buildProviderData>;
 
   beforeEach(() => {
     core = new DigitalLifeTwinCore();

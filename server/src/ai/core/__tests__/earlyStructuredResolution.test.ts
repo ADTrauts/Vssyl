@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest';
+import { beforeEach, describe, expect, it, vi, type MockInstance } from 'vitest';
 import { DigitalLifeTwinService } from '../DigitalLifeTwinService';
 import type { LifeTwinQuery } from '../DigitalLifeTwinCore';
 import * as structuredResponseMode from '../../utils/structuredResponseMode';
@@ -76,8 +76,8 @@ type RoutingHelper = {
 
 describe('Package C2 — early structured resolution', () => {
   let service: DigitalLifeTwinService;
-  let structuredSpy: ReturnType<typeof vi.spyOn>;
-  let responseModeSpy: ReturnType<typeof vi.spyOn>;
+  let structuredSpy: MockInstance<typeof structuredResponseMode.inferStructuredResponseMode>;
+  let responseModeSpy: MockInstance<typeof responseModeModule.inferResponseMode>;
 
   beforeEach(() => {
     callOrder.length = 0;
