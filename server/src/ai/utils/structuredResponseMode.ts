@@ -198,6 +198,13 @@ export function inferStructuredResponseMode(
   // P2: residual answer → neutral informational conversation when no grounding/action signals.
   if (mode === 'answer') {
     const conversationObjective = detectConversationObjective(q);
+    const authInput = {
+      query: q,
+      fileIds: input.fileIds,
+      businessId: input.businessId,
+      currentModule: input.currentModule,
+      hasAttachedFiles: input.hasAttachedFiles,
+    };
     if (
       shouldUseInformationalAnswerEscape({
         query: q,
@@ -210,6 +217,18 @@ export function inferStructuredResponseMode(
       })
     ) {
       return attachRoutingAxes('conversation', input, { informationalAnswerEscape: true });
+    }
+
+    // R1: ordinary decide/recommend advice uses conversation contract — not residual enterprise.
+    // Explicit comparison/analysis/recommendation modes and ENTERPRISE_RECOMMENDATION remain above.
+    // Grounded decide (attachments/auth) stays answer → grounded_answer.
+    // Execute residual answers keep prior enterprise path for create/assessment deliverables.
+    if (
+      conversationObjective === 'decide' &&
+      !isActionMutationRequest(q) &&
+      !requiresAuthoritativeContext(authInput)
+    ) {
+      return attachRoutingAxes('conversation', input);
     }
   }
 
