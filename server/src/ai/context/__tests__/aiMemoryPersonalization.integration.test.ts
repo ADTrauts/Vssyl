@@ -84,7 +84,8 @@ describe('AI memory personalization (Phase 1 exit)', () => {
         context: { contextProfile: 'enterprise' },
       },
       userContext: baseUserContext,
-      explicitStructuredMode: 'enterprise',
+      // Valid structured mode → enterprise context profile (not conversation budget).
+      explicitStructuredMode: 'analysis',
       userMemoryFacts: day1Facts,
     });
 
@@ -95,7 +96,7 @@ describe('AI memory personalization (Phase 1 exit)', () => {
         context: { contextProfile: 'enterprise' },
       },
       userContext: baseUserContext,
-      explicitStructuredMode: 'enterprise',
+      explicitStructuredMode: 'analysis',
       userMemoryFacts: day30Facts,
     });
 

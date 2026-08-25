@@ -56,10 +56,17 @@ describe('HR notification completeness (CO-02)', () => {
   it('createAttendanceException notifies manager with hr_attendance_exception_created', async () => {
     vi.spyOn(prisma.attendanceException, 'create').mockResolvedValue({ id: 'ex-3' } as never);
     vi.spyOn(prisma.employeePosition, 'findUnique').mockResolvedValue({ userId: 'emp-1' } as never);
+    // Shape must match resolveManagerOccupancyForEmployeePosition (reportsToId + occupant email).
     vi.spyOn(prisma.employeePosition, 'findFirst').mockResolvedValue({
       position: {
+        reportsToId: 'mgr-pos-1',
         reportsTo: {
-          employeePositions: [{ userId: 'mgr-1' }],
+          employeePositions: [
+            {
+              userId: 'mgr-1',
+              user: { name: 'Manager', email: 'mgr@example.com' },
+            },
+          ],
         },
       },
     } as never);

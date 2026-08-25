@@ -10,6 +10,10 @@ const PLATFORM_ROUTE_PATH = join(
   process.cwd(),
   'src/routes/admin-portal/adminPortalRoutes.platform.ts',
 );
+const PLATFORM_OPS_SERVICE_PATH = join(
+  process.cwd(),
+  'src/services/admin/adminPlatformOperationsService.ts',
+);
 
 describe('admin portal system ops / performance route extraction (1B-A.4)', () => {
   it('analyticsOps system routes delegate to adminSystemOpsService without inline prisma', () => {
@@ -42,7 +46,6 @@ describe('admin portal system ops / performance route extraction (1B-A.4)', () =
 
     expect(source).toContain('adminSystemOpsService.getDatabaseSchemaCheck');
     expect(source).toContain('adminSystemOpsService.listMigrations');
-    expect(source).toContain('adminSystemOpsService.probeDatabaseConnection');
     expect(source).toContain('adminSystemOpsService.fixFailedMigrations');
     expect(source).toContain('adminSystemOpsService.deleteMigrationRecords');
     expect(source).toContain('adminSystemOpsService.resetMigrationBaseline');
@@ -51,5 +54,10 @@ describe('admin portal system ops / performance route extraction (1B-A.4)', () =
     expect(source).toContain('enforceDangerousMigrationOpGate');
     expect(source).not.toContain('prisma.$queryRaw');
     expect(source).not.toContain('prisma.$executeRaw');
+  });
+
+  it('platform operations service probes DB via adminSystemOpsService.probeDatabaseConnection', () => {
+    const source = readFileSync(PLATFORM_OPS_SERVICE_PATH, 'utf8');
+    expect(source).toContain('adminSystemOpsService.probeDatabaseConnection');
   });
 });

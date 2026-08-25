@@ -6,6 +6,7 @@ import { ActionExecutor } from '../ActionExecutor';
 import type { AIAction, UserContext } from '../DigitalLifeTwinService';
 import * as todoAIActionService from '../../../services/todoAIActionService';
 import * as actionExecutorRegistryModule from '../ActionExecutorRegistry';
+import * as actionExecutorBridge from '../../governance/actionExecutorBridge';
 
 const executorSource = readFileSync(
   join(process.cwd(), 'src/ai/core/ActionExecutor.ts'),
@@ -26,6 +27,8 @@ describe('ActionExecutor todo paths (Phase 1F)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
     vi.spyOn(actionExecutorRegistryModule.actionExecutorRegistry, 'has').mockReturnValue(false);
+    // Keep Phase 1F assertions on the legacy todo service path (not governed bridge / ledger).
+    vi.spyOn(actionExecutorBridge, 'tryExecuteViaGovernedPlatform').mockResolvedValue(null);
     executor = new ActionExecutor({} as PrismaClient);
   });
 
