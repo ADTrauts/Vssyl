@@ -119,8 +119,8 @@ export const DEFAULT_PIPELINE_GROUNDING_RULES: DefaultGroundingSeed[] = [
   {
     intentId: 'local_discovery',
     requiredSources: ['location'],
-    optionalSources: ['vssyl_place', 'web_search'],
-    requirementSummary: 'location + (place_search | web_search)',
+    optionalSources: ['vssyl_place', 'google_places', 'web_search'],
+    requirementSummary: 'location + (vssyl_place | google_places | place_search | web_search)',
   },
   {
     intentId: 'planning',
@@ -131,7 +131,7 @@ export const DEFAULT_PIPELINE_GROUNDING_RULES: DefaultGroundingSeed[] = [
   {
     intentId: 'recommendation',
     requiredSources: ['user_memory'],
-    optionalSources: ['web_search', 'profile', 'vssyl_place'],
+    optionalSources: ['web_search', 'profile', 'vssyl_place', 'google_places'],
     requirementSummary: 'memory + optional web_search',
   },
   {
@@ -182,6 +182,7 @@ export const DEFAULT_PIPELINE_GROUNDING_RULES: DefaultGroundingSeed[] = [
 export const SOURCE_TO_TOOLS: Record<string, PipelineToolPolicy['toolId'][]> = {
   location: ['location'],
   vssyl_place: ['place_search'],
+  google_places: ['google_places_search', 'google_place_details'],
   vlink: ['module_context'],
   graph_bundle: ['module_context'],
   web_search: ['web_search'],
@@ -271,6 +272,13 @@ export const DEFAULT_PIPELINE_CONTEXT_SOURCES: DefaultSourceSeed[] = [
     wiredInTwin: true,
   },
   {
+    id: 'google_places',
+    label: 'Google Places',
+    description: 'External physical-place discovery via Google Maps Platform Places API (New)',
+    enabled: true,
+    wiredInTwin: true,
+  },
+  {
     id: 'web_search',
     label: 'Web search',
     description: 'External web search (not yet implemented in twin)',
@@ -326,6 +334,24 @@ export const DEFAULT_PIPELINE_TOOL_POLICIES: DefaultToolSeed[] = [
     optionalIntents: ['local_discovery', 'recommendation'],
     requiredPermissions: [],
     fallbackBehavior: 'Fall back to web_search when implemented',
+    enabled: true,
+  },
+  {
+    toolId: 'google_places_search',
+    purpose: 'Search Google Places for external physical-place discovery (Text Search)',
+    requiredIntents: [],
+    optionalIntents: ['local_discovery', 'recommendation'],
+    requiredPermissions: [],
+    fallbackBehavior: 'Disclose that external place discovery is unavailable; use Vssyl Place if present',
+    enabled: true,
+  },
+  {
+    toolId: 'google_place_details',
+    purpose: 'Fetch Google Place Details for a known place resource id',
+    requiredIntents: [],
+    optionalIntents: ['local_discovery', 'recommendation'],
+    requiredPermissions: [],
+    fallbackBehavior: 'Answer from prior search evidence only',
     enabled: true,
   },
   {

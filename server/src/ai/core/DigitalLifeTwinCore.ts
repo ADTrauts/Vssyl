@@ -1796,6 +1796,33 @@ export class DigitalLifeTwinCore {
           locationSummary: boost.locationSummary,
         };
       }
+      if (boost.externalReadEvidence?.length) {
+        mergedModuleContexts._pipeline_grounding = {
+          ...(typeof mergedModuleContexts._pipeline_grounding === 'object' &&
+          mergedModuleContexts._pipeline_grounding !== null
+            ? (mergedModuleContexts._pipeline_grounding as Record<string, unknown>)
+            : {}),
+          externalReadEvidence: boost.externalReadEvidence,
+        };
+      }
+      if (boost.googlePlacesNeedsLocation) {
+        mergedModuleContexts._pipeline_grounding = {
+          ...(typeof mergedModuleContexts._pipeline_grounding === 'object' &&
+          mergedModuleContexts._pipeline_grounding !== null
+            ? (mergedModuleContexts._pipeline_grounding as Record<string, unknown>)
+            : {}),
+          googlePlacesNeedsLocation: true,
+        };
+      }
+      if (boost.googlePlacesUnavailable) {
+        mergedModuleContexts._pipeline_grounding = {
+          ...(typeof mergedModuleContexts._pipeline_grounding === 'object' &&
+          mergedModuleContexts._pipeline_grounding !== null
+            ? (mergedModuleContexts._pipeline_grounding as Record<string, unknown>)
+            : {}),
+          googlePlacesUnavailable: true,
+        };
+      }
       groundingBoostTools = boost.toolsUsed;
       groundingBoostRetrieved = boost.contextRetrieved;
       groundingBoostSources = boost.sourcesUsed;

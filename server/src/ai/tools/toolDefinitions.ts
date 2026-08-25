@@ -116,6 +116,21 @@ export const AI_TOOL_DEFINITIONS = [
   {
     type: 'function' as const,
     function: {
+      name: 'google_place_details',
+      description:
+        'Get Google Place Details for a known Google place id from prior external discovery (read-only). Use places/ChIJ... or ChIJ... form.',
+      parameters: {
+        type: 'object',
+        properties: {
+          placeId: { type: 'string', description: 'Google place resource id (places/PLACE_ID or PLACE_ID)' },
+        },
+        required: ['placeId'],
+      },
+    },
+  },
+  {
+    type: 'function' as const,
+    function: {
       name: 'create_todo',
       description: 'Create a new to-do task for the user.',
       parameters: {
@@ -139,4 +154,5 @@ export type AIToolName =
   | 'search_places'
   | 'get_place_recommendations'
   | 'get_place_purchase_help'
+  | 'google_place_details'
   | 'create_todo';

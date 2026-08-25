@@ -330,7 +330,7 @@ export function normalizeAIResponse(
             label: item.label.trim(),
             sourceType:
               typeof item.sourceType === 'string' &&
-              ['module', 'file', 'chat', 'calendar', 'drive', 'business', 'personal', 'system', 'unknown'].includes(item.sourceType)
+              ['module', 'file', 'chat', 'calendar', 'drive', 'business', 'personal', 'system', 'external', 'unknown'].includes(item.sourceType)
                 ? item.sourceType as AIEvidenceItem['sourceType']
                 : undefined,
             sourceId: typeof item.sourceId === 'string' ? item.sourceId : undefined,

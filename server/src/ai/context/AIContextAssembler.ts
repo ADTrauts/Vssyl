@@ -75,6 +75,7 @@ export type AIAssembledEvidenceSourceType =
   | 'personal'
   | 'vlink'
   | 'graph_bundle'
+  | 'external'
   | 'system'
   | 'unknown';
 
@@ -1021,8 +1022,82 @@ export function assembleAIContext(input: AIContextAssemblyInput): AIAssembledCon
   }
 
   const moduleContextEntries = normalizeModuleContexts(rawModuleContexts).filter(
-    (entry) => entry.moduleId !== 'vlink'
+    (entry) => entry.moduleId !== 'vlink' && !entry.moduleId.startsWith('_')
   );
+
+  const pipelineGrounding =
+    rawModuleContexts &&
+    typeof rawModuleContexts._pipeline_grounding === 'object' &&
+    rawModuleContexts._pipeline_grounding !== null
+      ? (rawModuleContexts._pipeline_grounding as Record<string, unknown>)
+      : undefined;
+
+  const externalReadEvidence = pipelineGrounding?.externalReadEvidence;
+  if (Array.isArray(externalReadEvidence) && externalReadEvidence.length > 0) {
+    const placeItems = externalReadEvidence
+      .filter(
+        (item): item is Record<string, unknown> =>
+          !!item && typeof item === 'object' && typeof (item as { title?: unknown }).title === 'string'
+      )
+      .slice(0, MAX_ITEMS)
+      .map((item) => ({
+        name: String(item.title),
+        address: typeof item.address === 'string' ? item.address : undefined,
+        externalId: typeof item.externalId === 'string' ? item.externalId : undefined,
+        detail: typeof item.detail === 'string' ? item.detail : undefined,
+        mapsUrl: typeof item.url === 'string' ? item.url : undefined,
+        provider: 'google_maps_platform',
+        retrievedAt: typeof item.retrievedAt === 'string' ? item.retrievedAt : undefined,
+      }));
+
+    if (placeItems.length > 0) {
+      contextBlocks.push({
+        title: 'External place discovery (Google Places)',
+        sourceType: 'external',
+        content: placeItems,
+        priority: 'high',
+        tier: 'tier4_cross_module',
+        inclusionReason: 'live external place candidates for this turn (ephemeral; not Vssyl Place)',
+      });
+      for (const item of placeItems) {
+        evidence.push({
+          label: `Google Place: ${item.name}`,
+          sourceType: 'external',
+          sourceId: item.externalId,
+          detail: [item.address, item.detail].filter(Boolean).join(' · ') || undefined,
+          confidence: 'high',
+        });
+      }
+    }
+  }
+
+  if (pipelineGrounding?.googlePlacesNeedsLocation === true) {
+    missingContext.push(
+      'Approximate user location was not resolved for external place search — ask which city to search in.'
+    );
+  }
+  if (pipelineGrounding?.googlePlacesUnavailable === true) {
+    risks.push(
+      'External Google Places discovery was unavailable this turn; do not invent current local businesses from model memory.'
+    );
+  }
+
+  const locationSummary =
+    typeof pipelineGrounding?.locationSummary === 'string'
+      ? pipelineGrounding.locationSummary.trim()
+      : '';
+  if (locationSummary) {
+    contextBlocks.push({
+      title: 'Approximate user area (coarse)',
+      sourceType: 'system',
+      content: {
+        summary: locationSummary,
+        precision: 'city/region level only — not GPS',
+      },
+      priority: 'medium',
+      tier: 'tier3_profile',
+    });
+  }
   const moduleBlocksLoaded = Math.min(moduleContextEntries.length, MAX_ITEMS);
   for (const entry of moduleContextEntries.slice(0, MAX_ITEMS)) {
     const label = entry.moduleName || entry.moduleId;

@@ -23,7 +23,7 @@ export type AIResponseDensity = 'light' | 'balanced' | 'deep';
 
 export interface AIEvidenceItem {
   label: string;
-  sourceType?: 'module' | 'file' | 'chat' | 'calendar' | 'drive' | 'business' | 'personal' | 'system' | 'unknown';
+  sourceType?: 'module' | 'file' | 'chat' | 'calendar' | 'drive' | 'business' | 'personal' | 'system' | 'external' | 'unknown';
   sourceId?: string;
   detail?: string;
 }

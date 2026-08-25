@@ -11,6 +11,7 @@ import type { AIToolName } from './toolDefinitions';
 export interface ToolExecutionContext {
   userId: string;
   dashboardId?: string | null;
+  businessId?: string | null;
 }
 
 interface ToolResult {
@@ -24,7 +25,7 @@ export async function executeTool(
   args: Record<string, unknown>,
   context: ToolExecutionContext
 ): Promise<string> {
-  const { userId, dashboardId } = context;
+  const { userId, dashboardId, businessId } = context;
   try {
     let result: ToolResult;
     switch (name) {
@@ -168,6 +169,32 @@ export async function executeTool(
           success: true,
           message: 'Purchase guidance returned (read-only — no transaction created).',
           data: outcome.data as Record<string, unknown>,
+        };
+        break;
+      }
+      case 'google_place_details': {
+        const placeId = (args.placeId as string)?.trim();
+        if (!placeId) {
+          result = { success: false, message: 'placeId is required.' };
+          break;
+        }
+        const { runGooglePlacesDetailsForTool } = await import('../external/googlePlacesPipelineService.js');
+        const details = await runGooglePlacesDetailsForTool({
+          userId,
+          businessId,
+          placeId,
+        });
+        if (!details.success) {
+          result = {
+            success: false,
+            message: details.failureMessage ?? 'Google Place Details unavailable.',
+          };
+          break;
+        }
+        result = {
+          success: true,
+          message: `Retrieved details for ${details.evidence[0]?.title ?? 'place'}.`,
+          data: { places: details.evidence },
         };
         break;
       }

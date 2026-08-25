@@ -489,45 +489,43 @@ Assistant must not claim precise “near you” when only city-level inference e
 | Rule | Detail |
 |------|--------|
 | AI external API credentials | **Server-side only** |
-| Secret storage | Secret Manager → Cloud Run env (existing pattern) |
+| Primary auth (Google Places Wave 1) | **Application Default Credentials** — `@googlemaps/places` `PlacesClient()` on Cloud Run attached service identity; local dev via `gcloud auth application-default login` |
+| API key fallback | **Not used for Wave 1.** Restricted server API key via Secret Manager remains documented only if ADC is not viable for a future capability |
 | Browser | No unrestricted Places/Routes/web keys in client bundles |
 | Maps JavaScript (future display) | Separate **restricted browser key** if map UI ships later — not used for Twin retrieval |
 
-Env names (future — document only, not set in design phase):
+**Wave 1 production identity:** Cloud Run `vssyl-server` uses the project compute service account (`235369681725-compute@developer.gserviceaccount.com`). No service-account JSON keys; no Places API key in Secret Manager for this slice.
 
-- `GOOGLE_MAPS_PLATFORM_API_KEY` (server retrieval)
-- Optional: `GOOGLE_MAPS_BROWSER_API_KEY` (display only)
+Optional env names (display-only future):
+
+- `GOOGLE_MAPS_BROWSER_API_KEY` (display only — not used in Wave 1)
 
 ---
 
-## GCP operational prerequisites (Google Places ACT — do not execute)
+## GCP operational prerequisites (Google Places — Wave 1 complete)
 
-Checklist for authorized future ACT:
+### APIs enabled (Google Maps Platform — Places API New)
 
-### APIs to enable (Google Maps Platform — Places API New)
-
-- [ ] **Places API (New)** — service: `places.googleapis.com`
-- [ ] Confirm billing account linked to project `vssyl-472202`
+- [x] **Places API (New)** — service: `places.googleapis.com` (project `vssyl-472202`)
+- [x] Billing account linked
 - [ ] **Defer** until Routes ACT: Routes API (`routes.googleapis.com`)
 - [ ] **Defer** until geocoding ACT: Geocoding API (`geocoding-backend.googleapis.com`) or address through Places Text Search
 
-### Credentials
+### Credentials (Wave 1 — ADC)
 
-- [ ] Create **server** API key restricted to Places API (New) only
-- [ ] Apply HTTP referrer / IP restrictions appropriate to Cloud Run egress
-- [ ] Store key in Secret Manager (new secret name TBD, e.g. `google-maps-platform-api-key`)
-- [ ] Bind secret to Cloud Run `vssyl-server` via existing secret env pattern
-- [ ] Document names in `.env.example` (commented) for local dev
-- [ ] Local dev: restricted dev key or stub adapter — never commit secrets
+- [x] Server adapter uses ADC via `@googlemaps/places` — no long-lived API key
+- [x] Cloud Run service identity attached to `vssyl-server`
+- [x] No service-account private key files
+- [ ] Optional restricted API key path documented only for capabilities where ADC is unsupported
 
 ### Verification
 
-- [ ] `gcloud services list --enabled` shows `places.googleapis.com`
-- [ ] Smoke Text Search (New) from server adapter in staging
-- [ ] Quota / billing alert configured
-- [ ] Observation logs include capability id + latency + success (no secret leakage)
+- [x] `places.googleapis.com` enabled
+- [x] Smoke Text Search (New) + Place Details from server adapter (dev/staging)
+- [ ] Quota / billing alert configured (ops follow-up)
+- [x] Observation logs include capability id + latency + success (no secret leakage)
 
-**Current state (2026-08-25 audit):** Places APIs **not enabled**; no Maps API keys in Secret Manager; Cloud Run has GCS env only.
+**Current state (2026-08-25 Wave 1):** Places API (New) **enabled**; server auth via **ADC / Cloud Run service identity**; adapter at `server/src/ai/external/googlePlacesAdapter.ts`.
 
 ---
 
@@ -760,18 +758,19 @@ Flights, weather, market data, commerce feeds → **same adapter contract**, new
 | Gate | Status |
 |------|--------|
 | Architecture design | **COMPLETE** (this document) |
-| Google Places ACT | **NOT READY** (operational) |
+| Google Places Wave 1 | **SHIPPED** — Text Search + Place Details via ADC adapter |
 
-**Single genuine blocker for Places ACT:** GCP Places API not enabled + server credential not provisioned (expected to be handled in authorized ACT with explicit ops approval).
-
-Architecture does **not** block ACT once ops prerequisites are met.
+**Operational follow-up:** billing/quota alerts; production smoke via authenticated Twin sessions.
 
 ---
 
-## Reference implementation (future)
+## Reference implementation (Wave 1)
 
 | Path | Role |
 |------|------|
+| `server/src/ai/external/googlePlacesAdapter.ts` | Places API (New) Text Search + Details adapter (ADC) |
+| `server/src/ai/external/externalReadTypes.ts` | Thin `ExternalReadRequest` / `ExternalReadResult` contract |
+| `server/src/ai/external/googlePlacesPipelineService.ts` | Pipeline orchestration + details tool runner |
 | `server/src/ai/pipeline/pipelineGroundingRetrieval.ts` | Invoke external adapters from prepass |
 | `server/src/ai/pipeline/pipelineCatalogDefaults.ts` | Register sources/tools |
 | `server/src/ai/tools/toolExecutor.ts` | Optional Twin-loop read tools |
@@ -784,7 +783,7 @@ Architecture does **not** block ACT once ops prerequisites are met.
 
 ## Certification status
 
-N/A — design phase. Subsystem inventory updated to **CANONICAL DESIGN / NOT SHIPPED**.
+**Google Places Wave 1:** **SHIPPED / READY** — external read adapter, pipeline registration, governance gates, tests. Routes, geocoding, and `web_search` remain future.
 
 ---
 

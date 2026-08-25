@@ -4,6 +4,8 @@
 
 import { geolocationService, type LocationData } from '../../services/geolocationService';
 import { logger } from '../../lib/logger';
+import type { ExternalEvidenceItem } from '../external/externalReadTypes';
+import { runGooglePlacesSearchForPipeline } from '../external/googlePlacesPipelineService';
 import type {
   PipelineCatalog,
   PipelineContextRetrievedRecord,
@@ -80,6 +82,9 @@ export interface PipelineGroundingRetrievalResult {
   vlinkPipelineContext?: import('../context/vlinkPipelineContextService').VLinkPipelineContextResult;
   graphBundlePipelineContext?: import('../context/graphBundlePipelineContextService').GraphBundlePipelineContextResult;
   requiredSourceFailures?: string[];
+  externalReadEvidence?: ExternalEvidenceItem[];
+  googlePlacesNeedsLocation?: boolean;
+  googlePlacesUnavailable?: boolean;
   contextOrchestration?: {
     contextGenerationId: string;
     generatedAt: string;
@@ -256,6 +261,8 @@ export async function runPipelineGroundingRetrieval(
     }
   }
 
+  let resolvedCoarseLocation: LocationData | null = null;
+
   if (
     neededSources.has('location') &&
     isSourceEnabled(input.catalog, 'location') &&
@@ -263,6 +270,7 @@ export async function runPipelineGroundingRetrieval(
   ) {
     const location = await resolveLocation(input.clientIp);
     if (location) {
+      resolvedCoarseLocation = location;
       result.locationSummary = formatLocationSummary(location);
       result.contextRetrieved.push({
         source: 'location',
@@ -455,6 +463,46 @@ export async function runPipelineGroundingRetrieval(
         });
         result.sourcesUsed.push('calendar');
       }
+    }
+  }
+
+  const shouldRunGooglePlaces =
+    isSourceEnabled(input.catalog, 'google_places') &&
+    isToolEnabled(input.catalog, 'google_places_search') &&
+    (neededSources.has('google_places') ||
+      optionalSourcesForInferred.has('google_places') ||
+      groundingIntents.includes('local_discovery') ||
+      inferredIntents.includes('recommendation'));
+
+  if (shouldRunGooglePlaces) {
+    const placesRun = await runGooglePlacesSearchForPipeline({
+      userId: input.userId,
+      userMessage: input.userMessage,
+      businessId: input.businessId,
+      coarseLocation: resolvedCoarseLocation,
+    });
+    const placesResult = placesRun.result;
+
+    if (placesResult.success && placesResult.evidence.length > 0) {
+      result.externalReadEvidence = placesResult.evidence;
+      result.contextRetrieved.push({
+        source: 'google_places',
+        provider: 'google_maps_platform',
+        itemCount: placesResult.evidence.length,
+      });
+      result.sourcesUsed.push('google_places');
+      result.toolsUsed.push({ name: 'google_places_search', round: 0, success: true });
+    } else {
+      result.toolsUsed.push({ name: 'google_places_search', round: 0, success: false });
+      if (placesResult.failureCode === 'location_required') {
+        result.googlePlacesNeedsLocation = true;
+      } else {
+        result.googlePlacesUnavailable = true;
+      }
+      void logger.warn('Google Places pipeline search did not return results', {
+        operation: 'pipeline_grounding_google_places',
+        failureCode: placesResult.failureCode,
+      });
     }
   }
 

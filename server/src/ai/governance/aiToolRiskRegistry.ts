@@ -92,6 +92,18 @@ export const ACTIVE_AI_TOOL_RISK_REGISTRY: Record<AIToolName, AIActionRiskDeclar
     auditRequired: false,
     businessScopeRequired: false,
   },
+  google_place_details: {
+    canonicalName: 'google_place_details',
+    domainOwner: 'external',
+    riskCategory: 'READ_ONLY',
+    mutating: false,
+    externalVisibility: true,
+    reversible: true,
+    approvalPolicy: 'NEVER',
+    idempotencyRequired: false,
+    auditRequired: false,
+    businessScopeRequired: false,
+  },
   create_todo: {
     canonicalName: 'create_todo',
     domainOwner: 'todo',

@@ -164,7 +164,7 @@ flowchart TB
 |-------------------------|--------|
 | `location`, `vlink`, `business_context` | Existing adapters (as cataloged) |
 | **`web_search`** | **NOT SHIPPED** — catalog/stub / failed-attempt trace only. No live Twin web retrieval. See [`AI_EXTERNAL_CAPABILITY_MODEL.md`](./AI_EXTERNAL_CAPABILITY_MODEL.md). |
-| **`google_places` / external reads** | **NOT SHIPPED** — designed; not ContextProviders. See external capability model. |
+| **`google_places` / external reads** | **SHIPPED (Wave 1)** — pipeline prepass + Twin details tool; not ContextProviders. See external capability model. |
 
 ---
 

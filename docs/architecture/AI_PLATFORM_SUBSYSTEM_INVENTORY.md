@@ -173,8 +173,8 @@ Certification key: **CERTIFIED** · **CERTIFIED_WITH_LIMITATION** · **DESIGN_ON
 | Field | Value |
 |-------|-------|
 | Purpose | Live physical-place discovery via Google Maps Platform Places API (New) |
-| Status | **DESIGNED / NOT SHIPPED** — no client, no GCP APIs enabled |
-| Owner | External capability model; first implementation vertical slice |
+| Status | **SHIPPED (Wave 1)** — Text Search + Place Details via ADC; see [`AI_EXTERNAL_CAPABILITY_MODEL.md`](./AI_EXTERNAL_CAPABILITY_MODEL.md) |
+| Owner | `server/src/ai/external/` + pipeline catalog |
 
 ### Google Routes / Geocoding (external)
 
