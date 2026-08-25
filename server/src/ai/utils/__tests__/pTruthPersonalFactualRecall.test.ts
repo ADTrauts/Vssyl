@@ -210,13 +210,12 @@ describe('P-TRUTH — A2-R preserved', () => {
   });
 });
 
-describe('P-TRUTH — known businessId budget interference (report only)', () => {
-  it('house budget + businessId may still reqAuth via business keyword (unchanged)', () => {
+describe('P-TRUTH — businessId + personal budget (B1-R coexistence)', () => {
+  it('house budget tell-you stays recall without business truth when businessId set', () => {
     const q = 'What house budget did I tell you?';
     expect(hasExplicitRecallIntent(q)).toBe(true);
     expect(requiresAuthoritativeContext({ query: q })).toBe(false);
-    // Documented interference — not fixed in P-TRUTH.
-    expect(requiresAuthoritativeContext({ query: q, businessId: BIZ })).toBe(true);
+    expect(requiresAuthoritativeContext({ query: q, businessId: BIZ })).toBe(false);
   });
 });
 

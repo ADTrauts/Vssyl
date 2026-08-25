@@ -94,7 +94,33 @@ const PERSONAL_POSSESSION_OR_LIVE_STATE = new RegExp(
 
 /** Workspace / business operational current-state. */
 const WORKSPACE_CURRENT_STATE =
-  /\b(our|my team(?:'s)?|company(?:'s)?|department(?:'s)?|this department)\b.{0,80}\b(labor|budget|sales|revenue|headcount|staffing|staffed|utilization|payroll|kpi|metrics|employees?|workforce|manager|org chart)\b|\b(labor|budget|sales|revenue|headcount|staffing|staffed|payroll)\b.{0,40}\b(our|current|today|yesterday|this week|tomorrow)\b|\bhow many employees\b|\bwho is scheduled\b|\bwho is the manager\b|\bmanager of (this |the |our )?department\b/i;
+  /\b(our|my team(?:'s)?|company(?:'s)?|department(?:'s)?|this department|the business)\b.{0,80}\b(labor|budget|sales|revenue|headcount|staffing|staffed|utilization|payroll|kpi|metrics|employees?|workforce|manager|org chart)\b|\b(labor|budget|sales|revenue|headcount|staffing|staffed|payroll)\b.{0,40}\b(our|current|today|yesterday|this week|tomorrow)\b|\bhow many employees\b|\bwho is scheduled\b|\bwho is the manager\b|\bmanager of (this |the |our )?department\b/i;
+
+/**
+ * Historical personal statement about a prior utterance — not current business live state.
+ * Structural only (did I/we say|tell|mention|decide); no subject-domain words.
+ */
+function isHistoricalPersonalStatementQuery(query: string): boolean {
+  return (
+    /\b(?:what|who|when|which)\b[\s\w'-]{0,60}?\bdid\s+(?:i|we)\s+(?:say|tell|mention|decide)\b/i.test(
+      query
+    ) || /\bwhat\s+did\s+i\s+(?:ask|tell)\s+you\s+to\s+remember\b/i.test(query)
+  );
+}
+
+/**
+ * Business-framed operational metrics (requires businessId when used in B1 block).
+ * Bare "budget" / "employees" alone is not business truth — needs our/team/we/company framing
+ * or against/over/under/on budget evaluation language.
+ */
+const BUSINESS_FRAMED_OPERATIONAL_METRICS = new RegExp(
+  [
+    String.raw`\b(?:our|team(?:'s)?|company(?:'s)?|department(?:'s)?|the\s+business|we)\b.{0,60}\b(?:labor|budget|employees?|staffing|staffed|payroll|utilization|sales|revenue|headcount)\b`,
+    String.raw`\b(?:labor|employees?|staffing|staffed|payroll|utilization|sales|revenue|headcount)\b.{0,40}\b(?:our|current|today|this week|tomorrow)\b`,
+    String.raw`\b(?:against|over|under|on)\s+(?:our\s+)?budget\b`,
+  ].join('|'),
+  'i'
+);
 
 /**
  * Active-business live operational state (requires businessId).
@@ -329,7 +355,8 @@ export function requiresAuthoritativeContext(input: AuthoritativeContextInput): 
     return true;
   }
 
-  if (WORKSPACE_CURRENT_STATE.test(q)) {
+  // Workspace current-state — not historical "what did I tell you about our …".
+  if (WORKSPACE_CURRENT_STATE.test(q) && !isHistoricalPersonalStatementQuery(q)) {
     return true;
   }
 
@@ -340,6 +367,7 @@ export function requiresAuthoritativeContext(input: AuthoritativeContextInput): 
   }
 
   // B1 + H1: active-business scope — requires businessId; no tenant auto-selection.
+  // businessId is tenant scope, not intent: bare "budget" ≠ business question.
   if (hasBusinessScope(input)) {
     // H1: our PTO policy embeds "what is" but is tenant-specific truth.
     if (TENANT_PTO_POLICY.test(q)) {
@@ -352,11 +380,10 @@ export function requiresAuthoritativeContext(input: AuthoritativeContextInput): 
       if (EXPLICIT_HR_ORG_STATE.test(q)) {
         return true;
       }
-      // Explicit our/team operational metrics (e.g. labor budget) — not definitional/advisory.
+      // Framed operational metrics only — not bare keyword (personal "budget" contamination).
       if (
-        /\b(our|team|labor|budget|employees?|staffing|staffed|payroll|utilization|sales|revenue|headcount)\b/i.test(
-          q
-        )
+        !isHistoricalPersonalStatementQuery(q) &&
+        BUSINESS_FRAMED_OPERATIONAL_METRICS.test(q)
       ) {
         return true;
       }
