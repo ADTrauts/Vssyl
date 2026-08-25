@@ -23,4 +23,11 @@ describe('hasExplicitRecallIntent', () => {
     expect(hasExplicitRecallIntent('What files do I have in Drive?')).toBe(false);
     expect(hasExplicitRecallIntent('Schedule a meeting tomorrow at 3pm')).toBe(false);
   });
+
+  it('P-TRUTH: detects structural personal factual recall', () => {
+    expect(hasExplicitRecallIntent('What washing machine did I say I liked?')).toBe(true);
+    expect(hasExplicitRecallIntent('What house budget did I tell you?')).toBe(true);
+    expect(hasExplicitRecallIntent('What trip was I considering?')).toBe(true);
+    expect(hasExplicitRecallIntent('What do people say about LG washers?')).toBe(false);
+  });
 });
