@@ -29,8 +29,8 @@ const COMMUNICATION_ACTION = new RegExp(
     String.raw`\b(?:please\s+|can you\s+|could you\s+|i want you to\s+|i(?:'d| would) like you to\s+)?message\s+${ACTION_PERSON_REF}\b`,
     String.raw`\bsend\s+(?:${ACTION_PERSON_REF}\s+)?a\s+message\b`,
     String.raw`\bsend\s+a\s+message\s+to\s+${ACTION_PERSON_REF}\b`,
-    // "Tell Sarah I'll be late." — not "tell me my …"
-    String.raw`\b(?:please\s+|can you\s+|could you\s+|i want you to\s+|i(?:'d| would) like you to\s+)?tell\s+(?!me\b)${ACTION_PERSON_REF}\b`,
+    // "Tell Sarah I'll be late." — not "tell me …" / not "tell you" (assistant is not an outbound recipient).
+    String.raw`\b(?:please\s+|can you\s+|could you\s+|i want you to\s+|i(?:'d| would) like you to\s+)?tell\s+(?!me\b)(?!you\b)${ACTION_PERSON_REF}\b`,
     String.raw`\b(?:please\s+|can you\s+|could you\s+)?let\s+${ACTION_PERSON_REF}\s+know\b`,
     String.raw`\b(?:please\s+|can you\s+|could you\s+)?notify\s+${ACTION_PERSON_REF}\b`,
     String.raw`\b(?:please\s+|can you\s+|could you\s+)?ask\s+${ACTION_PERSON_REF}\b.{0,40}\b(?:if|whether|about|when|where|why|how|available)\b`,
@@ -47,10 +47,14 @@ const SHARE_SEND_REFERENTIAL_ACTION =
 
 /**
  * Historical / interrogative reads about past sends/shares/messages — not mutations.
+ * Includes embedded objects before did+tell/say ("What house budget did I tell you?").
  */
 const ACTION_HISTORICAL_READ_GUARD = new RegExp(
   [
     String.raw`\b(?:what|who|when|which)\s+(?:did|was|were|has|have)\b`,
+    // Intervening nouns before did+communication verb — must win over imperative "tell X".
+    String.raw`\b(?:what|who|when|which)\b[\s\w'-]{0,60}?\b(?:did|do)\s+(?:i|you|she|he|they|we|my\s+(?:manager|boss|supervisor)|${ACTION_PERSON_REF})\s+(?:tell|say|mention|message|ask|send|share|notify)\b`,
+    String.raw`\bremind me what i (?:said|told|mentioned)\b`,
     String.raw`\bexplain\s+what\b`,
     String.raw`\bwhat\s+(?:file|document|message|doc)s?\s+did\b`,
     String.raw`\bwho\s+(?:shared|sent|messaged|message)\b`,

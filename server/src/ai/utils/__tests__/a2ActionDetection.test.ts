@@ -134,3 +134,62 @@ describe('A2 — bounded action detection', () => {
     expect(isActionMutationRequest('Send this to Sarah.')).toBe(true);
   });
 });
+
+/**
+ * A2-R — Historical / embedded "tell" reads must not be communication actions.
+ * Does not implement P-TRUTH (reqAuth may remain false for personal recall).
+ */
+describe('A2-R — historical tell/say vs communication action', () => {
+  const actionTrue = [
+    "Tell Sarah I'll be late.",
+    "Can you tell Sarah I'll be late?",
+    'Tell Sarah about the meeting.',
+    'Please tell Sarah I will call tomorrow.',
+    "Could you tell Sarah the file is ready?",
+    "Let Sarah know I'll be late.",
+    'Notify Sarah.',
+    'Message Sarah.',
+    'Ask Sarah if she is available.',
+  ];
+
+  const actionFalse = [
+    'What did I tell Sarah?',
+    'What did Sarah tell me?',
+    'What house budget did I tell you?',
+    'What budget did I tell you?',
+    'What did I tell you my budget was?',
+    'Tell me what my budget was.',
+    'What did I message Sarah?',
+    'Who did I tell about the meeting?',
+    'When did I tell Sarah?',
+    'What did Sarah say?',
+    'What did I say to Sarah?',
+    'What amount did I say I could spend?',
+    'What message did I send Sarah?',
+    'What did I send yesterday?',
+    'Tell me my email.',
+    'Tell me what EBITDA means.',
+    'Tell me about mortgages.',
+    'Tell me what I said earlier.',
+    'Remind me what I said.',
+  ];
+
+  it.each(actionTrue)('imperative/polite action true: %s', (q) => {
+    expect(isActionMutationRequest(q)).toBe(true);
+  });
+
+  it.each(actionFalse)('historical/tell-me action false: %s', (q) => {
+    expect(isActionMutationRequest(q)).toBe(false);
+  });
+
+  it('house budget tell-you is not action; P-TRUTH not claimed', () => {
+    const q = 'What house budget did I tell you?';
+    expect(isActionMutationRequest(q)).toBe(false);
+    const inferred = inferStructuredResponseMode({ query: q });
+    expect(inferred.isActionRequest).toBe(false);
+    // Acceptable for A2-R: may remain non-authoritative until P-TRUTH.
+    expect(inferred.requiresAuthoritativeContext).toBe(false);
+    expect(inferred.informationalAnswerEscape).toBe(true);
+    expect(inferred.responseContract).toBe('conversation');
+  });
+});
