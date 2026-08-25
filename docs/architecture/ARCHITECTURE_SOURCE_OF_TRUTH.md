@@ -108,7 +108,8 @@ Before creating or editing architecture documentation:
 | **AI business/personal boundaries** | [`AI_BUSINESS_PERSONAL_TWIN_BOUNDARIES.md`](./AI_BUSINESS_PERSONAL_TWIN_BOUNDARIES.md) | Intelligence Model (Business scope), Mental Model | — | Interact mock is noncanonical |
 | **Tools / actions (Twin)** | [`AI_EXECUTION_ARCHITECTURE.md`](./AI_EXECUTION_ARCHITECTURE.md) + tool risk / approval docs | Constitution §6.3–6.4 | — | — |
 | **Grounding / source / pipeline policy** | Pipeline catalog + [`AI_PIPELINE_ADMIN_TOOLS.md`](./AI_PIPELINE_ADMIN_TOOLS.md) + retrieval constitution | `runPipelineGroundingRetrieval` | — | Not primary user-outcome router |
-| **Live External Truth / web_search** | Mental Model + Pipeline admin tools (NOT SHIPPED) | Catalog stubs | — | Do not document as live |
+| **External read capabilities (Places, Routes, web)** | [`AI_EXTERNAL_CAPABILITY_MODEL.md`](./AI_EXTERNAL_CAPABILITY_MODEL.md) | Mental Model, Pipeline admin tools, Place domain model | — | Do not conflate with Vssyl Place or ContextProviders |
+| **Live External Truth / web_search** | [`AI_EXTERNAL_CAPABILITY_MODEL.md`](./AI_EXTERNAL_CAPABILITY_MODEL.md) + Mental Model (NOT SHIPPED) | Catalog stubs | — | Do not document as live |
 | **AI retrieval (constitutional)** | [`../ai/retrieval/AI_RETRIEVAL_CONSTITUTION.md`](../ai/retrieval/AI_RETRIEVAL_CONSTITUTION.md) | [`../ai/retrieval/AI_RETRIEVAL_OPERATION_MATRIX.md`](../ai/retrieval/AI_RETRIEVAL_OPERATION_MATRIX.md) | Phase 2A closeout | — |
 | **AI experience routes** | `web/src/lib/aiExperienceNavigation.ts` | [`../ux/patterns/AI_EXPERIENCE_PATTERNS.md`](../ux/patterns/AI_EXPERIENCE_PATTERNS.md) | — | — |
 | **Connected Knowledge** | [`../connected-knowledge/KNOWLEDGE_CONSTITUTION.md`](../connected-knowledge/KNOWLEDGE_CONSTITUTION.md) | Provenance, trust, consumption docs in same folder | Phase 0A summaries | — |

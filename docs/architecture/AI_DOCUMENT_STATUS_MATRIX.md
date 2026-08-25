@@ -113,7 +113,9 @@ Status key: **Current** · **Supporting** · **Historical** · **Future** · **D
 | **C3 / shouldRetrieveModuleContext** | Current | Conditional MODULE ContextProvider skip | “LLM-only mode” |
 | **requiresAuthoritativeContext** | Current | Coarse non–base-model / platform-truth need | Complete source planner; personal-recall synonym |
 | **Broad discovery** | Current | C3 safety signal only | Cross-module attention product |
-| **Live External Truth / web_search** | Not shipped | Future capability; stub/trace only | Claiming live web access |
+| **External read capabilities** | Canonical design | [`AI_EXTERNAL_CAPABILITY_MODEL.md`](./AI_EXTERNAL_CAPABILITY_MODEL.md) — Places, Routes, web; not shipped | Conflating with Vssyl Place; ContextProvider internet fetch; provider-native search as owner |
+| **Live External Truth / web_search** | Not shipped | Future capability; stub/trace only; fits external capability model | Claiming live web access |
+| **`place_search` / `search_places`** | Current | Vssyl Place only — not Google Places | Repurposing for Google Maps Platform |
 | **Centralized AI** | Deprecated wording | Historical/fenced `/api/centralized-ai` | Describing current architecture |
 | **Knowledge** | Current | Governed information that may influence answers | Synonym for “intelligence” |
 | **Intelligence** | Current | Reasoning/routing/quality capability (four scopes) | “Intelligence” as a private fact dump |

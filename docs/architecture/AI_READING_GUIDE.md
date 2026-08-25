@@ -99,3 +99,4 @@ Do **not** delete historical documents.
 | Model tiers FAST/BALANCED/DEEP | Phase 7 Model Router (shadow) + [`AI_ROUTING_TIERS.md`](./AI_ROUTING_TIERS.md) | Live cutover still future — production uses `selectLlmProvider` |
 | Governed Skills | Phase 8 Skills Framework + [`AI_SKILLS_ARCHITECTURE.md`](./AI_SKILLS_ARCHITECTURE.md) | AI Studio, Industry Packs, customer-created Skills |
 | Industry Intelligence | Slot in Intelligence Model | Not implemented |
+| External read (Places, Routes, web) | [`AI_EXTERNAL_CAPABILITY_MODEL.md`](./AI_EXTERNAL_CAPABILITY_MODEL.md) (design) | Not shipped — `web_search` stub only; no Google client |

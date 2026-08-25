@@ -204,6 +204,8 @@ These are **not** replacements for memory, module ContextProviders, outcome rout
 
 **LIVE EXTERNAL TRUTH = FUTURE PRODUCT CAPABILITY** (should eventually fit existing tool/source architecture). Canonical docs must not imply live web access today.
 
+**External capability design (Places, Routes, web):** [`AI_EXTERNAL_CAPABILITY_MODEL.md`](./AI_EXTERNAL_CAPABILITY_MODEL.md) — canonical contract; **not shipped**. Do not conflate `place_search` / Vssyl Place with Google Places.
+
 ---
 
 ## The pieces (plain English)

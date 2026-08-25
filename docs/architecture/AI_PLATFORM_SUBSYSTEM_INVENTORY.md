@@ -160,13 +160,37 @@ Certification key: **CERTIFIED** · **CERTIFIED_WITH_LIMITATION** · **DESIGN_ON
 | Owner | `isBroadDiscoveryQuery` |
 | Status | **SAFETY SIGNAL ONLY — NOT A PRODUCT ENGINE** |
 
+### External Capability Model
+
+| Field | Value |
+|-------|-------|
+| Purpose | Canonical contract for external read adapters (Places, Routes, web, future providers) |
+| Status | **CANONICAL DESIGN** — see [`AI_EXTERNAL_CAPABILITY_MODEL.md`](./AI_EXTERNAL_CAPABILITY_MODEL.md) |
+| Owner | Pipeline catalog + external read adapters (future `server/src/ai/external/`) |
+
+### Google Places (external)
+
+| Field | Value |
+|-------|-------|
+| Purpose | Live physical-place discovery via Google Maps Platform Places API (New) |
+| Status | **DESIGNED / NOT SHIPPED** — no client, no GCP APIs enabled |
+| Owner | External capability model; first implementation vertical slice |
+
+### Google Routes / Geocoding (external)
+
+| Field | Value |
+|-------|-------|
+| Purpose | Distance, ETA, address ↔ coordinates |
+| Status | **FUTURE** — designed in external capability model; not scoped for first ACT |
+| Owner | External capability model |
+
 ### Live External Truth / web_search
 
 | Field | Value |
 |-------|-------|
-| Purpose | Future live external retrieval |
+| Purpose | Future live public-web retrieval |
 | Status | **STUB / NOT SHIPPED** — catalog + failed-attempt telemetry only |
-| Owner | Future — must fit existing tool/source architecture |
+| Owner | [`AI_EXTERNAL_CAPABILITY_MODEL.md`](./AI_EXTERNAL_CAPABILITY_MODEL.md) — same adapter lifecycle as Places |
 
 ### Pipeline / Grounding / Reasoning
 

@@ -163,7 +163,8 @@ flowchart TB
 | Platform source concept | Status |
 |-------------------------|--------|
 | `location`, `vlink`, `business_context` | Existing adapters (as cataloged) |
-| **`web_search`** | **NOT SHIPPED** — catalog/stub / failed-attempt trace only. No live Twin web retrieval. |
+| **`web_search`** | **NOT SHIPPED** — catalog/stub / failed-attempt trace only. No live Twin web retrieval. See [`AI_EXTERNAL_CAPABILITY_MODEL.md`](./AI_EXTERNAL_CAPABILITY_MODEL.md). |
+| **`google_places` / external reads** | **NOT SHIPPED** — designed; not ContextProviders. See external capability model. |
 
 ---
 

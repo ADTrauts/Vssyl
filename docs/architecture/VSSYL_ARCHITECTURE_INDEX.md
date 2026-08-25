@@ -163,6 +163,7 @@ Digital Life Twin, context system, retrieval, orchestration.
 | **AI canonical Twin runtime map** | [`AI_CANONICAL_ROUTE_MAP.md`](./AI_CANONICAL_ROUTE_MAP.md) | — | Shipped Service→Core flow |
 | **AI canonical diagram** | [`AI_PLATFORM_CANONICAL_DIAGRAM.md`](./AI_PLATFORM_CANONICAL_DIAGRAM.md) | — | Topology |
 | **AI context assembly** | [`AI_CONTEXT_ASSEMBLY.md`](./AI_CONTEXT_ASSEMBLY.md) | — | Acquisition vs assembly; C3 |
+| **External read capabilities** | [`AI_EXTERNAL_CAPABILITY_MODEL.md`](./AI_EXTERNAL_CAPABILITY_MODEL.md) | — | Canonical design; not shipped |
 | **AI subsystem inventory** | [`AI_PLATFORM_SUBSYSTEM_INVENTORY.md`](./AI_PLATFORM_SUBSYSTEM_INVENTORY.md) | — | Status + ownership |
 | **Business / personal Twin boundaries** | [`AI_BUSINESS_PERSONAL_TWIN_BOUNDARIES.md`](./AI_BUSINESS_PERSONAL_TWIN_BOUNDARIES.md) | — | Scopes; canonical path |
 | **Model Routing readiness** | [`AI_MODEL_ROUTING_READINESS.md`](./AI_MODEL_ROUTING_READINESS.md) | — | Phase 7 prep (not shipped) |
