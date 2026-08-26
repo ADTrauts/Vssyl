@@ -5,7 +5,12 @@
 import { geolocationService, type LocationData } from '../../services/geolocationService';
 import { logger } from '../../lib/logger';
 import type { ExternalEvidenceItem } from '../external/externalReadTypes';
-import { runGooglePlacesSearchForPipeline } from '../external/googlePlacesPipelineService';
+import {
+  mergeExternalEvidence,
+  runGooglePlacesSearchForPipeline,
+} from '../external/googlePlacesPipelineService';
+import { needsLiveExternalWebTruth } from '../external/needsLiveExternalWebTruth';
+import { runWebSearchForPipeline } from '../external/webSearchPipelineService';
 import type {
   PipelineCatalog,
   PipelineContextRetrievedRecord,
@@ -85,6 +90,8 @@ export interface PipelineGroundingRetrievalResult {
   externalReadEvidence?: ExternalEvidenceItem[];
   googlePlacesNeedsLocation?: boolean;
   googlePlacesUnavailable?: boolean;
+  /** Required/optional live web search failed or was denied. */
+  webSearchUnavailable?: boolean;
   contextOrchestration?: {
     contextGenerationId: string;
     generatedAt: string;
@@ -484,7 +491,10 @@ export async function runPipelineGroundingRetrieval(
     const placesResult = placesRun.result;
 
     if (placesResult.success && placesResult.evidence.length > 0) {
-      result.externalReadEvidence = placesResult.evidence;
+      result.externalReadEvidence = mergeExternalEvidence(
+        result.externalReadEvidence,
+        placesResult.evidence
+      );
       result.contextRetrieved.push({
         source: 'google_places',
         provider: 'google_maps_platform',
@@ -506,8 +516,46 @@ export async function runPipelineGroundingRetrieval(
     }
   }
 
-  if (neededSources.has('web_search') && isToolEnabled(input.catalog, 'web_search')) {
-    result.toolsUsed.push({ name: 'web_search', round: 0, success: false });
+  const liveWebNeed = needsLiveExternalWebTruth(input.userMessage);
+  const shouldRunWebSearch =
+    isSourceEnabled(input.catalog, 'web_search') &&
+    isToolEnabled(input.catalog, 'web_search') &&
+    (neededSources.has('web_search') || liveWebNeed);
+
+  if (shouldRunWebSearch) {
+    const webRun = await runWebSearchForPipeline({
+      userId: input.userId,
+      userMessage: input.userMessage,
+      businessId: input.businessId,
+    });
+    const webResult = webRun.result;
+
+    if (webResult.success && webResult.evidence.length > 0) {
+      result.externalReadEvidence = mergeExternalEvidence(
+        result.externalReadEvidence,
+        webResult.evidence
+      );
+      result.contextRetrieved.push({
+        source: 'web_search',
+        provider: 'tavily',
+        itemCount: webResult.evidence.length,
+      });
+      result.sourcesUsed.push('web_search');
+      result.toolsUsed.push({ name: 'web_search', round: 0, success: true });
+    } else {
+      result.toolsUsed.push({ name: 'web_search', round: 0, success: false });
+      result.webSearchUnavailable = true;
+      if (neededSources.has('web_search') || liveWebNeed) {
+        result.requiredSourceFailures = [
+          ...(result.requiredSourceFailures ?? []),
+          'web_search',
+        ];
+      }
+      void logger.warn('Web search pipeline retrieval did not return results', {
+        operation: 'pipeline_grounding_web_search',
+        failureCode: webResult.failureCode,
+      });
+    }
   }
 
   const vlinkSignals = detectVLinkQuerySignals(input.userMessage, {

@@ -26,6 +26,8 @@ export interface AIEvidenceItem {
   sourceType?: 'module' | 'file' | 'chat' | 'calendar' | 'drive' | 'business' | 'personal' | 'system' | 'external' | 'unknown';
   sourceId?: string;
   detail?: string;
+  /** Optional citation URL for external/web evidence. */
+  url?: string;
 }
 
 export interface AIRecommendedAction {

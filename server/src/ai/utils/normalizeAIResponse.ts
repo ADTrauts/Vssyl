@@ -335,6 +335,10 @@ export function normalizeAIResponse(
                 : undefined,
             sourceId: typeof item.sourceId === 'string' ? item.sourceId : undefined,
             detail: typeof item.detail === 'string' ? item.detail : undefined,
+            url:
+              typeof (item as { url?: unknown }).url === 'string'
+                ? String((item as { url?: unknown }).url)
+                : undefined,
           }))
       : undefined;
     const recommendedActions = Array.isArray(parsed.recommendedActions)

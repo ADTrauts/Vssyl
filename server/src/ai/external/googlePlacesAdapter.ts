@@ -240,6 +240,10 @@ export async function executeExternalRead(request: ExternalReadRequest): Promise
       return executeGooglePlacesTextSearch(request);
     case 'google_place_details':
       return executeGooglePlacesDetails(request);
+    case 'web_search': {
+      const { executeWebSearch } = await import('./webSearchAdapter.js');
+      return executeWebSearch(request);
+    }
     default:
       return {
         capabilityId: request.capabilityId,

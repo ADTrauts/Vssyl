@@ -97,7 +97,7 @@ describe('pipelineTraceInsights', () => {
     expect(vlinkRow?.itemCount).toBe(2);
   });
 
-  it('web_search source => planned or disabled', () => {
+  it('web_search source => not_used when enabled but unused this turn', () => {
     const trace = buildPipelineTrace(
       {
         userId: 'u1',
@@ -109,7 +109,7 @@ describe('pipelineTraceInsights', () => {
 
     const webRow = buildContextUsedRows(trace, catalog).find((r) => r.id === 'web_search');
     expect(webRow).toBeDefined();
-    expect(['planned', 'disabled']).toContain(webRow?.status);
+    expect(webRow?.status).toBe('not_used');
   });
 
   it('generic response => GENERIC_RESPONSE category', () => {

@@ -64,6 +64,7 @@ export interface StructuredAIResponse {
     sourceType?: string;
     sourceId?: string;
     detail?: string;
+    url?: string;
   }>;
   assumptions?: string[];
   risks?: string[];
@@ -325,6 +326,16 @@ export default function AIResponseRenderer({
               {evidence.map((e, i) => (
                 <li key={i} className="flex flex-col gap-0.5">
                   <span className="font-medium text-gray-900 dark:text-gray-100">{e.label}</span>
+                  {e.url ? (
+                    <a
+                      href={e.url}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-xs text-blue-700 dark:text-blue-300 hover:underline break-all"
+                    >
+                      {e.url}
+                    </a>
+                  ) : null}
                   {e.sourceType || e.sourceId ? (
                     <span className="text-xs text-gray-500 dark:text-gray-400">
                       {[e.sourceType, e.sourceId].filter(Boolean).join(' · ')}

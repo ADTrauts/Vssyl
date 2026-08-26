@@ -4,9 +4,10 @@
 
 export type ExternalReadCapabilityId =
   | 'google_places_search'
-  | 'google_place_details';
+  | 'google_place_details'
+  | 'web_search';
 
-export type ExternalReadProviderId = 'google_maps_platform';
+export type ExternalReadProviderId = 'google_maps_platform' | 'tavily';
 
 export type ExternalEvidenceSourceKind = 'place' | 'web' | 'route' | 'geocode' | 'other';
 
@@ -19,7 +20,8 @@ export type ExternalReadFailureCode =
   | 'timeout'
   | 'no_results'
   | 'location_required'
-  | 'invalid_request';
+  | 'invalid_request'
+  | 'configuration_missing';
 
 export interface ExternalReadLocationHint {
   city?: string;
@@ -52,11 +54,18 @@ export interface ExternalEvidenceItem {
   userRatingCount?: number;
   businessStatus?: string;
   retrievedAt: string;
+  /** When the provider returns a publish/update time. */
+  publishedAt?: string;
+  /** 1-based result order when applicable. */
+  rank?: number;
+  /** Hostname derived from url when useful for citations. */
+  domain?: string;
 }
 
 export interface ExternalReadUsage {
   latencyMs: number;
   resultCount: number;
+  billedUnits?: number;
 }
 
 export interface ExternalReadResult {

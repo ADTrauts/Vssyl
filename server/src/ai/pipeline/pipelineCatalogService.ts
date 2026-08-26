@@ -241,37 +241,117 @@ export async function seedPipelinePoliciesIfEmpty(): Promise<boolean> {
 export async function reconcileSystemPipelineContextSources(): Promise<number> {
   const defaults = getDefaultPipelineCatalog();
   let inserted = 0;
+  let updated = 0;
 
   for (const src of defaults.contextSources) {
     if (!isSystemContextSourceId(src.id)) continue;
     const existing = await prisma.aIPipelineContextSourcePolicy.findUnique({ where: { id: src.id } });
-    if (existing) continue;
+    if (!existing) {
+      const lifecycle = src.wiredInTwin ? 'live' : 'planned';
+      const caps = defaultContextSourceCapabilities(src.wiredInTwin, lifecycle);
+      const mapped = SOURCE_TO_TOOLS[src.id] ?? [];
+      await prisma.aIPipelineContextSourcePolicy.create({
+        data: {
+          id: src.id,
+          label: src.label,
+          description: src.description,
+          enabled: src.enabled,
+          wiredInTwin: src.wiredInTwin,
+          isSystem: seedIsSystemForSource(src.id),
+          archived: false,
+          sourceType: 'platform',
+          lifecycleStatus: lifecycle,
+          mappedTools: mapped,
+          capabilities: capabilitiesToJson(caps) as Prisma.InputJsonValue,
+        },
+      });
+      inserted += 1;
+      continue;
+    }
 
-    const lifecycle = src.wiredInTwin ? 'live' : 'planned';
-    const caps = defaultContextSourceCapabilities(src.wiredInTwin, lifecycle);
-    const mapped = SOURCE_TO_TOOLS[src.id] ?? [];
-    await prisma.aIPipelineContextSourcePolicy.create({
-      data: {
-        id: src.id,
-        label: src.label,
-        description: src.description,
-        enabled: src.enabled,
-        wiredInTwin: src.wiredInTwin,
-        isSystem: seedIsSystemForSource(src.id),
-        archived: false,
-        sourceType: 'platform',
-        lifecycleStatus: lifecycle,
-        mappedTools: mapped,
-        capabilities: capabilitiesToJson(caps) as Prisma.InputJsonValue,
-      },
-    });
-    inserted += 1;
+    // Ship Wave enablement: sync system web_search / google_places from defaults when stale.
+    if (
+      (src.id === 'web_search' || src.id === 'google_places') &&
+      existing.isSystem &&
+      !existing.archived &&
+      (existing.enabled !== src.enabled || existing.wiredInTwin !== src.wiredInTwin)
+    ) {
+      const lifecycle = src.wiredInTwin ? 'live' : 'planned';
+      const caps = defaultContextSourceCapabilities(src.wiredInTwin, lifecycle);
+      await prisma.aIPipelineContextSourcePolicy.update({
+        where: { id: src.id },
+        data: {
+          enabled: src.enabled,
+          wiredInTwin: src.wiredInTwin,
+          description: src.description,
+          lifecycleStatus: lifecycle,
+          capabilities: capabilitiesToJson(caps) as Prisma.InputJsonValue,
+        },
+      });
+      updated += 1;
+    }
   }
 
-  if (inserted > 0) {
+  if (inserted > 0 || updated > 0) {
     invalidatePipelineCatalogCache();
   }
-  return inserted;
+  return inserted + updated;
+}
+
+/** Sync system tool enablement for shipped external READ tools (web_search, places). */
+export async function reconcileSystemPipelineToolPolicies(): Promise<number> {
+  const defaults = getDefaultPipelineCatalog();
+  let changed = 0;
+  const shipIds = new Set(['web_search', 'google_places_search', 'google_place_details']);
+
+  for (const policy of defaults.toolPolicies) {
+    if (!shipIds.has(policy.toolId)) continue;
+    const existing = await prisma.aIPipelineToolPolicyRow.findUnique({
+      where: { toolId: policy.toolId },
+    });
+    if (!existing) {
+      const runtimeKind = seedRuntimeKindForTool(policy.toolId);
+      const caps = defaultToolCapabilities(runtimeKind);
+      await prisma.aIPipelineToolPolicyRow.create({
+        data: {
+          toolId: policy.toolId,
+          displayName: policy.toolId,
+          purpose: policy.purpose,
+          requiredIntents: policy.requiredIntents,
+          optionalIntents: policy.optionalIntents,
+          requiredPermissions: policy.requiredPermissions,
+          fallbackBehavior: policy.fallbackBehavior,
+          enabled: policy.enabled,
+          isSystem: seedIsSystemForTool(policy.toolId),
+          archived: false,
+          runtimeKind,
+          capabilities: capabilitiesToJson(caps) as Prisma.InputJsonValue,
+        },
+      });
+      changed += 1;
+      continue;
+    }
+    if (
+      existing.isSystem &&
+      !existing.archived &&
+      (existing.enabled !== policy.enabled || existing.purpose !== policy.purpose)
+    ) {
+      await prisma.aIPipelineToolPolicyRow.update({
+        where: { toolId: policy.toolId },
+        data: {
+          enabled: policy.enabled,
+          purpose: policy.purpose,
+          fallbackBehavior: policy.fallbackBehavior,
+        },
+      });
+      changed += 1;
+    }
+  }
+
+  if (changed > 0) {
+    invalidatePipelineCatalogCache();
+  }
+  return changed;
 }
 
 /** Idempotently insert missing system grounding rules and merge default optional sources (e.g. vlink). */
@@ -377,6 +457,7 @@ export async function getEffectivePipelineCatalog(options?: {
   try {
     await seedPipelinePoliciesIfEmpty();
     await reconcileSystemPipelineContextSources();
+    await reconcileSystemPipelineToolPolicies();
     await reconcileSystemPipelineGroundingRules();
     const catalog = await loadCatalogFromDb();
     const filtered = filterCatalogArchived(catalog, options?.includeArchived === true);

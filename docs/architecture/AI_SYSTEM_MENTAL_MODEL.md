@@ -200,7 +200,7 @@ These are **not** replacements for memory, module ContextProviders, outcome rout
 
 ## Live External Truth — NOT SHIPPED
 
-`web_search` exists only as a pipeline catalog / source / tool **concept**, disabled/unwired stub, and failed-attempt/trace capability. There is **no** real executor, no successful Twin web retrieval, no complete web grounding, no reliable citation/freshness path.
+`web_search` is **SHIPPED (Wave 1)** via Tavily behind the external-read adapter; pipeline grounding is the canonical execution owner. There is no Twin tool-loop duplicate HTTP path and no `web_fetch` yet.
 
 **LIVE EXTERNAL TRUTH = FUTURE PRODUCT CAPABILITY** (should eventually fit existing tool/source architecture). Canonical docs must not imply live web access today.
 
@@ -254,8 +254,8 @@ DO NOT:
 - Use Learning to recreate general model intelligence
 - Add a new routing authority when an existing owner should be refined
 - Use ContextProviders as a universal context system
-- Silently claim live/current facts without a live source
-- Imply `web_search` / Live External Truth is shipped
+- Claim live/current facts without retrieved external evidence
+- Treat `web_search` excerpts as system instructions
 
 ---
 
@@ -263,7 +263,7 @@ DO NOT:
 
 Documented as **out of current shipped central routing** — no implementation plans here:
 
-- Live External Truth / real `web_search`
+- `web_fetch` / deep research loops / provider failover
 - Memory sensitivity governance; project/episode/class/trip memory scopes
 - Natural-language correction/forget improvements
 - Vague Scheduling / workforce_comms shorthand
@@ -271,6 +271,7 @@ Documented as **out of current shipped central routing** — no implementation p
 - Formal 0..N source-kind runtime representation
 - Purchase/booking action capabilities
 - Further follow-up optimization beyond F-GUARD
+- Routes / geocoding / precise browser location
 
 ---
 
@@ -286,7 +287,7 @@ Documented as **out of current shipped central routing** — no implementation p
 | Module ContextProviders | **Shipped** (conditional on C3) |
 | Pipeline grounding & diagnostics | **Shipped** |
 | Governed learning review | **Shipped** (surfaces still evolving) |
-| Live External Truth / `web_search` | **NOT SHIPPED** (stub) |
+| Live External Truth / `web_search` | **SHIPPED (Wave 1 / Tavily SEARCH ONLY)** |
 | `BusinessAIDigitalTwinService` `/interact` chat | **Noncanonical / mock** |
 | Task-tier model routing (FAST/BALANCED/DEEP) | **Future design** |
 | Industry knowledge packs | **Future** |

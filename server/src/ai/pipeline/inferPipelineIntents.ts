@@ -17,7 +17,7 @@ const RECOMMENDATION =
   /\b(what\s+should\s+i|which\s+should\s+i|best\s+\w+|suggest|recommend(?:ation)?s?|any\s+ideas\s+for)\b/i;
 
 const RESEARCH =
-  /\b(latest|current|up\s+to\s+date|look\s+up|lookup|search\s+for|verify|fact\s+check|find\s+out\s+if)\b/i;
+  /\b(latest|current|up\s+to\s+date|look\s+up|lookup|search\s+for|verify|fact\s+check|find\s+out\s+if|right\s+now)\b/i;
 
 const TECHNICAL_HELP =
   /\b(typescript|javascript|python|debug|stack\s*trace|error:|repo|repository|pull\s+request|pr\s+#|compile\s+error|runtime\s+error|api\s+route|undefined\s+is\s+not)\b/i;

@@ -281,9 +281,10 @@ export const DEFAULT_PIPELINE_CONTEXT_SOURCES: DefaultSourceSeed[] = [
   {
     id: 'web_search',
     label: 'Web search',
-    description: 'External web search (not yet implemented in twin)',
-    enabled: false,
-    wiredInTwin: false,
+    description:
+      'Live public web search via Tavily (SEARCH ONLY Wave 1; ephemeral external evidence)',
+    enabled: true,
+    wiredInTwin: true,
   },
   {
     id: 'module_context',
@@ -356,12 +357,12 @@ export const DEFAULT_PIPELINE_TOOL_POLICIES: DefaultToolSeed[] = [
   },
   {
     toolId: 'web_search',
-    purpose: 'Search the public web for current local or factual information',
+    purpose: 'Search the public web for current factual information (pipeline prepass only)',
     requiredIntents: ['research'],
     optionalIntents: ['local_discovery', 'recommendation'],
     requiredPermissions: [],
-    fallbackBehavior: 'Disclose that live web data is unavailable',
-    enabled: false,
+    fallbackBehavior: 'Disclose that live web data is unavailable; do not invent current facts',
+    enabled: true,
   },
   {
     toolId: 'list_drive_files',

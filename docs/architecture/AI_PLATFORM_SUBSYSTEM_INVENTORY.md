@@ -44,7 +44,7 @@ Certification key: **CERTIFIED** · **CERTIFIED_WITH_LIMITATION** · **DESIGN_ON
 | Reporting / metrics | `operationsMetricsService` + platform metrics | |
 | Notebook AI | Notebook module services | Specialized exemption |
 | Media (Whisper / image) | `routes/ai.ts` media endpoints | Specialized exemption |
-| Live External Truth / `web_search` | — | **STUB / NOT SHIPPED** |
+| Live External Truth / `web_search` | — | **SHIPPED (Wave 1 / Tavily)** |
 | Legacy business interact chat | `BusinessAIDigitalTwinService` | **NONCANONICAL / LEGACY / MOCK** |
 
 ---
@@ -189,7 +189,7 @@ Certification key: **CERTIFIED** · **CERTIFIED_WITH_LIMITATION** · **DESIGN_ON
 | Field | Value |
 |-------|-------|
 | Purpose | Future live public-web retrieval |
-| Status | **STUB / NOT SHIPPED** — catalog + failed-attempt telemetry only |
+| Status | **SHIPPED (Wave 1)** — Tavily Search backend; SEARCH ONLY; pipeline grounding owner |
 | Owner | [`AI_EXTERNAL_CAPABILITY_MODEL.md`](./AI_EXTERNAL_CAPABILITY_MODEL.md) — same adapter lifecycle as Places |
 
 ### Pipeline / Grounding / Reasoning

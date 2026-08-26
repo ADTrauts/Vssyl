@@ -118,9 +118,40 @@ export const ACTIVE_AI_TOOL_RISK_REGISTRY: Record<AIToolName, AIActionRiskDeclar
   },
 };
 
+/** Pipeline-owned external READ tools (not Twin LLM tool-loop executors in Wave 1). */
+export const PIPELINE_EXTERNAL_READ_RISK_REGISTRY: Record<string, AIActionRiskDeclaration> = {
+  web_search: {
+    canonicalName: 'web_search',
+    domainOwner: 'external',
+    riskCategory: 'READ_ONLY',
+    mutating: false,
+    externalVisibility: true,
+    reversible: true,
+    approvalPolicy: 'NEVER',
+    idempotencyRequired: false,
+    auditRequired: false,
+    businessScopeRequired: false,
+  },
+  google_places_search: {
+    canonicalName: 'google_places_search',
+    domainOwner: 'external',
+    riskCategory: 'READ_ONLY',
+    mutating: false,
+    externalVisibility: true,
+    reversible: true,
+    approvalPolicy: 'NEVER',
+    idempotencyRequired: false,
+    auditRequired: false,
+    businessScopeRequired: false,
+  },
+};
+
 export function getToolRiskDeclaration(name: string): AIActionRiskDeclaration | undefined {
   if (name in ACTIVE_AI_TOOL_RISK_REGISTRY) {
     return ACTIVE_AI_TOOL_RISK_REGISTRY[name as AIToolName];
+  }
+  if (name in PIPELINE_EXTERNAL_READ_RISK_REGISTRY) {
+    return PIPELINE_EXTERNAL_READ_RISK_REGISTRY[name];
   }
   return undefined;
 }

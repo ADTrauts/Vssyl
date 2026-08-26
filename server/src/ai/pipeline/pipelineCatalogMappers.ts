@@ -140,7 +140,13 @@ export function mapSourceRow(row: {
 
 export function inferToolRuntimeKind(toolId: string): PipelineToolRuntimeKind {
   if (['list_drive_files', 'share_file', 'create_todo'].includes(toolId)) return 'openai_tool';
-  if (['location', 'place_search', 'memory'].includes(toolId)) return 'prepass';
+  if (
+    ['location', 'place_search', 'memory', 'web_search', 'google_places_search', 'google_place_details'].includes(
+      toolId
+    )
+  ) {
+    return 'prepass';
+  }
   return 'policy_only';
 }
 

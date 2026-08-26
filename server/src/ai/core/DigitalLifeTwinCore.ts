@@ -1823,6 +1823,15 @@ export class DigitalLifeTwinCore {
           googlePlacesUnavailable: true,
         };
       }
+      if (boost.webSearchUnavailable) {
+        mergedModuleContexts._pipeline_grounding = {
+          ...(typeof mergedModuleContexts._pipeline_grounding === 'object' &&
+          mergedModuleContexts._pipeline_grounding !== null
+            ? (mergedModuleContexts._pipeline_grounding as Record<string, unknown>)
+            : {}),
+          webSearchUnavailable: true,
+        };
+      }
       groundingBoostTools = boost.toolsUsed;
       groundingBoostRetrieved = boost.contextRetrieved;
       groundingBoostSources = boost.sourcesUsed;

@@ -704,16 +704,26 @@ Flag during Places ACT code review; no legal conclusions in this doc.
 
 ## Future `web_search` fit
 
-Same lifecycle as Places:
+**SHIPPED (Wave 1):** Tavily Search adapter behind canonical `web_search`.
 
 ```
-research intent → web_search required
+live/current or research source need
+  → pipeline grounding retrieval (canonical execution owner)
   → egress-safe query construction
-  → server-side adapter (Brave / SerpAPI / etc. — TBD)
-  → normalized web evidence (URL, title, snippet, publishedAt, retrievedAt)
-  → grounding + citations
+  → Tavily Search (`search_depth: basic`, max 5)
+  → normalized web evidence (URL, title, excerpt, publishedAt, retrievedAt)
+  → grounding + markdown citations
   → answer
 ```
+
+| Rule | Wave 1 |
+|------|--------|
+| Capability | `web_search` |
+| Provider | `tavily` |
+| Execution owner | **Pipeline grounding only** (no Twin tool-loop HTTP) |
+| Page fetch | **NOT SHIPPED** |
+| Auth | `TAVILY_API_KEY` (Secret Manager → Cloud Run) |
+| Evidence | Ephemeral; UNTRUSTED excerpts |
 
 **No second Internet architecture.**
 
@@ -783,7 +793,9 @@ Flights, weather, market data, commerce feeds → **same adapter contract**, new
 
 ## Certification status
 
-**Google Places Wave 1:** **SHIPPED / READY** — external read adapter, pipeline registration, governance gates, tests. Routes, geocoding, and `web_search` remain future.
+**Google Places Wave 1:** **SHIPPED / READY** — external read adapter, pipeline registration, governance gates, tests.
+
+**Web Search Wave 1:** **SHIPPED / TAVILY BACKEND** — SEARCH ONLY; pipeline-owned execution; ephemeral evidence. `web_fetch`, Routes, and geocoding remain future.
 
 ---
 
