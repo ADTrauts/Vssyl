@@ -78,7 +78,7 @@ steps:
       - '--set-env-vars'
       - 'NODE_ENV=production,FRONTEND_URL=https://vssyl.com,NEXT_PUBLIC_APP_URL=https://vssyl.com,STORAGE_PROVIDER=gcs,GOOGLE_CLOUD_PROJECT_ID=vssyl-472202,GOOGLE_CLOUD_STORAGE_BUCKET=vssyl-storage-472202,SMTP_HOST=smtp.postmarkapp.com,SMTP_PORT=587,SMTP_SECURE=false,EMAIL_REPLY_TO=support@vssyl.com,SUPPORT_EMAIL=support@vssyl.com,BILLING_EMAIL=billing@vssyl.com'
       - '--set-secrets'
-      - 'DATABASE_URL=database-url:latest,DIRECT_URL=database-url:latest,JWT_SECRET=jwt-secret:latest,JWT_REFRESH_SECRET=jwt-refresh-secret:latest,OPENAI_API_KEY=openai-api-key:latest,OPENAI_ADMIN_API_KEY=openai-admin-api-key:latest,ANTHROPIC_API_KEY=anthropic-api-key:latest,STRIPE_SECRET_KEY=stripe-secret-key:latest,STRIPE_WEBHOOK_SECRET=stripe-webhook-secret:latest,SMTP_USER=smtp-user:latest,SMTP_PASS=smtp-pass:latest,EMAIL_FROM=smtp-from:latest'
+      - 'DATABASE_URL=database-url:latest,DIRECT_URL=database-url:latest,JWT_SECRET=jwt-secret:latest,JWT_REFRESH_SECRET=jwt-refresh-secret:latest,OPENAI_API_KEY=openai-api-key:latest,OPENAI_ADMIN_API_KEY=openai-admin-api-key:latest,ANTHROPIC_API_KEY=anthropic-api-key:latest,STRIPE_SECRET_KEY=stripe-secret-key:latest,STRIPE_WEBHOOK_SECRET=stripe-webhook-secret:latest,SMTP_USER=smtp-user:latest,SMTP_PASS=smtp-pass:latest,EMAIL_FROM=smtp-from:latest,TAVILY_API_KEY=tavily-api-key:latest'
     id: 'deploy-server'
     waitFor: ['build-server']
 
