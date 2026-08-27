@@ -443,15 +443,18 @@ describe('C3 — Core getContextForAIQuery call counts', () => {
     expect(lifeTwinQuery.context.recalledMessages).toEqual(recalled);
   });
 
-  it('grounding prepass remains callable after module skip (enforcement path)', async () => {
-    // Force generate to invoke grounding by stubbing settings via catalog mock already off —
-    // assert runPipelineGroundingRetrieval is still imported/wired: call generateLifeTwinResponse
-    // with skipEnforcement false path is inside generate; here we only prove skip does not
-    // remove the import/call site by invoking generate after skip.
+  it('grounding prepass remains callable after module skip; live web runs with enforcement OFF', async () => {
+    groundingSpy.mockClear();
     await runCore('Why does salt melt ice?');
     expect(getContextForAIQuery).toHaveBeenCalledTimes(0);
-    // With enforcement off, prepass may not run; spy exists and module still loaded.
+    expect(groundingSpy).not.toHaveBeenCalled();
+
+    groundingSpy.mockClear();
+    getContextForAIQuery.mockClear();
+    await runCore('What are average mortgage rates today?');
+    expect(getContextForAIQuery).toHaveBeenCalledTimes(0);
+    expect(groundingSpy).toHaveBeenCalledTimes(1);
     expect(typeof pipelineGrounding.runPipelineGroundingRetrieval).toBe('function');
-    expect(groundingSpy).toBeDefined();
+    expect(typeof pipelineGrounding.shouldRunPipelineGroundingRetrieval).toBe('function');
   });
 });

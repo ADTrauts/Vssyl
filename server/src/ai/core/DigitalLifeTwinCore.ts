@@ -93,9 +93,11 @@ import { buildPipelineTrace } from '../pipeline/buildPipelineTrace';
 import {
   applyPipelineEnforcement,
   resolvePipelineEnforcementSettings,
-  shouldRunGroundingRetrievalPrepass,
 } from '../pipeline/pipelineEnforcement';
-import { runPipelineGroundingRetrieval } from '../pipeline/pipelineGroundingRetrieval';
+import {
+  runPipelineGroundingRetrieval,
+  shouldRunPipelineGroundingRetrieval,
+} from '../pipeline/pipelineGroundingRetrieval';
 import { buildPipelineEvidenceBundle } from '../pipeline/buildPipelineEvidenceBundle';
 import { getEffectivePipelineCatalog } from '../pipeline/pipelineCatalogService';
 import { mapOrchestrationToPipelineTraceInput } from '../pipeline/mapPipelineTraceInputs';
@@ -1739,7 +1741,11 @@ export class DigitalLifeTwinCore {
 
     if (
       !pipelineOptions?.skipEnforcement &&
-      shouldRunGroundingRetrievalPrepass(enforcementSettings)
+      shouldRunPipelineGroundingRetrieval(
+        enforcementSettings,
+        query.query,
+        pipelineCatalog
+      )
     ) {
       const clientIp =
         typeof ctxRecord.clientIp === 'string'

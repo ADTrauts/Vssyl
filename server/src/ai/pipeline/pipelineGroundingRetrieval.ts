@@ -14,6 +14,7 @@ import { runWebSearchForPipeline } from '../external/webSearchPipelineService';
 import type {
   PipelineCatalog,
   PipelineContextRetrievedRecord,
+  PipelineEnforcementSettings,
   PipelineIntentId,
   PipelineToolPolicy,
   PipelineToolUsageRecord,
@@ -34,6 +35,7 @@ import {
   mapGraphBundlePipelineContextToRetrieved,
 } from '../context/graphBundlePipelineContextService';
 import { inferPipelineIntents } from './inferPipelineIntents';
+import { shouldRunGroundingRetrievalPrepass } from './pipelineEnforcement';
 import { optionalSourcesForInferredIntents } from './pipelineGroundingRuleReconcile';
 import { orchestratePipelineModuleSources } from '../context/ContextProviderOrchestrator';
 import { isModuleBackedPipelineSource } from '../context/pipelineSourceProviderMap';
@@ -60,6 +62,29 @@ import {
   reconcileGroundingArtifacts,
   type GroundingReconcileDiagnostics,
 } from '../context/groundingReconcile.js';
+
+/**
+ * Whether to run pipeline grounding retrieval for this turn.
+ * Independent of regenerate enforcement: live-web / grounding-required intents
+ * must retrieve even when enforcement mode is OFF.
+ * Regenerates still force a prepass when that enforcement mode is active.
+ */
+export function shouldRunPipelineGroundingRetrieval(
+  settings: PipelineEnforcementSettings,
+  userMessage: string,
+  catalog: PipelineCatalog
+): boolean {
+  if (shouldRunGroundingRetrievalPrepass(settings)) {
+    return true;
+  }
+  if (needsLiveExternalWebTruth(userMessage)) {
+    return true;
+  }
+  const inferred = inferPipelineIntents(userMessage);
+  return inferred.some(
+    (id) => getIntentDefinitionFromCatalog(catalog, id)?.groundingRequired === true
+  );
+}
 
 export interface PipelineGroundingRetrievalInput {
   userId: string;

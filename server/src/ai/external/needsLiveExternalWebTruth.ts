@@ -23,8 +23,10 @@ export function needsLiveExternalWebTruth(userMessage: string): boolean {
     return true;
   }
 
+  // Allow a few intervening tokens: "current mortgage rates", "latest interest rates".
+  // Do not match definitional "current ratio" / "current assets" (those nouns are not in the set).
   if (
-    /\b(current|latest|recent)\s+(price|prices|rate|rates|ceo|cost|costs|news|events?|market)\b/i.test(
+    /\b(current|latest|recent)\s+(?:\w+[-\s]+){0,2}(price|prices|rate|rates|ceo|cost|costs|news|events?|market)\b/i.test(
       text
     )
   ) {

@@ -103,6 +103,32 @@ describe('pipelineGroundingRetrieval — web_search', () => {
     expect(runWebSearchForPipeline).not.toHaveBeenCalled();
   });
 
+  it('runs web search for current mortgage rates (detector intervening-noun refinement)', async () => {
+    vi.mocked(runWebSearchForPipeline).mockResolvedValue({
+      egressQuery: 'current mortgage rates',
+      result: {
+        capabilityId: 'web_search',
+        providerId: 'tavily',
+        success: false,
+        retrievedAt: '2026-08-26T12:00:00.000Z',
+        failureCode: 'configuration_missing',
+        evidence: [],
+      },
+    });
+
+    const catalog = getDefaultCatalog();
+    const result = await runPipelineGroundingRetrieval({
+      userId: 'u1',
+      userMessage: 'What are the current mortgage rates?',
+      catalog,
+    });
+
+    expect(runWebSearchForPipeline).toHaveBeenCalledTimes(1);
+    expect(result.webSearchUnavailable).toBe(true);
+    expect(result.requiredSourceFailures).toContain('web_search');
+  });
+
+
   it('can combine Places and web evidence without overwrite', async () => {
     vi.mocked(runGooglePlacesSearchForPipeline).mockResolvedValue({
       egressQuery: 'Italian restaurants in Buffalo, NY',
