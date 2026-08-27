@@ -21,6 +21,11 @@ import {
 } from './conversationCoachingProfile';
 import { isConversationStructuredMode } from './structuredResponseFormat';
 import type { AIResponseContract } from '../utils/responseContract';
+import {
+  REQUIRED_SOURCE_CLAIM_BOUNDARY_INSTRUCTION,
+  hasRequiredSourceFailures,
+  normalizeRequiredSourceFailures,
+} from '../utils/requiredSourceClaimBoundary';
 
 export function resolveResponseContractFromProviderData(
   data?: Record<string, unknown>
@@ -47,7 +52,22 @@ export function isGroundedAnswerProviderData(data?: Record<string, unknown>): bo
   return resolveResponseContractFromProviderData(data) === 'grounded_answer';
 }
 
-function slimAssembledContextForConversation(assembled: AIAssembledContext): Record<string, unknown> {
+function resolveRequiredSourceFailuresForPrompt(data: Record<string, unknown>): string[] {
+  return normalizeRequiredSourceFailures(data.requiredSourceFailures);
+}
+
+function claimBoundaryFields(failures: string[]): Record<string, unknown> {
+  if (!hasRequiredSourceFailures(failures)) return {};
+  return {
+    requiredSourceFailures: failures,
+    claimBoundary: 'required_source_failed',
+  };
+}
+
+function slimAssembledContextForConversation(
+  assembled: AIAssembledContext,
+  failures: string[]
+): Record<string, unknown> {
   return {
     scope: assembled.scope,
     intent: assembled.intent,
@@ -58,11 +78,15 @@ function slimAssembledContextForConversation(assembled: AIAssembledContext): Rec
       content: b.content,
       relevanceScore: b.relevanceScore,
     })),
+    ...claimBoundaryFields(failures),
   };
 }
 
 /** Medium payload for grounded facts — keep blocks/evidence, omit enterprise report noise. */
-function slimAssembledContextForGrounded(assembled: AIAssembledContext): Record<string, unknown> {
+function slimAssembledContextForGrounded(
+  assembled: AIAssembledContext,
+  failures: string[]
+): Record<string, unknown> {
   return {
     scope: assembled.scope,
     intent: assembled.intent,
@@ -77,7 +101,13 @@ function slimAssembledContextForGrounded(assembled: AIAssembledContext): Record<
       relevanceScore: b.relevanceScore,
       priority: b.priority,
     })),
+    ...claimBoundaryFields(failures),
   };
+}
+
+function buildRequiredSourceClaimBoundarySection(failures: string[]): string {
+  if (!hasRequiredSourceFailures(failures)) return '';
+  return `${REQUIRED_SOURCE_CLAIM_BOUNDARY_INSTRUCTION}\nFailed required sources: ${failures.join(', ')}.\n\n`;
 }
 
 function resolveCoachingProfile(data: Record<string, unknown>, userQuery: string): ConversationCoachingProfile {
@@ -148,6 +178,8 @@ export function buildProviderUserPrompt(input: {
   const contract = resolveResponseContractFromProviderData(data);
   const userQuery =
     typeof data.userQuery === 'string' && data.userQuery.trim() ? data.userQuery.trim() : requestQuery;
+  const requiredSourceFailures = resolveRequiredSourceFailuresForPrompt(data);
+  const claimBoundarySection = buildRequiredSourceClaimBoundarySection(requiredSourceFailures);
 
   const assembled = data.assembledContext;
   let assembledSection = '';
@@ -155,9 +187,9 @@ export function buildProviderUserPrompt(input: {
     const ac = assembled as AIAssembledContext;
     const payload =
       contract === 'conversation'
-        ? slimAssembledContextForConversation(ac)
+        ? slimAssembledContextForConversation(ac, requiredSourceFailures)
         : contract === 'grounded_answer'
-          ? slimAssembledContextForGrounded(ac)
+          ? slimAssembledContextForGrounded(ac, requiredSourceFailures)
           : assembled;
     assembledSection = `PRIVATE CONTEXT (use silently — do not cite scores, dashboards, or internal labels to the user):\n${JSON.stringify(payload, null, 2)}\n\n`;
   }
@@ -179,7 +211,7 @@ export function buildProviderUserPrompt(input: {
       : coachingProfile.includeRecommendationRichness
         ? 'Respond as a smart conversational guide helping the user make a real decision.'
         : 'Answer naturally and directly. Use the amount of explanation appropriate to the question. Do not assume the user is making a decision unless they asked for one.';
-    return `${coachingBlock}${threadSection}${framingSection}${assembledSection}USER'S LATEST MESSAGE:\n${userQuery}
+    return `${claimBoundarySection}${coachingBlock}${threadSection}${framingSection}${assembledSection}USER'S LATEST MESSAGE:\n${userQuery}
 
 ${continuityNote} Use private context only when it genuinely helps. Never mention productivity scores, work-life balance, dashboards, or internal analytics unless explicitly asked.`;
   }
@@ -192,7 +224,7 @@ ${continuityNote} Use private context only when it genuinely helps. Never mentio
           ? `\nGROUNDING STATUS: Authoritative context was assembled; prefer it over speculation.\n`
           : '\n';
     const threadSection = buildThreadSection(data);
-    return `${GROUNDED_TRUTHFULNESS_BLOCK}
+    return `${claimBoundarySection}${GROUNDED_TRUTHFULNESS_BLOCK}
 ${groundingNote}
 ${threadSection}${assembledSection}USER'S LATEST MESSAGE:
 ${userQuery}
@@ -200,7 +232,7 @@ ${userQuery}
 Answer naturally and directly from authoritative private context only. Do not produce an enterprise report (no key insights, risks, or recommended actions).`;
   }
 
-  return `USER REQUEST: ${userQuery}
+  return `${claimBoundarySection}USER REQUEST: ${userQuery}
 
 ${assembledSection}AVAILABLE DATA:
 ${JSON.stringify(data, null, 2)}

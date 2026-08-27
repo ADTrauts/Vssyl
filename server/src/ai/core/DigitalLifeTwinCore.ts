@@ -54,6 +54,7 @@ import {
 } from '../context/vlinkPipelineContextService';
 import { isSyntheticContextEnabled } from '../context/syntheticContextPolicy';
 import { validateAIResponseQuality } from '../utils/validateAIResponseQuality';
+import { applyRequiredSourceClaimBoundary } from '../utils/requiredSourceClaimBoundary';
 import {
   buildConversationThreadHints,
   updateConversationContinuityState,
@@ -1975,6 +1976,7 @@ export class DigitalLifeTwinCore {
     options.responseDensity = assembledContext.responseDensity ?? responseDensity;
     options.responseMode = responseMode;
     options.userQuery = query.query;
+    options.requiredSourceFailures = requiredSourceFailures;
     // P3: promptProfile remains binary (conversation | enterprise) for legacy wiring;
     // responseContract independently selects thin grounded vs ENTERPRISE_V2 format.
     options.responseContract = responseContract;
@@ -2349,12 +2351,39 @@ export class DigitalLifeTwinCore {
     const confidenceAfterQuality =
       typeof quality.adjustedConfidence === 'number' ? quality.adjustedConfidence : confidence;
 
+    const claimBoundaryFailures = Array.isArray(options.requiredSourceFailures)
+      ? (options.requiredSourceFailures as string[])
+      : Array.isArray(ctxRecord.requiredSourceFailures)
+        ? (ctxRecord.requiredSourceFailures as string[])
+        : [];
+    const claimBoundary = applyRequiredSourceClaimBoundary({
+      response,
+      requiredSourceFailures: claimBoundaryFailures,
+    });
+    if (claimBoundary.applied) {
+      void logger.info('Required-source claim boundary applied', {
+        operation: 'required_source_claim_boundary',
+        reason: claimBoundary.reason,
+        requiredSourceFailures: claimBoundaryFailures,
+      });
+    }
+    const structuredAfterClaimBoundary: StructuredAIResponse | undefined = claimBoundary.applied
+      ? {
+          mode: 'conversation',
+          summary: claimBoundary.response,
+          confidence: {
+            level: 'low',
+            explanation: 'Required source unavailable; live claims withheld.',
+          },
+        }
+      : (aiResponse.structured as StructuredAIResponse | undefined);
+
     const assembledForTrace =
       options?.assembledContext && typeof options.assembledContext === 'object'
         ? options.assembledContext
         : undefined;
     const analysisRecord = analysis as Record<string, unknown> | undefined;
-    let finalResponseText = response;
+    let finalResponseText = claimBoundary.response;
     let pipelineTrace = buildPipelineTrace(
       mapOrchestrationToPipelineTraceInput({
         userId: query.userId,
@@ -2430,7 +2459,7 @@ export class DigitalLifeTwinCore {
     const evidenceBundle = buildPipelineEvidenceBundle({
       trace: pipelineTrace,
       assembledContext: assembledForTrace as Record<string, unknown> | undefined,
-      structuredResponse: aiResponse.structured as StructuredAIResponse | undefined,
+      structuredResponse: structuredAfterClaimBoundary,
     });
     pipelineTrace = { ...pipelineTrace, evidenceBundle };
 
@@ -2450,7 +2479,7 @@ export class DigitalLifeTwinCore {
       modulesFocused: (analysis as any)?.scope?.modules || [],
       patternMatches: (analysis as any)?.relevantPatterns?.map((p: any) => p.id) || [],
       provider: effectiveProvider,
-      structured: aiResponse.structured,
+      structured: structuredAfterClaimBoundary,
       usedVisionParts,
       pipelineTrace,
       assembledContext: assembledForTrace as AIAssembledContext | undefined,

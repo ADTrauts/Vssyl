@@ -80,6 +80,12 @@ export function buildProviderData(input: BuildProviderDataInput): Record<string,
     providerData.groundingSatisfied = options.groundingSatisfied;
   }
 
+  if (Array.isArray(options.requiredSourceFailures) && options.requiredSourceFailures.length > 0) {
+    providerData.requiredSourceFailures = options.requiredSourceFailures.filter(
+      (id): id is string => typeof id === 'string' && id.trim() !== ''
+    );
+  }
+
   if (typeof options.contextProfile === 'string' && options.contextProfile.trim()) {
     providerData.contextProfile = options.contextProfile;
   }
