@@ -9,22 +9,30 @@ Use this procedure to discover existing truth; do not create a parallel architec
 
 ## Procedure
 
-1. Read the universal baseline:
+1. Follow the selective discovery sequence:
+   - `AGENTS.md` (orientation; not architecture law)
    - `docs/VSSYL_SOURCE_OF_TRUTH.md`
-   - `memory-bank/activeContext.md`
-   - `memory-bank/progress.md`
-2. Locate the domain through:
-   - `docs/architecture/VSSYL_ARCHITECTURE_INDEX.md`
+   - Inspect actual task-relevant code
+   - `docs/architecture/VSSYL_ARCHITECTURE_INDEX.md` to locate canonical architecture
+   - Load relevant scoped `.cursor/rules`
+   - Targeted Memory Bank product context only when product intent is relevant
+   - `memory-bank/activeContext.md` / `memory-bank/progress.md` only when current workstream status, recent implementation history, sequencing, or unfinished work is materially relevant
+2. Narrow the domain through:
    - `docs/architecture/ARCHITECTURE_DOMAIN_MAP.md`
 3. Confirm the owning document and edit policy in:
    - `docs/architecture/ARCHITECTURE_SOURCE_OF_TRUTH.md`
 4. Read the owning document before supporting guides, audits, plans, or historical closeouts. Check `docs/architecture/CERTIFICATION_LEDGER.md` when certification status matters.
-5. Search the repository for analogous implementations using several domain terms. Prefer a certified/reference implementation where one is named; File Hub is the canonical first-party module reference.
-6. Compare documentation claims with implementation:
+5. For AI / Digital Life Twin domains, read in this order before older AI plans or Memory Bank AI narratives:
+   - `docs/architecture/AI_SYSTEM_MENTAL_MODEL.md`
+   - `docs/architecture/AI_READING_GUIDE.md`
+   - `docs/architecture/AI_DOCUMENT_STATUS_MATRIX.md`
+   - Do not treat archived `docs/archive/session-summaries/AI_PLATFORM_PHASED_PLAN.md` as current architecture or strategic AI authority.
+6. Search the repository for analogous implementations using several domain terms. Prefer a certified/reference implementation where one is named; File Hub is the canonical first-party module reference.
+7. Compare documentation claims with implementation:
    - Code is implementation truth.
    - Architecture documents own architecture.
-   - Memory Bank owns product intent and status.
-7. If code and constitutional architecture conflict, or ownership is blank, TBD, duplicated, or ambiguous, stop. Report the exact conflict and owning authorities; do not invent architecture or silently choose a supporting document.
+   - Memory Bank owns product intent and bounded current context (may lag).
+8. If code and constitutional architecture conflict, or ownership is blank, TBD, duplicated, or ambiguous, stop. Report the exact conflict and owning authorities; do not invent architecture or silently choose a supporting document.
 
 ## Output
 

@@ -1,3 +1,13 @@
+---
+
+⚠️ **Architecture Notice**
+
+This document is retained for historical context only. It is **not** current authority.
+
+Archived from `memory-bank/` on 2026-09-03 (Batch 1A).
+
+---
+
 <!--
 Update Rules for apiDocumentation.md
 - Updated when API endpoints, contracts, or integration notes change.

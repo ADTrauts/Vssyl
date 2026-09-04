@@ -7,10 +7,11 @@ alwaysApply: true
 
 Before making changes:
 
-1. Read **`docs/VSSYL_SOURCE_OF_TRUTH.md`** — baseline for what is canonical where.
+1. Orient with root **`AGENTS.md`**, then read **`docs/VSSYL_SOURCE_OF_TRUTH.md`** — baseline for what is canonical where.
 2. **GitHub repo** is canonical for **implementation** (code, configs, migrations as applied).
-3. **Memory Bank** (`memory-bank/`) is canonical for **product intent, architecture, status, and decisions** — see `activeContext.md`, `progress.md`, and task-relevant `*ProductContext.md` / specs.
-4. If **repo and Memory Bank conflict**, **stop** and surface the conflict to the user **before** coding or documenting new truth.
-5. Do **not** add duplicate docs, routes, models, components, or modules without a **brief rationale** for why an existing one cannot be extended (see `core.mdc` reuse-first).
+3. **`docs/architecture/`** is canonical for **architectural truth** (boundaries, contracts, certification).
+4. **Memory Bank** (`memory-bank/`) is canonical for **product intent** and carefully maintained **current context / status**. It may lag implementation or architecture. Load `activeContext.md` / `progress.md` only when workstream status, recent history, sequencing, or unfinished work is materially relevant — not as universal baseline reads. Load task-relevant `*ProductContext.md` / specs when product intent matters.
+5. If **repo and Memory Bank conflict** on implementation status, **code wins** — stop and surface the conflict before documenting new truth. If **Memory Bank and architecture docs conflict** on architecture, **architecture wins**.
+6. Do **not** add duplicate docs, routes, models, components, or modules without a **brief rationale** for why an existing one cannot be extended (see `core.mdc` reuse-first).
 
-When updating truth after a major change: adjust Memory Bank status/progress as appropriate; archive superseded docs per `VSSYL_SOURCE_OF_TRUTH.md` (do not silently delete history).
+When updating truth after a major change: adjust Memory Bank status/progress as appropriate when workstream status is affected; archive superseded docs per `VSSYL_SOURCE_OF_TRUTH.md` (do not silently delete history).

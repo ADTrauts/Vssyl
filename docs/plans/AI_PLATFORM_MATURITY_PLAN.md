@@ -15,7 +15,7 @@
 | Admin pipeline diagnostics | `docs/architecture/AI_PIPELINE_ADMIN_TOOLS.md` |
 | Attachment & vision | `docs/ai/ARCHITECTURE.md`, `docs/ai/PROVIDERS.md`, `docs/ai/GOLDEN_RULES.md` |
 | Domain events | `docs/architecture/DOMAIN_EVENTS.md` |
-| Prior AI platform phases (image gen, tools, streaming) | `memory-bank/AI_PLATFORM_PHASED_PLAN.md` — **complete, different scope** |
+| Prior AI platform phases (image gen, tools, streaming) | [`docs/archive/session-summaries/AI_PLATFORM_PHASED_PLAN.md`](../archive/session-summaries/AI_PLATFORM_PHASED_PLAN.md) — **complete, different scope** (historical; not current AI SoT) |
 | **Execution philosophy (how we build)** | [`AI_PLATFORM_EXECUTION_PRINCIPLES.md`](./AI_PLATFORM_EXECUTION_PRINCIPLES.md) — **required reading before implementation** |
 | Superseded memories UI plan | `docs/plans/AI_MEMORIES_VIEW_PLAN.md` — **historical only** |
 

@@ -239,16 +239,16 @@ graph LR
 ```bash
 # 1. Verify registry populated
 curl https://your-api.com/api/admin/modules/ai/registry \
-  -H "Authorization: Bearer ADMIN_TOKEN"
+  -H "Authorization: Bearer YOUR_BEARER_TOKEN
 
 # 2. Test query analysis
 curl -X POST https://your-api.com/api/ai/analyze-query \
-  -H "Authorization: Bearer TOKEN" \
+  -H "Authorization: Bearer YOUR_BEARER_TOKEN \
   -d '{"query": "show my files"}'
 
 # 3. Test AI chat with smart context
 curl -X POST https://your-api.com/api/ai/twin \
-  -H "Authorization: Bearer TOKEN" \
+  -H "Authorization: Bearer YOUR_BEARER_TOKEN \
   -d '{"query": "what files did I upload recently?"}'
 ```
 
@@ -297,7 +297,7 @@ Total: 0.84s (5.6x faster!)
 
 ```bash
 curl -X POST http://localhost:5000/api/ai/analyze-query \
-  -H "Authorization: Bearer $TOKEN" \
+  -H "Authorization: Bearer YOUR_BEARER_TOKEN \
   -H "Content-Type: application/json" \
   -d '{"query": "show my calendar for tomorrow"}'
 ```
@@ -328,7 +328,7 @@ curl -X POST http://localhost:5000/api/ai/analyze-query \
 
 ```bash
 curl http://localhost:5000/api/drive/ai/context/recent \
-  -H "Authorization: Bearer $TOKEN"
+  -H "Authorization: Bearer YOUR_BEARER_TOKEN
 ```
 
 **Expected Response:**
@@ -360,7 +360,7 @@ curl http://localhost:5000/api/drive/ai/context/recent \
 
 ```bash
 curl -X POST http://localhost:5000/api/ai/twin \
-  -H "Authorization: Bearer $TOKEN" \
+  -H "Authorization: Bearer YOUR_BEARER_TOKEN \
   -H "Content-Type: application/json" \
   -d '{
     "query": "what files did I upload recently?",

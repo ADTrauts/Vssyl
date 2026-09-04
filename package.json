@@ -9,6 +9,8 @@
     "test:e2e": "playwright test",
     "test": "pnpm run test:server",
     "verify:ci": "pnpm type-check && pnpm run build:web && pnpm test",
+    "security:secrets": "bash scripts/security-secrets.sh",
+    "security:secrets:history": "bash scripts/security-secrets.sh --history",
     "type-check": "pnpm run build:shared && pnpm -r run type-check",
     "build:web": "NODE_ENV=production pnpm --filter vssyl-web build",
     "lint": "pnpm --filter vssyl-web lint && pnpm --filter vssyl-server lint && pnpm --filter vssyl-shared lint",

@@ -1,5 +1,8 @@
 # 🚀 Vssyl Deployment Guide - Module AI Context Registry
 
+
+> **Security note (2026-09):** Credential-bearing connection strings were removed from this historical document during security remediation. Secrets are not historical evidence worth preserving.
+
 ## 📋 What Was Changed
 
 ### New Features
@@ -126,7 +129,7 @@ If you need to run migrations manually:
 gcloud sql connect vssyl-db-optimized --user=vssyl_user --database=vssyl_production
 
 # OR run migration locally with Cloud SQL connection
-export DATABASE_URL="postgresql://vssyl_user:ArthurGeorge116%21@172.30.0.15:5432/vssyl_production"
+export DATABASE_URL="postgresql://[REDACTED — historical credential removed during 2026-09 security remediation]"
 npx prisma migrate deploy
 ```
 
@@ -172,7 +175,7 @@ Create developer docs for third-party module creators explaining:
 
 **Solution:** Database URL is set in Cloud Build. If running locally, set:
 ```bash
-export DATABASE_URL="postgresql://vssyl_user:ArthurGeorge116%21@172.30.0.15:5432/vssyl_production"
+export DATABASE_URL="postgresql://[REDACTED — historical credential removed during 2026-09 security remediation]"
 ```
 
 ---

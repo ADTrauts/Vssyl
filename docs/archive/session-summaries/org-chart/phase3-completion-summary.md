@@ -1,3 +1,13 @@
+---
+
+⚠️ **Architecture Notice**
+
+This document is retained for historical context only. It is **not** current authority.
+
+Archived from `memory-bank/` on 2026-09-03 (Batch 1A).
+
+---
+
 # Org Chart & Permission System - Phase 3 Core Integration Completion Summary
 
 ## **🎉 Phase 3 Core Integration Successfully Completed!**

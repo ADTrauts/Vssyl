@@ -160,7 +160,7 @@
 ## How to use this plan
 
 1. Pick one advancement (e.g. “Advancement 1: Rich text”).
-2. Break it into implementation steps and, if useful, add a short “Advancement 1” section to `NOTES_MODULE_BUILD_PHASES.md` or a separate `NOTES_MODULE_ADVANCEMENT_1.md`.
+2. Break it into implementation steps and, if useful, add notes to a Notes backlog under `docs/plans/` (historical build checklist: `docs/archive/session-summaries/NOTES_MODULE_BUILD_PHASES.md`).
 3. Implement phase by phase; run linter/type-check; then ask: **“Advancement N complete. Proceed to next?”**
 4. Update this plan (e.g. mark advancement complete, adjust order) as you go.
 

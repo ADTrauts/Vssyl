@@ -16,7 +16,7 @@ See README for the modular context pattern.
   - [Dashboard Product Context](./dashboardProductContext.md) (activity widgets)
   - [Marketplace Product Context](./marketplaceProductContext.md) (bots/plugins)
   - [System Patterns](./systemPatterns.md)
-  - [API Documentation](./apiDocumentation.md)
+  - API surface: repository routes/controllers (historical notes archived under `docs/archive/session-summaries/apiDocumentation.md`)
 
 ## 2. Problem Space
 - **Primary Users:**

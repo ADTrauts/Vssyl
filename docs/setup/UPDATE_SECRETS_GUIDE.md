@@ -76,32 +76,26 @@ If you're also changing your database password:
 
 ### 1. Change the password on your database server first
 
-```bash
-# Connect to your database
-psql postgresql://vssyl_user@172.30.0.15:5432/vssyl_production
+Use Cloud SQL / an authorized admin channel. Do not commit the new password or a credential-bearing URL.
 
-# Change password
-ALTER USER vssyl_user WITH PASSWORD 'your_new_secure_password';
+```bash
+# Example only — use YOUR_PASSWORD via an interactive/admin session, never commit it
+# ALTER USER your_db_user WITH PASSWORD 'YOUR_PASSWORD';
 ```
 
 ### 2. Update the secret in Google Cloud
 
-**Console Method:**
+**Console method:**
 1. Go to Secret Manager
 2. Find `database-url` secret
 3. Click "New Version"
-4. Paste new connection string:
-   ```
-   postgresql://vssyl_user:NEW_PASSWORD@172.30.0.15:5432/vssyl_production?connection_limit=20&pool_timeout=20&connect_timeout=60
-   ```
+4. Paste the new connection string from an authorized operator channel (never paste real credentials into git-tracked docs)
 
-**CLI Method:**
+**CLI method:**
 ```bash
-# Replace NEW_PASSWORD with your actual new password
-echo -n "postgresql://vssyl_user:NEW_PASSWORD@172.30.0.15:5432/vssyl_production?connection_limit=20&pool_timeout=20&connect_timeout=60" | \
-  gcloud secrets versions add database-url \
-  --project=vssyl-472202 \
-  --data-file=-
+# Prefer piping an env var you set locally (not committed):
+# printf '%s' "$DATABASE_URL" | gcloud secrets versions add database-url --project=vssyl-472202 --data-file=-
+gcloud secrets versions add database-url --project=vssyl-472202 --data-file=-
 ```
 
 ### 3. Update Cloud Run Service

@@ -37,11 +37,11 @@ Update Rules for testingStrategy.md
 
 ## QA Workflow
 - All new features and bugfixes must include appropriate tests (unit, integration, or E2E as appropriate).
-- Tests must pass locally and in CI before merging any PR.
-- Linting and type checks are enforced in CI (see [lintingAndCodeQuality.md](./lintingAndCodeQuality.md)).
-- Test coverage is tracked and reported in CI; PRs that reduce coverage must be justified.
+- Tests and type checks must pass locally; CI (`.github/workflows/ci.yml`) currently runs `pnpm type-check`, web production build, web Vitest, and server Vitest via the job steps / `pnpm test` — **lint is not currently part of that CI gate** (see [lintingAndCodeQuality.md](./lintingAndCodeQuality.md)).
+- Prefer `pnpm verify:ci` locally as a CI-like gate (type-check + web build + server test).
+- Coverage targets above are philosophy; do not assume CI fails solely on coverage deltas unless a coverage gate is added to the workflow.
 - Manual QA is performed before major releases or after significant UI/UX changes.
-- Known issues and test gaps are tracked in [progress.md](./progress.md).
+- Known issues and test gaps: check [progress.md](./progress.md) when status context is needed.
 
 ## Cross-References
 - [lintingAndCodeQuality.md](./lintingAndCodeQuality.md) (linting, code quality, CI enforcement)

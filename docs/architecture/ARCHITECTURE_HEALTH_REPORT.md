@@ -147,7 +147,7 @@ Phase 0A discoveries already produced authoritative synthesis:
 | [`docs/architecture/README.md`](./README.md) | 2026-06-14 | Index consolidation deliverables | Phase 1 cross-link |
 | [`PLATFORM_PORTFOLIO_DOMAIN_MAP.md`](../platform-portfolio/PLATFORM_PORTFOLIO_DOMAIN_MAP.md) | 2026-06-19 | Ledger 2026-06-24 | Mark superseded |
 | [`PLATFORM_CERTIFICATION_STATUS_2026.md`](../platform-portfolio/PLATFORM_CERTIFICATION_STATUS_2026.md) | 2026-06-21 | Ledger + 2026_5 snapshot | Archive candidate |
-| [`memory-bank/globalSearchProductContext.md`](../../memory-bank/globalSearchProductContext.md) | 2024 | Search Constitution 2026-06-23 | Deprecation banner |
+| [`memory-bank/globalSearchProductContext.md`](../../memory-bank/globalSearchProductContext.md) | Redirect stub (Batch 1A) | Search Constitution 2026-06-23 | Body archived `docs/archive/session-summaries/globalSearchProductContext.md` |
 | [`guides/AI_SYSTEM_ARCHITECTURE_MAP.md`](../guides/AI_SYSTEM_ARCHITECTURE_MAP.md) | Legacy | `AI_PLATFORM_OVERVIEW.md` | Already flagged in guides README |
 | [`plans/V_LINK_PLATFORM_LAYER_PLAN.md`](../plans/V_LINK_PLATFORM_LAYER_PLAN.md) | — | Links stale search context | Phase 1 cross-link fix |
 
@@ -200,7 +200,7 @@ Documents with **no clear SoT parent** or **no inbound links from indexes**:
 | Priority | Opportunity | Effort | Value |
 |----------|-------------|--------|-------|
 | **P0** | Link `VSSYL_ARCHITECTURE_INDEX.md` from `VSSYL_SOURCE_OF_TRUTH.md` and `docs/README.md` | Low | Immediate discoverability |
-| **P0** | Deprecation banner on stale docs (portfolio map, globalSearchProductContext) | Low | Stops drift |
+| **P0** | Deprecation banner on stale docs (portfolio map, globalSearchProductContext) | Low | **Batch 1A:** globalSearch → redirect stub + archive |
 | **P1** | Create domain README.md for 15 folders without indexes | Medium | Per-domain entry points |
 | **P1** | Create `docs/runbooks/README.md` aggregating 3+ runbooks | Low | Ops discoverability |
 | **P1** | Admin Portal single index page linking audits/ + admin-portal/ | Medium | Eliminates split truth confusion |
@@ -258,7 +258,7 @@ Adopt the template in [`ARCHITECTURE_SOURCE_OF_TRUTH.md`](./ARCHITECTURE_SOURCE_
 | **Runbooks index** | `docs/runbooks/README.md` | 1 session |
 | **Reference folder** | `docs/reference/README.md` with pointers | 1 session |
 | **Link audit** | Automated broken-link scan + fix top 20 | 1 session |
-| **Memory Bank alignment** | Deprecation pointers for globalSearchProductContext + activeContext cross-links | 1 session |
+| **Memory Bank alignment** | Deprecation pointers for globalSearchProductContext + activeContext cross-links | **Batch 1A done** for globalSearch stub |
 
 **Out of scope for Phase 1:**
 - Merging audit folders

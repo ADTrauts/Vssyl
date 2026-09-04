@@ -9,7 +9,7 @@
 - [systemPatterns.md](./systemPatterns.md) — app flow, providers, Work tab → business workspace
 - [databaseContext.md](./databaseContext.md) — `prisma/modules/business/*` file map
 - [permissionsModel.md](./permissionsModel.md) — tenant scope and enforcement lifecycle
-- [businessWorkspaceArchitecture.md](./businessWorkspaceArchitecture.md) — **note:** written as a historical plan; implementation details may lag; trust **`BusinessConfigurationContext`** and **`web/src/lib/businessWorkspaceNavigation.ts`** for current wiring
+- [businessWorkspaceArchitecture.md](../docs/archive/session-summaries/business-workspace/businessWorkspaceArchitecture.md) — **historical** sync plan; trust **`WORKSPACE_ROUTING_CONTRACT.md`**, **`APPLICATION_LIFECYCLE.md`**, **`BusinessConfigurationContext`**, and **`web/src/lib/businessWorkspaceNavigation.ts`** for current wiring
 
 ---
 

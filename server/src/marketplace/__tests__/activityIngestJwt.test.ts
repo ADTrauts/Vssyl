@@ -15,7 +15,7 @@ import {
 
 describe('activityIngestJwt', () => {
   beforeEach(() => {
-    process.env.JWT_SECRET = 'test-secret-key-with-enough-length-32chars';
+    process.env.JWT_SECRET = 'test-only-jwt-secret-not-for-production-use-32b';
     resetActivityIngestJtiCache();
   });
 

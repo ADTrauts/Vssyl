@@ -1,41 +1,48 @@
 ---
-description: Memory Bank baseline reads and doc placement pointer
+description: Selective Memory Bank reads and doc placement pointer
 alwaysApply: true
 ---
 
 # Memory Bank
 
-After each session reset, use the **source-of-truth baseline** plus targeted Memory Bank files—not the entire bank by default.
+After each session reset, follow the selective discovery sequence in root `AGENTS.md` — not the entire Memory Bank or documentation tree.
 
-## Required baseline (every task)
+## Default discovery sequence
 
-1. **`docs/VSSYL_SOURCE_OF_TRUTH.md`**
-2. **`memory-bank/activeContext.md`**
-3. **`memory-bank/progress.md`**
+1. `AGENTS.md`
+2. `docs/VSSYL_SOURCE_OF_TRUTH.md`
+3. Inspect actual task-relevant code
+4. Use `docs/architecture/VSSYL_ARCHITECTURE_INDEX.md` to locate canonical architecture
+5. Load relevant scoped `.cursor/rules`
+6. Load targeted Memory Bank product context only when relevant
+7. Load `memory-bank/activeContext.md` / `memory-bank/progress.md` only when current workstream status, recent implementation history, sequencing, or unfinished work is materially relevant
+
+Do **not** make `activeContext.md` or `progress.md` universal baseline reads.
 
 ## Expand by task (targeted reads only)
 
 | Task | Also read |
 |------|-----------|
-| Module / feature | `memory-bank/*ProductContext.md`, `memory-bank/moduleSpecs.md` |
-| Architecture / cross-cutting | `memory-bank/systemPatterns.md`, `memory-bank/designPatterns.md`, `memory-bank/techContext.md` |
-| Database | `memory-bank/databaseContext.md` |
-| Deploy / ops | `memory-bank/deployment.md`, `docs/deployment/` |
-| Platform architecture detail | `docs/architecture/README.md` |
+| Module / feature | `memory-bank/*ProductContext.md`, `memory-bank/moduleSpecs.md` when product intent matters |
+| Architecture / cross-cutting | Canonical docs via `docs/architecture/VSSYL_ARCHITECTURE_INDEX.md` first; Memory Bank patterns only as supporting product context |
+| Database | `memory-bank/databaseContext.md` when product/data intent matters; Prisma rules + schema otherwise |
+| Deploy / ops | `docs/deployment/` (and `memory-bank/deployment.md` only if product/ops status context is needed) |
+| AI architecture | `docs/architecture/AI_SYSTEM_MENTAL_MODEL.md`, `AI_READING_GUIDE.md`, `AI_DOCUMENT_STATUS_MATRIX.md` — not archived `docs/archive/session-summaries/AI_PLATFORM_PHASED_PLAN.md` as current authority |
 
-Do **not** read all 50+ Memory Bank files unless the user requests a full **update memory bank** refresh (then review all files; prioritize `activeContext.md` and `progress.md`).
+Do **not** read all 50+ Memory Bank files unless the user requests a full **update memory bank** refresh (then prioritize `activeContext.md` and `progress.md` for that refresh only).
 
 ## After major changes
 
-Update Memory Bank status/progress as appropriate. Archive superseded docs per `docs/VSSYL_SOURCE_OF_TRUTH.md`.
+Update Memory Bank status/progress as appropriate when the change affects current workstream status. Archive superseded docs per `docs/VSSYL_SOURCE_OF_TRUTH.md`.
 
 ## Where to write new documentation
 
 **Placement policy:** `docs/guides/DOCUMENTATION_PLACEMENT.md` and `.cursor/rules/RULES_SUMMARY.md`.
 
+- **Agent orientation** → root `AGENTS.md`
 - **Product intent / status** → `memory-bank/`
-- **Agent rules** → `.cursor/rules/` (short)
+- **Agent executable constraints** → `.cursor/rules/` (short)
 - **Architecture** → `docs/architecture/`
 - **How-to / onboarding** → `docs/guides/`
 
-**Last updated:** 2026-05-16
+**Last updated:** 2026-09-03

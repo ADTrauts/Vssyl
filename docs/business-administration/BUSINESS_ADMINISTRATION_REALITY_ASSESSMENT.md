@@ -286,7 +286,7 @@ Mostly **Business Operations** HR admin; scheduling redirects to workspace. Not 
 | Fat business controller | 56 `prisma.` calls |
 | No normalized activity for org-chart mutations | No `orgChartActivityService` |
 | No Global Trash for org entities | Hard deletes on positions/departments |
-| Config real-time sync incomplete | `businessWorkspaceArchitecture.md` — known issue |
+| Config real-time sync incomplete | Known issue (historical product note archived: `docs/archive/session-summaries/business-workspace/businessWorkspaceArchitecture.md`); current owners: `APPLICATION_LIFECYCLE.md`, `WORKSPACE_ROUTING_CONTRACT.md` |
 | `/admin/**` vs `/workspace/**` split | Confusing IA; HR admin under legacy path |
 
 ---

@@ -18,7 +18,10 @@ alwaysApply: false
 - pnpm type-check
 - pnpm --filter vssyl-web test   # vitest: web/src/runtime/** only (see web/vitest.config.ts)
 - pnpm test                      # server integration/unit (root script)
+- pnpm security:secrets          # working-tree Gitleaks (.gitleaks.toml); also .github/workflows/secret-scan.yml
 # Optional when green: pnpm lint, package format:check
+# Manual only: pnpm security:secrets:history (may flag rotated historical secrets)
 ```
 
+- Secret scanning is part of repository/release hygiene: run `pnpm security:secrets` (config: `.gitleaks.toml`) for the current tree; CI enforces the same via `.github/workflows/secret-scan.yml`. Do not commit literal credentials in source, scripts, docs, Memory Bank, or archives.
 - If deploy automation changes, also verify rollback guidance or operator docs still match the real release path.

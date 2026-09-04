@@ -2,10 +2,11 @@
 
 This directory contains human-readable guides and references for development, deployment, and operations.
 
-**Architecture entry point:** [`architecture/VSSYL_ARCHITECTURE_INDEX.md`](./architecture/VSSYL_ARCHITECTURE_INDEX.md)  
+**Agent orientation:** [`../AGENTS.md`](../AGENTS.md) (not architecture law)  
 **Source of truth hierarchy:** [`VSSYL_SOURCE_OF_TRUTH.md`](./VSSYL_SOURCE_OF_TRUTH.md)  
+**Architecture entry point:** [`architecture/VSSYL_ARCHITECTURE_INDEX.md`](./architecture/VSSYL_ARCHITECTURE_INDEX.md)  
 **AI assistant navigation:** [`architecture/AI_ARCHITECTURE_NAVIGATION_GUIDE.md`](./architecture/AI_ARCHITECTURE_NAVIGATION_GUIDE.md)  
-**Product intent:** [`memory-bank/`](../memory-bank/)
+**Product intent:** [`memory-bank/`](../memory-bank/) (selective reads; not universal baseline)
 
 ---
 
@@ -122,10 +123,12 @@ Historical records — [`archive/README.md`](./archive/README.md)
 
 ### For AI assistants
 
-1. [`VSSYL_SOURCE_OF_TRUTH.md`](./VSSYL_SOURCE_OF_TRUTH.md)
-2. [`memory-bank/activeContext.md`](../memory-bank/activeContext.md)
-3. [`architecture/VSSYL_ARCHITECTURE_INDEX.md`](./architecture/VSSYL_ARCHITECTURE_INDEX.md)
-4. [`architecture/ARCHITECTURE_SOURCE_OF_TRUTH.md`](./architecture/ARCHITECTURE_SOURCE_OF_TRUTH.md)
+1. [`../AGENTS.md`](../AGENTS.md) — orientation and operating guidance
+2. [`VSSYL_SOURCE_OF_TRUTH.md`](./VSSYL_SOURCE_OF_TRUTH.md) — authority and placement
+3. Inspect task-relevant code, then [`architecture/VSSYL_ARCHITECTURE_INDEX.md`](./architecture/VSSYL_ARCHITECTURE_INDEX.md)
+4. [`architecture/ARCHITECTURE_SOURCE_OF_TRUTH.md`](./architecture/ARCHITECTURE_SOURCE_OF_TRUTH.md) before editing architecture docs
+
+Load `memory-bank/activeContext.md` / `progress.md` only when current workstream status, recent history, sequencing, or unfinished work is materially relevant.
 
 ---
 
@@ -133,13 +136,13 @@ Historical records — [`archive/README.md`](./archive/README.md)
 
 | `docs/` | `memory-bank/` |
 |---------|----------------|
-| Architecture truth & governance | Product intent & current focus |
+| Architecture truth & governance | Product intent & bounded current context |
 | How-to guides & deployment | Why features exist |
-| Certification & contracts | `activeContext.md`, `progress.md` |
+| Certification & contracts | `activeContext.md`, `progress.md` (selective agent reads) |
 | Domain README landing pages | `*ProductContext.md` per module |
 
-**Rule:** Architecture decisions → `docs/architecture/` SoT. Product intent → Memory Bank. See [`ARCHITECTURE_SOURCE_OF_TRUTH.md`](./architecture/ARCHITECTURE_SOURCE_OF_TRUTH.md).
+**Rule:** Architecture decisions → `docs/architecture/` SoT. Product intent → Memory Bank. Implementation → code. Memory Bank must not override architecture or code. See [`ARCHITECTURE_SOURCE_OF_TRUTH.md`](./architecture/ARCHITECTURE_SOURCE_OF_TRUTH.md) and root [`AGENTS.md`](../AGENTS.md).
 
 ---
 
-**Last updated:** 2026-06-29 (Architecture Governance Phase 1)
+**Last updated:** 2026-09-03 (Batch 0.5 — selective agent bootstrap)

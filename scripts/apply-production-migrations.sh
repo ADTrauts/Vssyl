@@ -1,80 +1,53 @@
 #!/bin/bash
+# Apply Production Migrations — requires DATABASE_URL from environment / Secret Manager.
+set -euo pipefail
 
-# Apply Production Migrations Script
-# This script safely applies pending Prisma migrations to the production database
-
-set -e
-
-# Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
 BLUE='\033[0;34m'
-NC='\033[0m' # No Color
+NC='\033[0m'
 
-print_status() {
-    echo -e "${BLUE}[INFO]${NC} $1"
-}
+print_status() { echo -e "${BLUE}[INFO]${NC} $1"; }
+print_success() { echo -e "${GREEN}[SUCCESS]${NC} $1"; }
+print_warning() { echo -e "${YELLOW}[WARNING]${NC} $1"; }
+print_error() { echo -e "${RED}[ERROR]${NC} $1"; }
 
-print_success() {
-    echo -e "${GREEN}[SUCCESS]${NC} $1"
-}
-
-print_warning() {
-    echo -e "${YELLOW}[WARNING]${NC} $1"
-}
-
-print_error() {
-    echo -e "${RED}[ERROR]${NC} $1"
-}
-
-# Check if DATABASE_URL is set, otherwise use production defaults
-if [ -z "$DATABASE_URL" ]; then
-    print_status "DATABASE_URL not set, using production defaults..."
-    DB_USER="vssyl_user"
-    DB_PASSWORD="ArthurGeorge116!"
-    DB_HOST="172.30.0.15"
-    DB_NAME="vssyl_production"
-    export DATABASE_URL="postgresql://${DB_USER}:${DB_PASSWORD}@${DB_HOST}:5432/${DB_NAME}?connection_limit=5&pool_timeout=20"
-else
-    print_status "Using DATABASE_URL from environment..."
+if [ -z "${DATABASE_URL:-}" ]; then
+  print_error "DATABASE_URL is not set."
+  print_status "Export DATABASE_URL from Secret Manager (database-url). Do not embed credentials in this script."
+  exit 1
 fi
+print_status "Using DATABASE_URL from environment (value not logged)."
 
-print_warning "⚠️  PRODUCTION DATABASE MIGRATION"
-print_warning "⚠️  This will modify the production database schema!"
-print_status ""
+print_warning "PRODUCTION DATABASE MIGRATION"
+print_warning "This will modify the production database schema!"
 read -p "Are you sure you want to continue? (yes/no): " confirm
-
 if [ "$confirm" != "yes" ]; then
-    print_status "Migration cancelled."
-    exit 0
+  print_status "Migration cancelled."
+  exit 0
 fi
 
-print_status "🔍 Checking current migration status..."
+print_status "Checking current migration status..."
 pnpm prisma migrate status
 
-print_status ""
-print_warning "⚠️  About to apply pending migrations..."
+print_warning "About to apply pending migrations..."
 read -p "Continue? (yes/no): " confirm2
-
 if [ "$confirm2" != "yes" ]; then
-    print_status "Migration cancelled."
-    exit 0
+  print_status "Migration cancelled."
+  exit 0
 fi
 
-print_status "🔄 Building Prisma schema from modules..."
+print_status "Building Prisma schema from modules..."
 pnpm prisma:build
 
-print_status "🔄 Applying migrations to production database..."
+print_status "Applying migrations..."
 if pnpm prisma migrate deploy; then
-    print_success "✅ Migrations applied successfully!"
-    print_status ""
-    print_status "🔍 Verifying migration status..."
-    pnpm prisma migrate status
-    print_status ""
-    print_success "✅ All migrations are now up to date!"
+  print_success "Migrations applied successfully!"
+  print_status "Verifying migration status..."
+  pnpm prisma migrate status
+  print_success "All migrations are now up to date!"
 else
-    print_error "❌ Migration failed!"
-    print_error "Please check the error messages above and fix any issues."
-    exit 1
+  print_error "Migration failed!"
+  exit 1
 fi

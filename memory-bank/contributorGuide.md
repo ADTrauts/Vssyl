@@ -1,51 +1,88 @@
-<!--
-Update Rules for contributorGuide.md
-- Updated when onboarding, contributor workflow, or best practices change.
-- All changes should be dated and well-documented.
-- Use cross-references to other memory bank files for related patterns or requirements.
-- Archive outdated sections rather than deleting.
-- Add a table of contents if file exceeds 200 lines.
-- Summarize changes at the top if the update is significant.
--->
-
-## Summary of Major Changes / Update History
-- [Add major onboarding or best practice changes here with date.]
-
 # Contributor Guide
 
-## Onboarding
-- Read the entire Memory Bank, starting with [README.md](./README.md), to understand project rules, structure, and context.
-- Set up your local environment using the instructions in the project README and `.env.example` files.
-- Familiarize yourself with the project structure (see [techContext.md](./techContext.md)).
-- Review the [lintingAndCodeQuality.md](./lintingAndCodeQuality.md) and [testingStrategy.md](./testingStrategy.md) files for code quality and testing requirements.
-- For module-specific work, read the relevant product context and specs (e.g., [chatProductContext.md](./chatProductContext.md), [moduleSpecs.md](./moduleSpecs.md)).
-- Ask for a walkthrough or code review if you are unsure about any part of the process.
-
-## Memory Bank Usage
-- Every contributor is responsible for keeping the Memory Bank up to date.
-- Before making major changes, check for relevant update rules at the top of each file.
-- Use cross-references instead of duplicating content between files.
-- Archive outdated sections rather than deleting them.
-- Summarize significant changes at the top of the file.
-- When in doubt, ask for review before updating Memory Bank files.
-
-## Best Practices
-- Follow the code style and linting rules in [lintingAndCodeQuality.md](./lintingAndCodeQuality.md).
-- Write and maintain tests as described in [testingStrategy.md](./testingStrategy.md).
-- Document all new modules, features, and patterns in the appropriate Memory Bank files.
-- Use clear, descriptive commit messages and PR descriptions.
-- Collaborate respectfully and review others' work constructively.
-- Keep all documentation, onboarding, and best practices up to date as the project evolves.
-
-## Cross-References
-- [README.md](./README.md) (Memory Bank rules and onboarding)
-- [techContext.md](./techContext.md) (project structure and tech stack)
-- [lintingAndCodeQuality.md](./lintingAndCodeQuality.md) (code quality)
-- [testingStrategy.md](./testingStrategy.md) (testing)
-- [moduleSpecs.md](./moduleSpecs.md) (module specs)
-- [chatProductContext.md](./chatProductContext.md), [driveProductContext.md](./driveProductContext.md), [dashboardProductContext.md](./dashboardProductContext.md), [marketplaceProductContext.md](./marketplaceProductContext.md) (module context)
+**Last verified:** 2026-09-03  
+**Role:** Short onboarding / navigation for humans and agents  
+**Authority:** Root [`AGENTS.md`](../AGENTS.md) and `docs/VSSYL_SOURCE_OF_TRUTH.md` win. This guide does **not** duplicate them.
 
 ---
 
-## Archive (Deprecated Onboarding / Best Practices)
-- [Add deprecated or superseded onboarding or best practices here, with date and summary.] 
+## Do not
+
+- **Do not** read the entire Memory Bank by default.
+- **Do not** treat Memory Bank as architecture or implementation truth.
+- **Do not** invent parallel systems beside existing platform owners.
+
+---
+
+## Default discovery sequence
+
+1. Root [`AGENTS.md`](../AGENTS.md) — orientation and guardrails  
+2. [`docs/VSSYL_SOURCE_OF_TRUTH.md`](../docs/VSSYL_SOURCE_OF_TRUTH.md) — authority hierarchy  
+3. Inspect **task-relevant code**, tests, schema, and config  
+4. [`docs/architecture/VSSYL_ARCHITECTURE_INDEX.md`](../docs/architecture/VSSYL_ARCHITECTURE_INDEX.md) — locate canonical architecture  
+5. Load relevant scoped [`.cursor/rules/`](../.cursor/rules/) (see [`RULES_SUMMARY.md`](../.cursor/rules/RULES_SUMMARY.md))  
+6. Load targeted Memory Bank `*ProductContext.md` / [`moduleSpecs.md`](./moduleSpecs.md) only when product intent matters  
+7. Load [`activeContext.md`](./activeContext.md) / [`progress.md`](./progress.md) only when current workstream status is materially relevant  
+
+Full discipline: `AGENTS.md` §2 and [`memory-bank.mdc`](../.cursor/rules/memory-bank.mdc).
+
+---
+
+## Local setup (high level)
+
+1. Install with **pnpm** (`packageManager` pinned in root `package.json`).  
+2. Configure env from `.env.example` (and package-specific env as required).  
+3. `pnpm prisma:generate` then `pnpm dev` (web **:3002**, server default **:5000** unless `PORT` set).  
+4. Details: [`techContext.md`](./techContext.md), root `README.md`, `docs/setup/`.
+
+---
+
+## Before changing something
+
+1. Search for an existing owner (reuse-first).  
+2. Confirm architecture owner via Architecture Index / `ARCHITECTURE_SOURCE_OF_TRUTH.md`.  
+3. Follow Prisma / API / module rules when applicable.  
+4. Prefer extending certified/reference patterns (File Hub for modules).
+
+---
+
+## Validation (common)
+
+| Goal | Command |
+|------|---------|
+| Dev | `pnpm dev` |
+| Types | `pnpm type-check` |
+| Server tests | `pnpm test` |
+| E2E | `pnpm test:e2e` |
+| CI-like | `pnpm verify:ci` |
+| Lint (local; not currently in CI gate) | `pnpm lint` |
+| Secret scan (docs/scripts/config/secrets-adjacent) | `pnpm security:secrets` |
+
+Run `pnpm security:secrets` before committing documentation, scripts, deployment/config, or other secrets-adjacent changes. Full-history audit (`pnpm security:secrets:history`) is manual/informational only.
+
+Do not claim validation passed unless the command actually succeeded.
+
+---
+
+## Documentation placement
+
+| Content | Location |
+|---------|----------|
+| Agent orientation | `AGENTS.md` |
+| Executable constraints | `.cursor/rules/` |
+| Architecture | `docs/architecture/` |
+| How-to | `docs/guides/` |
+| Product intent / selective status | `memory-bank/` |
+| Deploy | `docs/deployment/` |
+
+See [`DOCUMENTATION_PLACEMENT.md`](../docs/guides/DOCUMENTATION_PLACEMENT.md).
+
+---
+
+## Related orientation
+
+- Memory Bank role: [`README.md`](./README.md)  
+- Pattern index: [`systemPatterns.md`](./systemPatterns.md)  
+- Stack card: [`techContext.md`](./techContext.md)  
+- Testing philosophy: [`testingStrategy.md`](./testingStrategy.md)  
+- Lint policy (aspirational vs CI): [`lintingAndCodeQuality.md`](./lintingAndCodeQuality.md)

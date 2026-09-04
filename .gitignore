@@ -17,6 +17,8 @@ playwright-report/
 
 # QA seed files (local test business/dashboard IDs — do not commit)
 **/qa-evidence/**/qa-seed.json
+# Local secrets (never commit)
+.env
 server/.env
 server/tmp/
 .env.local
@@ -24,6 +26,7 @@ server/tmp/
 .env.development
 .env.backup.*
 vssyl-storage-key.json
+.cache/
 
 # Machine-specific scratch (optional — uncomment if you use these paths locally)
 # docs/local/
@@ -52,3 +55,7 @@ pnpm-lock 2.yaml
 
 # Local SDK/tools directories
 Google CLI/
+
+# Local database backups (never commit)
+backups/
+*.dump

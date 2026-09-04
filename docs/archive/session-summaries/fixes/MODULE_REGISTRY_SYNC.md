@@ -179,7 +179,7 @@ gcloud scheduler jobs run module-registry-sync \
 
 # Or via API (requires admin token)
 curl -X POST https://vssyl-server-235369681725.us-central1.run.app/api/admin/modules/ai/sync \
-  -H "Authorization: Bearer YOUR_ADMIN_TOKEN" \
+  -H "Authorization: Bearer YOUR_BEARER_TOKEN \
   -H "Content-Type: application/json"
 ```
 
@@ -187,7 +187,7 @@ curl -X POST https://vssyl-server-235369681725.us-central1.run.app/api/admin/mod
 ```bash
 # Via API
 curl https://vssyl-server-235369681725.us-central1.run.app/api/admin/modules/ai/sync/status \
-  -H "Authorization: Bearer YOUR_ADMIN_TOKEN"
+  -H "Authorization: Bearer YOUR_BEARER_TOKEN
 ```
 
 ---
@@ -247,7 +247,7 @@ gcloud logging read \
 **Manually trigger sync:**
 ```bash
 curl -X POST https://vssyl-server-235369681725.us-central1.run.app/api/admin/modules/ai/sync \
-  -H "Authorization: Bearer YOUR_ADMIN_TOKEN" \
+  -H "Authorization: Bearer YOUR_BEARER_TOKEN \
   -H "Content-Type: application/json"
 ```
 

@@ -2,7 +2,7 @@
 const crypto = require('crypto');
 
 // Use the same JWT secret as the server
-const JWT_SECRET = 'wH0XTqYXGEeqKWr4BeffQYx2541Y+ls1Njf5s3sHypg=';
+const JWT_SECRET = 'test-only-jwt-secret-not-for-production-use-32b';
 
 // Create a simple JWT token (this is a basic implementation)
 function createJWT(payload) {

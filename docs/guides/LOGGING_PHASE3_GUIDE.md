@@ -371,7 +371,7 @@ Now that Phase 3 is complete, we can start **Phase 2: Console.log Migration**.
 
 - **Phase 1 Fix**: `docs/archive/session-summaries/LOGGING_SYSTEM_FIX.md`
 - **Phase 1 Migration**: `docs/archive/session-summaries/LOGGING_MIGRATION_PHASE1_SUMMARY.md`
-- **API Documentation**: `memory-bank/apiDocumentation.md`
+- **API Documentation**: repository routes/controllers (historical: `docs/archive/session-summaries/apiDocumentation.md`)
 - **Coding Standards**: `.cursor/rules/coding-standards.mdc`
 
 ---

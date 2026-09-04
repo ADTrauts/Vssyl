@@ -3877,7 +3877,7 @@ Based on Vssyl's existing architecture and market needs, here are the **top 20 p
 
 - **System Architecture**: See `systemPatterns.md` for module system design
 - **Org Chart Integration**: See `org-chart-permission-system.md`
-- **AI Capabilities**: See `AI_IMPLEMENTATION_SUMMARY.md`
+- **AI Capabilities**: See archived `docs/archive/session-summaries/AI_IMPLEMENTATION_SUMMARY.md` (historical); current AI discovery: `docs/architecture/AI_SYSTEM_MENTAL_MODEL.md`
 - **Roadmap**: See `roadmap.md` for overall platform timeline
 - **Marketplace**: See `marketplaceProductContext.md` for third-party modules
 

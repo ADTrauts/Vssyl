@@ -1,0 +1,102 @@
+# Vssyl Gitleaks configuration
+# Extends built-in rules; adds detection for credential-bearing Postgres URLs.
+#
+# Daily scans: working tree only (`gitleaks detect --no-git`).
+# Full Git history is intentionally NOT a merge blocker while rotated
+# historical secrets remain in immutable commits.
+#
+# Requires Gitleaks >= 8.25 ([[allowlists]] syntax). Pinned via scripts/security-secrets.sh.
+
+title = "Vssyl"
+
+[extend]
+useDefault = true
+
+[[rules]]
+id = "vssyl-postgres-uri-credentials"
+description = "Credential-bearing postgres:// or postgresql:// URL"
+regex = '''(?i)postgres(?:ql)?://[^\s/'":@]+:([^\s/'":@]{4,})@[^\s'"\)]+'''
+secretGroup = 1
+keywords = ["postgres://", "postgresql://"]
+tags = ["vssyl", "database", "postgres", "connection-string"]
+
+  [[rules.allowlists]]
+  description = "Obvious documentation / CI / remediation placeholders"
+  regexTarget = "match"
+  regexes = [
+    '''(?i)REDACTED''',
+    '''(?i)YOUR_PASSWORD''',
+    '''(?i)NEW_PASSWORD''',
+    '''(?i)USER:PASSWORD@HOST''',
+    '''(?i)changeme''',
+    '''(?i)example\.com''',
+    '''(?i)placeholder''',
+    '''(?i)user:password@''',
+    '''(?i):password@''',
+    '''(?i):pass@''',
+    '''(?i)postgres:postgres@(localhost|127\.0\.0\.1)''',
+  ]
+
+[[rules]]
+id = "vssyl-database-url-assignment"
+description = "DATABASE_URL assignment containing user:password@ credentials"
+regex = '''(?i)DATABASE_URL\s*[=:]\s*["']?postgres(?:ql)?://[^\s/'":@]+:([^\s/'":@]{4,})@[^\s'"\)]+'''
+secretGroup = 1
+keywords = ["DATABASE_URL"]
+tags = ["vssyl", "database", "env"]
+
+  [[rules.allowlists]]
+  description = "Obvious documentation / CI / remediation placeholders"
+  regexTarget = "match"
+  regexes = [
+    '''(?i)REDACTED''',
+    '''(?i)YOUR_PASSWORD''',
+    '''(?i)NEW_PASSWORD''',
+    '''(?i)USER:PASSWORD@HOST''',
+    '''(?i)changeme''',
+    '''(?i)example\.com''',
+    '''(?i)placeholder''',
+    '''(?i)user:password@''',
+    '''(?i):password@''',
+    '''(?i):pass@''',
+    '''(?i)postgres:postgres@(localhost|127\.0\.0\.1)''',
+  ]
+
+[[allowlists]]
+description = "Build/dependency paths and local gitignored env files (not docs or Memory Bank)"
+paths = [
+  '''(^|/)node_modules/''',
+  '''(^|/)\.next/''',
+  '''(^|/)dist/''',
+  '''(^|/)build/''',
+  '''(^|/)coverage/''',
+  '''(^|/)\.turbo/''',
+  '''(^|/)pnpm-lock\.yaml$''',
+  '''(^|/)package-lock\.json$''',
+  '''(^|/)\.git/''',
+  '''(^|/)\.cache/''',
+  '''(^|/)Google CLI/''',
+  '''(^|/)\.env$''',
+  '''(^|/)\.env\..*$''',
+  '''(^|/).*\.env\.local$''',
+]
+
+[[allowlists]]
+description = "CI fixture phrases and obvious test-only / placeholder secrets"
+regexTarget = "secret"
+regexes = [
+  '''(?i)ci-jwt-secret-must-be-at-least''',
+  '''(?i)ci-jwt-refresh-secret''',
+  '''(?i)ci-nextauth-secret-must-be-at-least''',
+  '''(?i)test-only-jwt-secret-not-for-production''',
+  '''(?i)default-key-32-chars-long-key''',
+  '''(?i)PLACEHOLDER_NOT_A_REAL_SECRET''',
+  '''(?i)YOUR_BEARER_TOKEN''',
+]
+
+[[allowlists]]
+description = "Known false-positive paths (model catalog keys / plan IDs)"
+paths = [
+  '''server/src/ai/routing/canonicalModelCatalog\.ts$''',
+  '''docs/ux/PLATFORMSHELL_STANDARDIZATION_PLAN\.md$''',
+]

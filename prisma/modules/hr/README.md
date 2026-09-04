@@ -155,7 +155,7 @@ Planned feature files:
 
 - **Module Brainstorming**: `memory-bank/moduleBrainstorming.md` - Full feature list
 - **Org Chart System**: `memory-bank/org-chart-permission-system.md` - Foundation
-- **Business Workspace**: `memory-bank/businessWorkspaceArchitecture.md` - Integration
+- **Business Workspace**: [`docs/architecture/WORKSPACE_ROUTING_CONTRACT.md`](../../../docs/architecture/WORKSPACE_ROUTING_CONTRACT.md) (historical: `docs/archive/session-summaries/business-workspace/businessWorkspaceArchitecture.md`)
 - **Database Context**: `memory-bank/databaseContext.md` - Overall schema
 
 ## Questions?

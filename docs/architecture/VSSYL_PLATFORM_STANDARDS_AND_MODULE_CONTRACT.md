@@ -123,7 +123,7 @@ See [LEGACY_CLEANUP.md](./LEGACY_CLEANUP.md) for deprecation tracker.
 | Memory Bank rules copy | `memory-bank/.cursor/rules` vs `.cursor/rules/` | Archived — see LEGACY_CLEANUP |
 | WorkflowAutomationService | `ai/workflows/WorkflowAutomationService.ts` | Tier 4; non-canonical |
 | Fragmented schedulers | `index.ts` crons, `cleanupService`, `setInterval` | §22 Platform Job Registry |
-| `AI_CODING_STANDARDS.md` | `memory-bank/` | Deprecated; use `.cursor/rules/` |
+| `AI_CODING_STANDARDS.md` | `memory-bank/` (redirect stub) | Deprecated; body in `docs/archive/guides-merged-2026/`; use `.cursor/rules/` |
 
 ### 0.4 Legacy cleanup priority
 

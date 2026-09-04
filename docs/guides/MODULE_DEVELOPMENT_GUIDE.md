@@ -1062,7 +1062,7 @@ router.get('/ai/context/data', authenticateJWT, getContext);
 ### Required Reading
 1. **Module AI Context Guide (archived)**: `docs/archive/guides-merged-2026/MODULE_AI_CONTEXT_GUIDE.md` — canonical patterns live in `memory-bank/aiContextSystem.md`
 2. **System Patterns**: `memory-bank/systemPatterns.md` - Architecture overview
-3. **API Documentation**: `memory-bank/apiDocumentation.md` - API reference
+3. **API truth**: repository routes/controllers (OpenAPI if/when published) — historical sample notes archived at `docs/archive/session-summaries/apiDocumentation.md`
 4. **Database Context**: `memory-bank/databaseContext.md` - Database schema
 
 ### Code Examples
@@ -1462,7 +1462,7 @@ For marketplace submission and **first-party merge review**, modules must satisf
 ## 📞 Support & Resources
 
 - **Documentation**: `memory-bank/aiContextSystem.md` + archived `docs/archive/guides-merged-2026/MODULE_AI_CONTEXT_GUIDE.md`
-- **API Reference**: `memory-bank/apiDocumentation.md`
+- **API Reference**: repository routes/controllers (historical notes: `docs/archive/session-summaries/apiDocumentation.md`)
 - **Examples**: `scripts/register-built-in-modules.ts`
 - **Admin Portal**: Monitor module performance at `/admin-portal/ai-learning`
 

@@ -124,7 +124,7 @@ Before creating or editing architecture documentation:
 | **Search providers** | [`SEARCH_PROVIDER_MODEL.md`](./SEARCH_PROVIDER_MODEL.md) | [`../search/SEARCH_PLATFORM_STANDARD.md`](../search/SEARCH_PLATFORM_STANDARD.md), [`../guides/SEARCH_DELEGATE_GUIDE.md`](../guides/SEARCH_DELEGATE_GUIDE.md) | — | — |
 | **Search permissions** | [`SEARCH_PERMISSION_MODEL.md`](./SEARCH_PERMISSION_MODEL.md) | Search Constitution G-S1–G-S8 | — | — |
 | **Relationship search** | [`RELATIONSHIP_SEARCH_ARCHITECTURE.md`](./RELATIONSHIP_SEARCH_ARCHITECTURE.md) | Tag search guidelines | — | — |
-| **Search product intent** | ⚠️ **Migrate to** Search Constitution | [`memory-bank/globalSearchProductContext.md`](../../memory-bank/globalSearchProductContext.md) | — | Do not extend Memory Bank file |
+| **Search product intent** | [`../search/SEARCH_CONSTITUTION.md`](../search/SEARCH_CONSTITUTION.md) (UX/product clauses) | — | [`memory-bank/globalSearchProductContext.md`](../../memory-bank/globalSearchProductContext.md) redirect stub → [`docs/archive/session-summaries/globalSearchProductContext.md`](../archive/session-summaries/globalSearchProductContext.md) | Do not extend Memory Bank stub |
 
 ### Product Modules
 
@@ -213,7 +213,7 @@ Before creating or editing architecture documentation:
 
 | Duplicate pair | Authoritative | Action (Phase 1) |
 |----------------|---------------|------------------|
-| `globalSearchProductContext.md` vs `SEARCH_CONSTITUTION.md` | Search Constitution | Add deprecation banner to Memory Bank |
+| `globalSearchProductContext.md` vs `SEARCH_CONSTITUTION.md` | Search Constitution | **Done (Batch 1A):** redirect stub + archived body |
 | `PLATFORM_PORTFOLIO_DOMAIN_MAP.md` vs `CERTIFICATION_LEDGER.md` | Ledger + this domain map | Mark portfolio map superseded |
 | `docs/admin-portal/` vs `audits/ADMIN_PORTAL_*` | audits/ status record | Consolidate index under Admin Portal SoT |
 | `workspace/` vs `workspace-review/` | workspace/ for program; workspace-review/ for boundary analyses | Merge or cross-link in Phase 1 |

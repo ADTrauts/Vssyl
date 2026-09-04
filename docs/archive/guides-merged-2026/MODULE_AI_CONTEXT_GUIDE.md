@@ -605,7 +605,7 @@ If your module is hosted externally, include the webhook URL in your manifest:
 
 **Your webhook endpoint must:**
 - **Method**: POST
-- **Headers**: `Authorization: Bearer {apiKey}` (if apiKey provided)
+- **Headers**: `Authorization: Bearer YOUR_BEARER_TOKEN (if apiKey provided)
 - **Body**: 
   ```json
   {
@@ -660,7 +660,7 @@ The executor will be automatically registered when your module is approved.
 ```bash
 # Test if your module is detected for relevant queries
 curl -X POST https://your-api.com/api/ai/analyze-query \
-  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Authorization: Bearer YOUR_BEARER_TOKEN \
   -H "Content-Type: application/json" \
   -d '{
     "query": "show my projects"
@@ -686,7 +686,7 @@ curl -X POST https://your-api.com/api/ai/analyze-query \
 ```bash
 # Test your context provider endpoint
 curl https://your-api.com/api/your-module/ai/context/provider-name \
-  -H "Authorization: Bearer YOUR_TOKEN"
+  -H "Authorization: Bearer YOUR_BEARER_TOKEN
 
 # Expected: JSON with your module's context data
 ```
@@ -696,7 +696,7 @@ curl https://your-api.com/api/your-module/ai/context/provider-name \
 ```bash
 # Test full AI query that should use your module
 curl -X POST https://your-api.com/api/ai/twin \
-  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Authorization: Bearer YOUR_BEARER_TOKEN \
   -H "Content-Type: application/json" \
   -d '{
     "query": "what projects am I working on?",
@@ -858,7 +858,7 @@ try {
 
 ```
 POST /api/modules/:moduleId/ai/context
-Authorization: Bearer {token}
+Authorization: Bearer YOUR_BEARER_TOKEN
 Content-Type: application/json
 
 Body: ModuleAIContext object
@@ -868,14 +868,14 @@ Body: ModuleAIContext object
 
 ```
 GET /api/modules/:moduleId/ai/context
-Authorization: Bearer {token}
+Authorization: Bearer YOUR_BEARER_TOKEN
 ```
 
 ### Analyze Query
 
 ```
 POST /api/ai/analyze-query
-Authorization: Bearer {token}
+Authorization: Bearer YOUR_BEARER_TOKEN
 Content-Type: application/json
 
 Body: { "query": "user question" }
@@ -885,7 +885,7 @@ Body: { "query": "user question" }
 
 ```
 GET /api/modules/:moduleId/ai/fetch-context/:providerName
-Authorization: Bearer {token}
+Authorization: Bearer YOUR_BEARER_TOKEN
 ```
 
 ---

@@ -53,7 +53,7 @@ This roadmap outlines the step-by-step phases for a complete rebuild of the plat
 - Design System & Global Layout ([designPatterns.md])
 - Authentication & Authorization ([systemPatterns.md], [permissionsModel.md])
 - Database Schema & Core Models ([databaseContext.md])
-- API & Real-Time Infrastructure ([apiDocumentation.md], [systemPatterns.md])
+- API & Real-Time Infrastructure ([systemPatterns.md]; historical API notes archived under `docs/archive/session-summaries/apiDocumentation.md`)
 
 ### Phase 1b: Foundational Scaffolding (Complete)
 - Persistent notification system (DB, API, NotificationList component)
@@ -94,7 +94,7 @@ This roadmap outlines the step-by-step phases for a complete rebuild of the plat
 - ✅ **Notifications:** Complete real-time, push, and email notification system - COMPLETED
 - ✅ **Compliance:** Audit logging, data retention, legal/privacy features ([compliance.md]) - COMPLETED
 - **Presence:** Real-time user status across modules ([presenceProductContext.md]) - IN PROGRESS
-- **Testing:** E2E, integration, and unit tests ([testingProductContext.md]) - PENDING
+- **Testing:** E2E, integration, and unit tests ([testingStrategy.md]; historical notes archived under `docs/archive/session-summaries/testingProductContext.md`) - PENDING
 
 **Note:** Admin system infrastructure (platform-level analytics and administration) is planned for future development after core analytics are stable.
 
@@ -112,7 +112,7 @@ This roadmap outlines the step-by-step phases for a complete rebuild of the plat
 
 ### Phase 5: Migration, QA, and Launch
 - Data migration scripts and validation ([databaseContext.md])
-- Full regression and performance testing ([testingProductContext.md])
+- Full regression and performance testing ([testingStrategy.md]; historical: `docs/archive/session-summaries/testingProductContext.md`)
 - Staged rollout, user onboarding, and feedback ([dashboardProductContext.md], [chatProductContext.md])
 - Documentation, training, and support resources ([contributorGuide.md], [README.md])
 

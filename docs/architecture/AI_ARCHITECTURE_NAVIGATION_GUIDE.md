@@ -16,15 +16,40 @@ Reduce repeated architectural discovery during AI-assisted development. Follow t
 
 ---
 
-## Universal agent startup (every task)
+## Selective agent startup
+
+Do **not** universally read `memory-bank/activeContext.md` or `progress.md` on every task.
+
+Default discovery (all domains):
 
 ```
-1. docs/VSSYL_SOURCE_OF_TRUTH.md
-2. memory-bank/activeContext.md + progress.md
-3. docs/architecture/VSSYL_ARCHITECTURE_INDEX.md  ← find domain
-4. docs/architecture/ARCHITECTURE_SOURCE_OF_TRUTH.md  ← before editing docs
-5. docs/architecture/CERTIFICATION_LEDGER.md  ← cert level
+1. AGENTS.md  ← orientation only; not architecture law
+2. docs/VSSYL_SOURCE_OF_TRUTH.md
+3. Inspect actual task-relevant code
+4. docs/architecture/VSSYL_ARCHITECTURE_INDEX.md  ← find domain owner
+5. Relevant scoped .cursor/rules
+6. Task-relevant Memory Bank product context only if needed
+7. activeContext.md / progress.md only when workstream status/history is material
+8. ARCHITECTURE_SOURCE_OF_TRUTH.md  ← before editing architecture docs
+9. CERTIFICATION_LEDGER.md  ← when cert level matters
 ```
+
+### AI work — discovery chain
+
+For AI / Digital Life Twin tasks, follow this order before older AI plans or Memory Bank AI narratives:
+
+```
+1. AGENTS.md
+2. docs/VSSYL_SOURCE_OF_TRUTH.md
+3. Inspect relevant AI implementation (server/src/ai/**, routes, tests)
+4. docs/architecture/AI_SYSTEM_MENTAL_MODEL.md
+5. docs/architecture/AI_READING_GUIDE.md
+6. docs/architecture/AI_DOCUMENT_STATUS_MATRIX.md  ← Current / Supporting / Historical / Future
+7. Task-relevant canonical AI subsystem documents (per matrix + trees below)
+8. Targeted Memory Bank / status context only if product intent or workstream status is material
+```
+
+[`AI_DOCUMENT_STATUS_MATRIX.md`](./AI_DOCUMENT_STATUS_MATRIX.md) controls whether an older AI document is Current, Supporting, Historical, Future/design-only, or otherwise noncanonical. Do not treat the historical [`docs/archive/session-summaries/AI_PLATFORM_PHASED_PLAN.md`](../archive/session-summaries/AI_PLATFORM_PHASED_PLAN.md) as current architecture or strategic AI roadmap authority.
 
 ---
 
@@ -76,11 +101,14 @@ Code SSOT        → web/src/lib/*Navigation.ts
 ```
 AI task
     ↓
+Follow “AI work — discovery chain” above first
+    (mental model → reading guide → status matrix → then subsystem docs)
+    ↓
 Need whole-system understanding / onboarding?
     YES → docs/architecture/AI_READING_GUIDE.md
         → docs/architecture/AI_SYSTEM_MENTAL_MODEL.md
         → docs/architecture/AI_INTELLIGENCE_MODEL.md
-        → docs/ai-system-audit/README.md  (official analysis)
+        → docs/ai-system-audit/README.md  (official analysis; check matrix)
     ↓
 Changing AI platform behavior or boundaries?
     YES → docs/architecture/AI_PLATFORM_CONSTITUTION.md  (law first)
@@ -89,8 +117,8 @@ Changing AI platform behavior or boundaries?
 Platform governance → docs/architecture/AI_PLATFORM_CONSTITUTION.md
 Overview / diagrams → docs/architecture/AI_PLATFORM_OVERVIEW.md
 Digital Life Twin   → docs/architecture/AI_TWIN_PROMPT_PIPELINE.md
-Context providers   → memory-bank/aiContextSystem.md
-                      → docs/architecture/AI_CONTEXT_ASSEMBLY.md
+Context providers   → docs/architecture/AI_CONTEXT_ASSEMBLY.md
+                      → memory-bank/aiContextSystem.md (product intent; verify vs architecture)
 Business/personal   → docs/architecture/AI_BUSINESS_PERSONAL_TWIN_BOUNDARIES.md
 Knowledge ingress   → docs/ai-knowledge/AI_KNOWLEDGE_DECISION_MODEL.md
 Knowledge law       → docs/ai-knowledge/AI_KNOWLEDGE_CONSTITUTION.md
@@ -122,7 +150,7 @@ Providers        → docs/architecture/SEARCH_PROVIDER_MODEL.md
 Operation matrix → docs/search/UNIFIED_SEARCH_OPERATION_MATRIX.md
 Partner delegates→ docs/guides/SEARCH_DELEGATE_GUIDE.md
 
-⚠️ Do NOT use memory-bank/globalSearchProductContext.md (superseded)
+⚠️ Do NOT use memory-bank/globalSearchProductContext.md (redirect stub; superseded — SEARCH_CONSTITUTION)
 ```
 
 ---
@@ -265,6 +293,7 @@ Certification    → CERTIFICATION_LEDGER.md
 | `platform-portfolio/PLATFORM_PORTFOLIO_DOMAIN_MAP.md` | `ARCHITECTURE_DOMAIN_MAP.md` |
 | `platform-portfolio/PLATFORM_CERTIFICATION_STATUS_2026.md` | `CERTIFICATION_LEDGER.md` |
 | `guides/AI_SYSTEM_ARCHITECTURE_MAP.md` (legacy names) | `AI_PLATFORM_OVERVIEW.md` |
+| Archived `AI_PLATFORM_PHASED_PLAN.md` as current AI SoT | `AI_SYSTEM_MENTAL_MODEL.md` → `AI_READING_GUIDE.md` → `AI_DOCUMENT_STATUS_MATRIX.md` |
 | Inventing navigation rules | `NAVIGATION_WORKSPACE_ARCHITECTURE_DISCOVERY.md` |
 
 ---
@@ -283,4 +312,4 @@ Update ARCHITECTURE_SOURCE_OF_TRUTH.md if creating new SoT
 
 ---
 
-**Last updated:** 2026-06-29 (Architecture Governance Phase 1E)
+**Last updated:** 2026-09-03 (Batch 0.5 — selective agent startup; AI discovery chain)

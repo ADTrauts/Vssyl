@@ -17,14 +17,29 @@ You have two modes of operation:
 
 ### Source-of-truth hierarchy
 
-- **`docs/VSSYL_SOURCE_OF_TRUTH.md`** — read first; aligns repo, Memory Bank, and rules.
-- **Authority and conflicts** — see **`source-of-truth.mdc`**.
+- **`AGENTS.md`** — agent orientation and cross-repository operating guidance (not architecture law).
+- **`docs/VSSYL_SOURCE_OF_TRUTH.md`** — repository-wide authority and document placement.
+- **Authority and conflicts** — see **`source-of-truth.mdc`**. Architectural truth lives in **`docs/architecture/`**. Executable constraints live in **`.cursor/rules/*.mdc`**.
+
+### Context-loading (selective)
+
+Default discovery sequence:
+
+1. `AGENTS.md`
+2. `docs/VSSYL_SOURCE_OF_TRUTH.md`
+3. Inspect actual task-relevant code
+4. Use `docs/architecture/VSSYL_ARCHITECTURE_INDEX.md` to locate canonical architecture
+5. Load relevant scoped `.cursor/rules`
+6. Load targeted Memory Bank product context only when relevant
+7. Load `memory-bank/activeContext.md` / `memory-bank/progress.md` only when current workstream status, recent implementation history, sequencing, or unfinished work is materially relevant
+
+Do **not** make `activeContext.md` or `progress.md` universal baseline reads. Full discipline: `AGENTS.md` §2 and `memory-bank.mdc`.
 
 ### Reuse-First and Pre-Novel-Item Search
 
 - Before creating or modifying any route, model, path, component, or document:
   - Search the entire codebase using semantic exploration to find existing equivalents; try multiple phrasings and keep searching until confident nothing suitable exists.
-  - Read **`docs/VSSYL_SOURCE_OF_TRUTH.md`**, then the Memory Bank baseline: **`memory-bank/activeContext.md`**, **`memory-bank/progress.md`**, plus task-relevant **`memory-bank/*ProductContext.md`**, **`memory-bank/systemPatterns.md`** when the task touches that area.
+  - Follow the selective context-loading sequence above; add task-relevant `memory-bank/*ProductContext.md` or other Memory Bank files only when product intent for that area matters.
   - Prefer reusing or extending existing modules/services; do not duplicate functionality.
   - Only create a new item when no viable extension point exists; document a brief rationale.
   - Validate alignment with core patterns: API proxy and URL env hierarchy (`api-and-auth.mdc`), Prisma modules (`database-prisma.mdc`), multi-tenant scoping (`api-and-auth.mdc`, `backend-trust-boundaries.mdc`), permissions, storageService (`storage-and-ai-attachments.mdc`), and logging (`api-and-auth.mdc`).
@@ -33,7 +48,8 @@ You have two modes of operation:
 
 ### Where roadmap and phase focus live
 
-- **Current focus, next steps, and business/AI roadmap** — **`memory-bank/activeContext.md`**, **`memory-bank/progress.md`**, and strategic docs under `memory-bank/` (e.g. **`memory-bank/AI_PLATFORM_PHASED_PLAN.md`**). Do not duplicate long roadmap sections in this file; keep them in the Memory Bank so they stay maintainable.
+- **Current workstream status / next-step sequencing** — `memory-bank/activeContext.md` and `memory-bank/progress.md` when materially relevant (not universal baseline).
+- **AI architecture discovery** — route through `docs/architecture/AI_SYSTEM_MENTAL_MODEL.md`, `docs/architecture/AI_READING_GUIDE.md`, and `docs/architecture/AI_DOCUMENT_STATUS_MATRIX.md` before older AI plans or Memory Bank AI narratives. Do not treat archived `docs/archive/session-summaries/AI_PLATFORM_PHASED_PLAN.md` as current strategic AI roadmap or architecture authority.
 
 ### User preferences (stable)
 
@@ -44,6 +60,7 @@ You have two modes of operation:
 
 ### Rule and documentation placement
 
+- **Agent orientation** → root `AGENTS.md`.
 - **Agent must/must-not** → `.cursor/rules/*.mdc` (short; see `RULES_SUMMARY.md`).
 - **Architecture (why, checklists)** → `docs/architecture/`.
 - **How-to / onboarding** → `docs/guides/` (`DOCUMENTATION_PLACEMENT.md`).

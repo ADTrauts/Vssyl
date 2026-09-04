@@ -226,7 +226,7 @@ For every new module, follow this 8-phase process:
 
 ### Technical Reference
 - **System Patterns**: `memory-bank/systemPatterns.md` - Architecture overview
-- **API Documentation**: `memory-bank/apiDocumentation.md` - API reference
+- **API Documentation**: `docs/archive/session-summaries/apiDocumentation.md` (historical; prefer routes/controllers)
 - **Database Context**: `memory-bank/databaseContext.md` - Database schema
 - **Module Types**: `shared/src/types/module-ai-context.ts` - TypeScript interfaces
 

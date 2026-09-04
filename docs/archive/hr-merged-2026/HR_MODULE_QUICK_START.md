@@ -135,7 +135,7 @@ import { TimeOffRequestForm } from '@/components/hr/TimeOffRequestForm';
 ```bash
 # Test API
 curl -X POST http://localhost:5000/api/hr/me/time-off/request \
-  -H "Authorization: Bearer YOUR_TOKEN" \
+  -H "Authorization: Bearer YOUR_BEARER_TOKEN \
   -d '{"startDate": "2025-11-01", "endDate": "2025-11-05", "reason": "Vacation"}'
 
 # Test UI

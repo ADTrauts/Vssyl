@@ -35,7 +35,7 @@ Please update the canonical documents rather than this file for current integrat
 | Domain events | [`docs/architecture/DOMAIN_EVENTS.md`](../architecture/DOMAIN_EVENTS.md) |
 | Workspace runtime | [`docs/architecture/WORKSPACE_RUNTIME_AND_MODULE_CONTRACTS.md`](../architecture/WORKSPACE_RUNTIME_AND_MODULE_CONTRACTS.md) |
 | Drive / Calendar product context | [`memory-bank/driveProductContext.md`](../../memory-bank/driveProductContext.md), [`memory-bank/calendarProductContext.md`](../../memory-bank/calendarProductContext.md) |
-| Global search | [`memory-bank/globalSearchProductContext.md`](../../memory-bank/globalSearchProductContext.md) |
+| Global search | [`docs/search/SEARCH_CONSTITUTION.md`](../search/SEARCH_CONSTITUTION.md) (historical product notes: [`docs/archive/session-summaries/globalSearchProductContext.md`](../archive/session-summaries/globalSearchProductContext.md)) |
 | AI context providers | [`memory-bank/aiContextSystem.md`](../../memory-bank/aiContextSystem.md) |
 | Prisma discipline | [`docs/guides/PRISMA_MIGRATION_DISCIPLINE.md`](../guides/PRISMA_MIGRATION_DISCIPLINE.md) |
 

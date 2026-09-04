@@ -279,7 +279,7 @@ Add endpoints:
 1. **Create Subscription (Pro Monthly)**
    ```bash
    curl -X POST http://localhost:5000/api/billing/subscriptions \
-     -H "Authorization: Bearer YOUR_TOKEN" \
+     -H "Authorization: Bearer YOUR_BEARER_TOKEN \
      -H "Content-Type: application/json" \
      -d '{
        "tier": "pro",
@@ -290,7 +290,7 @@ Add endpoints:
 2. **Create Checkout Session**
    ```bash
    curl -X POST http://localhost:5000/api/billing/checkout/session \
-     -H "Authorization: Bearer YOUR_TOKEN" \
+     -H "Authorization: Bearer YOUR_BEARER_TOKEN \
      -H "Content-Type: application/json" \
      -d '{
        "tier": "pro",

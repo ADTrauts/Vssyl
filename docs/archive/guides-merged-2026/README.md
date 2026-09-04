@@ -8,5 +8,6 @@ These files were moved out of `docs/` root and `docs/guides/` so there is a sing
 | `MODULE_AI_CONTEXT_GUIDE.md` | Module developer implementation guide |
 | `CENTRALIZED_AI_LEARNING.md` | Centralized learning notes |
 | `CENTRALIZED_AI_TESTING.md` | Testing notes |
+| `AI_CODING_STANDARDS.md` | Deprecated coding standards (Batch 1A; stub remains at `memory-bank/AI_CODING_STANDARDS.md`) |
 
-Update **`memory-bank/aiContextSystem.md`** when product rules change; touch archived files here only if you are recovering historical detail.
+Update **`memory-bank/aiContextSystem.md`** when product rules change; touch archived files here only if you are recovering historical detail. Agent rules live under **`.cursor/rules/`**.

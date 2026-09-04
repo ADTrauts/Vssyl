@@ -642,7 +642,7 @@ erDiagram
 | "Reference Workspace Candidate" | 2026-06-14 registration |
 | Duplicate personal/business sidebar implementations | PlatformShell 3C-4A–4F extraction |
 | Informal dashboard monolith assumptions | `WORKSPACE_DASHBOARD_REALITY_ASSESSMENT.md` |
-| `memory-bank/globalSearchProductContext.md` (2024) | `SEARCH_CONSTITUTION.md` + Phase 0A search docs |
+| `memory-bank/globalSearchProductContext.md` (redirect stub; body archived Batch 1A) | `SEARCH_CONSTITUTION.md` + Phase 0A search docs |
 | WS-L2 as current certification tier | WS-L3 ratification (record retained) |
 | `WORKSPACE_G1_G9_SCORECARD` | `WORKSPACE_CERTIFICATION_SCORECARD` |
 
@@ -746,7 +746,7 @@ Implementation should wait for:
 | Action | Owner |
 |--------|-------|
 | Cross-link this doc from `VSSYL_SOURCE_OF_TRUTH.md` | Architecture |
-| Archive/update `memory-bank/globalSearchProductContext.md` pointer to SEARCH_CONSTITUTION | Memory Bank |
+| Archive/update `memory-bank/globalSearchProductContext.md` pointer to SEARCH_CONSTITUTION | Memory Bank — **Done (Batch 1A):** redirect stub + archived body |
 | Add Navigation Reference Program stub to `activeContext.md` when chartered | Memory Bank |
 
 ### 4. Success criteria met (Phase 0A)

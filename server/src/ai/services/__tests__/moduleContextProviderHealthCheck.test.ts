@@ -10,7 +10,7 @@ vi.mock('axios', () => ({
 describe('moduleContextProviderHealthCheck', () => {
   beforeEach(() => {
     vi.restoreAllMocks();
-    process.env.JWT_SECRET = 'test-jwt-secret-with-enough-length-32';
+    process.env.JWT_SECRET = 'test-only-jwt-secret-not-for-production-use-32b';
   });
 
   it('marks provider healthy when probe succeeds with canonical shape', async () => {

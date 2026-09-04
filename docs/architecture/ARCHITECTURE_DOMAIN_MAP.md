@@ -348,7 +348,7 @@ The following documents are **superseded for certification status** by this map 
 |----------|--------------|-------------|
 | `platform-portfolio/PLATFORM_PORTFOLIO_DOMAIN_MAP.md` | Search L1, Dashboard L1, Analytics L1, CG L3, Kernel implicit | This document + ledger |
 | `platform-portfolio/PLATFORM_CERTIFICATION_STATUS_2026.md` | Pre-2026-06-23 certifications | `CERTIFICATION_LEDGER.md` |
-| `memory-bank/globalSearchProductContext.md` | Pre-constitution search model | `search/SEARCH_CONSTITUTION.md` |
+| `memory-bank/globalSearchProductContext.md` | Pre-constitution search model (redirect stub; body archived) | `search/SEARCH_CONSTITUTION.md` |
 
 ---
 

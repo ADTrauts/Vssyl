@@ -191,7 +191,7 @@ Unified Search and federated discovery infrastructure.
 | **Search provider model** | [`SEARCH_PROVIDER_MODEL.md`](./SEARCH_PROVIDER_MODEL.md) | — | Active |
 | **Relationship search** | [`RELATIONSHIP_SEARCH_ARCHITECTURE.md`](./RELATIONSHIP_SEARCH_ARCHITECTURE.md) | — | Active |
 
-**⚠️ Stale:** [`../../memory-bank/globalSearchProductContext.md`](../../memory-bank/globalSearchProductContext.md) — use Search Constitution instead.
+**⚠️ Stale:** [`../../memory-bank/globalSearchProductContext.md`](../../memory-bank/globalSearchProductContext.md) — redirect stub; use Search Constitution instead (body: `docs/archive/session-summaries/globalSearchProductContext.md`).
 
 **Supporting:** [`../search/`](../search/) · [`../guides/SEARCH_DELEGATE_GUIDE.md`](../guides/SEARCH_DELEGATE_GUIDE.md)
 
@@ -337,13 +337,21 @@ Commercial readiness (not runtime architecture, but indexed for completeness).
 
 ---
 
-## Agent quick-start (30 seconds)
+## Agent quick-start (selective)
 
-1. Read [`docs/VSSYL_SOURCE_OF_TRUTH.md`](../VSSYL_SOURCE_OF_TRUTH.md)
-2. Read [`../../memory-bank/activeContext.md`](../../memory-bank/activeContext.md) + [`../../memory-bank/progress.md`](../../memory-bank/progress.md)
-3. Find domain in this index → follow canonical link
-4. Check [`CERTIFICATION_LEDGER.md`](./CERTIFICATION_LEDGER.md) for cert level
-5. Check [`ARCHITECTURE_SOURCE_OF_TRUTH.md`](./ARCHITECTURE_SOURCE_OF_TRUTH.md) before editing any doc
+Root [`AGENTS.md`](../../AGENTS.md) is **orientation only** — not architecture authority. This index remains the canonical map of architecture ownership.
+
+1. Read [`../../AGENTS.md`](../../AGENTS.md)
+2. Read [`docs/VSSYL_SOURCE_OF_TRUTH.md`](../VSSYL_SOURCE_OF_TRUTH.md)
+3. Inspect the actual implementation involved in the task
+4. Use **this Architecture Index** to identify the canonical architecture owner
+5. Read relevant scoped [`.cursor/rules`](../../.cursor/rules/)
+6. Load relevant Memory Bank product context only if product intent is needed
+7. Read [`activeContext.md`](../../memory-bank/activeContext.md) / [`progress.md`](../../memory-bank/progress.md) only when current workstream status, recent history, sequencing, or unfinished work is material
+8. Check [`CERTIFICATION_LEDGER.md`](./CERTIFICATION_LEDGER.md) when certification status matters
+9. Check [`ARCHITECTURE_SOURCE_OF_TRUTH.md`](./ARCHITECTURE_SOURCE_OF_TRUTH.md) before editing any architecture doc
+
+Do **not** treat `activeContext.md` or `progress.md` as universal baseline reads.
 
 ---
 
@@ -360,4 +368,4 @@ Commercial readiness (not runtime architecture, but indexed for completeness).
 
 ---
 
-**Last updated:** 2026-06-29 (Architecture Consolidation Phase 0A)
+**Last updated:** 2026-09-03 (Batch 0.5 — selective agent quick-start)

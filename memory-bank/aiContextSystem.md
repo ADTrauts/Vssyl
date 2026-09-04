@@ -801,7 +801,7 @@ const summary = {
 2. Get a valid authentication token
 3. Test each context provider endpoint:
 ```bash
-curl -H "Authorization: Bearer YOUR_TOKEN" \
+curl -H "Authorization: Bearer YOUR_BEARER_TOKEN" \
   "http://localhost:5000/api/hr/ai/context/overview?businessId=YOUR_BUSINESS_ID"
 ```
 

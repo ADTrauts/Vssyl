@@ -1109,7 +1109,7 @@ The Scheduling module has comprehensive AI context providers that enable natural
 - **HR Module**: `hrProductContext.md` - Attendance tracking and time-off
 - **Org Chart System**: `org-chart-permission-system.md` - Employee structure
 - **Module Brainstorming**: `moduleBrainstorming.md` - Original scheduling ideas
-- **Business Workspace**: `businessWorkspaceArchitecture.md` - Integration points
+- **Business Workspace**: [`docs/architecture/WORKSPACE_ROUTING_CONTRACT.md`](../docs/architecture/WORKSPACE_ROUTING_CONTRACT.md) + [`APPLICATION_LIFECYCLE.md`](../docs/architecture/APPLICATION_LIFECYCLE.md) (historical sync plan archived: `docs/archive/session-summaries/business-workspace/businessWorkspaceArchitecture.md`)
 
 ### Code Files
 - **Database**: `prisma/modules/scheduling/core.prisma` - Complete scheduling schema (6 models)

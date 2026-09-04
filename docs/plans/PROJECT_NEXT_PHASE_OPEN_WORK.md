@@ -1,7 +1,7 @@
 # Project next phase — open work (living plan)
 
 **Last updated:** 2026-04-19  
-**Purpose:** Single place to answer “what’s left?” after **system audit remediation A–F** (`D-020`) and the **AI platform phased plan** (Phases 1–8 marked complete in `memory-bank/AI_PLATFORM_PHASED_PLAN.md`). This is **not** a commitment to dates; it is a prioritized backlog map.
+**Purpose:** Single place to answer “what’s left?” after **system audit remediation A–F** (`D-020`) and the historical **AI platform phased plan** (Phases 1–8 marked complete; archive: [`docs/archive/session-summaries/AI_PLATFORM_PHASED_PLAN.md`](../archive/session-summaries/AI_PLATFORM_PHASED_PLAN.md)). This is **not** a commitment to dates; it is a prioritized backlog map. Current AI architecture discovery starts at [`docs/architecture/AI_SYSTEM_MENTAL_MODEL.md`](../architecture/AI_SYSTEM_MENTAL_MODEL.md).
 
 **Related:** `docs/plans/SYSTEM_AUDIT_SOURCE_OF_TRUTH.md`, `memory-bank/progress.md`, `memory-bank/roadmap.md`, `memory-bank/futureIdeas.md`.
 
@@ -59,7 +59,7 @@ Pick based on business priority; all are “open” at the platform level:
 ## 3. What *is* complete (context — do not re-audit blindly)
 
 - **System audit execution phases A–F** — closed (**D-020**).  
-- **AI platform Phases 1–8** — checklist complete in `AI_PLATFORM_PHASED_PLAN.md` (verify in product if any drift).  
+- **AI platform Phases 1–8** — checklist complete in historical [`docs/archive/session-summaries/AI_PLATFORM_PHASED_PLAN.md`](../archive/session-summaries/AI_PLATFORM_PHASED_PLAN.md) (verify in product if any drift; not current AI SoT).  
 - **Module upload backend** phased plan — complete per `MODULE_UPLOAD_BACKEND_PHASED_PLAN.md` / Phase 7 rollout guide.
 
 ---

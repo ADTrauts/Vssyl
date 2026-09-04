@@ -17,7 +17,7 @@
 |------|-------------|-------------|-------|--------|
 | Duplicate module registration scripts | `scripts/register-built-in-modules.ts`, `server/src/scripts/register-built-in-modules.ts`, `scripts/ensure-builtin-modules.ts` | `server/src/startup/registerBuiltInModules.ts` | 1 | Documented |
 | Memory Bank Cursor rules copy | `memory-bank/.cursor/rules` | `.cursor/rules/` | 1 | Archived stub |
-| AI coding standards (Memory Bank) | `memory-bank/AI_CODING_STANDARDS.md` | `.cursor/rules/typescript-quality.mdc`, `api-and-auth.mdc`, `RULES_SUMMARY.md` | 1 | Deprecated banner |
+| AI coding standards (Memory Bank) | `memory-bank/AI_CODING_STANDARDS.md` (redirect stub) | `.cursor/rules/typescript-quality.mdc`, `api-and-auth.mdc`, `RULES_SUMMARY.md`, `AGENTS.md` | 1 | Redirect stub; body in `docs/archive/guides-merged-2026/AI_CODING_STANDARDS.md` |
 | Org-chart parallel RBAC | `server/src/middleware/orgChartPermissions.ts` | Policy Engine resource adapter | 3 | Planned |
 | Notes `deletedAt` soft delete | `notesController` | Global Trash `trashedAt` | 2 | Planned |
 | WorkflowAutomationService | `server/src/ai/workflows/WorkflowAutomationService.ts` | Domain event → canonical service router (§23) | 4 | Tier 4 |
@@ -39,6 +39,6 @@ Legacy scripts remain for one-off admin recovery only until removed in Batch 1 p
 | Former location | Archive / redirect |
 |-----------------|-------------------|
 | `memory-bank/.cursor/rules` | Stub points to `.cursor/rules/RULES_SUMMARY.md` |
-| `memory-bank/AI_CODING_STANDARDS.md` | Deprecated banner; use split `.mdc` rules |
+| `memory-bank/AI_CODING_STANDARDS.md` | Redirect stub; historical body at `docs/archive/guides-merged-2026/AI_CODING_STANDARDS.md` |
 
-**Last updated:** 2026-05-28
+**Last updated:** 2026-09-03 (Batch 1A Memory Bank historical archive)

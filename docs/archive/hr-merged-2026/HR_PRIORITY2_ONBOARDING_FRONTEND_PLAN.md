@@ -1,3 +1,13 @@
+---
+
+⚠️ **Architecture Notice**
+
+This document is retained for historical context only. It is **not** current authority.
+
+Archived from `memory-bank/` on 2026-09-03 (Batch 1A).
+
+---
+
 # Priority 2: Onboarding Frontend Completion - Implementation Plan
 
 **Date**: January 2025  

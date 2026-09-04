@@ -1,135 +1,132 @@
 #!/usr/bin/env node
-
 /**
- * Data Migration Script via Application
- * This script connects to both databases and migrates data through the application layer
+ * Data migration via Prisma clients.
+ * Requires OLD_DATABASE_URL and NEW_DATABASE_URL environment variables.
+ * Do not embed production credentials in this repository.
  */
 
 const { PrismaClient } = require('@prisma/client');
 
-// Database connections
-const oldDb = new PrismaClient({
-  datasources: {
-    db: {
-      url: 'postgresql://vssyl_user:ArthurGeorge116!@172.30.0.4:5432/vssyl_production?connection_limit=5&pool_timeout=20'
-    }
+function requireUrl(name) {
+  const value = process.env[name];
+  if (!value) {
+    console.error(`ERROR: ${name} is not set.`);
+    console.error('Obtain connection URLs from Secret Manager / an authorized channel.');
+    console.error('Do not hard-code credentials in this file.');
+    process.exit(1);
   }
+  return value;
+}
+
+const oldDb = new PrismaClient({
+  datasources: { db: { url: requireUrl('OLD_DATABASE_URL') } },
 });
 
 const newDb = new PrismaClient({
-  datasources: {
-    db: {
-      url: 'postgresql://vssyl_user:ArthurGeorge116!@172.30.0.15:5432/vssyl_production?connection_limit=5&pool_timeout=20'
-    }
-  }
+  datasources: { db: { url: requireUrl('NEW_DATABASE_URL') } },
 });
 
 async function migrateData() {
-  console.log('🔄 Starting data migration from old database to new optimized database...');
-  
+  console.log('Starting data migration (connection URLs not logged)...');
+
   try {
-    // Test connections
-    console.log('🔍 Testing database connections...');
+    console.log('Testing database connections...');
     await oldDb.$connect();
-    console.log('✅ Connected to old database');
-    
+    console.log('Connected to old database');
     await newDb.$connect();
-    console.log('✅ Connected to new database');
-    
-    // Get all tables
+    console.log('Connected to new database');
+
     const tables = await oldDb.$queryRaw`
-      SELECT table_name 
-      FROM information_schema.tables 
-      WHERE table_schema = 'public' 
+      SELECT table_name
+      FROM information_schema.tables
+      WHERE table_schema = 'public'
       AND table_type = 'BASE TABLE'
       ORDER BY table_name;
     `;
-    
-    console.log(`📊 Found ${tables.length} tables to migrate`);
-    
-    // Migrate each table
+
+    console.log(`Found ${tables.length} tables to migrate`);
+
     for (const table of tables) {
       const tableName = table.table_name;
-      console.log(`📤 Migrating table: ${tableName}`);
-      
+      console.log(`Migrating table: ${tableName}`);
+
       try {
-        // Get data from old database
         const data = await oldDb.$queryRawUnsafe(`SELECT * FROM "${tableName}"`);
-        
         if (data.length === 0) {
-          console.log(`  ⚠️  Table ${tableName} is empty, skipping...`);
+          console.log(`  Table ${tableName} is empty, skipping...`);
           continue;
         }
-        
-        // Clear existing data in new database
+
         await newDb.$executeRawUnsafe(`DELETE FROM "${tableName}"`);
-        
-        // Insert data in batches
+
         const batchSize = 100;
         for (let i = 0; i < data.length; i += batchSize) {
           const batch = data.slice(i, i + batchSize);
-          
-          if (batch.length > 0) {
-            // Get column names
-            const columns = Object.keys(batch[0]);
-            const values = batch.map(row => 
-              `(${columns.map(col => {
+          if (batch.length === 0) continue;
+
+          const columns = Object.keys(batch[0]);
+          const values = batch
+            .map((row) => {
+              const cells = columns.map((col) => {
                 const value = row[col];
                 if (value === null) return 'NULL';
                 if (typeof value === 'string') return `'${value.replace(/'/g, "''")}'`;
                 if (typeof value === 'boolean') return value;
                 if (value instanceof Date) return `'${value.toISOString()}'`;
+                if (typeof value === 'object') {
+                  return `'${JSON.stringify(value).replace(/'/g, "''")}'`;
+                }
                 return value;
-              }).join(', ')})`
-            ).join(', ');
-            
-            const insertQuery = `INSERT INTO "${tableName}" (${columns.map(c => `"${c}"`).join(', ')}) VALUES ${values}`;
-            await newDb.$executeRawUnsafe(insertQuery);
-          }
+              });
+              return `(${cells.join(', ')})`;
+            })
+            .join(', ');
+
+          const insertQuery = `INSERT INTO "${tableName}" (${columns
+            .map((c) => `"${c}"`)
+            .join(', ')}) VALUES ${values}`;
+          await newDb.$executeRawUnsafe(insertQuery);
         }
-        
-        console.log(`  ✅ Migrated ${data.length} rows to ${tableName}`);
-        
+
+        console.log(`  Migrated ${data.length} rows`);
       } catch (error) {
-        console.error(`  ❌ Error migrating table ${tableName}:`, error.message);
-        // Continue with other tables
+        console.error(`  Error migrating table ${tableName}:`, error.message);
       }
     }
-    
-    console.log('🎉 Data migration completed successfully!');
-    
-    // Verify migration
-    console.log('🔍 Verifying migration...');
-    const oldCounts = {};
-    const newCounts = {};
-    
+
+    console.log('Verifying row counts...');
     for (const table of tables) {
       const tableName = table.table_name;
       try {
-        const oldCount = await oldDb.$queryRawUnsafe(`SELECT COUNT(*) as count FROM "${tableName}"`);
-        const newCount = await newDb.$queryRawUnsafe(`SELECT COUNT(*) as count FROM "${tableName}"`);
-        
-        oldCounts[tableName] = oldCount[0].count;
-        newCounts[tableName] = newCount[0].count;
-        
-        if (oldCount[0].count === newCount[0].count) {
-          console.log(`  ✅ ${tableName}: ${newCount[0].count} rows (match)`);
+        const oldCount = await oldDb.$queryRawUnsafe(
+          `SELECT COUNT(*) as count FROM "${tableName}"`
+        );
+        const newCount = await newDb.$queryRawUnsafe(
+          `SELECT COUNT(*) as count FROM "${tableName}"`
+        );
+        const oc = oldCount[0].count;
+        const nc = newCount[0].count;
+        if (oc === nc) {
+          console.log(`  ${tableName}: ${nc} rows (match)`);
         } else {
-          console.log(`  ⚠️  ${tableName}: old=${oldCount[0].count}, new=${newCount[0].count} (mismatch)`);
+          console.log(`  ${tableName}: old=${oc}, new=${nc} (mismatch)`);
         }
       } catch (error) {
-        console.error(`  ❌ Error verifying table ${tableName}:`, error.message);
+        console.error(`  Error verifying table ${tableName}:`, error.message);
       }
     }
-    
+
+    console.log('Data migration completed!');
   } catch (error) {
-    console.error('❌ Migration failed:', error);
-    process.exit(1);
+    console.error('Migration failed:', error.message);
+    process.exitCode = 1;
   } finally {
     await oldDb.$disconnect();
     await newDb.$disconnect();
   }
 }
 
-// Run migration
-migrateData().catch(console.error);
+migrateData().catch((err) => {
+  console.error(err);
+  process.exit(1);
+});

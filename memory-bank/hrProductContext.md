@@ -691,7 +691,7 @@ if (hrFeatures.payroll) {
 
 ### Memory Bank Files
 - **Org Chart System**: `org-chart-permission-system.md` - Foundation for HR
-- **Business Workspace**: `businessWorkspaceArchitecture.md` - Integration points
+- **Business Workspace**: [`docs/architecture/WORKSPACE_ROUTING_CONTRACT.md`](../docs/architecture/WORKSPACE_ROUTING_CONTRACT.md) + [`APPLICATION_LIFECYCLE.md`](../docs/architecture/APPLICATION_LIFECYCLE.md) (historical sync plan archived: `docs/archive/session-summaries/business-workspace/businessWorkspaceArchitecture.md`)
 - **Module Brainstorming**: `moduleBrainstorming.md` - Full feature list
 - **Database Context**: `databaseContext.md` - Overall schema
 
