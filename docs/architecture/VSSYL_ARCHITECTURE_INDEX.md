@@ -277,7 +277,7 @@ Deployment, security posture, and operations.
 | **Production deployment** | [`../deployment/PRODUCTION_DEPLOYMENT.md`](../deployment/PRODUCTION_DEPLOYMENT.md) | — | Active |
 | **Google Cloud deployment** | [`../deployment/GOOGLE_CLOUD_DEPLOYMENT.md`](../deployment/GOOGLE_CLOUD_DEPLOYMENT.md) | — | Active |
 | **Deployment context** | [`../../memory-bank/deployment.md`](../../memory-bank/deployment.md) | — | Product intent |
-| **Security & compliance** | [`../../memory-bank/securityComplianceSystem.md`](../../memory-bank/securityComplianceSystem.md) | — | ⚠️ No cert program |
+| **Security & compliance** | Platform Standards §27 + [`POLICY_ENGINE.md`](./POLICY_ENGINE.md); Admin product intent [`../../memory-bank/adminProductContext.md`](../../memory-bank/adminProductContext.md) | — | ⚠️ No dedicated security cert program (historical MB: [`../archive/session-summaries/securityComplianceSystem.md`](../archive/session-summaries/securityComplianceSystem.md)) |
 | **Rollback runbook** | [`../deployment/CLOUD_RUN_ROLLBACK_RUNBOOK.md`](../deployment/CLOUD_RUN_ROLLBACK_RUNBOOK.md) | — | Active |
 
 **Supporting:** [`../deployment/`](../deployment/) · [`../setup/`](../setup/)

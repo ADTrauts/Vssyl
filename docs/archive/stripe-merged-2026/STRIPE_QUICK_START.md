@@ -159,7 +159,7 @@ After completing the quick start:
 ## 📚 Related Documentation
 
 - **Full Implementation Plan**: `./STRIPE_PRICE_POINTS_IMPLEMENTATION_PLAN.md`
-- **Billing System Plan**: `memory-bank/BILLING_PAYMENT_IMPLEMENTATION_PLAN.md`
+- **Billing System Plan**: `docs/archive/stripe-merged-2026/BILLING_PAYMENT_IMPLEMENTATION_PLAN.md`
 
 ---
 

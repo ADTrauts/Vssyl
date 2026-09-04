@@ -40,7 +40,7 @@ N/A — operational domain.
 ## Related Domains
 
 - [Setup guides](../setup/)
-- [Security](../../memory-bank/securityComplianceSystem.md) — ⚠️ no architecture cert program yet
+- [Security posture](../architecture/ARCHITECTURE_SOURCE_OF_TRUTH.md) — Platform Standards / Policy Engine; ⚠️ no dedicated security cert program yet (historical: [`../archive/session-summaries/securityComplianceSystem.md`](../archive/session-summaries/securityComplianceSystem.md))
 
 ## Open Decisions
 

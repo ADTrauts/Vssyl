@@ -45,12 +45,12 @@ All module actions that read or mutate protected resources must follow:
 ## Related Documentation
 - [moduleSpecs.md](./moduleSpecs.md) (module permissions, management)
 - [compliance.md](./compliance.md) (legal/HR requirements)
-- [roadmap.md](./roadmap.md) (future features, including Extender Services)
+- [activeContext.md](./activeContext.md) / [progress.md](./progress.md) (current status; historical roadmap archived)
 
 ---
 
 ## Technical Enforcement & Audit Logging (Placeholder)
-- Permissions are enforced in backend services via middleware and database access controls (see future implementation notes in roadmap).
+- Permissions are enforced in backend services via middleware and database access controls (see Policy Engine / current auth architecture; historical roadmap notes archived).
 - Audit logging of permission changes and access events is planned for future compliance and security.
 
 ---
@@ -62,7 +62,7 @@ All module actions that read or mutate protected resources must follow:
 - **User Suggestions:**
   - Users can suggest new modules to org admins.
 - **Extender Services:**
-  - [Roadmap Item] Clarification needed in the future: How individual extender services interact with org-level modules. See [roadmap.md](./roadmap.md).
+  - [Open item] Clarification needed in the future: How individual extender services interact with org-level modules. Track via current plans / ProductContexts (historical roadmap archived).
 
 ## 3. Data Visibility & Sharing
 - **Opt-In Data Sharing:**

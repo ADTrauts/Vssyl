@@ -56,9 +56,9 @@ flowchart TD
 
 ## Module and domain contexts
 
-`*ProductContext.md` files (drive, chat, hr, scheduling, admin, etc.), plus **`applicationMermaidDiagrams.md`** (platform + interoperability + module-surface maps), `permissionsModel.md`, `aiContextSystem.md`, `deployment.md`, `roadmap.md`, and remaining plan files (verify currency).
+`*ProductContext.md` files (drive, chat, hr, scheduling, admin, etc.), plus **`applicationMermaidDiagrams.md`** (platform + interoperability + module-surface maps), `permissionsModel.md`, `aiContextSystem.md`, `deployment.md`, and remaining plan files (verify currency). Historical roadmaps/plans archived in Batch 1C-4A (`roadmap.md` and related paths are redirect stubs).
 
-Completed AI phase plans, session summaries, and superseded workspace/search architecture notes live under **`docs/archive/`** (Batch 1A). Verify currency via architecture docs (for AI: `docs/architecture/AI_DOCUMENT_STATUS_MATRIX.md`) before treating any plan as current authority. Redirect stubs remain only where noted in `LEGACY_CLEANUP.md` / this README (`AI_CODING_STANDARDS.md`, `globalSearchProductContext.md`, `moduleManagerContext.md`).
+Completed AI phase plans, session summaries, and superseded workspace/search architecture notes live under **`docs/archive/`** (Batch 1A / 1C-4A). Verify currency via architecture docs (for AI: `docs/architecture/AI_DOCUMENT_STATUS_MATRIX.md`) before treating any plan as current authority. Redirect stubs include `AI_CODING_STANDARDS.md`, `globalSearchProductContext.md`, `moduleManagerContext.md`, `roadmap.md`, `moduleBrainstorming.md`, `org-chart-permission-system.md`, and other 1C-4A historical plans.
 
 **Workspace runtime (May 2026):** Frontend module/widget contracts — `docs/architecture/WORKSPACE_RUNTIME_AND_MODULE_CONTRACTS.md`; code under `web/src/runtime/`; status in `activeContext.md` / `progress.md` / `dashboardProductContext.md` §10a when status context is needed.
 

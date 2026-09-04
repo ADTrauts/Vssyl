@@ -313,7 +313,7 @@ flowchart TB
 | Domain | Owner | Primary SoT | Cert | Ref impl | Status |
 |--------|-------|-------------|------|----------|--------|
 | Deployment | DevOps | `deployment/PRODUCTION_DEPLOYMENT.md` | — | cloudbuild.yaml | Active |
-| Security | Platform / Security | `memory-bank/securityComplianceSystem.md` | — | `securityService.ts` | **Gap — no cert program** |
+| Security | Platform / Security | Platform Standards §27 + `POLICY_ENGINE.md` (gap: no dedicated security cert SoT) | — | `securityService.ts` | **Gap — no cert program** (historical: `docs/archive/session-summaries/securityComplianceSystem.md`) |
 | Developer Platform | Developer & Marketplace | `guides/THIRD_PARTY_MODULE_PIPELINE_SOURCE_OF_TRUTH.md` | L3 CwF | test-modules/ | Active |
 | Runbooks | DevOps / Ops | Scattered (see health report) | — | — | **Gap — no index** |
 

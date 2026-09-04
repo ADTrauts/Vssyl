@@ -3,7 +3,7 @@
 **Last updated:** 2026-04-19  
 **Purpose:** Single place to answer “what’s left?” after **system audit remediation A–F** (`D-020`) and the historical **AI platform phased plan** (Phases 1–8 marked complete; archive: [`docs/archive/session-summaries/AI_PLATFORM_PHASED_PLAN.md`](../archive/session-summaries/AI_PLATFORM_PHASED_PLAN.md)). This is **not** a commitment to dates; it is a prioritized backlog map. Current AI architecture discovery starts at [`docs/architecture/AI_SYSTEM_MENTAL_MODEL.md`](../architecture/AI_SYSTEM_MENTAL_MODEL.md).
 
-**Related:** `docs/plans/SYSTEM_AUDIT_SOURCE_OF_TRUTH.md`, `memory-bank/progress.md`, `memory-bank/roadmap.md`, `memory-bank/futureIdeas.md`.
+**Related:** `docs/plans/SYSTEM_AUDIT_SOURCE_OF_TRUTH.md`, `memory-bank/progress.md`, `memory-bank/activeContext.md`, `memory-bank/futureIdeas.md` (historical roadmap: `docs/archive/session-summaries/roadmap-archive-2026-09.md`; MB `roadmap.md` is a redirect stub).
 
 ---
 
@@ -15,9 +15,9 @@
 | **Audit deferred A-051** | Partial | Env matrix doc shipped (`docs/guides/MODULE_PLATFORM_ENVIRONMENT_MATRIX.md`); optional: **tests**, deeper prod review. |
 | **Audit deferred A-052** | Open | Multimodal **downgrade** UX/docs: when attachments become summary/text-only; provider/model matrix. |
 | **CI / quality** | Optional | **A-055** note: add **`pnpm lint`** to CI when eslint debt is manageable. |
-| **Roadmap Phases 2.5+** | Planned / partial | e.g. **global search** (roadmap **Phase 2.5**), **Presence** “in progress”, **Testing** “pending” in `roadmap.md`. |
-| **HR module enhancement plan** | Partial | Priorities 1–2 done per `progress.md`; **Phase 3+** (shift scheduling UI, advanced attendance, templates) per `memory-bank/HR_MODULE_ENHANCEMENT_PLAN.md`. |
-| **Strategic / vision** | Future | `roadmap.md` Phases **4–6**, **Vssyl_Place** concept, `futureIdeas.md` wishlist. |
+| **Roadmap Phases 2.5+** | Planned / partial | Historical rebuild phases archived; prefer `activeContext.md` / `progress.md` / current `docs/plans/` (MB `roadmap.md` is redirect stub). |
+| **HR module enhancement plan** | Partial | Prefer `hrProductContext.md` + HR operation matrix; historical plan archived under `docs/archive/hr-merged-2026/HR_MODULE_ENHANCEMENT_PLAN.md`. |
+| **Strategic / vision** | Future | Prefer current ProductContexts + `futureIdeas.md` (non-committing); historical roadmap archived. |
 
 ---
 
@@ -78,7 +78,7 @@ Pick based on business priority; all are “open” at the platform level:
 |-------|--------|
 | Audit tracker & deferred A-051 / A-052 | `docs/plans/SYSTEM_AUDIT_SOURCE_OF_TRUTH.md` |
 | Current engineering focus & history | `memory-bank/progress.md`, `memory-bank/activeContext.md` |
-| Long-range rebuild phases | `memory-bank/roadmap.md` |
-| HR backlog | `memory-bank/HR_MODULE_ENHANCEMENT_PLAN.md` |
+| Long-range rebuild phases | Historical: `docs/archive/session-summaries/roadmap-archive-2026-09.md` (MB `roadmap.md` stub) |
+| HR backlog | `memory-bank/hrProductContext.md` + HR operation matrix; historical: `docs/archive/hr-merged-2026/HR_MODULE_ENHANCEMENT_PLAN.md` |
 | Module env / GCS / sandbox | `docs/guides/MODULE_PLATFORM_ENVIRONMENT_MATRIX.md` |
 | Wishlist (non-committing) | `memory-bank/futureIdeas.md` |

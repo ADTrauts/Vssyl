@@ -253,8 +253,8 @@ The InstalledModulesSidebar displays the hierarchical structure of installed mod
 ## Related Documentation
 - [designPatterns.md](./designPatterns.md) (UI/UX, tokens, patterns)
 - [permissionsModel.md](./permissionsModel.md) (future: module permissions)
-- [roadmap.md](./roadmap.md) (planned features)
-- [activeContext.md](./activeContext.md) (current focus)
+- [activeContext.md](./activeContext.md) (current focus; historical roadmap archived)
+- [marketplaceProductContext.md](./marketplaceProductContext.md) (marketplace product intent)
 
 ---
 
@@ -300,7 +300,7 @@ The InstalledModulesSidebar displays the hierarchical structure of installed mod
   - Tracks module health, security, developer/reviewer info
   - Integrates with loader/runtime to make approved modules available
 - **Status:** Partially implemented; submission/install/review/listing exist. Runtime (MVP) to be added in Phase A.
-- **See also:** [roadmap.md](./roadmap.md) for planned marketplace enhancements
+- **See also:** [`marketplaceProductContext.md`](./marketplaceProductContext.md) for marketplace product intent (historical roadmap archived)
 
 --- 
 

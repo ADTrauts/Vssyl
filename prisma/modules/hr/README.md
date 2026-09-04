@@ -153,8 +153,8 @@ Planned feature files:
 
 ## Related Documentation
 
-- **Module Brainstorming**: `memory-bank/moduleBrainstorming.md` - Full feature list
-- **Org Chart System**: `memory-bank/org-chart-permission-system.md` - Foundation
+- **Module Brainstorming (historical)**: [`docs/plans/MODULE_BRAINSTORMING_SUMMARY.md`](../../../docs/plans/MODULE_BRAINSTORMING_SUMMARY.md) (full body archived; MB path is redirect stub)
+- **Org / workforce identity**: [`docs/business-operations/WORKFORCE_IDENTITY_ARCHITECTURE.md`](../../../docs/business-operations/WORKFORCE_IDENTITY_ARCHITECTURE.md); authorization → [`docs/architecture/POLICY_ENGINE.md`](../../../docs/architecture/POLICY_ENGINE.md) (historical org-chart permission design archived)
 - **Business Workspace**: [`docs/architecture/WORKSPACE_ROUTING_CONTRACT.md`](../../../docs/architecture/WORKSPACE_ROUTING_CONTRACT.md) (historical: `docs/archive/session-summaries/business-workspace/businessWorkspaceArchitecture.md`)
 - **Database Context**: `memory-bank/databaseContext.md` - Overall schema
 

@@ -804,8 +804,8 @@ const managerId = approval?.managerPosition.userId;
 
 ### Memory Bank
 - **HR Product Context**: `memory-bank/hrProductContext.md` - Complete product overview
-- **Org Chart System**: `memory-bank/org-chart-permission-system.md` - Foundation
-- **Module Brainstorming**: `memory-bank/moduleBrainstorming.md` - Full feature list
+- **Org Chart System**: `docs/archive/session-summaries/org-chart/org-chart-permission-system.md` - Foundation
+- **Module Brainstorming**: `docs/archive/session-summaries/moduleBrainstorming.md` - Full feature list
 - **Business Workspace**: `memory-bank/businessWorkspaceArchitecture.md` - Integration
 - **System Patterns**: `memory-bank/systemPatterns.md` - Architecture patterns
 

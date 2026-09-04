@@ -172,7 +172,7 @@ Before creating or editing architecture documentation:
 | Topic | Source of Truth | Supporting (living) | Historical / read-only | Never edit for truth |
 |-------|-----------------|---------------------|------------------------|----------------------|
 | **Production deployment** | [`../deployment/PRODUCTION_DEPLOYMENT.md`](../deployment/PRODUCTION_DEPLOYMENT.md) | [`../deployment/GOOGLE_CLOUD_DEPLOYMENT.md`](../deployment/GOOGLE_CLOUD_DEPLOYMENT.md), [`memory-bank/deployment.md`](../../memory-bank/deployment.md) | Build optimization guides | Session summaries |
-| **Security posture** | ⚠️ **TBD — gap** | [`memory-bank/securityComplianceSystem.md`](../../memory-bank/securityComplianceSystem.md), Platform Standards §27 | — | Do not treat Memory Bank as cert |
+| **Security posture** | ⚠️ **TBD — gap** | Platform Standards §27, [`POLICY_ENGINE.md`](./POLICY_ENGINE.md), [`memory-bank/adminProductContext.md`](../../memory-bank/adminProductContext.md) | [`../archive/session-summaries/securityComplianceSystem.md`](../archive/session-summaries/securityComplianceSystem.md) (historical; MB path is redirect stub) | Do not treat historical Memory Bank dump as cert |
 | **Rollback operations** | [`../deployment/CLOUD_RUN_ROLLBACK_RUNBOOK.md`](../deployment/CLOUD_RUN_ROLLBACK_RUNBOOK.md) | — | — | — |
 | **AI vision runbook** | [`../ai/RUNBOOK.md`](../ai/RUNBOOK.md) | [`../ai/PROVIDERS.md`](../ai/PROVIDERS.md) | — | — |
 | **Partner operator runbook** | [`../marketplace/PARTNER_OPERATOR_RUNBOOK.md`](../marketplace/PARTNER_OPERATOR_RUNBOOK.md) | — | — | — |

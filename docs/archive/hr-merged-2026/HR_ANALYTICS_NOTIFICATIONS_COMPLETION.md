@@ -173,7 +173,7 @@ Three main analytics functions:
 - `.cursor/rules/coding-standards.mdc` - Added notification patterns
 - `memory-bank/activeContext.md` - Updated current focus
 - `memory-bank/progress.md` - Added completion details
-- `memory-bank/HR_MODULE_ENHANCEMENT_PLAN.md` - Marked Priority 1 complete
+- `docs/archive/hr-merged-2026/HR_MODULE_ENHANCEMENT_PLAN.md` - Marked Priority 1 complete
 
 ---
 

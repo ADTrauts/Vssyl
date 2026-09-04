@@ -169,7 +169,7 @@ flowchart LR
 2. **Service layer** — `orgChartService`, `permissionService`, `employeeManagementService` are substantial
 3. **Identity hub** — `EmployeePosition` is workforce anchor for entire platform
 4. **Frontend context** — `BusinessConfigurationContext` (~1,050 LOC) models domain state
-5. **Product documentation** — historical `businessWorkspaceArchitecture.md` (archived); living `org-chart-permission-system.md` (pending later reconciliation); current routing: `WORKSPACE_ROUTING_CONTRACT.md` / `APPLICATION_LIFECYCLE.md`
+5. **Product documentation** — historical `businessWorkspaceArchitecture.md` (archived); historical org-chart permission design archived at `docs/archive/session-summaries/org-chart/org-chart-permission-system.md` (MB path is redirect stub — authorization → Policy Engine; structure → BA / workforce identity); current routing: `WORKSPACE_ROUTING_CONTRACT.md` / `APPLICATION_LIFECYCLE.md`
 
 **Evidence it remains scattered:**
 

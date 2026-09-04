@@ -329,7 +329,7 @@ Add endpoints:
 #### Step 7.1: Update Documentation
 
 **Files to Update**:
-- `memory-bank/BILLING_PAYMENT_IMPLEMENTATION_PLAN.md`
+- `docs/archive/stripe-merged-2026/BILLING_PAYMENT_IMPLEMENTATION_PLAN.md`
 - `docs/setup/STRIPE_SETUP_GUIDE.md` (canonical Stripe setup; no separate `STRIPE_SETUP.md`)
 
 **Action Items**:

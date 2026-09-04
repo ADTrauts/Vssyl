@@ -242,7 +242,7 @@ npm run prisma:migrate -- --name add_hr_module
 - **Documentation**: `memory-bank/hrProductContext.md`
 - **Implementation Details**: `./HR_MODULE_FRAMEWORK_IMPLEMENTATION.md`
 - **Database Docs**: `prisma/modules/hr/README.md`
-- **Module Brainstorming**: `memory-bank/moduleBrainstorming.md`
+- **Module Brainstorming**: `docs/archive/session-summaries/moduleBrainstorming.md`
 
 ---
 

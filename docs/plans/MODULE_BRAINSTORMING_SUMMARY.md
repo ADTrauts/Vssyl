@@ -8,7 +8,9 @@
 ## 📋 What Was Created
 
 ### 1. **Comprehensive Module Brainstorming Document**
-**Location**: `memory-bank/moduleBrainstorming.md`
+**Location (historical body):** `docs/archive/session-summaries/moduleBrainstorming.md`  
+**Active Memory Bank path:** `memory-bank/moduleBrainstorming.md` (redirect stub only)  
+**Prefer this summary** for orientation; do not treat the historical brainstorm as current module strategy.
 
 **Contents**:
 - **150+ module ideas** across 3 categories:
@@ -195,7 +197,7 @@ For every new module, follow this 8-phase process:
 
 ### For Product Managers
 
-1. **Browse module ideas**: `memory-bank/moduleBrainstorming.md`
+1. **Browse module ideas**: `docs/plans/MODULE_BRAINSTORMING_SUMMARY.md` (historical full list: `docs/archive/session-summaries/moduleBrainstorming.md`)
 2. **Update status as modules progress**: Add status icons (📋, 🚧, ✅)
 3. **Track completion**: Use the status legend
 4. **Prioritize**: Mark with ⭐ flags
@@ -220,7 +222,7 @@ For every new module, follow this 8-phase process:
 ## 📚 Related Documentation
 
 ### Core Documentation
-- **Module Brainstorming**: `memory-bank/moduleBrainstorming.md` - 150+ module ideas
+- **Module Brainstorming**: this summary + historical `docs/archive/session-summaries/moduleBrainstorming.md` (MB path is redirect stub)
 - **Development Standards**: `.cursor/rules/module-development.mdc` - Mandatory requirements
 - **AI Context**: `memory-bank/aiContextSystem.md` (archived guide in `docs/archive/guides-merged-2026/MODULE_AI_CONTEXT_GUIDE.md`)
 
