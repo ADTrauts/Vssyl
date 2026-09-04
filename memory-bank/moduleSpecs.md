@@ -242,7 +242,7 @@ The InstalledModulesSidebar displays the hierarchical structure of installed mod
 - Accessible via keyboard and screen readers
 
 ### Design Notes
-- Follows design patterns in [designPatterns.md](./designPatterns.md)
+- Follows UX Constitution / design tokens ([designPatterns.md](./designPatterns.md) redirect stub)
 - Uses icons for groups and modules (see Iconography section)
 - Sidebar layout adapts for mobile (collapsible, touch-friendly)
 - Integrates with ModuleManager for group/module management
@@ -251,8 +251,8 @@ The InstalledModulesSidebar displays the hierarchical structure of installed mod
 ---
 
 ## Related Documentation
-- [designPatterns.md](./designPatterns.md) (UI/UX, tokens, patterns)
-- [permissionsModel.md](./permissionsModel.md) (future: module permissions)
+- [`docs/ux/UX_CONSTITUTION.md`](../docs/ux/UX_CONSTITUTION.md) / [`DESIGN_TOKENS.md`](../docs/ux/DESIGN_TOKENS.md) (UI law; [designPatterns.md](./designPatterns.md) is a redirect stub)
+- [`docs/architecture/POLICY_ENGINE.md`](../docs/architecture/POLICY_ENGINE.md) (authorization; [permissionsModel.md](./permissionsModel.md) is a redirect stub)
 - [activeContext.md](./activeContext.md) (current focus; historical roadmap archived)
 - [marketplaceProductContext.md](./marketplaceProductContext.md) (marketplace product intent)
 

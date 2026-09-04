@@ -74,4 +74,4 @@ Settings does **not** own:
 - Account / profile routing and UX patterns in current product surfaces
 - [`memory-bank/adminProductContext.md`](./adminProductContext.md) — Platform Admin fence
 - [`memory-bank/memberManagementProductContext.md`](./memberManagementProductContext.md) — membership fence
-- Notifications guides / ProductContext when notification preference ownership is refined
+- [`memory-bank/notificationsProductContext.md`](./notificationsProductContext.md) — attention / delivery vs Settings preferences

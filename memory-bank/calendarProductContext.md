@@ -50,6 +50,7 @@ Calendar is Vssyl’s **events and time-grid** application: personal, business, 
 
 - Calendar remains the system of record for **events** on calendars it owns.
 - Context-bound calendars must not leak private events across unauthorized contexts.
+- **Availability / free-busy exposure is not the same as sharing full event details**; revealing event content to others should be intentional (exact free-busy depth remains an open product decision).
 - Soft-deleted events remain recoverable under Global Trash–aligned lifecycle expectations.
 - Calling something a “schedule” in casual language must not redefine Calendar as the workforce Scheduling module.
 

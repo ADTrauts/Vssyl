@@ -51,7 +51,13 @@ A business member can exist without an HR profile; whether that is an explicit p
 
 - **Employee HR profile** — employment lifecycle extension of an organizational placement
 - Employment metadata (hire date, employment status, employment type)
-- **Onboarding** — journeys, checklists/tasks, and related documents for new hires
+- **Onboarding** — structured employee journeys for new hires (not account signup, business creation, app install, or developer setup):
+  - reusable **templates / journeys** (business-level recipes)
+  - **tasks / checklists** with product-level ownership (employee, manager, HR, buddy where supported)
+  - **sequencing / due offsets** at product level (not schema machinery)
+  - **auto-start** when hire / employment lifecycle transition makes someone ready to onboard
+  - **admin / manager / employee** participation surfaces and completion / progression visibility
+  - document and task **completion** as part of readiness — not a separate Onboarding product
 - **Time-off / PTO** — request, balance, and approval lifecycle (system of record for leave)
 - **Attendance** — **historical workforce truth** (punches, who actually worked, policies, exceptions)
 - **Employee documents** — employment-related files where the product supports them
@@ -126,4 +132,5 @@ HR does **not** own:
 - [`docs/architecture/POLICY_ENGINE.md`](../docs/architecture/POLICY_ENGINE.md)
 - [`docs/architecture/WORKSPACE_ROUTING_CONTRACT.md`](../docs/architecture/WORKSPACE_ROUTING_CONTRACT.md)
 - Historical HR framework notes: [`docs/archive/hr-merged-2026/`](../docs/archive/hr-merged-2026/)
+- Historical onboarding ProductContext body: [`docs/archive/hr-merged-2026/onboardingProductContext-archive-2026-09.md`](../docs/archive/hr-merged-2026/onboardingProductContext-archive-2026-09.md) (redirect: [`onboardingProductContext.md`](./onboardingProductContext.md))
 - Scheduling / Calendar / To-Do product boundaries: respective ProductContexts

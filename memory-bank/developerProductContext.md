@@ -1,95 +1,95 @@
-<!--
-Developer Tools Product Context
-See README for the modular context pattern.
--->
+# Developer Product Context
 
-# Developer Tools Product Context
+**Status:** Active product intent  
+**Last verified:** 2026-09-04  
+**Authority:** Product intent only  
+**Product type:** Creator / publisher surface  
+**Architecture:** Third-party module pipeline, Application Lifecycle, Platform Admin certification, Policy Engine
 
-**Description:**
-This file documents the product context for all developer-facing features, including module management, developer dashboards, and "God Mode" tools.
+---
 
-## 1. Header & Purpose
-- **Purpose:**  
-  The Developer Tools module provides features for developers to manage modules, access developer dashboards, and use advanced ("God Mode") tools for debugging, monitoring, and platform extension.
-- **Cross-References:**  
-  - [adminProductContext.md] (admin/monitoring overlap)
-  - [marketplaceProductContext.md] (module management)
-  - [systemPatterns.md] (developer patterns, module system)
+## Purpose
 
-## 2. Problem Space
-- Developers need tools to manage modules, debug, and monitor system health.
-- Lack of centralized developer dashboard limits productivity and oversight.
+**Developer** is the **creator/publisher side** of the Vssyl application ecosystem: where people and businesses **author, submit, publish, and understand creator-side outcomes** for applications that extend Vssyl.
 
-## 3. User Experience Goals
-- Centralized dashboard for module management and developer analytics.
-- Access to advanced tools for debugging, monitoring, and testing.
-- Secure, developer-only access to sensitive features.
+It is adjacent to Marketplace (discover/install) and Platform Admin (approve/certify), not a substitute for either.
 
-## 3a. Panel-Based Layout & Navigation
-- **Left Sidebar:** Navigation between modules, analytics, monitoring, and tools.
-- **Main Panel:** Module lists, analytics, logs, and controls.
-- **Panel Features:** Filtering, sorting, and action buttons for each tool.
+## User Value
 
-## 4. Core Features & Requirements
-- Module management (view, submit, update, delete)
-- Developer dashboard (stats, analytics)
-- Monitoring (module health, logs, metrics)
-- Advanced tools ("God Mode")
-- Secure, developer-only access
+- A coherent place to bring an application into the Vssyl ecosystem
+- Clear expectation that publishing is business-scoped where the product requires a business publisher
+- Visibility into submission and certification **status** without owning approval authority
+- Awareness of creator-side monetization where the product supports it
+- Secure creator access — publisher tools are not a general-user surface
 
-## 4a. Feature Checklist (Implementation Status)
-| Feature                | Status      | Notes/Location (if implemented)      |
-|------------------------|-------------|--------------------------------------|
-| Module Management      | ✅          | Marketplace backend, APIs            |
-| Developer Dashboard    | ✅          | `/developer-portal` + business-scoped route |
-| Monitoring             | ⚠️ Partial | Marketplace monitoring, logs         |
-| Advanced Tools         | ❌ Planned  |                                      |
+## Core Product Model
 
-## 5. Integration & Compatibility
-- Integrates with Marketplace, monitoring, and analytics APIs.
+Durable creator concepts:
 
-## 5a. Data Model Reference
-- Module, ModuleSubmission, Developer, Log (see [databaseContext.md])
+- **Authoring / packaging** an application for Vssyl (product-level: prepare something installable)
+- **Submission** into the platform review path
+- **Publishing** — making an approved application available to the ecosystem (catalog eligibility), not silent activation of untrusted code
+- **Creator dashboard** — status, listings, and creator-facing outcomes for the publisher’s applications
+- **Monetization awareness** — pricing/revenue visibility where product-supported (economics boundaries may still be open)
+- **Trust experience** — creators see certification/approval state; they do not perform platform certification
 
-## 6. Technical Constraints & Decisions
-- Developer-only access enforced at API and UI.
-- Uses Node.js, Express, React, REST APIs.
+### Publish (product meaning)
 
-## 7. Success Metrics
-- Developer productivity
-- Module management efficiency
-- System health/uptime
+**Publish** means the creator’s application is advanced into the ecosystem as an available offering after platform trust gates — not “install for myself,” and not “approve as Platform Admin.”
 
-## 8. Design & UX References
-- VS Code Extensions, GitHub Actions, Atlassian Developer Console
-- [designPatterns.md], [systemPatterns.md]
+## Product Fence
 
-## 8a. Global Components & Integration Points
-- Developer dashboard, module management panels, monitoring widgets.
+| Surface | Product meaning |
+|--------|------------------|
+| **Marketplace** | Discover / evaluate / initiate install (consumer / buyer side) |
+| **Developer** | Author / submit / publish / creator-side monetization |
+| **Platform Admin** | Approve / certify / govern |
+| **Application Lifecycle / Manager** | Installed state and lifecycle after install initiation |
 
-## 12. Navigation & Business Context (New)
-- Business-scoped Developer Portal is accessible via the Work area:
-  - Path: `/business/{businessId}/workspace/developer-portal`
-  - Also available globally at `/developer-portal` and supports `?businessId={id}`
-- Module submission flow now routes users to create or link a business after upload:
-  - `BusinessCreationModal` offers "Create New Business" and "Link to Existing Business"
-  - On completion, user is redirected to `/business/{id}/workspace`, which includes a Developer Portal quick action
+Developer may **surface** certification status. Developer does **not** own approval authority.
 
-## 13. Current Implementation Notes (New)
-- Frontend Developer Portal APIs (`web/src/api/developerPortal.ts`) accept optional `businessId` to scope stats and revenue
-- Backend Developer Portal services/controllers accept optional `businessId` to filter modules by business
-- Business Workspace shows a Modules widget and a direct "Developer Portal" action
-- Developer Portal Modules tab lists modules (when in business scope), supports inline pricing and analytics, and links to Module Details (`/business/{id}/workspace/developer-portal/modules/{moduleId}`)
+## Context Behavior
 
-## 9. Testing & Quality
-- Unit/integration tests for developer APIs and UI.
-- E2E tests for module management flows.
+- Creator work is typically **business-scoped** (publisher business) where the product requires linking submissions to a business.
+- Global or personal entry points may exist as navigation convenience; they do not redefine Marketplace ownership.
+- After install initiation by users, day-to-day installed lifecycle lives in Application Manager / Lifecycle — not Developer.
 
-## 10. Future Considerations & Ideas
-- In-app code editor
-- Real-time log streaming
-- Advanced debugging tools
+## Key Relationships
 
-## 11. Update History & Ownership
-- **2024-06:** Initial draft.  
-  Owner: [Your Name/Team]
+- **Marketplace:** Adjacent consumer surface; do not merge product ownership.
+- **Platform Admin:** Certification and governance; creators consume status, admins decide trust.
+- **Application Lifecycle:** Installed state after Marketplace install initiation.
+- **Policy Engine:** Access to creator surfaces and protected publisher actions.
+- **Business Administration:** Publisher business identity/context — not the developer console itself.
+
+## Product Invariants
+
+- Marketplace discovery/install must not absorb creator authoring/publishing ownership.
+- Certification status visibility must not imply that Developer owns approval.
+- Creator access remains restricted; publisher tools are not general Settings or Member admin.
+- Changing pipeline implementation must not erase the buyer vs creator product fence.
+
+## Boundaries
+
+Developer does **not** own:
+
+- Marketplace catalog / discovery / install initiation UX
+- Platform Admin approve/certify operations
+- Application Lifecycle install/enable/disable state machine
+- Policy Engine / authorization architecture
+- Module runtime, manifests, sandbox, or API schemas as product philosophy
+- End-user application configuration after install
+
+## Open Product Decisions
+
+1. Long-term consolidation of Developer ↔ Marketplace surfaces (default today: **keep separate**).
+2. Exact creator persona mix (individual developers vs business publishers vs partners) as permanent product framing.
+3. Monetization / product-economics boundaries that remain unresolved commercially.
+
+## Canonical References
+
+- [`memory-bank/marketplaceProductContext.md`](./marketplaceProductContext.md) — discover / install
+- [`memory-bank/adminProductContext.md`](./adminProductContext.md) — Platform Admin
+- [`docs/architecture/APPLICATION_LIFECYCLE.md`](../docs/architecture/APPLICATION_LIFECYCLE.md)
+- [`docs/guides/THIRD_PARTY_MODULE_PIPELINE_SOURCE_OF_TRUTH.md`](../docs/guides/THIRD_PARTY_MODULE_PIPELINE_SOURCE_OF_TRUTH.md)
+- [`docs/architecture/POLICY_ENGINE.md`](../docs/architecture/POLICY_ENGINE.md)

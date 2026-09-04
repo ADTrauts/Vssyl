@@ -66,7 +66,9 @@ File Hub trash is a **module-scoped view of Global Trash**, not a separate perma
 - Changing the underlying blob-storage provider must not change the user’s File Hub mental model (files, folders, share, trash).
 - Soft-deleted File Hub items remain recoverable through trash until permanently removed per platform rules.
 - Share and access decisions are contextual; File Hub must not present another tenant’s private content as the user’s own.
+- Sharing personal content into a business (or other) context should feel **intentional** to the user — not a silent harvest of private files.
 - File Hub is the user-facing file experience; it does not redefine platform storage as a competing product.
+- Authorization / effective access enforcement belongs to **Policy Engine** and File Hub implementation — not a parallel Memory Bank ACL model.
 
 ## Boundaries
 

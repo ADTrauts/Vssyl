@@ -150,7 +150,21 @@ flowchart TD
 
 ---
 
-## 7. Related documents
+## 7. Product intent — business identity & branding
+
+Durable **product** meaning for internal business identity (not implementation checklist):
+
+- Business Administration owns **internal tenant business identity**: name, description, contact/metadata the business uses for itself, and **branding** (logo / visual profile representation) within Vssyl.
+- Business-level **configuration** of how the tenant presents and operates itself remains BA-scoped (`businessId`), distinct from personal Settings.
+- **Members** owns participation (who belongs). **Place** owns public publisher / listing surfaces. Shared fields must not make Place the system of record for internal tenant identity.
+- Platform Admin may view aggregates; it does not replace tenant business profile ownership.
+
+Historical Memory Bank body (non-authoritative): [`../archive/session-summaries/businessProfileManagement-archive-2026-09.md`](../archive/session-summaries/businessProfileManagement-archive-2026-09.md)  
+Active redirect: [`../../memory-bank/businessProfileManagement.md`](../../memory-bank/businessProfileManagement.md)
+
+---
+
+## 8. Related documents
 
 - [BUSINESS_ADMINISTRATION_BOUNDARY_ANALYSIS.md](./BUSINESS_ADMINISTRATION_BOUNDARY_ANALYSIS.md)
 - [BUSINESS_OPERATIONS_OWNERSHIP_MODEL.md](../business-operations/BUSINESS_OPERATIONS_OWNERSHIP_MODEL.md)

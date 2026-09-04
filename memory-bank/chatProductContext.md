@@ -80,8 +80,10 @@ Deeper governance surfaces (classification, retention, moderation, encryption-re
 
 - Entering another application should not require losing access to ongoing Chat via always-available chat (when the user is in an authenticated shell where Chat is enabled).
 - Personal and business conversations remain context-scoped; Chat must not mix private contexts without authorized participation.
+- Conversation **content privacy** is a product expectation: ordinary business admins should not gain message oversight merely by holding membership admin status, unless a separately defined governance product explicitly provides it.
 - File attachments remain File Hub resources, not a second Chat-only file store.
 - Chat is the system of record for conversations/messages; widgets and AI are consumers, not competing stores.
+- Authorization for conversation access is **Policy Engine / current auth architecture**, not a Chat-local RBAC narrative.
 
 ## Boundaries
 

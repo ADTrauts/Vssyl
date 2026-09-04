@@ -79,6 +79,7 @@ Until that decision, treat personal connections as **co-located intent**, not as
 - Inviting someone to a business is membership, not automatic HR employment or org placement.
 - Personal connection actions must not be described as business membership.
 - Hosting Members UI under another shell does not change ownership.
+- **Directory / membership visibility** should be understandable as business-participation visibility — not a claim that personal life data or private app content is visible to all members.
 
 ## Boundaries
 
