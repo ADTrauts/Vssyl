@@ -56,7 +56,16 @@ flowchart TD
 
 ## Module and domain contexts
 
-`*ProductContext.md` files (drive, chat, hr, scheduling, admin, developer, notifications, etc.), plus **`applicationMermaidDiagrams.md`** (platform + interoperability + module-surface maps), `aiContextSystem.md`, `deployment.md`, and remaining plan files (verify currency). Redirect stubs from ownership reconciliation include `permissionsModel.md`, `onboardingProductContext.md`, `businessProfileManagement.md`, `threadActivityProductContext.md`, and `designPatterns.md` (Batch 1C-4B-1). Historical roadmaps/plans archived in Batch 1C-4A (`roadmap.md` and related paths are redirect stubs).
+`*ProductContext.md` files (drive, chat, hr, scheduling, admin, developer, notifications, etc.), plus **`applicationMermaidDiagrams.md`** (platform + interoperability + module-surface maps), `aiContextSystem.md`, and remaining plan files (verify currency).
+
+| Orientation file | Role (Batch 1C-4B-2) |
+|------------------|----------------------|
+| [`moduleSpecs.md`](./moduleSpecs.md) | Active contributor / certification checklist (not architecture SoT) |
+| [`deployment.md`](./deployment.md) | Active deployment orientation → `docs/deployment/` |
+| [`compliance.md`](./compliance.md) | Redirect stub (not legal SoT) |
+| [`landingPageContext.md`](./landingPageContext.md) | Redirect stub (not root identity / GTM) |
+
+Redirect stubs from ownership reconciliation (1C-4B-1): `permissionsModel.md`, `onboardingProductContext.md`, `businessProfileManagement.md`, `threadActivityProductContext.md`, `designPatterns.md`. Historical roadmaps/plans archived in Batch 1C-4A (`roadmap.md` and related paths are redirect stubs).
 
 Completed AI phase plans, session summaries, and superseded workspace/search architecture notes live under **`docs/archive/`** (Batch 1A / 1C-4A). Verify currency via architecture docs (for AI: `docs/architecture/AI_DOCUMENT_STATUS_MATRIX.md`) before treating any plan as current authority. Redirect stubs include `AI_CODING_STANDARDS.md`, `globalSearchProductContext.md`, `moduleManagerContext.md`, `roadmap.md`, `moduleBrainstorming.md`, `org-chart-permission-system.md`, and other 1C-4A historical plans.
 
