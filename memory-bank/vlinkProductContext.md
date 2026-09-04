@@ -1,55 +1,59 @@
 # V_Link Product Context
 
-**Status:** Implemented (May 2026) — platform layer, not a marketplace module  
-**Canonical plan:** [`docs/plans/V_LINK_PLATFORM_LAYER_PLAN.md`](../docs/plans/V_LINK_PLATFORM_LAYER_PLAN.md)
+**Status:** Active product intent  
+**Last verified:** 2026-09-04  
+**Authority:** Product intent only  
+**Product type:** Product–platform relationship bridge  
+**Architecture:** [`docs/architecture/V_LINK.md`](../docs/architecture/V_LINK.md)
+
+---
 
 ## Purpose
 
-V_Link is a native operating-layer primitive that lets users connect related items across Vssyl (files, calendar events, future modules). It organizes relationships; **membership does not grant access to linked entity content**.
+**V_Link** is Vssyl’s **relationship bridge**: user-curated associations across applications while each app remains the system of record for its entities. Optional hub UX; **not** a Marketplace module and **not** file sharing/ACL.
 
-## Key paths
+## User Experience
 
-| Area | Location |
-|------|----------|
-| Schema | `prisma/modules/platform/vlink.prisma` |
-| API | `/api/vlinks` — `server/src/routes/vlinks.ts` |
-| Hub UI | `/vlink` — `web/src/components/vlink/VLinkModule.tsx` |
-| Sidebar | `web/src/components/vlink/VLinkSidebarButton.tsx` (under AI) |
-| AI context | `GET /api/vlinks/ai/context/recent` |
-| AI pipeline source | Admin **Context Sources** id `vlink` — `V_Link Relationships` |
+- Link related items across apps into navigable relationships
+- Optional **hub** to browse V_Links
+- AI may **suggest** links; **user approval** required before AI-created links are durable (current product law)
 
-## AI pipeline integration (May 2026) ✅
+## Core Product Model
 
-| Layer | Status |
-|-------|--------|
-| Module context provider | ✅ `recent_vlinks` in `registerBuiltInModules.ts` |
-| Pipeline context source | ✅ id `vlink`, label **V_Link Relationships** |
-| Grounding rules reconcile | ✅ `reconcileSystemPipelineGroundingRules()` merges optional `vlink` on system intents |
-| Runtime grounding | ✅ `vlinkPipelineContextService` + `DigitalLifeTwinCore` |
-| Entity linking | ✅ `persistedVLinks` preferred over inferred links |
-| Pipeline traces/diagnostics | ✅ `source: vlink` (not folded into generic `module_context`) |
-| Permission filtering | ✅ Restricted linked entities redacted; unapproved suggestions excluded |
+- Cross-application associations; user-curated by default
+- Navigable/contextual linking from apps and hub
+- Apps remain SoR for linked content; V_Link organizes relationships only
 
-**Canonical runtime:** `server/src/ai/context/vlinkPipelineContextService.ts`
+## Critical Invariant
 
-## Module resolver status (2026-06-14)
+**Link membership does not automatically grant access** to linked content. Authorization stays with the linked product and **Policy Engine** / current auth architecture.
 
-Backend V_Link resolver coverage (see [PLATFORM_ENTITY_MODEL.md](../docs/architecture/PLATFORM_ENTITY_MODEL.md) for full table):
+## Relationships
 
-| Module | Status |
-|--------|--------|
-| drive (FILE, FOLDER) | ✅ Reference path |
-| calendar (CALENDAR_EVENT) | ✅ |
-| chat (CHAT_CONVERSATION) | ✅ — CHAT_THREAD deferred |
-| todo (TASK, TODO) | ✅ |
-| place (PLACE_LISTING, PLACE_MEETING) | ✅ |
-| notes (NOTE) | ⚠️ partial inline resolver; dedicated service TBD |
+- Linkable apps own their entities; V_Link does not absorb SoR
+- AI may ground on approved V_Links; suggestions need approval
+- Global Trash ≠ V_Link archive UX
+- People connections (Members) ≠ V_Link entity associations
 
-**Relationship Framework:** [RELATIONSHIP_FRAMEWORK_INDEX.md](../docs/architecture/RELATIONSHIP_FRAMEWORK_INDEX.md)
+## Product Invariants
 
-## Non-negotiables
+- Membership on a V_Link ≠ content access
+- Hub UX changes must not turn V_Link into a Marketplace module or ACL system
+- No silent AI durable linking without approval (current law)
 
-- Membership-only access in v1 (no UNLISTED/code-only anonymous access)
-- One primary vlink per entity in v1; schema supports future secondary links
-- AI suggestions require user approval; no silent link creation
-- Separate archive UX (not Global Trash)
+## Boundaries
+
+Not file sharing/ACL, Global Trash, replacement SoR, app-local operational links, Drive/Calendar/Chat/To-Do/Place ownership, Platform Admin, or Marketplace install.
+
+## Open Product Decisions
+
+1. `/vlink` as **primary hub UX** vs mostly **contextual utility**
+2. Secondary / multi-link depth beyond primary-link product law
+3. Which additional entity types become first-class link targets over time
+
+## Canonical References
+
+- [`docs/architecture/V_LINK.md`](../docs/architecture/V_LINK.md)
+- [`docs/architecture/PLATFORM_ENTITY_MODEL.md`](../docs/architecture/PLATFORM_ENTITY_MODEL.md)
+- [`docs/architecture/RELATIONSHIP_FRAMEWORK_INDEX.md`](../docs/architecture/RELATIONSHIP_FRAMEWORK_INDEX.md)
+- [`docs/architecture/POLICY_ENGINE.md`](../docs/architecture/POLICY_ENGINE.md)

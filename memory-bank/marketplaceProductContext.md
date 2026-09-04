@@ -1,185 +1,99 @@
-<!--
-Marketplace Product Context
-See README for the modular context pattern.
--->
-
 # Marketplace Product Context
 
-## 1. Header & Purpose
+**Status:** Active product intent  
+**Last verified:** 2026-09-04  
+**Authority:** Product intent only  
+**Product type:** Application / discovery–install surface  
+**Architecture:** Application Lifecycle, Marketplace partner pipeline / cert records, Policy Engine
 
-**Purpose:**  
-The Marketplace module enables users and developers to discover, submit, review, and manage installable modules and plugins for the Block on Block platform. It is designed to foster extensibility, customization, and a vibrant ecosystem of third-party and proprietary modules. The Marketplace supports secure submission, approval, and monitoring of modules, with a vision for a user-friendly UI for browsing, searching, and managing modules in the future.
+---
 
-**Cross-References:**  
-- See also:  
-  - [dashboardProductContext.md] (integration of modules as dashboard widgets)
-  - [chatProductContext.md], [driveProductContext.md] (modules that can be extended via Marketplace)
-  - [systemPatterns.md] (module system architecture, security, and monitoring)
-  - [designPatterns.md] (planned UI/UX for Marketplace)
-  - [databaseContext.md] (data model and relationships)
+## Purpose
 
-## 2. Problem Space
+**Marketplace** is the user- and business-facing place to:
 
-- Users and organizations need a way to extend the platform with new features and integrations.
-- Developers require a secure, standardized process for submitting and managing modules/plugins.
-- Admins need tools for reviewing, approving, and monitoring third-party code.
-- There is currently no UI for browsing or managing modules, limiting discoverability and adoption.
+- **discover** applications and capabilities
+- **evaluate** them
+- understand **trust / approval** expectations
+- **initiate installation** into supported personal or business contexts
 
-## 3. User Experience Goals
+It fosters a first-party and third-party extensibility ecosystem without owning the entire application lifecycle or the developer authoring console.
 
-- Simple, secure submission and approval process for modules/plugins.
-- Intuitive UI for browsing, searching, and installing modules (planned).
-- Clear feedback and status for module submissions and approvals.
-- Role-based access for developers, reviewers, and admins.
-- Seamless integration of installed modules into the user's dashboard and workflows.
-- Monitoring and health status for installed modules.
+## User Value
 
-## 4. Core Features & Requirements
+- Find apps that extend Vssyl without leaving the platform
+- See what is available for personal vs business use where supported
+- Install with clear expectations that untrusted apps are not silently activated
+- Keep discovery separate from day-to-day “manage my installed apps” work
 
-- Module/plugin submission with validation and metadata.
-- Admin review, approval, and rejection of modules.
-- Developer and reviewer roles for module management.
-- Module search, update, and deletion.
-- Security policy enforcement and monitoring for installed modules.
-- REST API endpoints for all core operations.
-- (Planned) UI for browsing, searching, and managing modules.
-- Integration with dashboard and other modules.
+## Core Product Model
 
-## 3a. Panel-Based Layout & Navigation
+Durable concepts:
 
-*Planned for UI implementation:*
-- **Left Sidebar:** Categories, filters, user modules.
-- **Main Panel:** Module/plugin cards, search results, featured items.
-- **Side Panels (optional):** Module details, install/configure dialogs.
-- **Panel Features:**
-  - Responsive, interactive panels/cards.
-  - State preserved for user filters/searches.
-  - Mobile and desktop support.
+- **Catalog / discovery** — browse and search installable applications
+- **Evaluation** — enough product information to decide (description, trust posture, suitability)
+- **Trust / governance expectations** — apps are expected to pass approval/certification before they are trusted for activation
+- **Install initiation** — start install into a supported context
+- **Ecosystem** — first-party and third-party applications that integrate into Vssyl workflows rather than reinventing the platform
 
-## 4a. Feature Checklist (Implementation Status)
+Marketplace is not the system of record for every module’s internal data.
 
-> **Note:** All features marked as planned due to full platform rebuild. Status will be updated as features are re-implemented.
+## Context Behavior
 
-| Feature                        | Status      | Notes/Location (if implemented)                |
-|-------------------------------|-------------|-----------------------------------------------|
-| Data Model & API Foundations   | ✅          | Implemented (Prisma models, controllers)      |
-| Module/Plugin Submission       | ✅          | Implemented (`/modules/submit`)               |
-| Admin Review/Approval/Reject   | ✅          | Implemented (`/modules/submissions/*`)        |
-| Developer/Reviewer Roles       | ✅          | Implemented (via roles/permissions)           |
-| Module Search/Discovery        | ✅          | Implemented (`/modules/marketplace`)          |
-| Install/Update/Delete          | ✅          | Implemented (`install/uninstall/configure`)   |
-| Structural certification (MP-Q1–Q3) | ✅       | Validator + persistence + activation gate     |
-| Security Policy & Monitoring   | 🟡 Partial | Certification + artifact scan; broader monitoring planned |
-| Integrations (Dashboard, Chat, Drive) | ✅   | Partially via Modules page; runtime pending   |
-| UI for Browsing/Managing Modules | ✅        | Basic modules page implemented                |
-| Notifications                  | ❌          | Planned                                       |
-| Analytics & Reporting          | ❌          | Planned                                       |
-| Compliance & Audit             | ❌          | Planned                                       |
-## 4b. Runtime (MVP) Integration
+- Available where the product exposes Marketplace for personal and/or business scopes.
+- After install initiation, users manage installed applications through **Application Manager / Application Lifecycle** surfaces — not by treating Marketplace as the permanent home for every lifecycle action.
+- Installed apps appear or are assigned via **Dashboard / application assignment** UX — Marketplace does not own tab/home assignment.
 
-- Add iframe‑based runtime host and `GET /api/modules/:id/runtime` endpoint.
-- Submission supports hosted bundle URL; approval sets `manifest.frontend.entryUrl`.
-- Installed modules get “Open” action linking to `/modules/run/:id`.
-- Bundle runtime path when artifact passes baseline scan (see pipeline source of truth).
+## Key Relationships
 
-## 4c. Structural certification (May 2026) ✅
+| Surface | Product meaning |
+|--------|------------------|
+| **Marketplace** | Discover, evaluate, initiate install |
+| **Application Manager / Lifecycle** | Installed state and lifecycle management |
+| **Dashboard / application assignment** | Where installed apps are presented or assigned |
+| **Developer Portal** | Author, submit, publish, monetize (creator side) |
+| **Platform Admin Portal** | Approve, certify, govern (operator side) |
 
-**Purpose:** Automated interoperability validation on `ModuleVersion` before activation; complements human review in `moduleSpecs.md`.
+**Developer boundary:** Marketplace and Developer experience are **adjacent but distinct current surfaces**.
 
-| Stage | Behavior |
-|-------|----------|
-| Artifact finalize | `validateModuleCertification` + `persistModuleVersionCertification` (advisory; surfaces errors/warnings in admin UI) |
-| Approval publish | `AdminService.reviewModuleSubmission` → `ensureModuleVersionCertificationForActivation` — **blocks on FAILED** |
-| Promote / rollback | Same gate; re-validates when `NOT_RUN` or `certificationValidatorVersion` stale |
-| Warnings | `WARNING` status allows activation; `FAILED` returns `400` + `details.certification` |
+- Marketplace = **consumer / buyer** side  
+- Developer = **creator / publisher** side  
 
-**Key services:** `moduleCertificationValidator.ts`, `moduleCertificationPersistence.ts`, `moduleVersionCertificationGate.ts`.
+Long-term consolidation remains an open product decision. This batch does not merge them.
 
-**UI:** `ModuleCertificationReviewPanel` on admin modules review; certification fields on list/detail APIs.
+**Admin boundary:** Platform Admin may certify/approve; Marketplace owns catalog/discovery UX.
 
-**Migration:** `20260517000000_module_version_certification` — deploy before relying on gate in production.
+## Product Invariants
 
-**Docs:** `docs/guides/THIRD_PARTY_MODULE_PIPELINE_SOURCE_OF_TRUTH.md`, `THIRD_PARTY_MODULE_RULEBOOK.md`.
+- Changing install plumbing must not make Marketplace own Dashboard application assignment.
+- Trust expectations remain part of the product story even when certification UI lives partly in Platform Admin.
+- First-party and third-party apps share the same discovery/install product contract at the experience level.
+- Developer publishing is not redefined as Marketplace ownership merely because both touch modules.
 
-*Update status as features are rebuilt.*
+## Boundaries
 
-## 5. Integration & Compatibility
+Marketplace does **not** own:
 
-- Modules can extend or integrate with Dashboard, Chat, Drive, and other core modules.
-- REST API endpoints allow other modules to query, install, or manage marketplace modules.
-- Security and monitoring are enforced for all installed modules.
-- Designed for extensibility: new module types and integrations can be added.
+- Full submit → review → monitor pipeline as a single Marketplace product
+- Developer authoring, submission console, or monetization
+- Platform Admin certification/governance operations
+- Application Lifecycle state machine / enable-disable mechanics (architecture)
+- Dashboard tab / widget **application assignment**
+- Module-local configuration after install (module / Application Manager configure)
+- Personal Settings or Business Administration
 
-## 5a. Data Model Reference
+## Open Product Decisions
 
-- See [databaseContext.md](./databaseContext.md) and `prisma/schema.prisma` for full details.
-- **Key entities for Marketplace:**
-  - **Module:** Represents an installable module, with metadata, versioning, and compatibility.
-  - **ModuleSettings:** Stores settings/configuration for each module.
-  - **ModuleData:** Stores module-specific data.
-  - **moduleSubmission:** Tracks submission, approval, and review status.
-  - **User:** Can install, review, and manage modules.
-- **Important relationships:**
-  - Users can develop, review, and install multiple modules.
-  - Modules can be updated and versioned.
-  - Submissions are linked to developers and reviewers.
+1. Whether Developer Portal remains permanently separate or eventually integrates more tightly with Marketplace.
+2. Depth of evaluation UX (screenshots, permissions summaries, recommendations) as durable product law vs progressive enhancement.
+3. How strongly personal vs business availability is presented as first-class product structure.
+4. Licensing / purchase experiences before install (product vs commercial track).
 
-## 6. Technical Constraints & Decisions
+## Canonical References
 
-- Backend implemented with Node.js, Express, and Prisma ORM.
-- Security policies enforced for all modules (no direct file system/network/process access by default).
-- Module monitoring for health and metrics.
-- All API endpoints require authentication; some require admin.
-- UI/UX for Marketplace is planned but not yet implemented.
-
-## 7. Success Metrics
-
-- Number of modules submitted, approved, and installed.
-- User and developer engagement with the Marketplace.
-- Time to review/approve modules.
-- Module health and security compliance.
-- User satisfaction with module discovery and management (once UI is built).
-
-## 8. Design & UX References
-
-- Planned inspiration: VS Code Extensions Marketplace, Atlassian Marketplace, Google Workspace Marketplace.
-- [designPatterns.md] (planned UI/UX patterns for cards, search, install dialogs)
-- [systemPatterns.md] (module system architecture, security, and monitoring)
-
-## 8a. Global Components & Integration Points
-
-- **Global Components (planned):**
-  - Module cards, install/configure dialogs, search/filter UI.
-  - Integration with dashboard widgets and module management panels.
-- **Integration Points:**
-  - Dashboard: modules as widgets or dashboard extensions.
-  - Chat/Drive: modules that extend or integrate with core features.
-  - API: endpoints for module management, install, and health monitoring.
-- **Persistent/Global UI (planned):**
-  - Marketplace navigation and install dialogs accessible from anywhere in the app.
-
-## 9. Testing & Quality
-
-- Unit and integration tests for all backend services and API endpoints.
-- (Planned) E2E tests for module submission, approval, and management UI.
-- Security and compliance testing for all modules.
-- Monitoring and alerting for module health.
-
-## 10. Future Considerations & Ideas
-
-- Full-featured UI for browsing, searching, and managing modules.
-- Third-party developer onboarding: entry guide lives at [`docs/guides/THIRD_PARTY_MODULE_DEVELOPER_GUIDE.md`](../docs/guides/THIRD_PARTY_MODULE_DEVELOPER_GUIDE.md) (April 2026). Dedicated public partner portal / SLA pages remain future work.
-- AI-driven module recommendations and search.
-- Module/plugin analytics and reporting.
-- Team/shared module management.
-- Custom notification center for module updates.
-- Theming and dark mode.
-- Business start-up tools (planned)
-- Training/operations modules (planned)
-- Vendor/service connection integrations (planned)
-
-## 11. Update History & Ownership
-
-- **2024-06:** Major update to reflect current Marketplace backend implementation and planned UI.  
-  Owner: [Your Name/Team]
-- **2024-06:** Feature checklist reordered and expanded for best-practice rebuild. All features marked as planned. Status will be updated as features are re-implemented.
+- [`docs/architecture/APPLICATION_LIFECYCLE.md`](../docs/architecture/APPLICATION_LIFECYCLE.md)
+- [`docs/guides/THIRD_PARTY_MODULE_PIPELINE_SOURCE_OF_TRUTH.md`](../docs/guides/THIRD_PARTY_MODULE_PIPELINE_SOURCE_OF_TRUTH.md)
+- [`docs/marketplace/MARKETPLACE_PARTNER_CAPABILITY_CERTIFICATION_RECORD.md`](../docs/marketplace/MARKETPLACE_PARTNER_CAPABILITY_CERTIFICATION_RECORD.md)
+- [`memory-bank/adminProductContext.md`](./adminProductContext.md) — operator certification
+- [`memory-bank/developerProductContext.md`](./developerProductContext.md) — creator side (do not treat as merged)
+- [`memory-bank/dashboardProductContext.md`](./dashboardProductContext.md) — application assignment

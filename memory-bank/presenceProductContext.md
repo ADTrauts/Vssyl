@@ -1,94 +1,45 @@
-<!--
-Presence Product Context
-See README for the modular context pattern.
--->
-
 # Presence Product Context
 
-**Description:**
-This file documents the product context for user presence and activity tracking across modules.
+**Status:** Active product intent  
+**Last verified:** 2026-09-04  
+**Authority:** Product intent only  
+**Product type:** Cross-cutting real-time awareness capability
 
-## 1. Header & Purpose
-- **Purpose:**  
-  The Presence module provides real-time tracking and display of user online/away/offline status across threads and modules. It enables collaborative features, improves user awareness, and supports engagement analytics.
-- **Cross-References:**  
-  - [chatProductContext.md] (thread presence in chat)
-  - [threadActivityProductContext.md] (activity tracking)
-  - [systemPatterns.md] (real-time architecture, presence patterns)
-  - [databaseContext.md] (User, ThreadPresence models)
+---
 
-## 2. Problem Space
-- Users need to know who is online, away, or recently active in collaborative contexts (chat, threads, docs).
-- Presence must be accurate, real-time, and scalable across modules.
-- Presence data should be extensible for analytics, notifications, and engagement features.
+## Purpose
 
-## 3. User Experience Goals
-- Clear, real-time presence indicators (avatars, tooltips, status badges).
-- Accurate online/away/offline status and last seen info.
-- Presence integrated into chat, threads, and other collaborative modules.
-- Non-intrusive, accessible, and performant UI.
+**Presence** is a **cross-cutting real-time awareness capability**: online / away / offline (and last seen where supported). Collaborative products **project** it; users do not primarily “open Presence” as an app.
 
-## 3a. Panel-Based Layout & Navigation
-- **PresenceIndicator:** Shown in thread headers, chat panels, or user lists.
-- **Panels:** Grouped by status (online, away, offline), with avatars and tooltips.
-- **Integration:** Presence indicators embedded in chat, thread, and collaboration UIs.
+## User Experience / Where It Appears
 
-## 4. Core Features & Requirements
-- Real-time presence tracking via WebSocket or similar.
-- Activity-based status updates (online, away after inactivity, offline on disconnect).
-- Thread-specific and (future) global presence support.
-- Presence data stored and retrievable via API.
-- Extensible for new modules and analytics.
+- Awareness indicators in **Chat**, threads, and other people-aware surfaces
+- Not a required standalone navigation destination
 
-## 4a. Feature Checklist (Implementation Status)
-| Feature                | Status      | Notes/Location (if implemented)      |
-|------------------------|-------------|--------------------------------------|
-| Real-Time Presence     | ✅          | usePresence, WebSocket, API          |
-| PresenceIndicator UI   | ✅          | PresenceIndicator.tsx                |
-| Thread-Specific Status | ✅          | usePresence, threadPresence API      |
-| Activity Tracking      | ✅          | usePresence (mousemove, keydown, etc.)|
-| Last Seen Info         | ✅          | PresenceIndicator, API               |
-| Global Presence        | ❌ Planned  | Not yet implemented                  |
-| Analytics Integration  | ❌ Planned  | Not yet implemented                  |
+## Relationships
 
-## 5. Integration & Compatibility
-- Integrated with chat, threads, and collaboration modules.
-- API and WebSocket support for real-time updates.
-- Designed for extensibility to other modules and analytics.
+- **Chat** projects presence; displaying it does not transfer conceptual ownership to Chat alone.
+- **Notifications**, **activity/audit**, **Scheduling workforce availability**, and **Vssyl Place** are separate products/concepts.
 
-## 5a. Data Model Reference
-- See [databaseContext.md] and `prisma/schema.prisma` for User and ThreadPresence models.
+## Product Invariants
 
-## 6. Technical Constraints & Decisions
-- Real-time updates via WebSocket.
-- Presence status based on user activity and connection state.
-- Thread-specific presence; global presence planned.
-- Must be performant and scalable for large user bases.
+- **Presence availability ≠ workforce (Scheduling) availability.**
+- **Presence status ≠ Vssyl Place location or listing.**
+- Presence remains a projected capability, not a content system of record.
 
-## 7. Success Metrics
-- Accuracy and timeliness of presence updates.
-- User engagement with collaborative features.
-- Performance and scalability under load.
-- User satisfaction with presence awareness.
+## Boundaries
 
-## 8. Design & UX References
-- Slack, Google Docs, Microsoft Teams (presence indicators)
-- [designPatterns.md], [systemPatterns.md]
+Presence does **not** own Chat messaging, Scheduling shifts/work availability, Place graph/geography, notification delivery, activity/audit history, or engagement analytics.
 
-## 8a. Global Components & Integration Points
-- PresenceIndicator UI, usePresence hook, threadPresence API.
+## Open Product Decisions
 
-## 9. Testing & Quality
-- Unit/integration tests for presence APIs and UI.
-- E2E tests for real-time updates and activity tracking.
-- Performance and scalability testing.
+1. Keep a separate Presence ProductContext vs fold documentation into another capability (e.g. Chat).
+2. Privacy / who can see whose online status.
+3. Custom semantic states (e.g. “In a meeting”) — not current product law.
+4. Global presence depth vs Chat-centric presence.
 
-## 10. Future Considerations & Ideas
-- Global presence tracking (across all modules).
-- Presence-based notifications and analytics.
-- Custom status messages (e.g., "In a meeting").
-- Integration with external presence systems (calendar, SSO).
+## Canonical References
 
-## 11. Update History & Ownership
-- **2024-06:** Major update to reflect real-time, modular presence tracking.  
-  Owner: [Your Name/Team]
+- [`memory-bank/chatProductContext.md`](./chatProductContext.md)
+- [`memory-bank/schedulingProductContext.md`](./schedulingProductContext.md)
+- [`memory-bank/vssylPlaceProductContext.md`](./vssylPlaceProductContext.md)

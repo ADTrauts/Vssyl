@@ -1,151 +1,109 @@
 # Member Management Product Context
 
-## Overview
-The Member Management system provides a unified, reusable foundation for managing user relationships across both personal and business contexts. It enables users to connect with each other personally while also supporting comprehensive business employee management with role-based permissions.
+**Status:** Active product intent  
+**Last verified:** 2026-09-04  
+**Authority:** Product intent only  
+**Product type:** Business membership / admin surface (+ unresolved personal relationship capability)  
+**Architecture:** Workforce identity architecture, Policy Engine, Business Administration / org chart
 
-## Core Problems Solved
+---
 
-### Personal Side
-- **User Discovery**: Users need to find and connect with other users on the platform
-- **Connection Management**: Users need to send, accept, decline, and manage personal connections
-- **Colleague Connections**: Users working in the same organization should easily connect with colleagues
-- **Network Building**: Users need to build their personal network for collaboration and social features
+## Purpose
 
-### Business Side
-- **Employee Management**: Business admins need to invite, manage, and remove employees
-- **Role Assignment**: Businesses need to assign appropriate roles and permissions to employees
-- **Invitation Tracking**: Track pending invitations and manage the onboarding process
-- **Access Control**: Ensure proper permissions based on employee roles
+**Members** owns product intent for **business participation**: who is invited into a business, who has joined, membership status, and directory/visibility of participants.
 
-## User Experience Goals
+It does **not** own employment records, workforce placement, or platform authorization.
 
-### Personal Connections
-1. **User Search & Discovery**
-   - Search for users by name, email, or username
-   - View user profiles with connection status
-   - See organization badges for context
+## User Value
 
-2. **Connection Requests**
-   - Send connection requests to other users
-   - Receive and manage incoming connection requests
-   - Accept, decline, or block connection requests
-   - "Connect with Colleague" button for same-organization users
+- Invite people into a business and track invitation lifecycle
+- See who belongs to the business and manage joining/leaving
+- Keep “who participates here” separate from “who is an HR employee” and “who holds which org position”
+- (Where co-located) manage personal connection requests without confusing them with business membership
 
-3. **Connection Management**
-   - View list of all connections
-   - Filter connections (All, Colleagues, Regular)
-   - Remove or block connections
-   - See shared activity and collaboration opportunities
+## Core Product Model — Business Membership
 
-### Business Employee Management
-1. **Employee Invitation**
-   - Invite employees by email address
-   - Assign roles and departments during invitation
-   - Track invitation status and resend if needed
-   - Automatic user creation for new email addresses
+Durable business concepts:
 
-2. **Employee Directory**
-   - View all current employees with roles and status
-   - Search and filter employees
-   - See connection status between employees
-   - Manage employee information and roles
+- **Invitation** to a business
+- **Joining / leaving**
+- **Membership lifecycle / status**
+- **Business participation** (`BusinessMember`)
+- **Directory / visibility** of members
+- **Member discovery within the business** where supported
 
-3. **Role & Permission Management**
-   - Assign and modify employee roles
-   - Define custom permissions per role
-   - Manage department assignments
-   - Track role changes and permissions
+### Workforce identity (do not collapse)
 
-4. **Employee Lifecycle**
-   - Onboarding new employees
-   - Role transitions and promotions
-   - Employee removal and access revocation
-   - Activity tracking and analytics
+| Concept | Product meaning | Owner |
+|--------|-----------------|--------|
+| **BusinessMember** | Participation / membership in a business | **Members** |
+| **EmployeePosition** | Organizational / workforce placement | Org chart / Business Administration |
+| **EmployeeHRProfile** | Employment / HR lifecycle extension | **HR** |
 
-## Key Features
+Business membership and HR employment profile are **distinct** concepts. Whether membership without HR representation is a **permanent product invariant** remains an **open product decision** — do not elevate it yet.
 
-### Unified Invitation System
-- **Email Invitations**: Send invitations via email with secure tokens
-- **Link Sharing**: Share invitation links for easy onboarding
-- **Status Tracking**: Track invitation status (pending, accepted, expired)
-- **Resend/Cancel**: Manage pending invitations
+Membership **role** (e.g. business admin/manager/member language) describes participation responsibilities. It is **not** Policy Engine authorization law and **not** an org-chart position.
 
-### Colleague Connection Feature
-- **Automatic Detection**: Identify when users are in the same organization
-- **"Connect with Colleague" Button**: Prominent button for same-org users
-- **Organization Context**: Clear labeling of colleague connection requests
-- **Enhanced Discovery**: Suggest colleague connections in member lists
+## Context Behavior
 
-### Role-Based Access Control
-- **Business Roles**: Employee, Manager, Admin with escalating permissions
-- **Personal Context**: Full access to personal features
-- **Cross-Context**: Users can have different roles in different contexts
-- **Permission Inheritance**: Context-aware permissions and access control
+- Experienced primarily in **business** contexts (member admin / directory surfaces).
+- Hosting a Members view inside a Business Administration shell does **not** transfer membership ownership to Business Administration.
+- Platform Admin Portal does **not** replace tenant member management for business owners.
 
-### Notifications & Communication
-- **Invitation Notifications**: Email and in-app notifications for invitations
-- **Connection Requests**: Notifications for personal connection requests
-- **Status Updates**: Notifications for role changes and member updates
-- **Activity Tracking**: Track member activity and engagement
+## Personal Connections — Current Co-located Product Intent
 
-## Technical Requirements
+The same ProductContext historically also describes **personal connections**:
 
-### Data Models
-- **User**: Core user identity and profile information
-- **Organization**: Business or educational institution context
-- **Member**: Relationship between User and Organization (role, status, permissions)
-- **Role**: Defines permissions and access levels
-- **Invitation**: Pending invitations with tokens and expiration
-- **Relationship**: Personal connections between users (with optional organization context)
+- discover people
+- request / accept / decline
+- block
 
-### API Endpoints
-- **Business Management**: Invite, list, update, remove employees
-- **Personal Connections**: Search, connect, manage relationships
-- **Role Management**: Assign, update, and manage roles and permissions
-- **Invitation Management**: Create, track, resend, cancel invitations
+These are **not** business membership.
 
-### Integration Points
-- **Chat System**: Show connection status and suggest colleague connections
-- **Drive System**: Share files with connections and colleagues
-- **Dashboard**: Display member activity and connection suggestions
-- **Profile System**: Show connection status and organization badges
+> Whether personal connections should remain in Member Management or become a separate relationship capability is an **open product decision**.
 
-## Success Metrics
+Until that decision, treat personal connections as **co-located intent**, not as BusinessMember semantics.
 
-### User Engagement
-- Number of personal connections made
-- Colleague connection acceptance rate
-- Time to connect with colleagues after joining organization
-- Connection request response rate
+## Key Relationships
 
-### Business Adoption
-- Employee invitation acceptance rate
-- Time to onboard new employees
-- Role assignment accuracy
-- Member management efficiency
+- **Business / Business Administration:** Business identity and org structure; Members own participation, not hierarchy design.
+- **HR:** Employment profile and workforce lifecycle; Members do not own hire/PTO/attendance.
+- **Policy Engine:** Authorization for invite/remove/update membership actions and connection actions.
+- **Scheduling / Org chart:** Consume placement for workforce planning — not Members ownership.
+- **Chat / collaborative apps:** May show member or connection context; they do not own membership.
+- **Platform Admin:** Operator oversight of platform users — not tenant member admin.
 
-### Platform Growth
-- Network effect from personal connections
-- Business team collaboration improvements
-- User retention through social connections
-- Cross-organization collaboration opportunities
+## Product Invariants
 
-## Future Enhancements
+- Changing authorization implementation must not erase **BusinessMember ≠ EmployeePosition ≠ EmployeeHRProfile**.
+- Inviting someone to a business is membership, not automatic HR employment or org placement.
+- Personal connection actions must not be described as business membership.
+- Hosting Members UI under another shell does not change ownership.
 
-### Advanced Features
-- **Bulk Operations**: Invite multiple employees at once
-- **Advanced Search**: Search by role, department, or activity
-- **Connection Analytics**: Insights into network growth and engagement
-- **Integration APIs**: Third-party integrations for HR systems
+## Boundaries
 
-### Social Features
-- **Connection Recommendations**: AI-powered connection suggestions
-- **Activity Sharing**: Share activity with connections
-- **Group Connections**: Create and manage connection groups
-- **Connection Insights**: Analytics on connection strength and engagement
+Members does **not** own:
 
-### Business Features
-- **SSO Integration**: Single sign-on for business employees
-- **Advanced Permissions**: Granular permission system
-- **Audit Logging**: Comprehensive audit trail for member changes
-- **Compliance**: GDPR and data protection compliance features 
+- Employment lifecycle / HR profile
+- Workforce placement / org hierarchy
+- Platform authorization mechanics (Policy Engine)
+- Platform Admin Portal operator tools
+- Personal Settings preferences
+- Marketplace install or application assignment
+- V_Link entity associations (separate relationship bridge)
+- Promotions, HR onboarding journeys, or attendance as Members features
+
+## Open Product Decisions
+
+1. Whether personal connections stay here or split into a separate relationship ProductContext.
+2. Whether BusinessMember-without-HR-profile is a permanent product invariant.
+3. Depth of membership **role** language vs Business Administration permission sets (product framing only; PE remains auth).
+4. Household or other non-business participation models (if any) relative to this file.
+
+## Canonical References
+
+- [`docs/business-operations/WORKFORCE_IDENTITY_ARCHITECTURE.md`](../docs/business-operations/WORKFORCE_IDENTITY_ARCHITECTURE.md)
+- [`docs/architecture/POLICY_ENGINE.md`](../docs/architecture/POLICY_ENGINE.md)
+- [`memory-bank/hrProductContext.md`](./hrProductContext.md)
+- Business Administration status / org-chart architecture docs
+- [`memory-bank/adminProductContext.md`](./adminProductContext.md) — Platform Admin ≠ tenant members
