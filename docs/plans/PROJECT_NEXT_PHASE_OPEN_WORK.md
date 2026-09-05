@@ -17,7 +17,7 @@
 | **CI / quality** | Optional | **A-055** note: add **`pnpm lint`** to CI when eslint debt is manageable. |
 | **Roadmap Phases 2.5+** | Planned / partial | Historical rebuild phases archived; prefer `activeContext.md` / `progress.md` / current `docs/plans/` (MB `roadmap.md` is redirect stub). |
 | **HR module enhancement plan** | Partial | Prefer `hrProductContext.md` + HR operation matrix; historical plan archived under `docs/archive/hr-merged-2026/HR_MODULE_ENHANCEMENT_PLAN.md`. |
-| **Strategic / vision** | Future | Prefer current ProductContexts + `futureIdeas.md` (non-committing); historical roadmap archived. |
+| **Strategic / vision** | Future | Prefer current ProductContexts + `futureIdeas.md` (non-committing); commercial policy openness → `memory-bank/commercialOpenDecisions.md`; historical roadmap archived. |
 
 ---
 
@@ -82,3 +82,4 @@ Pick based on business priority; all are “open” at the platform level:
 | HR backlog | `memory-bank/hrProductContext.md` + HR operation matrix; historical: `docs/archive/hr-merged-2026/HR_MODULE_ENHANCEMENT_PLAN.md` |
 | Module env / GCS / sandbox | `docs/guides/MODULE_PLATFORM_ENVIRONMENT_MATRIX.md` |
 | Wishlist (non-committing) | `memory-bank/futureIdeas.md` |
+| Commercial policy (open) | `memory-bank/commercialOpenDecisions.md` (not pricing SoT) |

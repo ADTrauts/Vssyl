@@ -217,4 +217,10 @@ Use **`pnpm`** (not npm) for all Stripe-related scripts.
 | `pnpm stripe:verify` | Verify Stripe + DB alignment (`server/src/scripts/verifyStripeSetup.ts`) |
 | `pnpm stripe:sync` | Sync Stripe price IDs into the database (`server/src/scripts/syncStripePrices.ts`) |
 
-Older standalone docs (quick start, configuration deep-dive, price-point implementation plan, setup status/complete snapshots) live in **`docs/archive/stripe-merged-2026/`** for historical reference only. Treat **this guide** plus `memory-bank/BILLING_PRICING_UPDATES.md` as the living billing narrative.
+Older standalone docs (quick start, configuration deep-dive, price-point implementation plan, setup status/complete snapshots) live in **`docs/archive/stripe-merged-2026/`** for historical reference only.
+
+**Living ops narrative:** this guide (Stripe dashboard, webhooks, env, verification scripts).
+
+**Billing / entitlements architecture:** [`docs/account-platform/PP3_BILLING_SERVICE_MODEL.md`](../account-platform/PP3_BILLING_SERVICE_MODEL.md) and related PP-3 docs.
+
+**Commercial policy:** unresolved questions live in [`memory-bank/commercialOpenDecisions.md`](../../memory-bank/commercialOpenDecisions.md). Stripe configuration and seeded prices reflect **implementation/configuration** and do **not** establish Vssyl’s desired commercial policy. Retired Memory Bank pricing plans (`BILLING_PRICING_UPDATES.md`, `phase4-payment-tier-plans.md`) are redirects only.

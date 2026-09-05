@@ -67,8 +67,15 @@ flowchart TD
 | [`deployment.md`](./deployment.md) | Active deployment orientation → `docs/deployment/` |
 | [`compliance.md`](./compliance.md) | Redirect stub (not legal SoT) |
 | [`landingPageContext.md`](./landingPageContext.md) | Redirect stub (not root identity / GTM) |
+| [`commercialOpenDecisions.md`](./commercialOpenDecisions.md) | **Active** unresolved commercial-policy register (not pricing SoT) |
+| [`futureIdeas.md`](./futureIdeas.md) | Non-authoritative idea parking |
+| [`BILLING_PRICING_UPDATES.md`](./BILLING_PRICING_UPDATES.md), [`phase4-payment-tier-plans.md`](./phase4-payment-tier-plans.md), [`BILLING_PAYMENT_IMPLEMENTATION_PLAN.md`](./BILLING_PAYMENT_IMPLEMENTATION_PLAN.md) | **Redirects** — historical pricing/billing plans |
+| [`enterpriseModuleStrategy.md`](./enterpriseModuleStrategy.md) | Compact principle stub (no enterprise forks) + open commercial pointers |
+| [`NOTES_MODULE_ADVANCEMENTS_PLAN.md`](./NOTES_MODULE_ADVANCEMENTS_PLAN.md) | **Redirect** — historical Notes backlog |
 
 **AI technical discovery:** [`docs/architecture/AI_READING_GUIDE.md`](../docs/architecture/AI_READING_GUIDE.md) → [`AI_SYSTEM_MENTAL_MODEL.md`](../docs/architecture/AI_SYSTEM_MENTAL_MODEL.md) → [`AI_DOCUMENT_STATUS_MATRIX.md`](../docs/architecture/AI_DOCUMENT_STATUS_MATRIX.md); providers: [`AI_CONTEXT_PROVIDER_API.md`](../docs/guides/AI_CONTEXT_PROVIDER_API.md) + [`AI_CONTEXT_ASSEMBLY.md`](../docs/architecture/AI_CONTEXT_ASSEMBLY.md).
+
+**Commercial / billing discovery:** unresolved policy → [`commercialOpenDecisions.md`](./commercialOpenDecisions.md); implementation → [`PP3_BILLING_SERVICE_MODEL.md`](../docs/account-platform/PP3_BILLING_SERVICE_MODEL.md); Stripe ops → [`STRIPE_SETUP_GUIDE.md`](../docs/setup/STRIPE_SETUP_GUIDE.md).
 
 Redirect stubs from ownership reconciliation (1C-4B-1): `permissionsModel.md`, `onboardingProductContext.md`, `businessProfileManagement.md`, `threadActivityProductContext.md`, `designPatterns.md`. Historical roadmaps/plans archived in Batch 1C-4A (`roadmap.md` and related paths are redirect stubs).
 

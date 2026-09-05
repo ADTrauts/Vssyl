@@ -1,38 +1,42 @@
 <!--
 Update Rules for futureIdeas.md
-- Updated when new feature ideas or enhancements are proposed or prioritized.
-- All changes should be dated and well-documented.
-- Use cross-references to other memory bank files for related patterns or requirements.
-- Archive outdated sections rather than deleting.
-- Add a table of contents if file exceeds 200 lines.
-- Summarize changes at the top if the update is significant.
+- Ideas are not roadmap commitments, shipped behavior, architecture law, or product authority.
+- Updated when new feature ideas are proposed; date and document changes.
+- Move shipped/superseded/rejected ideas to Archived Ideas.
+- Commercial-policy questions belong in commercialOpenDecisions.md — not here.
+- Cross-reference ProductContexts / architecture where relevant.
 -->
 
 # Future Ideas & Feature Wishlist
 
-## Checklist of Potential Features
+**Status:** Explicitly **non-authoritative** parking lot.
 
-| Feature | Status | Date Proposed | Related Docs |
-|---------|--------|--------------|--------------|
-| Ratings and reviews for modules in the marketplace | Proposed | 2024-06 | [moduleSpecs.md](./moduleSpecs.md) |
-| Ability for users to favorite/bookmark modules | Proposed | 2024-06 | [moduleSpecs.md](./moduleSpecs.md) |
-| Trial/demo mode for modules (at module creator's discretion) | Proposed | 2024-06 | [moduleSpecs.md](./moduleSpecs.md) |
-| Advanced block customization (resize, content selection) | Proposed | 2024-06 | [designPatterns.md](./designPatterns.md) |
-| Multiple/savable dashboard layouts per context | Proposed | 2024-06 | [designPatterns.md](./designPatterns.md) |
-| Unified notification center | Proposed | 2024-06 | [historical roadmap](../docs/archive/session-summaries/roadmap-archive-2026-09.md) |
-| Per-module notification controls | Proposed | 2024-06 | [historical roadmap](../docs/archive/session-summaries/roadmap-archive-2026-09.md) |
-| Enhanced onboarding with progressive disclosure | Proposed | 2024-06 | [historical roadmap](../docs/archive/session-summaries/roadmap-archive-2026-09.md) |
-| "Getting started" dashboard or checklist | Proposed | 2024-06 | [historical roadmap](../docs/archive/session-summaries/roadmap-archive-2026-09.md) |
-| Accessibility deep dive and audit tools | Proposed | 2024-06 | [designPatterns.md](./designPatterns.md) |
-| More onboarding templates for different user/org types | Proposed | 2024-06 | [historical roadmap](../docs/archive/session-summaries/roadmap-archive-2026-09.md) |
-| Marketplace revenue sharing and analytics for module creators | Proposed | 2024-06 | [moduleSpecs.md](./moduleSpecs.md) |
-| Cross-context data visualization widgets | Proposed | 2024-06 | [designPatterns.md](./designPatterns.md) |
-| AI-powered recommendations for modules and dashboard layouts | Proposed | 2024-06 | [historical roadmap](../docs/archive/session-summaries/roadmap-archive-2026-09.md) |
+Ideas here are **not** roadmap commitments, **not** shipped behavior, **not** architecture law, and **not** product authority. They may be removed when shipped, superseded, or rejected.
 
-> Add new ideas as they arise. Reference related design patterns, specs, or active context as needed. 
+## Checklist of potential features
 
----
+| Feature | Status | Date Proposed | Related |
+|---------|--------|---------------|---------|
+| Ratings and reviews for marketplace modules | Proposed | 2024-06 | [`moduleSpecs.md`](./moduleSpecs.md), [`marketplaceProductContext.md`](./marketplaceProductContext.md) |
+| Favorite / bookmark modules | Proposed | 2024-06 | Marketplace ProductContext |
+| Trial/demo mode for modules (creator discretion) | Proposed | 2024-06 | Marketplace / Developer boundaries |
+| Advanced block customization (resize, content selection) | Proposed | 2024-06 | Dashboard / UX contracts |
+| Multiple/savable dashboard layouts per context | Proposed | 2024-06 | Dashboard ProductContext |
+| Accessibility deep dive and audit tools | Proposed | 2024-06 | UX constitution / patterns |
+| More onboarding templates for user/org types | Proposed | 2024-06 | HR / onboarding ownership |
+| Cross-context data visualization widgets | Proposed | 2024-06 | Analytics ≠ activity |
+| AI-powered recommendations for modules/layouts | Proposed | 2024-06 | AI if-exposed; [`aiProductPhilosophy.md`](./aiProductPhilosophy.md) |
 
-## Archived Ideas
+Commercial policy (pricing, creator revenue share, enterprise packaging, per-module SKUs) → [`commercialOpenDecisions.md`](./commercialOpenDecisions.md).
 
-> Move implemented or deprecated ideas here, with notes and dates for historical context. 
+## Archived ideas
+
+| Feature | Disposition | Notes |
+|---------|-------------|-------|
+| Unified notification center | Superseded / largely shipped | See Notifications ProductContext |
+| Per-module notification controls | Superseded / largely shipped | Notifications metadata + Settings boundaries |
+| Enhanced onboarding with progressive disclosure | Partially superseded | Onboarding → HR ownership; verify currency in ProductContexts |
+| “Getting started” dashboard or checklist | Partially superseded | Same as onboarding |
+| Marketplace revenue sharing and analytics for creators | Moved | Commercial open decision — not a casual wishlist item |
+
+> Add new ideas as they arise. Do not treat this file as a commitment register.
