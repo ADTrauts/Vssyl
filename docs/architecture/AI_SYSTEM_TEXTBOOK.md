@@ -106,7 +106,7 @@ See canonical platform map: [`AI_PLATFORM_OVERVIEW.md`](./AI_PLATFORM_OVERVIEW.m
 | **Canonical Mermaid diagrams** | [`AI_PLATFORM_OVERVIEW.md`](./AI_PLATFORM_OVERVIEW.md), [`AI_TWIN_PROMPT_PIPELINE.md`](./AI_TWIN_PROMPT_PIPELINE.md), [`AI_CONTEXT_ASSEMBLY.md`](./AI_CONTEXT_ASSEMBLY.md) |
 | **Provider API contract (must comply)** | [`AI_CONTEXT_PROVIDER_API.md`](../guides/AI_CONTEXT_PROVIDER_API.md) |
 | **Vision / multimodal ops** | [`docs/ai/ARCHITECTURE.md`](../ai/ARCHITECTURE.md), [`PROVIDERS.md`](../ai/PROVIDERS.md), [`RUNBOOK.md`](../ai/RUNBOOK.md) |
-| **Product Q&A / streaming UX** | [`memory-bank/aiContextSystem.md`](../../memory-bank/aiContextSystem.md) |
+| **Product philosophy** | [`memory-bank/aiProductPhilosophy.md`](../../memory-bank/aiProductPhilosophy.md) |
 | **Roadmap / phase plans** | [`docs/plans/AI_PLATFORM_MATURITY_PLAN.md`](../plans/AI_PLATFORM_MATURITY_PLAN.md), [`AI_PLATFORM_EXECUTION_PRINCIPLES.md`](../plans/AI_PLATFORM_EXECUTION_PRINCIPLES.md) |
 | **Current shipping status** | [`memory-bank/activeContext.md`](../../memory-bank/activeContext.md), [`memory-bank/progress.md`](../../memory-bank/progress.md) |
 | **Legacy entry-point inventory** | [`AI_SYSTEM_ARCHITECTURE_MAP.md`](../guides/AI_SYSTEM_ARCHITECTURE_MAP.md) (partially superseded) |

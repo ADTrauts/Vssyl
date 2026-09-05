@@ -6,7 +6,9 @@ Runbooks and rules for **vision, providers, and multimodal** behavior in product
 **Architecture navigation:** [`docs/architecture/AI_ARCHITECTURE_NAVIGATION_GUIDE.md`](../architecture/AI_ARCHITECTURE_NAVIGATION_GUIDE.md)  
 **Whole-system analysis:** [`docs/ai-system-audit/README.md`](../ai-system-audit/README.md)  
 **AI platform constitution:** [`docs/architecture/AI_PLATFORM_CONSTITUTION.md`](../architecture/AI_PLATFORM_CONSTITUTION.md)  
-**Product-level AI rules:** [`memory-bank/aiContextSystem.md`](../../memory-bank/aiContextSystem.md)  
+**Product-level AI philosophy:** [`memory-bank/aiProductPhilosophy.md`](../../memory-bank/aiProductPhilosophy.md)  
+**Providers / assembly:** [`docs/guides/AI_CONTEXT_PROVIDER_API.md`](../guides/AI_CONTEXT_PROVIDER_API.md), [`docs/architecture/AI_CONTEXT_ASSEMBLY.md`](../architecture/AI_CONTEXT_ASSEMBLY.md)  
+**Architecture entry:** [`docs/architecture/AI_READING_GUIDE.md`](../architecture/AI_READING_GUIDE.md)  
 **AI retrieval:** [`retrieval/`](./retrieval/) — [`AI_RETRIEVAL_CONSTITUTION.md`](./retrieval/AI_RETRIEVAL_CONSTITUTION.md)
 
 **Canonical platform diagrams:** [`docs/architecture/AI_PLATFORM_OVERVIEW.md`](../architecture/AI_PLATFORM_OVERVIEW.md)

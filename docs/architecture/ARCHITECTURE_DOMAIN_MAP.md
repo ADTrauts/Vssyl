@@ -250,7 +250,7 @@ flowchart TB
 |--------|-------|-------------|------|----------|--------|
 | AI Platform | AI Platform Program | `AI_PLATFORM_CONSTITUTION.md` | L2 | UX Ref #4 | L3 deferred |
 | Digital Life Twin | AI Platform | `AI_TWIN_PROMPT_PIPELINE.md` | — | Twin pipeline | Active |
-| AI Context | AI Platform | `memory-bank/aiContextSystem.md` | — | Context providers | Active |
+| AI Context | AI Platform | `AI_CONTEXT_ASSEMBLY.md` + `docs/guides/AI_CONTEXT_PROVIDER_API.md` | — | Context providers (if AI-exposed) | Active |
 | AI Tools / Actions | AI Platform | `audits/AI_TOOL_ACTION_COMPLIANCE_MATRIX.md` | L2 | Module executors | Partial |
 
 ### Realtime & Notifications

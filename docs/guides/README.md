@@ -16,7 +16,7 @@ Technical references used during development and ops. **Troubleshooting** starts
 | **Logging & notifications** | [`LOGGING_PHASE3_GUIDE.md`](./LOGGING_PHASE3_GUIDE.md), [`NOTIFICATION_METADATA_GUIDE.md`](./NOTIFICATION_METADATA_GUIDE.md) |
 | **Platform architecture** | [`../architecture/README.md`](../architecture/README.md) — Policy Engine, domain events, workspace runtime, **AI platform diagrams** |
 | **Product / portal** | [`ADMIN_PORTAL.md`](./ADMIN_PORTAL.md), [`SIDEBAR_CUSTOMIZATION_IMPLEMENTATION_PLAN.md`](./SIDEBAR_CUSTOMIZATION_IMPLEMENTATION_PLAN.md), [`ENTERPRISE_INTEGRATION.md`](./ENTERPRISE_INTEGRATION.md) |
-| **AI (in-repo plans)** | [`AI_SUGGESTIONS_DISPLAY_PLAN.md`](./AI_SUGGESTIONS_DISPLAY_PLAN.md) — *long AI architecture narratives live in* `docs/archive/guides-merged-2026/` *and* `memory-bank/aiContextSystem.md` |
+| **AI (in-repo plans)** | [`AI_SUGGESTIONS_DISPLAY_PLAN.md`](./AI_SUGGESTIONS_DISPLAY_PLAN.md) — *product philosophy:* [`memory-bank/aiProductPhilosophy.md`](../../memory-bank/aiProductPhilosophy.md); *providers:* [`AI_CONTEXT_PROVIDER_API.md`](./AI_CONTEXT_PROVIDER_API.md); *historical AI narratives:* `docs/archive/guides-merged-2026/` |
 | **Deep implementation** | [`TECHNICAL_IMPLEMENTATION_GUIDE.md`](./TECHNICAL_IMPLEMENTATION_GUIDE.md), [`ADVANCED_FEATURES.md`](./ADVANCED_FEATURES.md), [`ADVANCED_WORKFLOWS.md`](./ADVANCED_WORKFLOWS.md) |
 | **QA** | [`TESTING_CHECKLIST.md`](./TESTING_CHECKLIST.md) |
 

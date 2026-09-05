@@ -39,7 +39,9 @@ Status key: **Current** · **Supporting** · **Historical** · **Future** · **D
 | [`../ai/ARCHITECTURE.md`](../ai/ARCHITECTURE.md), [`PROVIDERS.md`](../ai/PROVIDERS.md), [`RUNBOOK.md`](../ai/RUNBOOK.md), [`GOLDEN_RULES.md`](../ai/GOLDEN_RULES.md) | Supporting | Vision/providers ops (Twin-scoped; see exemptions) |
 | [`../ai-knowledge/AI_KNOWLEDGE_DECISION_MODEL.md`](../ai-knowledge/AI_KNOWLEDGE_DECISION_MODEL.md) | Current | Ingress philosophy |
 | [`../ai-knowledge/KNOWLEDGE_TRANSITION_MODEL.md`](../ai-knowledge/KNOWLEDGE_TRANSITION_MODEL.md) | Current | State transitions |
-| [`memory-bank/aiContextSystem.md`](../../memory-bank/aiContextSystem.md) | Supporting | Context provider product/implementation notes |
+| [`memory-bank/aiProductPhilosophy.md`](../../memory-bank/aiProductPhilosophy.md) | Supporting | Durable AI product philosophy (not architecture SoT) |
+| [`memory-bank/aiContextSystem.md`](../../memory-bank/aiContextSystem.md) | Historical | Redirect stub — former context-system narrative |
+| [`memory-bank/AI_CONTEXT_MEMORY_ARCHITECTURE.md`](../../memory-bank/AI_CONTEXT_MEMORY_ARCHITECTURE.md) | Historical | Redirect stub — former memory implementation diary |
 | Audit package docs under `docs/ai-system-audit/` | Current analysis | Do not duplicate; link |
 | [`AI_PIPELINE_OPERATOR_INFORMATION_ARCHITECTURE.md`](./AI_PIPELINE_OPERATOR_INFORMATION_ARCHITECTURE.md) | Current | Canonical Admin AI Pipeline operator IA |
 | [`AI_ADMIN_SURFACE_CONSOLIDATION_MATRIX.md`](./AI_ADMIN_SURFACE_CONSOLIDATION_MATRIX.md) | Current | Admin AI surface dispositions |

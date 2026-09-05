@@ -179,11 +179,11 @@ AI is not a domain system of record · no independent AI brain per application b
 | Personal / Business boundaries | [`docs/architecture/AI_BUSINESS_PERSONAL_TWIN_BOUNDARIES.md`](../docs/architecture/AI_BUSINESS_PERSONAL_TWIN_BOUNDARIES.md) |
 | Intelligence / knowledge | [`docs/architecture/AI_INTELLIGENCE_MODEL.md`](../docs/architecture/AI_INTELLIGENCE_MODEL.md), [`docs/ai-knowledge/AI_KNOWLEDGE_CONSTITUTION.md`](../docs/ai-knowledge/AI_KNOWLEDGE_CONSTITUTION.md) |
 | Context assembly / providers | [`docs/architecture/AI_CONTEXT_ASSEMBLY.md`](../docs/architecture/AI_CONTEXT_ASSEMBLY.md), [`docs/guides/AI_CONTEXT_PROVIDER_API.md`](../docs/guides/AI_CONTEXT_PROVIDER_API.md) |
-| Memory notes (current) | [`memory-bank/AI_CONTEXT_MEMORY_ARCHITECTURE.md`](./AI_CONTEXT_MEMORY_ARCHITECTURE.md) |
+| Memory / recall (technical) | [`AI_SYSTEM_MENTAL_MODEL.md`](../docs/architecture/AI_SYSTEM_MENTAL_MODEL.md) (P-TRUTH), [`AI_CONTEXT_ASSEMBLY.md`](../docs/architecture/AI_CONTEXT_ASSEMBLY.md) |
 | Tools / approval | [`docs/architecture/AI_TOOL_RISK_AND_APPROVAL_POLICY.md`](../docs/architecture/AI_TOOL_RISK_AND_APPROVAL_POLICY.md) |
 | Authorization | [`docs/architecture/POLICY_ENGINE.md`](../docs/architecture/POLICY_ENGINE.md) |
 | V_Link | [`docs/architecture/V_LINK.md`](../docs/architecture/V_LINK.md) |
 | Module AI exposure | [`memory-bank/moduleSpecs.md`](./moduleSpecs.md) |
 | Navigation / status | [`docs/architecture/AI_READING_GUIDE.md`](../docs/architecture/AI_READING_GUIDE.md), [`docs/architecture/AI_DOCUMENT_STATUS_MATRIX.md`](../docs/architecture/AI_DOCUMENT_STATUS_MATRIX.md) |
 
-Legacy narratives in `aiContextSystem.md` are **not** philosophy authority here; retirement and reference repair are a separate batch.
+Legacy paths `aiContextSystem.md` and `AI_CONTEXT_MEMORY_ARCHITECTURE.md` are **redirect stubs** — not philosophy or architecture authority.

@@ -21,9 +21,9 @@ alwaysApply: true
 
 ## AI context
 
-- Every module **must** ship a real **`ModuleAIContext`** (purpose, category, keywords, patterns, concepts, entities, actions, **`contextProviders`**).
-- Provide at least one authenticated, fast, bounded `/api/.../ai/context/...` context provider.
-If the module supports AI-driven writes, register an executor / supported operations per platform patterns (see long reference). Read-only modules may omit.
+- **If AI-exposed**, the module **must** ship a real **`ModuleAIContext`** (purpose, category, keywords, patterns, concepts, entities, actions, **`contextProviders`**) and at least one authenticated, fast, bounded `/api/.../ai/context/...` context provider — see `moduleSpecs.md` and `docs/guides/AI_CONTEXT_PROVIDER_API.md`.
+- Modules that are **not** AI-exposed do **not** require AI context.
+- If the module supports AI-driven writes, register an executor / supported operations per platform patterns. Read-only AI-exposed modules may omit executors.
 
 ## Notifications
 

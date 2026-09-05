@@ -2,7 +2,7 @@
 
 **Status:** Shipped (Phases 1–5, May 2026)  
 **Audience:** Admins, platform engineers  
-**Related:** `memory-bank/activeContext.md`, `memory-bank/aiContextSystem.md` (assembled context), `docs/architecture/AI_TWIN_PROMPT_PIPELINE.md`
+**Related:** `memory-bank/activeContext.md` (when status context needed), `docs/architecture/AI_CONTEXT_ASSEMBLY.md` (assembled context), `docs/architecture/AI_TWIN_PROMPT_PIPELINE.md`
 
 ## Problem
 

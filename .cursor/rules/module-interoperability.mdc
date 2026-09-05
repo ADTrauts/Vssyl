@@ -19,7 +19,7 @@ First-party and third-party modules **share the same contract**. Differences are
 4. **Activity vs analytics:** Immutable activity records describe what happened; analytics are derived separately — do not conflate.
 5. **Realtime:** User-targeted or room events must not leak data across tenants; membership must be proven before join/emit (see `chatSocketService` patterns).
 6. **Notifications:** If the module sends notifications, manifest metadata and `[module]_[event]` types must follow `module-development.mdc` and `docs/guides/NOTIFICATION_METADATA_GUIDE.md`.
-7. **AI context:** If the module is AI-exposed, context providers and registration must follow `module-development.mdc` and `memory-bank/aiContextSystem.md`.
+7. **AI context:** If the module is AI-exposed, context providers and registration must follow `module-development.mdc`, `memory-bank/moduleSpecs.md`, and [`docs/guides/AI_CONTEXT_PROVIDER_API.md`](../../docs/guides/AI_CONTEXT_PROVIDER_API.md) (assembly: [`docs/architecture/AI_CONTEXT_ASSEMBLY.md`](../../docs/architecture/AI_CONTEXT_ASSEMBLY.md)). Behavioral product boundaries: [`memory-bank/aiProductPhilosophy.md`](../../memory-bank/aiProductPhilosophy.md) — not an integration API manual.
 
 ## Review and approval gates
 

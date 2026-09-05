@@ -118,7 +118,8 @@ Platform governance → docs/architecture/AI_PLATFORM_CONSTITUTION.md
 Overview / diagrams → docs/architecture/AI_PLATFORM_OVERVIEW.md
 Digital Life Twin   → docs/architecture/AI_TWIN_PROMPT_PIPELINE.md
 Context providers   → docs/architecture/AI_CONTEXT_ASSEMBLY.md
-                      → memory-bank/aiContextSystem.md (product intent; verify vs architecture)
+                      → docs/guides/AI_CONTEXT_PROVIDER_API.md
+Product philosophy  → memory-bank/aiProductPhilosophy.md (product intent; not architecture SoT)
 Business/personal   → docs/architecture/AI_BUSINESS_PERSONAL_TWIN_BOUNDARIES.md
 Knowledge ingress   → docs/ai-knowledge/AI_KNOWLEDGE_DECISION_MODEL.md
 Knowledge law       → docs/ai-knowledge/AI_KNOWLEDGE_CONSTITUTION.md

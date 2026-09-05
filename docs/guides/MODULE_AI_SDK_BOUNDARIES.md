@@ -2,7 +2,7 @@
 
 **Status:** Canonical partner contract (May 2026)  
 **Audience:** Marketplace module developers, admin reviewers, platform engineers  
-**Related:** [`AI_CONTEXT_PROVIDER_API.md`](./AI_CONTEXT_PROVIDER_API.md), [`WEBHOOK_SUBSCRIPTIONS.md`](../architecture/WEBHOOK_SUBSCRIPTIONS.md), [`DOMAIN_EVENTS.md`](../architecture/DOMAIN_EVENTS.md), [`memory-bank/aiContextSystem.md`](../../memory-bank/aiContextSystem.md)
+**Related:** [`AI_CONTEXT_PROVIDER_API.md`](./AI_CONTEXT_PROVIDER_API.md), [`WEBHOOK_SUBSCRIPTIONS.md`](../architecture/WEBHOOK_SUBSCRIPTIONS.md), [`DOMAIN_EVENTS.md`](../architecture/DOMAIN_EVENTS.md), [`memory-bank/moduleSpecs.md`](../../memory-bank/moduleSpecs.md), [`memory-bank/aiProductPhilosophy.md`](../../memory-bank/aiProductPhilosophy.md) (behavior only)
 
 ---
 

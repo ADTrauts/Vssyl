@@ -56,14 +56,19 @@ flowchart TD
 
 ## Module and domain contexts
 
-`*ProductContext.md` files (drive, chat, hr, scheduling, admin, developer, notifications, etc.), plus **`applicationMermaidDiagrams.md`** (platform + interoperability + module-surface maps), `aiContextSystem.md`, and remaining plan files (verify currency).
+`*ProductContext.md` files (drive, chat, hr, scheduling, admin, developer, notifications, etc.), plus **`applicationMermaidDiagrams.md`** (platform + interoperability + module-surface maps), and remaining plan files (verify currency).
 
-| Orientation file | Role (Batch 1C-4B-2) |
-|------------------|----------------------|
-| [`moduleSpecs.md`](./moduleSpecs.md) | Active contributor / certification checklist (not architecture SoT) |
+| AI / orientation file | Role |
+|-----------------------|------|
+| [`aiProductPhilosophy.md`](./aiProductPhilosophy.md) | **Active** durable AI product philosophy (sole MB philosophy owner) |
+| [`aiContextSystem.md`](./aiContextSystem.md) | **Redirect** — superseded; not philosophy / architecture / provider API |
+| [`AI_CONTEXT_MEMORY_ARCHITECTURE.md`](./AI_CONTEXT_MEMORY_ARCHITECTURE.md) | **Redirect** — superseded; not memory SoT |
+| [`moduleSpecs.md`](./moduleSpecs.md) | Active contributor / certification checklist (**AI if AI-exposed**; not architecture SoT) |
 | [`deployment.md`](./deployment.md) | Active deployment orientation → `docs/deployment/` |
 | [`compliance.md`](./compliance.md) | Redirect stub (not legal SoT) |
 | [`landingPageContext.md`](./landingPageContext.md) | Redirect stub (not root identity / GTM) |
+
+**AI technical discovery:** [`docs/architecture/AI_READING_GUIDE.md`](../docs/architecture/AI_READING_GUIDE.md) → [`AI_SYSTEM_MENTAL_MODEL.md`](../docs/architecture/AI_SYSTEM_MENTAL_MODEL.md) → [`AI_DOCUMENT_STATUS_MATRIX.md`](../docs/architecture/AI_DOCUMENT_STATUS_MATRIX.md); providers: [`AI_CONTEXT_PROVIDER_API.md`](../docs/guides/AI_CONTEXT_PROVIDER_API.md) + [`AI_CONTEXT_ASSEMBLY.md`](../docs/architecture/AI_CONTEXT_ASSEMBLY.md).
 
 Redirect stubs from ownership reconciliation (1C-4B-1): `permissionsModel.md`, `onboardingProductContext.md`, `businessProfileManagement.md`, `threadActivityProductContext.md`, `designPatterns.md`. Historical roadmaps/plans archived in Batch 1C-4A (`roadmap.md` and related paths are redirect stubs).
 
@@ -75,12 +80,10 @@ Completed AI phase plans, session summaries, and superseded workspace/search arc
 
 - **Active context**: long tail moved to `docs/archive/session-summaries/active-context-archive-2026-04-pretrim.md`.
 - **Troubleshooting**: long incident log moved to `docs/archive/troubleshooting-historical-incidents.md`; fixes stay in `docs/guides/TROUBLESHOOTING.md`.
-- **AI long guides**: `docs/archive/guides-merged-2026/` (see that folder’s README).
+- **AI long guides**: `docs/archive/guides-merged-2026/` (historical; current AI philosophy is `aiProductPhilosophy.md`).
 - **Stripe duplicates**: `docs/archive/stripe-merged-2026/`.
 - **HR framework duplicates**: `docs/archive/hr-merged-2026/`.
 - **`docs/` root**: only `docs/README.md` remains at top level; other markdown lives under `plans/`, `guides/`, `setup/`, `deployment/`, `ai/`, or `archive/` (see `docs/plans/README.md`, `docs/guides/README.md`, `docs/archive/README.md`, `docs/ai/README.md`).
-
-Canonical doc map for AI modules: end of `aiContextSystem.md` (verify against current architecture AI chain before relying on older narratives).
 
 ## Where operational runbooks live
 

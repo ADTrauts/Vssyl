@@ -1060,7 +1060,7 @@ router.get('/ai/context/data', authenticateJWT, getContext);
 ## 📚 Reference Documentation
 
 ### Required Reading
-1. **Module AI Context Guide (archived)**: `docs/archive/guides-merged-2026/MODULE_AI_CONTEXT_GUIDE.md` — canonical patterns live in `memory-bank/aiContextSystem.md`
+1. **Module AI context (if AI-exposed)**: [`docs/guides/AI_CONTEXT_PROVIDER_API.md`](./AI_CONTEXT_PROVIDER_API.md) + [`memory-bank/moduleSpecs.md`](../../memory-bank/moduleSpecs.md); historical examples: `docs/archive/guides-merged-2026/MODULE_AI_CONTEXT_GUIDE.md`
 2. **System Patterns**: `memory-bank/systemPatterns.md` - Architecture overview
 3. **API truth**: repository routes/controllers (OpenAPI if/when published) — historical sample notes archived at `docs/archive/session-summaries/apiDocumentation.md`
 4. **Database Context**: `memory-bank/databaseContext.md` - Database schema
@@ -1455,13 +1455,13 @@ For marketplace submission and **first-party merge review**, modules must satisf
 8. ✅ **Security** review passed
 9. ✅ **Performance** benchmarks met
 
-**Modules without AI context integration OR global trash system will be rejected.**
+**Modules without required Global Trash integration will be rejected. Modules that claim AI exposure without valid AI context integration will be rejected.**
 
 ---
 
 ## 📞 Support & Resources
 
-- **Documentation**: `memory-bank/aiContextSystem.md` + archived `docs/archive/guides-merged-2026/MODULE_AI_CONTEXT_GUIDE.md`
+- **Documentation (AI if exposed)**: [`AI_CONTEXT_PROVIDER_API.md`](./AI_CONTEXT_PROVIDER_API.md) + [`moduleSpecs.md`](../../memory-bank/moduleSpecs.md); product behavior: [`aiProductPhilosophy.md`](../../memory-bank/aiProductPhilosophy.md); archived examples: `docs/archive/guides-merged-2026/MODULE_AI_CONTEXT_GUIDE.md`
 - **API Reference**: repository routes/controllers (historical notes: `docs/archive/session-summaries/apiDocumentation.md`)
 - **Examples**: `scripts/register-built-in-modules.ts`
 - **Admin Portal**: Monitor module performance at `/admin-portal/ai-learning`

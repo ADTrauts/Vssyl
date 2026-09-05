@@ -75,7 +75,7 @@ FH-6 scope excluded large platform migrations. The following are **documented on
 
 - `activityFeedController` — requires multi-module normalized feed design.
 - `analyticsController` — requires analytics pipeline decision (activity vs metrics).
-- AI engines — require bounded query contract in `aiContextSystem.md`.
+- AI engines — require bounded query contract in `docs/guides/AI_CONTEXT_PROVIDER_API.md` / `AI_CONTEXT_ASSEMBLY.md`.
 
 ---
 

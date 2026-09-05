@@ -2,7 +2,7 @@
 
 **Status:** Canonical contract (Phase 4B + Context Provider Contract Phase A/B, May 2026)  
 **Audience:** First-party module authors, marketplace partners, admin reviewers  
-**Related:** `memory-bank/aiContextSystem.md`, `memory-bank/moduleSpecs.md`, `server/src/startup/registerBuiltInModules.ts`
+**Related:** `memory-bank/moduleSpecs.md`, `docs/architecture/AI_CONTEXT_ASSEMBLY.md`, `server/src/startup/registerBuiltInModules.ts`; product behavior: `memory-bank/aiProductPhilosophy.md`. Historical path: `memory-bank/aiContextSystem.md` (redirect).
 
 ---
 

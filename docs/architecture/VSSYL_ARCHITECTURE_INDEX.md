@@ -168,7 +168,8 @@ Digital Life Twin, context system, retrieval, orchestration.
 | **Business / personal Twin boundaries** | [`AI_BUSINESS_PERSONAL_TWIN_BOUNDARIES.md`](./AI_BUSINESS_PERSONAL_TWIN_BOUNDARIES.md) | — | Scopes; canonical path |
 | **Model Routing readiness** | [`AI_MODEL_ROUTING_READINESS.md`](./AI_MODEL_ROUTING_READINESS.md) | — | Phase 7 prep (not shipped) |
 | **AI knowledge constitution** | [`../ai-knowledge/AI_KNOWLEDGE_CONSTITUTION.md`](../ai-knowledge/AI_KNOWLEDGE_CONSTITUTION.md) | — | Constitutional |
-| **AI context system** | [`../../memory-bank/aiContextSystem.md`](../../memory-bank/aiContextSystem.md) | — | Product + implementation |
+| **AI product philosophy** | [`../../memory-bank/aiProductPhilosophy.md`](../../memory-bank/aiProductPhilosophy.md) | — | Product intent (not architecture SoT) |
+| **AI context providers** | [`../guides/AI_CONTEXT_PROVIDER_API.md`](../guides/AI_CONTEXT_PROVIDER_API.md), [`AI_CONTEXT_ASSEMBLY.md`](./AI_CONTEXT_ASSEMBLY.md) | [`../../memory-bank/moduleSpecs.md`](../../memory-bank/moduleSpecs.md) | Integration **if AI-exposed** |
 | **Digital Life Twin pipeline** | [`AI_TWIN_PROMPT_PIPELINE.md`](./AI_TWIN_PROMPT_PIPELINE.md) | — | Active |
 | **AI retrieval constitution** | [`../ai/retrieval/AI_RETRIEVAL_CONSTITUTION.md`](../ai/retrieval/AI_RETRIEVAL_CONSTITUTION.md) | L2 CwF | Phase 2A governance |
 | **AI experience navigation** | `web/src/lib/aiExperienceNavigation.ts` | — | Route SSOT |

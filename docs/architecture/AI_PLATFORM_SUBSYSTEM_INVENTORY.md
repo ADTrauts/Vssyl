@@ -139,7 +139,7 @@ Certification key: **CERTIFIED** · **CERTIFIED_WITH_LIMITATION** · **DESIGN_ON
 |-------|-------|
 | Purpose | Module-scoped context for Twin |
 | Owner | `ContextProviderOrchestrator` (+ CrossModule facade) |
-| SoT | `AI_CONTEXT_ASSEMBLY.md`, `memory-bank/aiContextSystem.md` |
+| SoT | `AI_CONTEXT_ASSEMBLY.md`, `docs/guides/AI_CONTEXT_PROVIDER_API.md` |
 | Status | **CANONICAL, CONDITIONAL (C3)** — not every Twin turn |
 | Certification | **CERTIFIED** |
 

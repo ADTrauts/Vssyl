@@ -159,7 +159,7 @@ Platform shell + workspace runtime — **not** a product `moduleId`. Governs **o
 
 ### Definition
 
-Module demonstrating complete **ModuleAIContext**, context providers, optional action executors, and AI manifest alignment per `memory-bank/aiContextSystem.md`.
+Module demonstrating complete **ModuleAIContext**, context providers, optional action executors, and AI manifest alignment per `docs/guides/AI_CONTEXT_PROVIDER_API.md` and `memory-bank/moduleSpecs.md` (AI if AI-exposed).
 
 ### Certification process
 

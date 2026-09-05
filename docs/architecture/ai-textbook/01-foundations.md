@@ -55,7 +55,7 @@ Every module that exposes AI-relevant data must register:
 
 Registration lives in `server/src/startup/registerBuiltInModules.ts` and the **Module AI Context Registry** (database). The twin discovers providers through `ModuleAIContextService` — not hardcoded lists in `DigitalLifeTwinCore`.
 
-**Further reading:** [`memory-bank/aiContextSystem.md`](../../../memory-bank/aiContextSystem.md), [`AI_CONTEXT_PROVIDER_API.md`](../../guides/AI_CONTEXT_PROVIDER_API.md)
+**Further reading:** [`aiProductPhilosophy.md`](../../../memory-bank/aiProductPhilosophy.md), [`AI_CONTEXT_PROVIDER_API.md`](../../guides/AI_CONTEXT_PROVIDER_API.md), [`AI_CONTEXT_ASSEMBLY.md`](../AI_CONTEXT_ASSEMBLY.md)
 
 ---
 

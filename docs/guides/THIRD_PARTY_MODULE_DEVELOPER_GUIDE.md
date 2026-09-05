@@ -31,9 +31,9 @@ Use these entry points to create submissions, manage modules, and track status a
 3. **[`../../memory-bank/moduleSpecs.md`](../../memory-bank/moduleSpecs.md)** — canonical module interoperability contract (permissions, events, realtime, notifications, AI context, compliance).
 4. **[`THIRD_PARTY_MODULE_PIPELINE_SOURCE_OF_TRUTH.md`](./THIRD_PARTY_MODULE_PIPELINE_SOURCE_OF_TRUTH.md)** — artifact upload (GCS), versioning, security scan, admin approval, runtime resolution, iframe sandboxing, size limits, legacy `manifest.frontend.entryUrl` behavior.
 5. **[`NOTIFICATION_METADATA_GUIDE.md`](./NOTIFICATION_METADATA_GUIDE.md)** — declare notification types in the module manifest so the global notification center can categorize and surface your events.
-6. **[`memory-bank/aiContextSystem.md`](../../memory-bank/aiContextSystem.md)** (repository) — **mandatory** AI context: keywords, patterns, context providers, and how the assistant discovers your module. Third-party modules register via the manifest/registry path described there; long-form examples also exist under [`docs/archive/guides-merged-2026/MODULE_AI_CONTEXT_GUIDE.md`](../archive/guides-merged-2026/MODULE_AI_CONTEXT_GUIDE.md) (archived reference).
+6. **[`AI_CONTEXT_PROVIDER_API.md`](./AI_CONTEXT_PROVIDER_API.md)** — **if AI-exposed**: provider auth, response shape, cache, payload limits; certification expectations in [`../../memory-bank/moduleSpecs.md`](../../memory-bank/moduleSpecs.md). Historical long-form examples: [`docs/archive/guides-merged-2026/MODULE_AI_CONTEXT_GUIDE.md`](../archive/guides-merged-2026/MODULE_AI_CONTEXT_GUIDE.md).
 7. **[`MODULE_AI_SDK_BOUNDARIES.md`](./MODULE_AI_SDK_BOUNDARIES.md)** — **canonical partner AI contract**: what you can/cannot do (context providers, webhook executors, events, no autonomy, no in-process code).
-8. **[`AI_CONTEXT_PROVIDER_API.md`](./AI_CONTEXT_PROVIDER_API.md)** — provider endpoint auth, response shape, cache, payload limits.
+8. **[`../../memory-bank/aiProductPhilosophy.md`](../../memory-bank/aiProductPhilosophy.md)** — durable AI product/behavior boundaries (not an integration API manual).
 9. **Operational AI runbooks** (operators / advanced debugging): [`docs/ai/README.md`](../ai/README.md).
 
 ---
@@ -56,11 +56,11 @@ Summarized from the pipeline source of truth—if anything conflicts, **the pipe
 | Area | Requirement | Where to read |
 |------|-------------|----------------|
 | **Manifest & submission** | Valid metadata, versioning, artifact or hosted entry as allowed | Pipeline source of truth |
-| **AI context** | Keywords, patterns, context providers so the assistant can answer questions about your module | `memory-bank/aiContextSystem.md` |
+| **AI context (if AI-exposed)** | Keywords, patterns, context providers so the assistant can answer questions about your module | `AI_CONTEXT_PROVIDER_API.md`, `moduleSpecs.md` |
 | **Notifications** | Manifest metadata for notification types | `NOTIFICATION_METADATA_GUIDE.md` |
 | **Action execution (if applicable)** | Registry / webhook patterns as implemented for your module class | Platform team + archived examples in `docs/archive/guides-merged-2026/` |
 
-Modules that are not AI-aware or that omit required metadata are likely to **fail review**.
+Modules that claim AI exposure without valid AI context metadata/providers are likely to **fail review**. AI is not required for modules that are not AI-exposed.
 
 ---
 
@@ -120,7 +120,7 @@ Partners should expect **request changes** or **reject** until the manifest, dec
 
 ## First-party (internal) vs third-party (partner)
 
-Developers working **inside the Vssyl monorepo** also follow `.cursor/rules/module-development.mdc` and built-in registration patterns. That file is **tooling- and repo-centric**. If you are **only** shipping a marketplace module artifact, treat **this guide + the pipeline source of truth + `aiContextSystem.md`** as your contract; use the internal rulebook only where your team overlaps with core platform code.
+Developers working **inside the Vssyl monorepo** also follow `.cursor/rules/module-development.mdc` and built-in registration patterns. That file is **tooling- and repo-centric**. If you are **only** shipping a marketplace module artifact, treat **this guide + the pipeline source of truth + `AI_CONTEXT_PROVIDER_API.md` / `moduleSpecs.md` (if AI-exposed)** as your contract; use the internal rulebook only where your team overlaps with core platform code.
 
 ---
 

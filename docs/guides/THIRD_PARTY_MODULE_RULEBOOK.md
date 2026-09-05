@@ -11,10 +11,10 @@ Reviewer and implementer checklist for marketplace modules. **Agent rule:** `.cu
 2. [`THIRD_PARTY_MODULE_DEVELOPER_GUIDE.md`](./THIRD_PARTY_MODULE_DEVELOPER_GUIDE.md) — onboarding index
 3. [`THIRD_PARTY_MODULE_PIPELINE_SOURCE_OF_TRUTH.md`](./THIRD_PARTY_MODULE_PIPELINE_SOURCE_OF_TRUTH.md) — authoritative pipeline (wins on conflict)
 4. [`memory-bank/moduleSpecs.md`](../../memory-bank/moduleSpecs.md) — interoperability contract
-5. [`memory-bank/aiContextSystem.md`](../../memory-bank/aiContextSystem.md) — if AI-exposed
+5. [`AI_CONTEXT_PROVIDER_API.md`](./AI_CONTEXT_PROVIDER_API.md) — if AI-exposed
 6. [`MODULE_AI_SDK_BOUNDARIES.md`](./MODULE_AI_SDK_BOUNDARIES.md) — **partner AI can/cannot** (Phase 4D)
-7. [`AI_CONTEXT_PROVIDER_API.md`](./AI_CONTEXT_PROVIDER_API.md) — context provider contract
-8. [`NOTIFICATION_METADATA_GUIDE.md`](./NOTIFICATION_METADATA_GUIDE.md) — if notifications declared
+7. [`NOTIFICATION_METADATA_GUIDE.md`](./NOTIFICATION_METADATA_GUIDE.md) — if notifications declared
+8. [`../../memory-bank/aiProductPhilosophy.md`](../../memory-bank/aiProductPhilosophy.md) — product/behavior boundaries only (not integration API)
 
 ## Platform constraints (non-negotiable)
 
