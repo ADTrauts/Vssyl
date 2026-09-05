@@ -25,8 +25,13 @@ Usage: scripts/security-secrets.sh [--history] [--help]
 
 Environment:
   GITLEAKS_VERSION   Pinned Gitleaks release (default: 8.30.1)
-  GITLEAKS_BIN       Optional path to an existing gitleaks binary
+  GITLEAKS_BIN       Optional explicit path to a gitleaks binary (validated)
 EOF
+}
+
+die_infra() {
+  echo "ERROR: secret-scan infrastructure: $*" >&2
+  exit 1
 }
 
 while [[ $# -gt 0 ]]; do
@@ -46,19 +51,30 @@ if [[ ! -f "$CONFIG" ]]; then
   exit 1
 fi
 
+validate_bin() {
+  local candidate="$1"
+  if [[ -z "$candidate" ]]; then
+    die_infra "resolved gitleaks path is empty"
+  fi
+  if [[ ! -e "$candidate" ]]; then
+    die_infra "gitleaks binary not found: ${candidate}"
+  fi
+  if [[ ! -f "$candidate" ]]; then
+    die_infra "gitleaks path is not a regular file: ${candidate}"
+  fi
+  if [[ ! -x "$candidate" ]]; then
+    die_infra "gitleaks binary is not executable: ${candidate}"
+  fi
+}
+
 resolve_bin() {
-  if [[ -n "${GITLEAKS_BIN:-}" && -x "${GITLEAKS_BIN}" ]]; then
+  # Explicit override only — never auto-prefer an arbitrary PATH gitleaks.
+  if [[ -n "${GITLEAKS_BIN:-}" ]]; then
+    validate_bin "${GITLEAKS_BIN}"
     echo "${GITLEAKS_BIN}"
     return
   fi
-  if command -v gitleaks >/dev/null 2>&1; then
-    local ver
-    ver="$(gitleaks version 2>/dev/null | head -1 || true)"
-    if [[ "$ver" == *"${GITLEAKS_VERSION}"* ]]; then
-      command -v gitleaks
-      return
-    fi
-  fi
+
   local os arch asset
   os="$(uname -s | tr '[:upper:]' '[:lower:]')"
   arch="$(uname -m)"
@@ -66,16 +82,14 @@ resolve_bin() {
     x86_64|amd64) arch="x64" ;;
     arm64|aarch64) arch="arm64" ;;
     *)
-      echo "ERROR: unsupported architecture: ${arch}" >&2
-      exit 1
+      die_infra "unsupported architecture: ${arch}"
       ;;
   esac
   case "$os" in
     darwin) asset="gitleaks_${GITLEAKS_VERSION}_darwin_${arch}.tar.gz" ;;
     linux) asset="gitleaks_${GITLEAKS_VERSION}_linux_${arch}.tar.gz" ;;
     *)
-      echo "ERROR: unsupported OS: ${os}" >&2
-      exit 1
+      die_infra "unsupported OS: ${os}"
       ;;
   esac
 
@@ -85,7 +99,7 @@ resolve_bin() {
     local url="https://github.com/gitleaks/gitleaks/releases/download/v${GITLEAKS_VERSION}/${asset}"
     local tmp
     tmp="$(mktemp -d)"
-    echo "Fetching Gitleaks v${GITLEAKS_VERSION}..." >&2
+    echo "Fetching Gitleaks v${GITLEAKS_VERSION} (${asset})..." >&2
     if command -v curl >/dev/null 2>&1; then
       curl -fsSL "$url" -o "${tmp}/${asset}"
     elif command -v python3 >/dev/null 2>&1; then
@@ -94,23 +108,29 @@ import sys, urllib.request
 urllib.request.urlretrieve(sys.argv[1], sys.argv[2])
 PY
     else
-      echo "ERROR: need curl or python3 to download Gitleaks" >&2
-      exit 1
+      die_infra "need curl or python3 to download Gitleaks"
     fi
     tar -xzf "${tmp}/${asset}" -C "${tmp}"
+    if [[ ! -f "${tmp}/gitleaks" ]]; then
+      rm -rf "${tmp}"
+      die_infra "release archive missing gitleaks binary (${asset})"
+    fi
     mv "${tmp}/gitleaks" "$bin"
     chmod +x "$bin"
     rm -rf "${tmp}"
   fi
+  validate_bin "$bin"
   echo "$bin"
 }
 
 BIN="$(resolve_bin)"
+validate_bin "$BIN"
+
 TMP_REPORT="$(mktemp)"
 cleanup() { rm -f "$TMP_REPORT"; }
 trap cleanup EXIT
 
-echo "Gitleaks ${GITLEAKS_VERSION} | config=.gitleaks.toml | mode=${MODE}" >&2
+echo "Gitleaks ${GITLEAKS_VERSION} | bin=${BIN} | config=.gitleaks.toml | mode=${MODE}" >&2
 
 set +e
 if [[ "$MODE" == "history" ]]; then
