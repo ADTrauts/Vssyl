@@ -44,8 +44,8 @@ flowchart TD
 
 | File | Role |
 |------|------|
-| `projectbrief.md` | Scope and requirements |
-| `productContext.md` | Product vision |
+| `projectbrief.md` | Durable project identity / vision / purpose |
+| `productContext.md` | System-level product model / experience context |
 | `activeContext.md` | **Active workstreams only** (selective agent read) — history: `docs/archive/session-summaries/active-context-archive-2026-09-pretrim.md` |
 | `progress.md` | Compact status ledger (selective agent read) — history: `docs/archive/session-summaries/progress-archive-2026-09-pretrim.md` |
 | `systemPatterns.md` | Compact pattern index (pointers only; architecture SoT is `docs/architecture/`) — history: `docs/archive/session-summaries/system-patterns-archive-2026-09-pretrim.md` |

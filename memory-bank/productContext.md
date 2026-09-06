@@ -1,213 +1,155 @@
-<!--
-Update Rules for productContext.md
-- Only updated for major changes in product context, user experience goals, or core problems solved.
-- All changes must be reviewed and approved before updating.
-- Should always reflect the single source of truth for product context and UX vision.
-- Date major updates or new sections.
-- Use cross-references instead of duplication.
-- Archive outdated sections rather than deleting.
-- Add a table of contents if file exceeds 200 lines.
-- Summarize changes at the top if the update is significant.
--->
-
 # Product Context
 
-## Cross-References & Modular Context Pattern
-- See [projectbrief.md](./projectbrief.md) for project vision, requirements, and scope.
-- See [systemPatterns.md](./systemPatterns.md) for architecture and technical decisions.
-- See [businessProfileManagement.md](./businessProfileManagement.md) for business management context and requirements.
-- See [progress.md](./progress.md) and [activeContext.md](./activeContext.md) for current status and next steps.
-- See [calendarProductContext.md](./calendarProductContext.md) for the Calendar module product context (tab-bound calendars that mirror tab names, auto-provisioned per Personal/Business/Household contexts).
-  - Calendar overlays default to All Tabs; Current Tab toggle available; household child protections enforced (Teen/Child read-only)
+**Authority:** System-level product model for Vssyl.  
+**Not:** Per-application ProductContexts, architecture design, Policy Engine internals, UX token/layout law, commercial pricing, or implementation status.
+
+Domain ProductContexts own detailed behavior. Canonical architecture owns technical design. Dedicated policy files own unresolved commercial and deep AI detail.
 
 ---
 
-## Product Purpose
-Vssyl is a next-generation modular ERP and Life Resource Manager platform. It empowers individuals, teams, and organizations to build personalized, context-aware workspaces by combining proprietary and third-party modules (Blocks) in a unified dashboard experience.
+## Product model
 
-### Problems Solved
-- Fragmented workflows across multiple SaaS tools
-- Lack of context-aware, role-based access and collaboration
-- Siloed data and poor integration between business and personal tools
-- Inflexible, non-customizable dashboards in legacy ERP/LRM systems
-- Poor user experience in multi-context (personal, business, educational) environments
+Vssyl is **one contextual operational platform**: distinct application/domain surfaces plus shared platform capabilities.
 
-## User Experience Goals
-- **Seamless Context Switching**: Effortlessly move between personal, business, and educational workspaces
-- **Modular Customization**: Add, remove, and arrange modules to fit unique workflows
-- **Unified Navigation**: Consistent, context-aware navigation across all modules
-- **Role-Based Access**: Clear, secure permissions for every context and module
-- **Real-Time Collaboration**: Instant updates and presence across all modules
-- **Professional & Personal Balance**: Support both enterprise and lifestyle use cases in a single platform
-- **Accessible & Responsive**: Intuitive UI for all devices and user types
+Applications feel connected because they operate inside the same governed system—not because all data collapses into one domain.
 
-## Modular Context Pattern
-- Each major module (Chat, Drive, Dashboard, Marketplace, etc.) has its own product context file
-- All modules support both enterprise and lifestyle use cases, with feature flags and permission checks
-- Context switching and role-based access are core to the user experience
-- Product context files are cross-referenced for clarity and maintainability
-
-## Current Product Vision (2024-12)
-- Multi-context dashboard system (personal, business, educational)
-- Modular, extensible architecture for rapid feature development
-- Robust business profile management and team collaboration
-- Marketplace for third-party and proprietary modules
-- Real-time analytics, notifications, and presence
-- **Data Classification & Governance**: Comprehensive data sensitivity management with automated classification rules
-- **Audit & Privacy Management**: Complete audit trail with data masking and privacy controls
-- **Visual Classification System**: Interactive classification badges throughout the UI
-- Secure, scalable, and user-friendly foundation for future growth
-
-## Current Core Features
-
-### Data Management & Governance
-- **Data Classification**: Automatic and manual classification of files, messages, and content
-- **Classification Rules**: Regex-based automated classification with priority processing
-- **Classification Templates**: Pre-defined classification settings for quick application
-- **Visual Indicators**: Color-coded classification badges with expiration warnings
-- **Bulk Operations**: Multi-item classification with success/failure tracking
-
-### Audit & Privacy
-- **Audit Trail**: Comprehensive user activity logging with data masking
-- **Privacy Controls**: Granular privacy settings and consent management
-- **Data Export**: GDPR-compliant data export and deletion requests
-- **Data Masking**: Automatic masking of sensitive information (IP addresses, passwords)
-- **Retention Policies**: Automated data retention and cleanup
-
-### User Experience
-- **Context Switching**: Seamless movement between personal, business, and educational contexts
-- **Role-Based Access**: Clear permissions for every context and module
-- **Real-Time Updates**: Instant updates and presence across all modules
-- **Professional & Personal Balance**: Support for both enterprise and lifestyle use cases
-- **Accessible & Responsive**: Intuitive UI for all devices and user types
-
-### Household Module
-
-**Purpose**: Coordinate family and household activities with shared resources and role-based access control.
-
-**Key Features**:
-- **Family Coordination**: Shared calendars, grocery lists, bill management, and household tasks
-- **Role-Based Access**: Owner, Admin, Adult, Teen, Child, and Temporary Guest roles with appropriate permissions
-- **Member Management**: Invite family members, assign roles, and manage household membership
-- **Household Context**: Household-aware widgets and features across all platform modules
-- **Two-Step Creation**: Streamlined household setup with optional member invitation
-
-**User Benefits**:
-- **Centralized Organization**: All family coordination in one platform
-- **Age-Appropriate Access**: Teen and Child roles with limited permissions
-- **Guest Management**: Temporary access for babysitters, relatives, or roommates
-- **Seamless Integration**: Household context enhances all existing modules
-
-**Target Users**: Families, multi-generational households, roommate situations, and extended family groups
-
-### Technical Foundation
-- **API Proxy**: Consistent API routing with automatic authentication
-- **Error Handling**: Centralized error handling with proper user feedback
-- **Session Management**: Automatic token refresh and session persistence
-- **Data Protection**: Built-in data masking and privacy controls
+**Central tension:** connected experience **with** bounded ownership.
 
 ---
 
-## User Experience & Business Value
+## User and context model
 
-### **Block ID System - User Experience** 🆕
-**Status**: ✅ Implemented
+| Context | Meaning |
+|---------|---------|
+| **Personal** | Individual authority, preferences, and personal work |
+| **Business** | Tenant/organization authority, policies, and business work |
 
-#### **User Journey & Experience**
+One platform and shared intelligence serve both. Authority and privacy boundaries remain separate. Context may cross boundaries only through **governed** mechanisms—not by default, relationship alone, or shared infrastructure alone.
 
-**Registration Flow:**
-1. **User Registration**: User creates account with email/password
-2. **Automatic Location Detection**: System detects user's location via IP address
-3. **Block ID Generation**: System generates unique Block ID (e.g., `001-001-001-0000001`)
-4. **Success Display**: User sees their Block ID prominently displayed
-5. **Copy Functionality**: User can copy Block ID to clipboard with one click
-
-**Daily Usage:**
-1. **Avatar Menu**: Block ID prominently displayed in user's avatar menu
-2. **Settings Page**: Dedicated page showing Block ID and location information
-3. **Security Messaging**: Clear communication about Block ID immutability
-4. **Cross-Module Integration**: Block ID used for secure identification across all features
-
-**Business Connections:**
-1. **Business Invitations**: Block ID included in invitation emails for secure identification
-2. **Connection Requests**: Block ID in notifications for cross-module security
-3. **Audit Trail**: Complete history of all Block ID usage for compliance
-
-#### **Business Value & Benefits**
-
-**For Users:**
-- **Permanent Identity**: Immutable Block ID serves as permanent digital identity
-- **Secure Identification**: Block ID used for secure identification across all platform features
-- **Location Transparency**: Users can see their detected location and when it was determined
-- **Cross-Module Security**: Block ID ensures correct user identification in business connections
-- **Compliance**: Complete audit trail for all Block ID usage and location changes
-
-**For Administrators:**
-- **User Management**: Comprehensive admin tools for Block ID management
-- **Location Updates**: Admin-only location changes with proper audit trails
-- **Security Monitoring**: Complete audit logs for Block ID usage and security
-- **Data Integrity**: Block ID format validation and data integrity checks
-- **Compliance**: Full audit trail for regulatory compliance requirements
-
-**For Platform:**
-- **Global Scalability**: 9.9 quintillion capacity with 3-digit codes
-- **Atomic Operations**: Database transactions prevent race conditions
-- **Cross-Module Integration**: Block ID used for secure identification across all features
-- **Audit Compliance**: Complete audit trail for security and compliance requirements
-- **Immutable Design**: Block ID cannot be changed by users, ensuring data integrity
-
-#### **Key Features & Capabilities**
-
-**Block ID Format:**
-- **Structure**: `[CountryCode]-[RegionCode]-[TownCode]-[UserSerial]`
-- **Example**: `001-001-001-0000001` (USA-NY-Manhattan-User #1)
-- **Capacity**: 9.9 quintillion users globally
-- **Validation**: Strict 3-3-3-7 format with component parsing
-
-**Location Detection:**
-- **Automatic**: IP-based geolocation using ipapi.co
-- **Fallback**: Default location assignment when geolocation fails
-- **Transparency**: Users can see their detected location and timestamp
-- **Admin Control**: Location changes require admin approval with audit trails
-
-**Security Features:**
-- **Immutable Design**: Block ID cannot be changed by users
-- **Admin Oversight**: Location changes require admin approval
-- **Audit Trail**: Complete history of all Block ID usage
-- **Cross-Module Security**: Block ID verification for secure identification
-
-**Cross-Module Integration:**
-- **Business Invitations**: Block ID included in invitation emails
-- **Connection Requests**: Block ID in notification data
-- **Audit Logging**: Complete trail of Block ID usage across modules
-- **Secure Identification**: Block ID used for user identification across platform
-
-#### **User Interface Components**
-
-**Avatar Menu Integration:**
-- Block ID prominently displayed below user email
-- Copy-to-clipboard functionality with feedback
-- Clear visual hierarchy and accessibility
-
-**Settings Page:**
-- Dedicated page for Block ID and location information
-- Security messaging about Block ID immutability
-- Location detection timestamp and details
-- Copy functionality for Block ID
-
-**Registration Success:**
-- Block ID display after successful registration
-- Clear explanation of Block ID purpose
-- Copy functionality for immediate use
-
-**Admin Panel:**
-- User management with Block ID display
-- Location update capabilities with audit trails
-- Audit log viewing for security monitoring
-- Block ID validation and data integrity tools
-
-### **Payment & Billing System - User Experience**
+Household, education, and similar concepts are not root identity peers; if active, they live with their own owners.
 
 ---
 
-> For detailed requirements, see [projectbrief.md]. For technical patterns, see [systemPatterns.md]. For business management, see [businessProfileManagement.md]. For current status, see [activeContext.md] and [progress.md]. 
+## Application and domain ownership
+
+- **Applications** own their domain records and workflows.
+- **Shared platform capabilities** support applications without taking over domain truth.
+- **Dashboard** projects information; it does not own underlying domains.
+- **Analytics** interprets information; it does not own operational records.
+- **V_Link** connects relationships/context; it does not replace source ownership or grant access merely because a relationship exists.
+- **AI** reasons over governed domain truth; it does not create a shadow system of record.
+
+---
+
+## Shared platform capabilities
+
+Shared capabilities let applications participate in one coherent system. Examples (not exhaustive): identity and membership · permissions · communication · analytics · settings · presence · relationships · notifications · contextual intelligence · interoperability.
+
+Exact contracts live in ProductContexts and architecture.
+
+---
+
+## Relationships (V_Link)
+
+**V_Link** provides relationship and contextual connection across Vssyl.
+
+Entities remain source-owned. A relationship is **not** an automatic access grant. V_Link is not universal entity ownership. Relationship context is not durable memory.
+
+Detail: [`vlinkProductContext.md`](./vlinkProductContext.md) and V_Link architecture docs.
+
+---
+
+## Contextual intelligence
+
+Vssyl’s AI philosophy describes its governed contextual intelligence as a **Digital Life Twin** concept. How visible that name should be to end users remains an **open product decision**.
+
+At system product level:
+
+- Intelligence uses governed Vssyl context—not generic conversation alone.
+- Personal and Business remain governed scopes over shared intelligence.
+- Applications remain sources of domain truth.
+- Authorization is inherited; AI never expands it.
+- Actions pass through appropriate domain owners.
+- Model/provider is replaceable and is not product identity.
+- Intelligence should reduce work rather than create another administrative surface.
+
+Philosophy: [`aiProductPhilosophy.md`](./aiProductPhilosophy.md). Not every application must expose AI.
+
+---
+
+## Application and ecosystem taxonomy
+
+Representative categories—not an exhaustive catalog:
+
+**Direct work surfaces** — domain work. Examples: File Hub, Chat, Calendar, To-Do, HR, Scheduling, Place.
+
+**Projection / interpretation** — Dashboard (home projections; not the whole platform); Analytics (interpretation; not domain SoR).
+
+**Administrative** — examples: Business Administration, Members, Platform Admin. Platform Admin owns approval/certification; tenant business configuration stays with business-admin surfaces.
+
+**Cross-cutting** — examples: Settings, Presence, Notifications.
+
+**Creator / ecosystem**
+
+| Surface | Role |
+|---------|------|
+| **Developer** | Authoring, publishing, creator-side monetization awareness |
+| **Marketplace** | Discover, evaluate, install |
+| **Platform Admin** | Approval / certification |
+
+Module lifecycle owns installed-state truth. Marketplace does not own creator-economics policy.
+
+**Relationship bridge** — V_Link (above).
+
+Full taxonomy: [`README.md`](./README.md) and `*ProductContext.md`.
+
+---
+
+## Experience principles
+
+- Context-aware rather than app-isolated
+- Coherent across Personal/Business while respecting scope boundaries
+- Reduce cognitive and operational burden
+- Guide users without demanding constant software administration
+- Prefer real-world language over exposing technical internals
+- Preserve user control
+- Enable cross-app continuity without collapsing domain ownership
+- Use natural language where it genuinely improves interaction
+
+Dashboard is a projection surface inside the workspace shell—not “all of Vssyl.”
+
+Visual/interaction law: [`docs/ux/UX_CONSTITUTION.md`](../docs/ux/UX_CONSTITUTION.md).
+
+---
+
+## Enterprise and commercial boundary
+
+**Vssyl remains one application/product family across customer scale.**
+
+Enterprise needs may deepen governance, configuration, integrations, entitlements, and support/service depth **without** creating separate enterprise forks. Those deepenings are not automatic commercial packaging promises.
+
+Commercial packaging is **not** root product identity. Open questions remain around pricing structure, enterprise commercial meaning, premium/module packaging, creator economics, and AI monetization.
+
+See [`commercialOpenDecisions.md`](./commercialOpenDecisions.md).
+
+---
+
+## What this model is not
+
+- Isolated SaaS apps · one giant monolithic domain · Dashboard-owned data
+- AI replacing domain truth · unrestricted cross-context access
+- Separate enterprise application forks · pricing encoded as system identity
+
+---
+
+## Where to go next
+
+| Concern | Owner |
+|---------|--------|
+| Domain product behavior | Relevant `*ProductContext.md`, [`README.md`](./README.md) |
+| Architecture | [`ARCHITECTURE_SOURCE_OF_TRUTH.md`](../docs/architecture/ARCHITECTURE_SOURCE_OF_TRUTH.md), [`VSSYL_ARCHITECTURE_INDEX.md`](../docs/architecture/VSSYL_ARCHITECTURE_INDEX.md) |
+| UX | [`UX_CONSTITUTION.md`](../docs/ux/UX_CONSTITUTION.md) |
+| AI philosophy | [`aiProductPhilosophy.md`](./aiProductPhilosophy.md) |
+| Commercial open decisions | [`commercialOpenDecisions.md`](./commercialOpenDecisions.md) |
+| Current status | [`activeContext.md`](./activeContext.md), [`progress.md`](./progress.md) — **only when needed** |
+| Contributor / navigation | Root [`AGENTS.md`](../AGENTS.md) |
