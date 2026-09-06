@@ -185,6 +185,6 @@ Phase 2D-1 establishes **R1 minimum** for new adapters; legacy adapters tracked 
 |----------|---------|
 | [RELATIONSHIP_FRAMEWORK_INDEX.md](./RELATIONSHIP_FRAMEWORK_INDEX.md) | Program entry |
 | [VSSYL_PLATFORM_STANDARDS_AND_MODULE_CONTRACT.md](./VSSYL_PLATFORM_STANDARDS_AND_MODULE_CONTRACT.md) | Module contract |
-| [memory-bank/moduleSpecs.md](../memory-bank/moduleSpecs.md) | Certification checklist |
+| [memory-bank/moduleSpecs.md](../../memory-bank/moduleSpecs.md) | Certification checklist |
 
 **Last updated:** 2026-06-14

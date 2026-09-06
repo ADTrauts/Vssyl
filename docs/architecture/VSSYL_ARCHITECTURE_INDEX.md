@@ -23,7 +23,7 @@ Read documents in this order when resolving conflicts:
 | 3 | **Constitutional docs** | Permanent platform law |
 | 4 | [`CERTIFICATION_LEDGER.md`](./CERTIFICATION_LEDGER.md) | Certification status (dated) |
 | 5 | **Domain status records** | Program posture per domain |
-| 6 | [`memory-bank/`](../memory-bank/) | Product intent (may lag docs) |
+| 6 | [`memory-bank/`](../../memory-bank/) | Product intent (may lag docs) |
 | 7 | [`docs/guides/`](../guides/) | How-to (not architecture truth) |
 
 **Constitutional documents (peer tier):**

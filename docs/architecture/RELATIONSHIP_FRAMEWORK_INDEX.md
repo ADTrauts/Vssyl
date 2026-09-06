@@ -60,7 +60,7 @@ The Relationship Framework defines **what relationship classes exist**, **who ow
 | [PLATFORM_ENTITY_MODEL.md](./PLATFORM_ENTITY_MODEL.md) | **Integration truth table** (resolver/manifest/UI) | Entity registry contract | Platform architecture | registerPlatformEntities.ts |
 | [GLOBAL_TRASH.md](./GLOBAL_TRASH.md) | Trash vs V_Link archive | Entity lifecycle | Platform architecture | Lifecycle matrix |
 | [DOMAIN_EVENTS.md](./DOMAIN_EVENTS.md) | Event bus implementation | Cross-cutting fan-out | Platform architecture | Event model (conceptual) |
-| [memory-bank/vlinkProductContext.md](../memory-bank/vlinkProductContext.md) | Product status + AI pipeline | V_Link product truth | Product / Memory Bank | V_LINK.md |
+| [memory-bank/vlinkProductContext.md](../../memory-bank/vlinkProductContext.md) | Product status + AI pipeline | V_Link product truth | Product / Memory Bank | V_LINK.md |
 
 ### Tag strategy (Phase 2A)
 
