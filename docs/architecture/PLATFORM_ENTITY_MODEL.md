@@ -21,11 +21,13 @@ V_Link attachments are **Association** relationships ([RELATIONSHIP_TAXONOMY.md]
 ## Registration (modules opt in)
 
 1. Declare types in manifest `entities[]`
-2. Implement `*VlinkAccessService` + resolver case in `vlinkEntityResolverService.ts`
+2. Implement `*VlinkAccessService` + resolver case in `vlinkEntityResolverService.ts` when V_Link linkable
 3. Implement lifecycle unlink on permanent delete where V_Link linkable
 4. Trash handler, domain events, optional SearchProvider
 
-**Startup registry:** `server/src/startup/registerPlatformEntities.ts`
+**Startup registry:** `server/src/startup/registerPlatformEntities.ts` → `platformEntityRegistry.ts`
+
+Descriptor fields today (`PlatformEntityDescriptor`): `entityType`, `moduleId`, `displayName`, `pluralName`, optional `vlinkEntityType`, `supportsTrash`, `supportsSearch`, `activityTargetType`.
 
 | moduleId | entityTypes (registry) |
 |----------|------------------------|
@@ -36,6 +38,48 @@ V_Link attachments are **Association** relationships ([RELATIONSHIP_TAXONOMY.md]
 | notes | page |
 | notebook | page |
 | place | listing, meeting |
+
+---
+
+## Entity metadata consistency (Phase 3B)
+
+Descriptor flags are **descriptive metadata**, not executable runtime gates.
+
+### Search
+
+| Layer | Role |
+|-------|------|
+| Module `capabilities.search: true` | Claims Unified Search **participation contract** |
+| Manifest `entities[].supportsSearch` | Declares searchable **intent** for that entity type |
+| Registry `supportsSearch` | Same intent as descriptor metadata — should stay consistent with manifest |
+| SearchProvider readiness / registration | **Runtime inclusion gate** for Unified Search |
+
+**Runtime gate:** Unified Search runs a domain because a valid SearchProvider/delegate is registered and **ready** under the Search contract ([`SEARCH_PROVIDER_MODEL.md`](./SEARCH_PROVIDER_MODEL.md), Search Constitution). Entity metadata does **not** activate Search.
+
+**Metadata truthfulness:** If an entity is intentionally searchable through a ready SearchProvider, canonical descriptor metadata (`supportsSearch`) **should** truthfully represent that intent unless an explicitly documented exception applies.
+
+**Consistency rule (expected):**
+
+| Module claim | Entity metadata | Live provider | Status |
+|--------------|-----------------|---------------|--------|
+| `search: true` | `supportsSearch: true` for searchable types | Ready provider | **Consistent** |
+| `search: true` | `supportsSearch: false` while provider ready | Ready provider | **Metadata drift** (fix metadata; do not disable Search solely for the flag) |
+| `search: false` / omitted | any | No ready provider | Consistent non-participation |
+| `search: false` | true | Ready provider | **Claim drift** — fix claim or retire provider |
+
+**Known implementation drift (do not fix in Phase 3B):** Scheduling has a ready SearchProvider and manifest searchable entities, while registry `supportsSearch` remains `false` for scheduling entity types — representation debt to correct later.
+
+### Analogous flags (same descriptive rule)
+
+| Flag / field | Executable gate | Consistency expectation |
+|--------------|-----------------|-------------------------|
+| `supportsTrash` + `capabilities.trash` | Global Trash **handlers** + soft-delete paths ([`GLOBAL_TRASH.md`](./GLOBAL_TRASH.md)) | Descriptor should match trash participation intent |
+| `vlinkEntityType` + `capabilities.vlink` | Resolver + access/lifecycle ([`V_LINK.md`](./V_LINK.md)) | Do not claim `vlink` without resolver coverage; descriptors should list linkable types |
+| Preview | Module preview surfaces when `preview` claimed | Align when preview entity metadata exists; no separate registry preview flag today |
+
+Do not invent new descriptor flags in this phase.
+
+---
 
 ## V_Link integration truth table
 
@@ -86,5 +130,7 @@ Do not add enum values without resolver + link permission + lifecycle policy.
 | V_Link summary | [V_LINK.md](./V_LINK.md) |
 | Ownership / SoR | [RELATIONSHIP_OWNERSHIP_MATRIX.md](./RELATIONSHIP_OWNERSHIP_MATRIX.md) |
 | Doc corrections | [audits/RELATIONSHIP_DOCUMENTATION_CORRECTION_PLAN.md](./audits/RELATIONSHIP_DOCUMENTATION_CORRECTION_PLAN.md) |
+| Search inclusion | [SEARCH_PROVIDER_MODEL.md](./SEARCH_PROVIDER_MODEL.md) |
+| Participation composition | [APPLICATION_PARTICIPATION_COMPOSITION.md](./APPLICATION_PARTICIPATION_COMPOSITION.md) |
 
-**Last updated:** 2026-06-14
+**Last updated:** 2026-09-08 (entity metadata consistency — Phase 3B)

@@ -490,21 +490,82 @@ Activity and domain events survive deletion where audit requires. V_Link links p
 
 ## 19. Capability matrix
 
-Extend `ModuleCapability` in manifest + `coreModuleRegistry.ts`: `read`, `write`, `realtime`, `ai`, `vlink`, `trash`, `notifications`, `search`, `businessWorkspace`, `analytics`, `globalActivity`, etc.
+### 19.1 Canonical capability model
 
-**Canonical capability declaration:** backend/shared Module/Application manifest semantics (`builtInModuleManifests` → reconciled `Module.manifest`) are the **authoritative capability declaration**. Frontend registry capability arrays are **presentation / projection metadata** and must not independently redefine capability truth. Projection/sync implementation details are deferred (see [`APPLICATION_PARTICIPATION_COMPOSITION.md`](./APPLICATION_PARTICIPATION_COMPOSITION.md)).
+**One authority.** For built-in/native applications, the **Module/Application manifest capability declaration** is the sole authoring authority for capability truth.
 
-**Resolution order (documented target):** manifest `capabilities[]` → `ModuleDefinition.capabilities` → certification inference. Helper `resolveModuleCapabilities()` remains a documented target, not a second authoring authority.
+| Representation | Role |
+|----------------|------|
+| Backend/shared manifest builder (`builtInModuleManifests` / partner manifest contract) | **Canonical declaration** |
+| Persisted `Module.manifest` (after reconcile) | Runtime / persisted **projection** of the declaration |
+| Frontend registry capability arrays / presentation metadata | Consumer **projection** — may subset or reshape for UI; **must not** independently author or contradict canonical truth |
+| Certification / audit views | Derived evidence views — not alternate authoring |
+
+Frontend arrays must eventually be **derived, synchronized, or removed** if unused. **Implementation of sync is deferred** (do not change FE arrays in Phase 3B).
+
+**Claim semantics.** `capabilities.<name>: true` means: *the application claims conformance with the canonical contract for that capability.* It does **not** mean incidental use of related infrastructure (e.g. emitting a socket event once).
+
+**Partner completeness.** Partners must satisfy runtime/lifecycle, tenant isolation, security/certification, truthful declarations, and the contract for **every claimed** capability. Unclaimed capabilities are not mandatory.
+
+### 19.2 Capability vocabulary (from current manifests)
+
+Authoritative TypeScript shape today: `BuiltInManifestCapabilities` in `server/src/startup/builtInModuleManifests.ts` (partner manifests follow the same capability keys where declared).
+
+| Capability | Meaning (claim) | Canonical contract owner |
+|------------|-----------------|--------------------------|
+| `read` | Application exposes authorized reads of its domain | Module services + Policy Engine / visibility |
+| `write` | Application exposes authorized mutations via canonical services | Module services + Policy Engine |
+| `search` | Participates in Unified Search under Search contracts | [`../search/SEARCH_CONSTITUTION.md`](../search/SEARCH_CONSTITUTION.md), [`SEARCH_PROVIDER_MODEL.md`](./SEARCH_PROVIDER_MODEL.md) |
+| `ai` | AI-exposed: context providers and/or governed AI actions | [`AI_CONTEXT_ASSEMBLY.md`](./AI_CONTEXT_ASSEMBLY.md), [`AI_EXECUTION_ARCHITECTURE.md`](./AI_EXECUTION_ARCHITECTURE.md), ContextProvider API guide |
+| `vlink` | V_Link linkable entities with resolver + lifecycle | [`V_LINK.md`](./V_LINK.md), [`PLATFORM_ENTITY_MODEL.md`](./PLATFORM_ENTITY_MODEL.md) |
+| `trash` | Soft-delete / Global Trash participation | [`GLOBAL_TRASH.md`](./GLOBAL_TRASH.md) |
+| `realtime` | Certified realtime participation (not mere hub traffic) | [`REALTIME.md`](./REALTIME.md), Pattern 14 |
+| `notifications` | Notification types + NotificationService emission | [`../guides/NOTIFICATION_METADATA_GUIDE.md`](../guides/NOTIFICATION_METADATA_GUIDE.md) |
+| `businessWorkspace` | Business workspace hub mount / routing participation | [`WORKSPACE_ROUTING_CONTRACT.md`](./WORKSPACE_ROUTING_CONTRACT.md), workspace runtime |
+| `globalActivity` | Normalized module activity participation | Platform Standards §3, activity query model, `moduleSpecs` |
+| `preview` | Preview surfaces for entities where declared | Module + presentation contracts |
+| `operationalLinks` | Persisted operational edges (e.g. NotebookLink) — **not** V_Link | Module domain + [`NOTEBOOK_RELATIONSHIP_MODEL.md`](./NOTEBOOK_RELATIONSHIP_MODEL.md) where applicable |
+
+Do **not** invent future capability keys here. Platform Standards text may mention `analytics` aspirationally; until present on the shared capability type/manifests, treat analytics participation via Analytics ownership docs rather than a required manifest key.
+
+**Capability validation:** Pattern 14 in [`MODULE_REFERENCE_PATTERNS_FROM_FILE_HUB.md`](../guides/MODULE_REFERENCE_PATTERNS_FROM_FILE_HUB.md).
+
+### 19.3 Projection semantics
+
+```
+Canonical manifest declaration
+  → persisted/runtime Module.manifest (reconcile)
+  → frontend / certification / other projections as needed
+```
+
+A projection:
+
+- **may** contain a subset of capabilities,
+- **may** translate shape for a consumer,
+- **must not** contradict canonical truth,
+- **must not** become an independent authoring authority.
+
+Code-generation / sync mechanism is **not** chosen in this phase.
+
+### 19.4 Resolution semantics (architectural)
+
+**Documented direction (transitional):** prefer canonical manifest when available; use persisted reconciled `Module.manifest` where runtime requires a DB-backed representation; transitional compatibility fallbacks (e.g. `ModuleDefinition.capabilities`, certification inference) only where explicitly documented and must not invent capability claims absent from the authoring path.
+
+Helper name `resolveModuleCapabilities()` remains a **documented implementation target**, not a second authoring authority and **not implemented** as of Phase 3B.
+
+**Transitional state:** FE registry arrays and BE manifests may drift. Drift is **representation debt**, not dual authority. Until sync lands, treat backend/shared manifest as truth for certification and claims.
 
 Capability-driven before feature-flag-driven (§26).
 
-**Capability validation:** Manifest and runtime capability truthfulness follow **Pattern 14** in [`MODULE_REFERENCE_PATTERNS_FROM_FILE_HUB.md`](../guides/MODULE_REFERENCE_PATTERNS_FROM_FILE_HUB.md).
+### 19.5 Realtime claim vs transport (summary)
 
-**Realtime semantics:** Using shared realtime transport (e.g. Chat Socket.IO hub) is **not** the same as claiming `realtime: true`. `capabilities.realtime: true` means the module satisfies the **certified module realtime participation** contract (adapter + safe fan-out per Pattern 14). Transport ownership of the platform realtime layer remains **TBD** in [`ARCHITECTURE_SOURCE_OF_TRUTH.md`](./ARCHITECTURE_SOURCE_OF_TRUTH.md).
+Full contract: [`REALTIME.md`](./REALTIME.md).
 
-### Per-module capability matrix (audit baseline)
+Using shared realtime transport (e.g. Chat Socket.IO hub) is **not** the same as claiming `realtime: true`. `capabilities.realtime: true` means certified module realtime participation. Platform architecture owner for realtime semantics is `REALTIME.md`; current transport **implementation** remains Chat hub.
 
-**V_Link column:** reflects manifest `capabilities.vlink` + resolver alignment — see [PLATFORM_ENTITY_MODEL.md](./PLATFORM_ENTITY_MODEL.md) for entity-level truth. **Relationship Framework:** [RELATIONSHIP_FRAMEWORK_INDEX.md](./RELATIONSHIP_FRAMEWORK_INDEX.md).  
+### 19.6 Per-module capability matrix (audit baseline)
+
+**V_Link column:** reflects manifest `capabilities.vlink` + resolver alignment — see [PLATFORM_ENTITY_MODEL.md](./PLATFORM_ENTITY_MODEL.md). **Relationship Framework:** [RELATIONSHIP_FRAMEWORK_INDEX.md](./RELATIONSHIP_FRAMEWORK_INDEX.md).  
 **Realtime column:** reflects **claimed** `capabilities.realtime` (certified participation), not incidental hub traffic.
 
 | Module | ai | vlink | trash | realtime | notifications | businessWorkspace | globalActivity |
@@ -522,9 +583,9 @@ Capability-driven before feature-flag-driven (§26).
 
 ¹ **Scheduling:** manifest intentionally omits `realtime` while schedule-related events may still use the shared Chat hub. Do not treat hub traffic as a certified `realtime` capability claim until a certified scheduling realtime adapter exists.
 
-**Target:** manifest + registry reconcile on startup; `resolveModuleCapabilities()` helper (Batch 2). V_Link ≠ module operational links — see [RELATIONSHIP_OWNERSHIP_MATRIX.md](./RELATIONSHIP_OWNERSHIP_MATRIX.md).
+**Target:** manifest + registry reconcile on startup; `resolveModuleCapabilities()` helper (implementation deferred). V_Link ≠ module operational links — see [RELATIONSHIP_OWNERSHIP_MATRIX.md](./RELATIONSHIP_OWNERSHIP_MATRIX.md).
 
-**Composition reference:** how capabilities compose with other participation mechanisms — [`APPLICATION_PARTICIPATION_COMPOSITION.md`](./APPLICATION_PARTICIPATION_COMPOSITION.md).
+**Composition reference:** [`APPLICATION_PARTICIPATION_COMPOSITION.md`](./APPLICATION_PARTICIPATION_COMPOSITION.md).
 
 ---
 

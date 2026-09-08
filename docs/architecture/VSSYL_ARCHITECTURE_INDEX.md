@@ -93,6 +93,8 @@ Platform-wide constitutional framework, kernel capabilities, and cross-cutting s
 | **Module Activity** | [`../platform-kernel/PLATFORM_ACTIVITY_QUERY_MODEL.md`](../platform-kernel/PLATFORM_ACTIVITY_QUERY_MODEL.md) | L2 CwF | Sub-score under kernel |
 | **Global Trash** | [`GLOBAL_TRASH.md`](./GLOBAL_TRASH.md) | L2 | Active |
 | **V_Link** | [`V_LINK.md`](./V_LINK.md) | L2 | Active |
+| **Realtime** | [`REALTIME.md`](./REALTIME.md) | — | Active (Phase 3B semantics) |
+| **External-system interoperability** | [`EXTERNAL_SYSTEM_INTEROPERABILITY.md`](./EXTERNAL_SYSTEM_INTEROPERABILITY.md) | — | Active (minimal contract) |
 | **Platform Entity Model** | [`PLATFORM_ENTITY_MODEL.md`](./PLATFORM_ENTITY_MODEL.md) | — | Active |
 | **Platform Job Registry** | [`PLATFORM_JOB_REGISTRY.md`](./PLATFORM_JOB_REGISTRY.md) | L1 | Inventory-first |
 | **Context Graph** | [`../context-graph/CONTEXT_GRAPH_L4_CERTIFICATION_RECORD.md`](../context-graph/CONTEXT_GRAPH_L4_CERTIFICATION_RECORD.md) | L4 CwF | Program archived |
@@ -136,7 +138,7 @@ Install, configure, assign, and discover applications.
 | Topic | Canonical document | Cert | Status |
 |-------|-------------------|------|--------|
 | **Application lifecycle** | [`APPLICATION_LIFECYCLE.md`](./APPLICATION_LIFECYCLE.md) | — | Active (2026-06-29) |
-| **Application participation composition** | [`APPLICATION_PARTICIPATION_COMPOSITION.md`](./APPLICATION_PARTICIPATION_COMPOSITION.md) | — | Composition / navigation (Phase 3A) |
+| **Application participation composition** | [`APPLICATION_PARTICIPATION_COMPOSITION.md`](./APPLICATION_PARTICIPATION_COMPOSITION.md) | — | Composition / navigation (Phase 3A/3B) |
 | **Module interoperability** | [`../../memory-bank/moduleSpecs.md`](../../memory-bank/moduleSpecs.md) | — | Constitutional |
 | **Marketplace partner pipeline** | [`../guides/THIRD_PARTY_MODULE_PIPELINE_SOURCE_OF_TRUTH.md`](../guides/THIRD_PARTY_MODULE_PIPELINE_SOURCE_OF_TRUTH.md) | L3 CwF | Active |
 | **Marketplace status** | [`../marketplace/MARKETPLACE_PARTNER_CAPABILITY_CERTIFICATION_RECORD.md`](../marketplace/MARKETPLACE_PARTNER_CAPABILITY_CERTIFICATION_RECORD.md) | L3 CwF | Phase 1B-G complete |

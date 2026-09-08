@@ -64,6 +64,8 @@ Complement (not replace) `memory-bank/systemPatterns.md` for product-level archi
 | Topic | Document |
 |-------|----------|
 | V_Link | [V_LINK.md](./V_LINK.md) |
+| Realtime | [REALTIME.md](./REALTIME.md) |
+| External-system interoperability | [EXTERNAL_SYSTEM_INTEROPERABILITY.md](./EXTERNAL_SYSTEM_INTEROPERABILITY.md) |
 | Global Trash | [GLOBAL_TRASH.md](./GLOBAL_TRASH.md) |
 | Relationship Framework | [RELATIONSHIP_FRAMEWORK_INDEX.md](./RELATIONSHIP_FRAMEWORK_INDEX.md) |
 | Platform entity model | [PLATFORM_ENTITY_MODEL.md](./PLATFORM_ENTITY_MODEL.md) |

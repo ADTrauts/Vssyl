@@ -8,11 +8,13 @@ Centralized authorization lives under **`server/src/auth/`**. Discoverability re
 
 | Concern | Owner / pattern | Role |
 |---------|-----------------|------|
-| **Authorization** | Policy Engine (permanent target; partial rollout) + dual-enforcement bridges | Whether the actor may perform a protected action |
-| **Visibility filtering** | Domain visibility services | Governed read / search / AI hit filtering — not a substitute for PE on mutations |
-| **UI / workspace gating** | e.g. `BusinessConfigurationContext`, role chrome, module visibility | Presentation only — **never** server authorization |
+| **Authorization** | Policy Engine (permanent target; partial rollout) + dual-enforcement bridges | Server decision: *May this actor perform this protected read/action in this scope?* |
+| **Visibility filtering** | Domain visibility services | Governed read / search / AI hit filtering so users only discover authorized data — not a substitute for PE on mutations |
+| **Presentation gating** | e.g. `BusinessConfigurationContext`, role chrome, module visibility, preferences, installed apps | Frontend/workspace decision: *Should this surface be shown/emphasized?* — **never** server authorization |
 
-Frontend hiding of modules or controls is **not** authorization. V_Link membership and workspace visibility are also **not** AuthZ by themselves. Composition: [`APPLICATION_PARTICIPATION_COMPOSITION.md`](./APPLICATION_PARTICIPATION_COMPOSITION.md).
+Frontend hiding of modules or controls is **not** authorization. Visible UI never guarantees permission to execute. V_Link membership and workspace visibility are also **not** AuthZ by themselves.
+
+**Role-aware experience** (Product Definition): broader than permission gating — may use role, responsibility, membership, org position, preferences, and context to shape what is emphasized. Detailed role-aware UX architecture is **future product/UX work**. Architecture rule for now: presentation inputs may inform UX; they must not replace Policy Engine / server AuthZ. Composition: [`APPLICATION_PARTICIPATION_COMPOSITION.md`](./APPLICATION_PARTICIPATION_COMPOSITION.md).
 
 ## v1 scope
 
@@ -176,5 +178,5 @@ Do not remove legacy checks before policy implements the action.
 - Incremental migration of business/member routes; remove dual enforcement when complete
 - Drive: `file:restore`, `hardDeleteFile`, `reorderFiles`, permission revoke/update routes, global trash restore; `file.moved` / `folder.created` domain events; business AI/SSO settings routes if separate from `updateBusiness`
 
-**Last updated:** 2026-09-08 (AuthZ vs UI/presentation gating clarified)
+**Last updated:** 2026-09-08 (AuthZ vs presentation + role-aware experience boundary — Phase 3B)
 

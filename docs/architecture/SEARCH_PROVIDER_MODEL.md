@@ -39,7 +39,7 @@ interface SearchProvider {
 | `platformEntityRegistry` / entity descriptor `supportsSearch` | Descriptor **metadata** — should truthfully reflect searchable intent; **not** the Unified Search inclusion gate |
 | SearchProvider `readiness: 'ready'` (or equivalent registry readiness) | **What Unified Search actually runs** |
 
-Do not treat a stale entity `supportsSearch: false` as proof that search is unimplemented when a ready SearchProvider exists (and vice versa). Consistency rules for entity flags are Phase 3B contract work; see [`APPLICATION_PARTICIPATION_COMPOSITION.md`](./APPLICATION_PARTICIPATION_COMPOSITION.md).
+**Consistency:** See [`PLATFORM_ENTITY_MODEL.md`](./PLATFORM_ENTITY_MODEL.md) § Entity metadata consistency. Do not treat a stale entity `supportsSearch: false` as proof that search is unimplemented when a ready SearchProvider exists (and vice versa). Scheduling registry flag drift is a known implementation gap — **not** corrected in Phase 3B.
 
 ---
 

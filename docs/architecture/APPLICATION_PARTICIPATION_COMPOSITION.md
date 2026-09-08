@@ -1,16 +1,16 @@
 # Application Participation Composition
 
-**Program:** Platform Participation Reconciliation — Phase 3A  
+**Program:** Platform Participation Reconciliation — Phase 3A (updated Phase 3B)  
 **Date:** 2026-09-08  
 **Status:** Active — composition / navigation reference (not a subsystem)  
 **Owner:** Platform architecture  
 **Source of Truth for:** Application participation composition and navigation only  
-**Supporting to:** Per-concern canonical owners listed in §9 (Search, AI, Dashboard, V_Link, authorization, lifecycle, Analytics, realtime ownership, etc.)
+**Supporting to:** Per-concern canonical owners listed in §9
 
-> **This document does not own** Search, AI, Dashboard, V_Link, Policy Engine, lifecycle, Analytics, realtime transport, or partner pipeline contracts. It explains how those existing contracts compose when an application participates in the platform.
+> **This document does not own** Search, AI, Dashboard, V_Link, Policy Engine, lifecycle, Analytics, realtime semantics, external-system interoperability, or partner pipeline contracts. It explains how those existing contracts compose when an application participates in the platform.
 
 **Product language (not architecture law):** [`docs/product/VSSYL_PRODUCT_DEFINITION_AND_CANONICAL_LANGUAGE.md`](../product/VSSYL_PRODUCT_DEFINITION_AND_CANONICAL_LANGUAGE.md)  
-**Evidence baselines:** [Phase 1 trace](./audits/APPLICATION_PARTICIPATION_TRACE_PHASE_1.md) · [Phase 2 matrix](./audits/APPLICATION_PARTICIPATION_MATRIX_PHASE_2.md)
+**Evidence baselines:** [Phase 1](./audits/APPLICATION_PARTICIPATION_TRACE_PHASE_1.md) · [Phase 2](./audits/APPLICATION_PARTICIPATION_MATRIX_PHASE_2.md) · [Phase 3B](./audits/APPLICATION_PARTICIPATION_CONTRACT_PHASE_3B.md)
 
 ---
 
@@ -30,7 +30,9 @@ Product Definition terms used here (product meaning only):
 | **Shared operational understanding** | Product outcome of connected meaning — **not** a named subsystem | Composition of owners below |
 | **Domain owner / SoR** | Authoritative owner of records | Per-module services + Platform Standards |
 | **Projection** | Contextual representation owned elsewhere | e.g. Dashboard widget contract |
-| **Capability** | Shared platform function consuming contributions | Platform Standards §19 + Pattern 14 |
+| Capability | Shared platform function consuming contributions | Platform Standards §19 |
+| Realtime | Near-immediate delivery (not SoR) | [`REALTIME.md`](./REALTIME.md) |
+| External interop | Connect before replace | [`EXTERNAL_SYSTEM_INTEROPERABILITY.md`](./EXTERNAL_SYSTEM_INTEROPERABILITY.md) |
 
 Architecture owners linked in §9 remain authoritative for their domains.
 
@@ -61,7 +63,7 @@ Not every application must implement every contribution mechanism. Capability-ba
 | Frontend presentation metadata | Workspace/module registry display metadata | [`WORKSPACE_RUNTIME_AND_MODULE_CONTRACTS.md`](./WORKSPACE_RUNTIME_AND_MODULE_CONTRACTS.md) | **Core** (presentation) | Projection for UI — **not** independent capability authority |
 | Workspace participation | Business/personal routing + mount contracts | [`WORKSPACE_ROUTING_CONTRACT.md`](./WORKSPACE_ROUTING_CONTRACT.md), workspace runtime | Capability / surface (`businessWorkspace`, mounts) | Where the app appears; not AuthZ by itself |
 | Authorization | Policy Engine (+ transitional dual enforcement) | [`POLICY_ENGINE.md`](./POLICY_ENGINE.md) | **Core** | Server enforcement of protected actions |
-| Entities | Platform entity descriptors + manifest `entities[]` | [`PLATFORM_ENTITY_MODEL.md`](./PLATFORM_ENTITY_MODEL.md) | Core when app owns linkable/trashable/searchable types | Describes entity types; not a substitute for providers |
+| Entities | Platform entity descriptors + manifest `entities[]` | [`PLATFORM_ENTITY_MODEL.md`](./PLATFORM_ENTITY_MODEL.md) | Core when app owns linkable/trashable/searchable types | Descriptive metadata; SearchProvider readiness gates Search |
 | Unified Search | SearchProvider registration + readiness | [`../search/SEARCH_CONSTITUTION.md`](../search/SEARCH_CONSTITUTION.md), [`SEARCH_PROVIDER_MODEL.md`](./SEARCH_PROVIDER_MODEL.md) | **Capability-based** (`search`) | Federated discovery; inclusion via ready providers |
 | AI context | Module ContextProviders | [`AI_CONTEXT_ASSEMBLY.md`](./AI_CONTEXT_ASSEMBLY.md), [`../guides/AI_CONTEXT_PROVIDER_API.md`](../guides/AI_CONTEXT_PROVIDER_API.md) | **Capability-based** (`ai` / AI-exposed) | Authorized context for Twin — if AI-exposed |
 | AI actions | ActionExecutor → domain AI action services | [`AI_EXECUTION_ARCHITECTURE.md`](./AI_EXECUTION_ARCHITECTURE.md) | **Capability-based** | Writes only through owning domain services |
@@ -69,13 +71,13 @@ Not every application must implement every contribution mechanism. Capability-ba
 | Domain events | Registered types + emit after success | [`DOMAIN_EVENTS.md`](./DOMAIN_EVENTS.md) | Core for meaningful mutations (as applicable) | Cross-cutting fan-out after successful state change |
 | Activity | `emitModuleActivityEvent` / partner ingest | Platform Standards §3, activity query model, [`../../memory-bank/moduleSpecs.md`](../../memory-bank/moduleSpecs.md) | Core for meaningful governed mutations | Immutable “what happened” evidence |
 | Notifications | NotificationService + manifest metadata | [`../guides/NOTIFICATION_METADATA_GUIDE.md`](../guides/NOTIFICATION_METADATA_GUIDE.md) | **Capability-based** (`notifications`) | User attention on events |
-| Realtime | Shared transport (Chat hub / clients) + optional module adapter | ⚠️ Platform Realtime SoT **TBD** in [`ARCHITECTURE_SOURCE_OF_TRUTH.md`](./ARCHITECTURE_SOURCE_OF_TRUTH.md); claim semantics Pattern 14 | **Capability-based** (`realtime`) | Transport usage ≠ certified claim (§5, §10) |
+| Realtime | Shared transport + module adapter + capability claim | [`REALTIME.md`](./REALTIME.md) | **Capability-based** (`realtime`) | Transport usage ≠ certified claim |
 | Global Trash | `trashedAt` + handlers | [`GLOBAL_TRASH.md`](./GLOBAL_TRASH.md) | **Capability-based** (`trash`) when soft-delete applies | Lifecycle / recovery contract |
 | Dashboard projection | Personal Dashboard widget boundary contract | [`PERSONAL_DASHBOARD_WIDGET_CONTRACT.md`](./PERSONAL_DASHBOARD_WIDGET_CONTRACT.md) | **Capability-based** / product surface | Bespoke projections — **no** SearchProvider-like Dashboard registry |
 | Analytics | Analytics ownership + consumers | [`../analytics/ANALYTICS_STATUS_RECORD.md`](../analytics/ANALYTICS_STATUS_RECORD.md), ownership model | **Capability-based** / derived | Derived metrics; not a second SoR |
 | Internal interoperability | Module interop contract + domain bridges | [`../../memory-bank/moduleSpecs.md`](../../memory-bank/moduleSpecs.md) | Core order: authorize → execute → activity → notify/realtime | Same product model across first-party apps |
 | Third-party module participation | Sandbox + JWT/delegates + certification | [`../guides/THIRD_PARTY_MODULE_PIPELINE_SOURCE_OF_TRUTH.md`](../guides/THIRD_PARTY_MODULE_PIPELINE_SOURCE_OF_TRUTH.md), marketplace cert record | Core for partners: runtime/trust + cert + truthful capabilities | Partner apps inside Vssyl trust boundary |
-| External-system interoperability | Domain-local adapters today; platform minimum contract | **Phase 3B definition pending** (no dedicated SoT yet) | Product-driven; connect-before-replace | Outside SoR (ERP, payroll, POS, etc.) — see §7 |
+| External-system interoperability | Connect-before-replace minimum contract | [`EXTERNAL_SYSTEM_INTEROPERABILITY.md`](./EXTERNAL_SYSTEM_INTEROPERABILITY.md) | Product-driven connections | Outside SoR (ERP, payroll, POS, etc.) — see §7 |
 
 ---
 
@@ -112,21 +114,18 @@ A partner or first-party application can be **complete** for install/certificati
 
 ## 5. Capability truth
 
+Canonical detail: Platform Standards **§19**. Summary:
+
 | Layer | Role |
 |-------|------|
 | **Backend / shared Module–Application manifest** | **Canonical capability declaration** |
 | **Persisted DB `Module.manifest`** | Runtime / persisted representation after reconcile |
 | **Frontend registry capability arrays** | Presentation / projection metadata — **must not independently redefine capability truth** |
 
-Established rules:
-
-1. One canonical capability declaration per application (manifest contract).
-2. Other layers may eventually be derived, synchronized projections, or removed if unused — **synchronization implementation is Phase 3B**, not defined here.
-3. Projections must not redefine capability truth.
-4. A claimed capability means the application satisfies that capability’s **canonical contract** (Pattern 14 + per-capability owners).
-5. **Capability claim ≠ incidental use of infrastructure** (especially realtime: hub traffic without `realtime: true` is allowed; the claim means certified module realtime participation).
-
-Frontend capability arrays are **not** changed in Phase 3A.
+1. One canonical capability declaration per application.
+2. Projections may subset/translate; must not contradict or independently author.
+3. Claim = conformance with that capability’s contract — not incidental infrastructure use.
+4. FE sync/derive/remove and `resolveModuleCapabilities()` are **implementation targets**, not done in Phase 3B.
 
 ---
 
@@ -146,13 +145,15 @@ Do not collapse partner and first-party into one technical mechanism.
 
 ## 7. External systems
 
+Canonical contract: [`EXTERNAL_SYSTEM_INTEROPERABILITY.md`](./EXTERNAL_SYSTEM_INTEROPERABILITY.md).
+
 | | Third-party Vssyl module | External system |
 |--|-------------------------|-----------------|
 | What it is | Application participating **inside** the Vssyl ecosystem / partner runtime | Outside authoritative system (accounting, payroll, POS, productivity suite, etc.) |
 | SoR | May own domain truth **inside** Vssyl when installed as the app SoR | Often remains **external SoR**; Vssyl **connects before it replaces** |
-| Contract | Marketplace / third-party pipeline (exists) | **Minimal platform interoperability contract — Phase 3B definition pending** |
+| Contract | Marketplace / third-party pipeline | External-system interoperability (minimal conceptual contract) |
 
-This document does **not** invent MuleSoft-like infrastructure or a connector subsystem. Domain-local integrations may exist; a platform-minimum external interoperability contract is queued for Phase 3B (§10).
+Domain-local adapters may exist today; they are not a connector platform. No MuleSoft-like subsystem is implied.
 
 ---
 
@@ -194,9 +195,10 @@ The consuming capability **never** becomes system of record.
 | Notifications | [`../guides/NOTIFICATION_METADATA_GUIDE.md`](../guides/NOTIFICATION_METADATA_GUIDE.md) |
 | Analytics | [`../analytics/ANALYTICS_STATUS_RECORD.md`](../analytics/ANALYTICS_STATUS_RECORD.md) |
 | Third-party / marketplace | [`../guides/THIRD_PARTY_MODULE_PIPELINE_SOURCE_OF_TRUTH.md`](../guides/THIRD_PARTY_MODULE_PIPELINE_SOURCE_OF_TRUTH.md) |
-| Realtime platform ownership | ⚠️ **TBD** — [`ARCHITECTURE_SOURCE_OF_TRUTH.md`](./ARCHITECTURE_SOURCE_OF_TRUTH.md) § Realtime |
+| Realtime semantics | [`REALTIME.md`](./REALTIME.md) |
+| External-system interoperability | [`EXTERNAL_SYSTEM_INTEROPERABILITY.md`](./EXTERNAL_SYSTEM_INTEROPERABILITY.md) |
 | Product language | [`../product/VSSYL_PRODUCT_DEFINITION_AND_CANONICAL_LANGUAGE.md`](../product/VSSYL_PRODUCT_DEFINITION_AND_CANONICAL_LANGUAGE.md) |
-| Participation evidence | [Phase 1](./audits/APPLICATION_PARTICIPATION_TRACE_PHASE_1.md), [Phase 2](./audits/APPLICATION_PARTICIPATION_MATRIX_PHASE_2.md) |
+| Participation evidence | [Phase 1](./audits/APPLICATION_PARTICIPATION_TRACE_PHASE_1.md), [Phase 2](./audits/APPLICATION_PARTICIPATION_MATRIX_PHASE_2.md), [Phase 3B](./audits/APPLICATION_PARTICIPATION_CONTRACT_PHASE_3B.md) |
 
 ---
 
@@ -213,21 +215,25 @@ The consuming capability **never** becomes system of record.
 - Requiring every application to implement every capability
 - Confusing **partner Vssyl modules** with **external systems**
 - Equating **socket/hub traffic** with certified `realtime` capability
+- Silently transferring external SoR ownership into Vssyl on connect
 
 ---
 
-## 11. Open contract work (Phase 3B handoff)
+## 11. Deferred implementation and verification (after Phase 3B)
 
-Bounded semantic contract work still required — **do not implement here**:
+Semantic contracts are defined. Remaining work is **implementation and verification**, not more architecture invention:
 
-1. **Capability projection / resolution semantics** — how FE (and helpers such as documented `resolveModuleCapabilities()`) derive from or sync to canonical manifest claims without becoming a second authority
-2. **Entity metadata consistency rule** — align `entities[].supportsSearch` / `platformEntityRegistry.supportsSearch` with searchable intent while keeping **SearchProvider readiness** as Unified Search inclusion gate
-3. **Realtime participation semantics / owner gap** — document platform Realtime SoT owner (still TBD); keep claim = certified participation vs transport usage
-4. **External-system interoperability minimum contract** — locate owner and define minimal connect-before-replace contract (no new subsystem invention in 3A)
-5. **Authorization vs presentation wording** — finish propagating AuthZ ≠ UI gating language into any remaining ambiguous supporting docs after Policy Engine / composition clarifications
+| Item | Deferred to |
+|------|-------------|
+| Derive/sync/remove FE capability arrays; implement `resolveModuleCapabilities()` | Targeted implementation |
+| Align Scheduling (and similar) registry `supportsSearch` with searchable intent | Targeted implementation |
+| Scheduling certified realtime adapter / claim (if product chooses) | Targeted implementation + certification |
+| External connector schemas, OAuth, sync engines | Future implementation under interop contract |
+| Role-aware dashboard/UX design | Future product/UX architecture |
+| Runtime verification of claim vs behavior | Phase 3C |
 
-Phase 3B must **not** create a Participation Engine, AnalyticsProvider, DashboardProvider registry, or rewrite the business workspace switch unless separately product-scheduled.
+Do **not** create a Participation Engine, AnalyticsProvider, DashboardProvider registry, or rewrite the business workspace switch unless separately product-scheduled.
 
 ---
 
-**Last updated:** 2026-09-08
+**Last updated:** 2026-09-08 (Phase 3B pointers)

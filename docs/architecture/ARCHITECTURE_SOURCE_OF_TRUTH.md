@@ -77,7 +77,7 @@ Before creating or editing architecture documentation:
 | **Module classification** | `shared/src/types/moduleClassification.ts` | [`APPLICATION_LIFECYCLE.md`](./APPLICATION_LIFECYCLE.md) | — | — |
 | **Module interop** | [`memory-bank/moduleSpecs.md`](../../memory-bank/moduleSpecs.md) | [`.cursor/rules/module-interoperability.mdc`](../../.cursor/rules/module-interoperability.mdc) | — | — |
 | **Third-party pipeline** | [`../guides/THIRD_PARTY_MODULE_PIPELINE_SOURCE_OF_TRUTH.md`](../guides/THIRD_PARTY_MODULE_PIPELINE_SOURCE_OF_TRUTH.md) | [`../guides/THIRD_PARTY_MODULE_DEVELOPER_GUIDE.md`](../guides/THIRD_PARTY_MODULE_DEVELOPER_GUIDE.md), [`../guides/THIRD_PARTY_MODULE_RULEBOOK.md`](../guides/THIRD_PARTY_MODULE_RULEBOOK.md) | Marketplace phase closeouts | — |
-| **External-system interoperability** | ⚠️ **Phase 3B definition pending** | [`APPLICATION_PARTICIPATION_COMPOSITION.md`](./APPLICATION_PARTICIPATION_COMPOSITION.md) §7; domain-local adapters | — | Do not conflate with third-party Vssyl modules |
+| **External-system interoperability** | [`EXTERNAL_SYSTEM_INTEROPERABILITY.md`](./EXTERNAL_SYSTEM_INTEROPERABILITY.md) | [`APPLICATION_PARTICIPATION_COMPOSITION.md`](./APPLICATION_PARTICIPATION_COMPOSITION.md) §7; domain-local adapters | — | Do not conflate with third-party Vssyl modules; no connector runtime invented here |
 | **Marketplace partner runtime** | [`../marketplace/MARKETPLACE_PARTNER_CAPABILITY_CERTIFICATION_RECORD.md`](../marketplace/MARKETPLACE_PARTNER_CAPABILITY_CERTIFICATION_RECORD.md) | [`../marketplace/MARKETPLACE_REALITY_ASSESSMENT.md`](../marketplace/MARKETPLACE_REALITY_ASSESSMENT.md) | Phase 1A–1B closeouts | — |
 | **Dashboard module product** | [`../dashboard/DASHBOARD_STATUS_RECORD.md`](../dashboard/DASHBOARD_STATUS_RECORD.md) | [`../dashboard/DASHBOARD_OPERATION_MATRIX.md`](../dashboard/DASHBOARD_OPERATION_MATRIX.md), [`memory-bank/dashboardProductContext.md`](../../memory-bank/dashboardProductContext.md) | [`DASHBOARD_PROGRAM_ARCHIVE.md`](../dashboard/DASHBOARD_PROGRAM_ARCHIVE.md) | Package implementation reports |
 | **Dashboard membership SoT** | [`APPLICATION_LIFECYCLE.md`](./APPLICATION_LIFECYCLE.md) §membership | `dashboard.preferences.selectedModuleIds` (code) | — | — |
@@ -184,7 +184,7 @@ Before creating or editing architecture documentation:
 
 | Topic | Source of Truth | Supporting (living) | Historical / read-only | Never edit for truth |
 |-------|-----------------|---------------------|------------------------|----------------------|
-| **Realtime / WebSocket** | ⚠️ **TBD — gap** (platform ownership undecided) | Platform Standards §19 realtime semantics; Pattern 14 claim rules; Chat hub as current transport usage; [`APPLICATION_PARTICIPATION_COMPOSITION.md`](./APPLICATION_PARTICIPATION_COMPOSITION.md); [`memory-bank/presenceProductContext.md`](../../memory-bank/presenceProductContext.md) | — | Do not equate hub traffic with `capabilities.realtime: true` |
+| **Realtime / WebSocket** | [`REALTIME.md`](./REALTIME.md) | Platform Standards §19; Pattern 14; Chat hub as **current transport implementation**; [`APPLICATION_PARTICIPATION_COMPOSITION.md`](./APPLICATION_PARTICIPATION_COMPOSITION.md); [`memory-bank/presenceProductContext.md`](../../memory-bank/presenceProductContext.md) | — | Do not equate hub traffic with `capabilities.realtime: true`; Chat transport ≠ every module’s domain realtime |
 
 ### Commercial & GTM
 
@@ -252,7 +252,8 @@ Official ownership register — expanded from SoT matrix. **Maturity** = certifi
 | **AI Retrieval** | `ai/retrieval/AI_RETRIEVAL_CONSTITUTION.md` | AI Platform | L2 CwF | Retrieval orch. | Phase 2A | Search alignment |
 | **Search** | `search/SEARCH_CONSTITUTION.md` | Unified Search | L2 CwF | searchCapabilityService | Phase 1B | Provider gaps |
 | **Notifications** | `guides/NOTIFICATION_METADATA_GUIDE.md` | Platform Engineering | L2 / UX #2 | notificationService | L2 | No constitution |
-| **Realtime** | ⚠️ TBD | Platform Engineering | — | chatSocketService | Unaudited | Platform capability doc |
+| **Realtime** | `REALTIME.md` | Platform Engineering | — | chatSocketService (transport impl) | Semantics Active (3B) | Cert adapters per module |
+| **External-system interop** | `EXTERNAL_SYSTEM_INTEROPERABILITY.md` | Platform Engineering | — | Domain-local only | Contract Active (3B) | No connector runtime |
 | **File Hub** | `audits/FILE_HUB_REFERENCE_IMPLEMENTATION_REVIEW.md` | Drive team | **L4** | **Canonical ref** | L4 active | Ongoing hygiene |
 | **Chat** | `audits/CHAT_LEVEL3_CERTIFICATION_REVIEW.md` | Chat team | L3 | Ref #2 | L3 | Post-L3 punch-list |
 | **Calendar** | `audits/CALENDAR_LEVEL3_CERTIFICATION_REVIEW.md` | Calendar team | L3 | Ref #3 / UX #5 | L3 | Hygiene backlog |
