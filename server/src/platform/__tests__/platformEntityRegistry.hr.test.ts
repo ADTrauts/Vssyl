@@ -19,20 +19,23 @@ describe('platformEntityRegistry HR (CO-09 / G13)', () => {
       moduleId: 'hr',
       vlinkEntityType: 'HR_EMPLOYEE_PROFILE',
       supportsTrash: true,
-      supportsSearch: false,
+      supportsSearch: true,
       activityTargetType: 'employee_profile',
     });
     expect(getPlatformEntity('hr', 'time_off_request')).toMatchObject({
       vlinkEntityType: 'HR_TIME_OFF_REQUEST',
       supportsTrash: false,
+      supportsSearch: true,
     });
     expect(getPlatformEntity('hr', 'attendance_exception')).toMatchObject({
       vlinkEntityType: 'HR_ATTENDANCE_EXCEPTION',
       supportsTrash: false,
+      supportsSearch: false,
     });
     expect(getPlatformEntity('hr', 'onboarding_journey')).toMatchObject({
       vlinkEntityType: 'HR_ONBOARDING_JOURNEY',
       supportsTrash: false,
+      supportsSearch: true,
     });
   });
 

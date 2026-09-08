@@ -47,6 +47,10 @@ function coreModule(
 
 /**
  * First-party core modules. Marketplace/custom modules register separately in future.
+ *
+ * Capability truth lives on backend/shared Module manifests — do not re-author
+ * `capabilities` arrays here (Phase 4). Optional `ModuleDefinition.capabilities`
+ * remains for future derived projections if a FE consumer appears.
  */
 export const CORE_MODULE_DEFINITIONS: ModuleDefinition[] = [
   coreModule({
@@ -60,7 +64,6 @@ export const CORE_MODULE_DEFINITIONS: ModuleDefinition[] = [
     defaultRoute: 'dashboard',
     category: 'core',
     isCore: true,
-    capabilities: ['read'],
   }),
   coreModule({
     id: 'drive',
@@ -72,19 +75,6 @@ export const CORE_MODULE_DEFINITIONS: ModuleDefinition[] = [
     defaultRoute: 'drive',
     category: 'core',
     isCore: true,
-    capabilities: [
-      'read',
-      'write',
-      'trash',
-      'search',
-      'preview',
-      'notifications',
-      'realtime',
-      'businessWorkspace',
-      'globalActivity',
-      'ai',
-      'vlink',
-    ],
   }),
   coreModule({
     id: 'chat',
@@ -96,7 +86,6 @@ export const CORE_MODULE_DEFINITIONS: ModuleDefinition[] = [
     defaultRoute: 'chat',
     category: 'communication',
     isCore: true,
-    capabilities: ['read', 'write', 'realtime'],
   }),
   coreModule({
     id: 'calendar',
@@ -108,7 +97,6 @@ export const CORE_MODULE_DEFINITIONS: ModuleDefinition[] = [
     defaultRoute: 'calendar',
     category: 'productivity',
     isCore: true,
-    capabilities: ['read', 'write'],
   }),
   coreModule({
     id: 'todo',
@@ -119,7 +107,6 @@ export const CORE_MODULE_DEFINITIONS: ModuleDefinition[] = [
     routes: [businessRoute('todo', 'To-Do', 'todo')],
     defaultRoute: 'todo',
     category: 'productivity',
-    capabilities: ['read', 'write', 'trash', 'ai', 'businessWorkspace'],
   }),
   coreModule({
     id: 'notebook',
@@ -130,7 +117,6 @@ export const CORE_MODULE_DEFINITIONS: ModuleDefinition[] = [
     routes: [businessRoute('notebook', 'Notebook', 'notebook')],
     defaultRoute: 'notebook',
     category: 'productivity',
-    capabilities: ['read', 'write', 'ai', 'businessWorkspace'],
   }),
   coreModule({
     id: 'notes',
@@ -141,7 +127,6 @@ export const CORE_MODULE_DEFINITIONS: ModuleDefinition[] = [
     routes: [],
     category: 'productivity',
     status: 'disabled',
-    capabilities: ['read', 'write'],
   }),
   coreModule({
     id: 'ai',
@@ -152,7 +137,6 @@ export const CORE_MODULE_DEFINITIONS: ModuleDefinition[] = [
     routes: [businessRoute('ai', 'AI Assistant', 'ai')],
     category: 'utility',
     isCore: true,
-    capabilities: ['read', 'ai'],
   }),
   coreModule({
     id: 'notifications',
@@ -164,7 +148,6 @@ export const CORE_MODULE_DEFINITIONS: ModuleDefinition[] = [
     routes: [],
     category: 'utility',
     isCore: true,
-    capabilities: ['read', 'notifications'],
   }),
   coreModule({
     id: 'quickstats',
@@ -176,7 +159,6 @@ export const CORE_MODULE_DEFINITIONS: ModuleDefinition[] = [
     routes: [],
     category: 'utility',
     isCore: true,
-    capabilities: ['read', 'analytics'],
   }),
   coreModule({
     id: 'quicknotes',
@@ -188,7 +170,6 @@ export const CORE_MODULE_DEFINITIONS: ModuleDefinition[] = [
     routes: [],
     category: 'utility',
     isCore: true,
-    capabilities: ['read', 'write'],
   }),
   coreModule({
     id: 'bookmarks',
@@ -200,7 +181,6 @@ export const CORE_MODULE_DEFINITIONS: ModuleDefinition[] = [
     routes: [],
     category: 'utility',
     isCore: true,
-    capabilities: ['read'],
   }),
   coreModule({
     id: 'activityfeed',
@@ -212,7 +192,6 @@ export const CORE_MODULE_DEFINITIONS: ModuleDefinition[] = [
     routes: [],
     category: 'utility',
     isCore: true,
-    capabilities: ['read', 'realtime'],
   }),
   coreModule({
     id: 'hr',
@@ -225,7 +204,6 @@ export const CORE_MODULE_DEFINITIONS: ModuleDefinition[] = [
     defaultRoute: 'hr',
     category: 'business',
     isBusinessScoped: true,
-    capabilities: ['read', 'write', 'admin'],
   }),
   coreModule({
     id: 'scheduling',
@@ -238,7 +216,6 @@ export const CORE_MODULE_DEFINITIONS: ModuleDefinition[] = [
     defaultRoute: 'scheduling',
     category: 'business',
     isBusinessScoped: true,
-    capabilities: ['read', 'write'],
   }),
   coreModule({
     id: 'workforce_comms',
@@ -251,7 +228,6 @@ export const CORE_MODULE_DEFINITIONS: ModuleDefinition[] = [
     defaultRoute: 'workforce-comms',
     category: 'business',
     isBusinessScoped: true,
-    capabilities: ['read', 'write', 'trash', 'vlink', 'globalActivity', 'notifications', 'businessWorkspace', 'ai'],
   }),
   coreModule({
     id: 'analytics',
@@ -264,7 +240,6 @@ export const CORE_MODULE_DEFINITIONS: ModuleDefinition[] = [
     defaultRoute: 'analytics',
     category: 'business',
     isBusinessScoped: true,
-    capabilities: ['read', 'analytics'],
   }),
   coreModule({
     id: 'members',
@@ -279,7 +254,6 @@ export const CORE_MODULE_DEFINITIONS: ModuleDefinition[] = [
     defaultRoute: 'members',
     category: 'business',
     isBusinessScoped: true,
-    capabilities: ['read', 'write', 'admin'],
   }),
   coreModule({
     id: 'vlink',
@@ -293,7 +267,6 @@ export const CORE_MODULE_DEFINITIONS: ModuleDefinition[] = [
     ],
     defaultRoute: 'vlink',
     category: 'utility',
-    capabilities: ['read', 'write', 'ai'],
   }),
   coreModule({
     id: 'place',
@@ -307,7 +280,6 @@ export const CORE_MODULE_DEFINITIONS: ModuleDefinition[] = [
     ],
     defaultRoute: 'place',
     category: 'utility',
-    capabilities: ['read', 'write', 'ai', 'businessWorkspace'],
   }),
 ];
 

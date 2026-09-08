@@ -86,6 +86,10 @@ export interface ModuleDefinition {
   isCore?: boolean;
   isBusinessScoped?: boolean;
   source?: ModuleSource;
+  /**
+   * Optional projection only — not authored for core modules.
+   * Canonical capability declaration: backend/shared Module manifests.
+   */
   capabilities?: ModuleCapability[];
   status?: ModuleStatus;
 }

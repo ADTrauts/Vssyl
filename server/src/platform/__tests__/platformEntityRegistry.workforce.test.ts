@@ -19,6 +19,7 @@ describe('platformEntityRegistry workforce_comms (Phase A)', () => {
       entityType: 'communication',
       vlinkEntityType: 'WORKFORCE_COMMUNICATION',
       supportsTrash: true,
+      supportsSearch: true,
       activityTargetType: 'communication',
     });
 
@@ -28,6 +29,7 @@ describe('platformEntityRegistry workforce_comms (Phase A)', () => {
       entityType: 'campaign',
       vlinkEntityType: 'WORKFORCE_CAMPAIGN',
       supportsTrash: true,
+      supportsSearch: true,
       activityTargetType: 'campaign',
     });
   });

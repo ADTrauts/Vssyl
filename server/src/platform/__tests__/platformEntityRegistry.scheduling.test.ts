@@ -19,16 +19,18 @@ describe('platformEntityRegistry scheduling (CO-09 / G13)', () => {
       moduleId: 'scheduling',
       vlinkEntityType: 'SCHEDULE',
       supportsTrash: true,
-      supportsSearch: false,
+      supportsSearch: true,
       activityTargetType: 'schedule',
     });
     expect(getPlatformEntity('scheduling', 'shift')).toMatchObject({
       vlinkEntityType: 'SCHEDULE_SHIFT',
       supportsTrash: true,
+      supportsSearch: true,
     });
     expect(getPlatformEntity('scheduling', 'swap_request')).toMatchObject({
       vlinkEntityType: 'SHIFT_SWAP_REQUEST',
       supportsTrash: false,
+      supportsSearch: false,
     });
   });
 

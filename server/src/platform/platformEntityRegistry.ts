@@ -171,7 +171,7 @@ export function registerSchedulingPlatformEntities(): void {
     pluralName: 'Schedules',
     vlinkEntityType: 'SCHEDULE',
     supportsTrash: true,
-    supportsSearch: false,
+    supportsSearch: true,
     activityTargetType: 'schedule',
   });
   registerPlatformEntity({
@@ -181,7 +181,7 @@ export function registerSchedulingPlatformEntities(): void {
     pluralName: 'Shifts',
     vlinkEntityType: 'SCHEDULE_SHIFT',
     supportsTrash: true,
-    supportsSearch: false,
+    supportsSearch: true,
     activityTargetType: 'shift',
   });
   registerPlatformEntity({
@@ -205,7 +205,7 @@ export function registerHRPlatformEntities(): void {
     pluralName: 'Employee profiles',
     vlinkEntityType: 'HR_EMPLOYEE_PROFILE',
     supportsTrash: true,
-    supportsSearch: false,
+    supportsSearch: true,
     activityTargetType: 'employee_profile',
   });
   registerPlatformEntity({
@@ -215,7 +215,7 @@ export function registerHRPlatformEntities(): void {
     pluralName: 'Time-off requests',
     vlinkEntityType: 'HR_TIME_OFF_REQUEST',
     supportsTrash: false,
-    supportsSearch: false,
+    supportsSearch: true,
     activityTargetType: 'time_off_request',
   });
   registerPlatformEntity({
@@ -235,7 +235,7 @@ export function registerHRPlatformEntities(): void {
     pluralName: 'Onboarding journeys',
     vlinkEntityType: 'HR_ONBOARDING_JOURNEY',
     supportsTrash: false,
-    supportsSearch: false,
+    supportsSearch: true,
     activityTargetType: 'onboarding_journey',
   });
 }
@@ -249,7 +249,7 @@ export function registerWorkforceCommsPlatformEntities(): void {
     pluralName: 'Communications',
     vlinkEntityType: 'WORKFORCE_COMMUNICATION',
     supportsTrash: true,
-    supportsSearch: false,
+    supportsSearch: true,
     activityTargetType: 'communication',
   });
   registerPlatformEntity({
@@ -259,7 +259,7 @@ export function registerWorkforceCommsPlatformEntities(): void {
     pluralName: 'Campaigns',
     vlinkEntityType: 'WORKFORCE_CAMPAIGN',
     supportsTrash: true,
-    supportsSearch: false,
+    supportsSearch: true,
     activityTargetType: 'campaign',
   });
 }

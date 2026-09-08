@@ -47,7 +47,13 @@ describe('moduleRegistry', () => {
   it('exposes place display name and dashboard icon (Wave 3A)', () => {
     expect(getModuleDisplayName('place')).toBe('Place');
     expect(MODULE_ICONS.place).toBeDefined();
-    expect(getModuleDefinition('place')?.capabilities).toContain('businessWorkspace');
+    expect(getModuleDefinition('place')?.routes.some((r) => r.context === 'business')).toBe(true);
+  });
+
+  it('does not author duplicate capability metadata on core modules (Phase 4)', () => {
+    for (const id of ['drive', 'chat', 'place', 'scheduling', 'hr', 'workforce_comms'] as const) {
+      expect(getModuleDefinition(id)?.capabilities).toBeUndefined();
+    }
   });
 
   it('marks core modules with source core', () => {

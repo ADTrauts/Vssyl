@@ -13,9 +13,10 @@ describe('moduleRegistry workforce_comms (Phase F)', () => {
     const def = getModuleDefinition('workforce_comms');
     expect(def).toBeDefined();
     expect(def?.name).toBe('Workforce Communications');
-    expect(def?.capabilities).toContain('vlink');
-    expect(def?.capabilities).toContain('trash');
-    expect(def?.capabilities).not.toContain('realtime');
+    expect(def?.isBusinessScoped).toBe(true);
+    expect(def?.defaultRoute).toBe('workforce-comms');
+    // Capability truth is backend/shared manifests — not authored on FE registry (Phase 4).
+    expect(def?.capabilities).toBeUndefined();
   });
 
   it('normalizes workforce-comms alias', () => {
