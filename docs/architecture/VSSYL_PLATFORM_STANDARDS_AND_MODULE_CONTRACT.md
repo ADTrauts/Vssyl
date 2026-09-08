@@ -492,15 +492,20 @@ Activity and domain events survive deletion where audit requires. V_Link links p
 
 Extend `ModuleCapability` in manifest + `coreModuleRegistry.ts`: `read`, `write`, `realtime`, `ai`, `vlink`, `trash`, `notifications`, `search`, `businessWorkspace`, `analytics`, `globalActivity`, etc.
 
-**Resolution order:** manifest `capabilities[]` → `ModuleDefinition.capabilities` → certification inference.
+**Canonical capability declaration:** backend/shared Module/Application manifest semantics (`builtInModuleManifests` → reconciled `Module.manifest`) are the **authoritative capability declaration**. Frontend registry capability arrays are **presentation / projection metadata** and must not independently redefine capability truth. Projection/sync implementation details are deferred (see [`APPLICATION_PARTICIPATION_COMPOSITION.md`](./APPLICATION_PARTICIPATION_COMPOSITION.md)).
+
+**Resolution order (documented target):** manifest `capabilities[]` → `ModuleDefinition.capabilities` → certification inference. Helper `resolveModuleCapabilities()` remains a documented target, not a second authoring authority.
 
 Capability-driven before feature-flag-driven (§26).
 
 **Capability validation:** Manifest and runtime capability truthfulness follow **Pattern 14** in [`MODULE_REFERENCE_PATTERNS_FROM_FILE_HUB.md`](../guides/MODULE_REFERENCE_PATTERNS_FROM_FILE_HUB.md).
 
+**Realtime semantics:** Using shared realtime transport (e.g. Chat Socket.IO hub) is **not** the same as claiming `realtime: true`. `capabilities.realtime: true` means the module satisfies the **certified module realtime participation** contract (adapter + safe fan-out per Pattern 14). Transport ownership of the platform realtime layer remains **TBD** in [`ARCHITECTURE_SOURCE_OF_TRUTH.md`](./ARCHITECTURE_SOURCE_OF_TRUTH.md).
+
 ### Per-module capability matrix (audit baseline)
 
-**V_Link column:** reflects manifest `capabilities.vlink` + resolver alignment — see [PLATFORM_ENTITY_MODEL.md](./PLATFORM_ENTITY_MODEL.md) for entity-level truth. **Relationship Framework:** [RELATIONSHIP_FRAMEWORK_INDEX.md](./RELATIONSHIP_FRAMEWORK_INDEX.md).
+**V_Link column:** reflects manifest `capabilities.vlink` + resolver alignment — see [PLATFORM_ENTITY_MODEL.md](./PLATFORM_ENTITY_MODEL.md) for entity-level truth. **Relationship Framework:** [RELATIONSHIP_FRAMEWORK_INDEX.md](./RELATIONSHIP_FRAMEWORK_INDEX.md).  
+**Realtime column:** reflects **claimed** `capabilities.realtime` (certified participation), not incidental hub traffic.
 
 | Module | ai | vlink | trash | realtime | notifications | businessWorkspace | globalActivity |
 |--------|----|-------|-------|----------|---------------|-------------------|----------------|
@@ -510,12 +515,16 @@ Capability-driven before feature-flag-driven (§26).
 | vlink | ✅ | — | archive | partial | ❌ | ✅ | ❌ |
 | todo | ⚠️ | ✅ | ✅ | ❌ | partial | ❌ gap | ❌ |
 | notes | ⚠️ | ⚠️ partial | ⚠️ deletedAt | ❌ | ✅ | ✅ | ❌ |
-| hr | ✅ | ❌ | ❌ | partial | ⚠️ | ✅ | ❌ |
-| scheduling | ✅ | ❌ | partial | ✅ | ❌ | ✅ | ❌ |
+| hr | ✅ | ✅ | ❌ | partial | ⚠️ | ✅ | ❌ |
+| scheduling | ✅ | ✅ | partial | ❌ intentional¹ | ✅ | ✅ | ✅ |
 | place | ✅ | ✅ | ✅ | ✅ | partial | ❌ gap | ❌ |
 | dashboard | ✅ | ❌ | ✅ | ❌ | ❌ | ✅ | ❌ |
 
+¹ **Scheduling:** manifest intentionally omits `realtime` while schedule-related events may still use the shared Chat hub. Do not treat hub traffic as a certified `realtime` capability claim until a certified scheduling realtime adapter exists.
+
 **Target:** manifest + registry reconcile on startup; `resolveModuleCapabilities()` helper (Batch 2). V_Link ≠ module operational links — see [RELATIONSHIP_OWNERSHIP_MATRIX.md](./RELATIONSHIP_OWNERSHIP_MATRIX.md).
+
+**Composition reference:** how capabilities compose with other participation mechanisms — [`APPLICATION_PARTICIPATION_COMPOSITION.md`](./APPLICATION_PARTICIPATION_COMPOSITION.md).
 
 ---
 

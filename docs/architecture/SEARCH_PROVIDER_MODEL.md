@@ -31,6 +31,16 @@ interface SearchProvider {
 - Define permission rules (delegates to visibility / PE)  
 - Own data indexed from another module's SoR  
 
+### Entity metadata vs capability vs inclusion
+
+| Layer | Meaning |
+|-------|---------|
+| Manifest `capabilities.search` (+ entity `supportsSearch` intent) | Module **claims** federated search / searchable types |
+| `platformEntityRegistry` / entity descriptor `supportsSearch` | Descriptor **metadata** — should truthfully reflect searchable intent; **not** the Unified Search inclusion gate |
+| SearchProvider `readiness: 'ready'` (or equivalent registry readiness) | **What Unified Search actually runs** |
+
+Do not treat a stale entity `supportsSearch: false` as proof that search is unimplemented when a ready SearchProvider exists (and vice versa). Consistency rules for entity flags are Phase 3B contract work; see [`APPLICATION_PARTICIPATION_COMPOSITION.md`](./APPLICATION_PARTICIPATION_COMPOSITION.md).
+
 ---
 
 ## Authority columns (how to read this matrix)
@@ -259,5 +269,6 @@ When a module adds global search:
 | [SEARCH_PERMISSION_MODEL.md](./SEARCH_PERMISSION_MODEL.md) | Hit visibility rules |
 | [TAG_INDEX_CONTRACT.md](./TAG_INDEX_CONTRACT.md) | Tag facet reader rules |
 | [PLATFORM_ENTITY_MODEL.md](./PLATFORM_ENTITY_MODEL.md) | Entity registration checklist |
+| [APPLICATION_PARTICIPATION_COMPOSITION.md](./APPLICATION_PARTICIPATION_COMPOSITION.md) | How Search composes with other participation mechanisms |
 
-**Last updated:** 2026-06-14
+**Last updated:** 2026-09-08 (entity metadata vs SearchProvider inclusion clarified)

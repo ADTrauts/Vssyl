@@ -1,9 +1,14 @@
 # Scheduling Operation Matrix
 
+> **Historical / non-authoritative snapshot (2026-06-14).**  
+> This matrix is a **point-in-time discovery record**. It **lags current implementation** on Policy Engine, activity, Trash, V_Link, notifications, Search, and related rows.  
+> **Do not use as live participation or certification truth.** Prefer current code + manifests, [`docs/architecture/audits/APPLICATION_PARTICIPATION_TRACE_PHASE_1.md`](../architecture/audits/APPLICATION_PARTICIPATION_TRACE_PHASE_1.md), [`APPLICATION_PARTICIPATION_MATRIX_PHASE_2.md`](../architecture/audits/APPLICATION_PARTICIPATION_MATRIX_PHASE_2.md), and [`APPLICATION_PARTICIPATION_COMPOSITION.md`](../architecture/APPLICATION_PARTICIPATION_COMPOSITION.md).  
+> Body below is preserved as historical evidence (not silently rewritten).
+
 **Module id:** `scheduling`  
 **Phase:** Business Operations Phase 0A — Discovery only  
-**Status:** Reality assessment (not certified)  
-**Last updated:** 2026-06-14  
+**Status:** Historical discovery snapshot (not certified; not live SoT)  
+**Last updated:** 2026-06-14 (banner added 2026-09-08 — Phase 3A)  
 **Related:** [SCHEDULING_ARCHITECTURE_AUDIT.md](./SCHEDULING_ARCHITECTURE_AUDIT.md), [WORKFORCE_DOMAIN_BOUNDARY_ANALYSIS.md](./WORKFORCE_DOMAIN_BOUNDARY_ANALYSIS.md)
 
 ---

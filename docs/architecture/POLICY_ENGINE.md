@@ -4,6 +4,16 @@ Centralized authorization lives under **`server/src/auth/`**. Discoverability re
 
 **Agent rule:** `.cursor/rules/policy-engine.mdc`
 
+### Authorization vs presentation (do not conflate)
+
+| Concern | Owner / pattern | Role |
+|---------|-----------------|------|
+| **Authorization** | Policy Engine (permanent target; partial rollout) + dual-enforcement bridges | Whether the actor may perform a protected action |
+| **Visibility filtering** | Domain visibility services | Governed read / search / AI hit filtering — not a substitute for PE on mutations |
+| **UI / workspace gating** | e.g. `BusinessConfigurationContext`, role chrome, module visibility | Presentation only — **never** server authorization |
+
+Frontend hiding of modules or controls is **not** authorization. V_Link membership and workspace visibility are also **not** AuthZ by themselves. Composition: [`APPLICATION_PARTICIPATION_COMPOSITION.md`](./APPLICATION_PARTICIPATION_COMPOSITION.md).
+
 ## v1 scope
 
 - **`dashboard:read`** (optional query scope)
@@ -145,6 +155,7 @@ Do not remove legacy checks before policy implements the action.
 - Assuming **403** from policy means “resource does not exist” (use `authorize` in controller if you need 404).
 - Adding new actions to routes **without** extending `policyActions.ts` and tests (v1 will deny).
 - Skipping **`policy_deny`** logging by catching and swallowing `PolicyDeniedError` without structured log.
+- Treating **UI role maps / module visibility / workspace chrome** as authorization.
 
 ## Review checklist
 
@@ -165,4 +176,5 @@ Do not remove legacy checks before policy implements the action.
 - Incremental migration of business/member routes; remove dual enforcement when complete
 - Drive: `file:restore`, `hardDeleteFile`, `reorderFiles`, permission revoke/update routes, global trash restore; `file.moved` / `folder.created` domain events; business AI/SSO settings routes if separate from `updateBusiness`
 
-**Last updated:** 2026-05-17 (platform hardening closeout — PE-D2 Drive move/upload/share; dual enforcement on wired controllers)
+**Last updated:** 2026-09-08 (AuthZ vs UI/presentation gating clarified)
+

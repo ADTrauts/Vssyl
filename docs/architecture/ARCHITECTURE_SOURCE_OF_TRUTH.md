@@ -73,9 +73,11 @@ Before creating or editing architecture documentation:
 | Topic | Source of Truth | Supporting (living) | Historical / read-only | Never edit for truth |
 |-------|-----------------|---------------------|------------------------|----------------------|
 | **Application lifecycle** | [`APPLICATION_LIFECYCLE.md`](./APPLICATION_LIFECYCLE.md) | `shared/src/types/applicationLifecycle.ts`, `web/src/lib/applicationLifecycle.ts` | — | Marketplace phase summaries |
+| **Application participation composition** | [`APPLICATION_PARTICIPATION_COMPOSITION.md`](./APPLICATION_PARTICIPATION_COMPOSITION.md) | Phase 1/2 participation audits | — | Does **not** own Search, AI, Dashboard, V_Link, AuthZ, lifecycle, Analytics, or realtime transport |
 | **Module classification** | `shared/src/types/moduleClassification.ts` | [`APPLICATION_LIFECYCLE.md`](./APPLICATION_LIFECYCLE.md) | — | — |
 | **Module interop** | [`memory-bank/moduleSpecs.md`](../../memory-bank/moduleSpecs.md) | [`.cursor/rules/module-interoperability.mdc`](../../.cursor/rules/module-interoperability.mdc) | — | — |
 | **Third-party pipeline** | [`../guides/THIRD_PARTY_MODULE_PIPELINE_SOURCE_OF_TRUTH.md`](../guides/THIRD_PARTY_MODULE_PIPELINE_SOURCE_OF_TRUTH.md) | [`../guides/THIRD_PARTY_MODULE_DEVELOPER_GUIDE.md`](../guides/THIRD_PARTY_MODULE_DEVELOPER_GUIDE.md), [`../guides/THIRD_PARTY_MODULE_RULEBOOK.md`](../guides/THIRD_PARTY_MODULE_RULEBOOK.md) | Marketplace phase closeouts | — |
+| **External-system interoperability** | ⚠️ **Phase 3B definition pending** | [`APPLICATION_PARTICIPATION_COMPOSITION.md`](./APPLICATION_PARTICIPATION_COMPOSITION.md) §7; domain-local adapters | — | Do not conflate with third-party Vssyl modules |
 | **Marketplace partner runtime** | [`../marketplace/MARKETPLACE_PARTNER_CAPABILITY_CERTIFICATION_RECORD.md`](../marketplace/MARKETPLACE_PARTNER_CAPABILITY_CERTIFICATION_RECORD.md) | [`../marketplace/MARKETPLACE_REALITY_ASSESSMENT.md`](../marketplace/MARKETPLACE_REALITY_ASSESSMENT.md) | Phase 1A–1B closeouts | — |
 | **Dashboard module product** | [`../dashboard/DASHBOARD_STATUS_RECORD.md`](../dashboard/DASHBOARD_STATUS_RECORD.md) | [`../dashboard/DASHBOARD_OPERATION_MATRIX.md`](../dashboard/DASHBOARD_OPERATION_MATRIX.md), [`memory-bank/dashboardProductContext.md`](../../memory-bank/dashboardProductContext.md) | [`DASHBOARD_PROGRAM_ARCHIVE.md`](../dashboard/DASHBOARD_PROGRAM_ARCHIVE.md) | Package implementation reports |
 | **Dashboard membership SoT** | [`APPLICATION_LIFECYCLE.md`](./APPLICATION_LIFECYCLE.md) §membership | `dashboard.preferences.selectedModuleIds` (code) | — | — |
@@ -146,7 +148,7 @@ Before creating or editing architecture documentation:
 |-------|-----------------|---------------------|------------------------|----------------------|
 | **Business Operations domain** | [`../business-operations/BUSINESS_OPERATIONS_CERTIFICATION_RECORD.md`](../business-operations/BUSINESS_OPERATIONS_CERTIFICATION_RECORD.md) | Operation matrices per module, [`BUSINESS_OPERATIONS_REFERENCE_STATUS_RECORD.md`](../business-operations/BUSINESS_OPERATIONS_REFERENCE_STATUS_RECORD.md) | [`BUSINESS_OPERATIONS_PROGRAM_ARCHIVE.md`](../business-operations/BUSINESS_OPERATIONS_PROGRAM_ARCHIVE.md) | — |
 | **HR module** | [`audits/HR_OPERATION_MATRIX.md`](./audits/HR_OPERATION_MATRIX.md) | [`memory-bank/hrProductContext.md`](../../memory-bank/hrProductContext.md) | Constitutional compliance assessments | — |
-| **Scheduling module** | [`audits/SCHEDULING_OPERATION_MATRIX.md`](./audits/SCHEDULING_OPERATION_MATRIX.md) | [`memory-bank/schedulingProductContext.md`](../../memory-bank/schedulingProductContext.md) | — | — |
+| **Scheduling module** | Code + manifests + BO certification records when published | [`memory-bank/schedulingProductContext.md`](../../memory-bank/schedulingProductContext.md), participation composition | [`audits/SCHEDULING_OPERATION_MATRIX.md`](./audits/SCHEDULING_OPERATION_MATRIX.md), [`../business-operations/SCHEDULING_OPERATION_MATRIX.md`](../business-operations/SCHEDULING_OPERATION_MATRIX.md) (historical 2026-06-14 snapshots) | Do not treat historical matrices as live SoT |
 | **Workforce Comms** | [`audits/WORKFORCE_COMMUNICATIONS_OPERATION_MATRIX.md`](./audits/WORKFORCE_COMMUNICATIONS_OPERATION_MATRIX.md) | — | — | — |
 | **Business Administration** | [`../business-administration/BUSINESS_ADMINISTRATION_REFERENCE_STATUS_RECORD.md`](../business-administration/BUSINESS_ADMINISTRATION_REFERENCE_STATUS_RECORD.md) | [`BUSINESS_ADMINISTRATION_OPERATION_MATRIX.md`](../business-administration/BUSINESS_ADMINISTRATION_OPERATION_MATRIX.md) | Program archive | — |
 | **Account Platform** | [`../account-platform/ACCOUNT_PLATFORM_STATUS_RECORD.md`](../account-platform/ACCOUNT_PLATFORM_STATUS_RECORD.md) | PP1/PP2/PP3 certification records, unified operation matrix | Program archive | Package implementation reports |
@@ -182,7 +184,7 @@ Before creating or editing architecture documentation:
 
 | Topic | Source of Truth | Supporting (living) | Historical / read-only | Never edit for truth |
 |-------|-----------------|---------------------|------------------------|----------------------|
-| **Realtime / WebSocket** | ⚠️ **TBD — gap** (Platform Standards §3 + module patterns) | [`memory-bank/presenceProductContext.md`](../../memory-bank/presenceProductContext.md), Chat operation matrix realtime section | — | — |
+| **Realtime / WebSocket** | ⚠️ **TBD — gap** (platform ownership undecided) | Platform Standards §19 realtime semantics; Pattern 14 claim rules; Chat hub as current transport usage; [`APPLICATION_PARTICIPATION_COMPOSITION.md`](./APPLICATION_PARTICIPATION_COMPOSITION.md); [`memory-bank/presenceProductContext.md`](../../memory-bank/presenceProductContext.md) | — | Do not equate hub traffic with `capabilities.realtime: true` |
 
 ### Commercial & GTM
 

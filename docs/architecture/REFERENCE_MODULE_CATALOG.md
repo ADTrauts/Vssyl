@@ -25,7 +25,7 @@ UX reference slots live under `docs/ux/audits/` per [`REFERENCE_MODULE_PROGRAM.m
 
 | UX slot | Module | Status | Registration |
 |---------|--------|--------|--------------|
-| **#1** | Drive / File Hub | **Approved with Findings** | [`REFERENCE_MODULE_DRIVE.md`](../ux/audits/REFERENCE_MODULE_DRIVE.md) |
+| **#1** | File Hub (`drive`) | **Approved with Findings** | [`REFERENCE_MODULE_DRIVE.md`](../ux/audits/REFERENCE_MODULE_DRIVE.md) |
 | **#2** | Notifications | **Approved with Findings** | [`REFERENCE_MODULE_NOTIFICATIONS.md`](../ux/audits/REFERENCE_MODULE_NOTIFICATIONS.md) |
 | **#3** | Todo | **Approved with Findings** | [`REFERENCE_MODULE_TODO.md`](../ux/audits/REFERENCE_MODULE_TODO.md) |
 | **#4** | AI Experience (`ai` / AI Chat) | **Approved with Findings** | [`REFERENCE_MODULE_AI.md`](../ux/audits/REFERENCE_MODULE_AI.md) |
@@ -478,8 +478,8 @@ UX reference slots live under `docs/ux/audits/` per [`REFERENCE_MODULE_PROGRAM.m
 | V_Link access + lifecycle | Membership ≠ content; unlink on permanent delete | `driveVlinkAccessService`, `driveVlinkLifecycleService` |
 | Platform Entity registration | `register*PlatformEntities` + manifest `entities[]` | `platformEntityRegistry.ts` |
 | Manifest truth | Capabilities match runtime; no aspirational types | `builtInModuleManifests.ts` |
-| Domain events | Registered types; emit from services after success | `driveDomainEventService`, registry |
-| Module activity | `emitModuleActivityEvent` on writes | `driveActivityService` |
+| Domain events | Registered types; emit from services after success | `server/src/events/domainEventEmitters.ts` (`emitFileUploadedEvent`, `emitFileDeletedEvent`, …) called from File Hub services |
+| Module activity | `emitModuleActivityEvent` on writes | Inline from File Hub services (`driveUploadService`, `driveDeleteService`, `driveFileShareService`, `driveAIActionService`) via `moduleActivityService` — no separate `driveActivityService` |
 | Notifications | `*NotificationService` + manifest metadata | `driveNotificationService` |
 | Lifecycle correctness | `authorize → execute → activity → domain → notify → realtime` | Operation matrix **C** rows |
 

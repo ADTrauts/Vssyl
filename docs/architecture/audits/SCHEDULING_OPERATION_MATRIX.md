@@ -1,8 +1,12 @@
 # SCHEDULING OPERATION MATRIX (published BO-1A)
 
-**Published:** docs/architecture/audits/ (BO-1A operation matrix publication)
-**Canonical working copy:** [SCHEDULING_OPERATION_MATRIX.md](../../business-operations/SCHEDULING_OPERATION_MATRIX.md)
+> **Historical / non-authoritative snapshot.** Published mirror of the BO-1A discovery matrix.  
+> **Lags current implementation** (PE, activity, Trash, V_Link, notifications, Search, etc.).  
+> **Do not use as live participation truth.** See [`../APPLICATION_PARTICIPATION_COMPOSITION.md`](../APPLICATION_PARTICIPATION_COMPOSITION.md) and Phase 1/2 participation audits. Body preserved as historical evidence.
 
+**Published:** docs/architecture/audits/ (BO-1A operation matrix publication)  
+**Working copy (also historical):** [SCHEDULING_OPERATION_MATRIX.md](../../business-operations/SCHEDULING_OPERATION_MATRIX.md)  
+**Banner added:** 2026-09-08 (Phase 3A)
 
 ---
 

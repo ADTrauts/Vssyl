@@ -6,6 +6,8 @@
 **Prior:** [WORKSPACE_RUNTIME_AND_MODULE_CONTRACTS.md](./WORKSPACE_RUNTIME_AND_MODULE_CONTRACTS.md) · [PERSONAL_DASHBOARD_ROUTING_CONTRACT.md](./PERSONAL_DASHBOARD_ROUTING_CONTRACT.md)
 
 > **Principle:** Module = capability; widget = projection. Widgets live on the grid only; they do not replace module routes.
+>
+> **Participation note:** Dashboard remains a **bespoke projection / home surface**. There is **no** SearchProvider-style generic Dashboard contribution registry. Projections preserve source ownership, authorization, and deep links back to the owning application. See [`APPLICATION_PARTICIPATION_COMPOSITION.md`](./APPLICATION_PARTICIPATION_COMPOSITION.md).
 
 ---
 

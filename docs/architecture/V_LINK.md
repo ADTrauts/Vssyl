@@ -48,7 +48,8 @@ Linkable modules must implement resolver cases in `vlinkEntityResolverService` (
 | **todo** | TASK, TODO | ✅ | ✅ | [Phase 2](./audits/TODO_PHASE2_TRASH_ENTITY_VLINK.md) |
 | **place** | PLACE_LISTING, PLACE_MEETING | ✅ | ✅ | `placeVlinkAccessService` |
 | **notes** | NOTE | ⚠️ partial inline resolver | ❌ not declared | Dedicated `notesVlinkAccessService` TBD |
-| **hr, scheduling** | — | ❌ | ❌ | Not integrated |
+| **hr** | HR_EMPLOYEE_PROFILE, HR_TIME_OFF_REQUEST, HR_ATTENDANCE_EXCEPTION, HR_ONBOARDING_JOURNEY | ✅ | ✅ | `hrVlinkAccessService`, `hrVlinkLifecycleService`; resolver cases in `vlinkEntityResolverService` |
+| **scheduling** | SCHEDULE, SCHEDULE_SHIFT, SHIFT_SWAP_REQUEST | ✅ | ✅ | `schedulingVlinkAccessService`, `schedulingVlinkLifecycleService`; resolver cases in `vlinkEntityResolverService` |
 | **Enum placeholders** | DASHBOARD, WIDGET, USER, BUSINESS, HOUSEHOLD, MODULE_ENTITY | ❌ | — | No resolver — do not link until implemented |
 
 **UI completeness** may lag backend (hub tabs for chat/task remain partial). **Pending** in this table means **UI or manifest gap**, not necessarily missing resolver.
@@ -64,4 +65,5 @@ Linkable modules must implement resolver cases in `vlinkEntityResolverService` (
 
 Implementation phases and non-negotiables origin: [`docs/plans/V_LINK_PLATFORM_LAYER_PLAN.md`](../plans/V_LINK_PLATFORM_LAYER_PLAN.md) (historical — use this doc + PLATFORM_ENTITY_MODEL for current status).
 
-**Last updated:** 2026-06-14
+**Last updated:** 2026-09-08 (hr/scheduling integration rows reconciled to code + manifests)
+

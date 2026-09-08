@@ -44,6 +44,7 @@ Read documents in this order when resolving conflicts:
 | Overall platform law | [Platform Kernel](#1-platform) |
 | Where users navigate | [Navigation & Workspace](#2-navigation--workspace) |
 | How apps install and appear | [Applications & Marketplace](#3-applications--marketplace) |
+| How apps participate in platform capabilities | [`APPLICATION_PARTICIPATION_COMPOSITION.md`](./APPLICATION_PARTICIPATION_COMPOSITION.md) |
 | AI and Digital Life Twin | [AI Platform](#4-ai-platform) |
 | Finding content | [Search & Discovery](#5-search--discovery) |
 | A specific product module | [Product Modules](#6-product-modules) |
@@ -97,6 +98,7 @@ Platform-wide constitutional framework, kernel capabilities, and cross-cutting s
 | **Context Graph** | [`../context-graph/CONTEXT_GRAPH_L4_CERTIFICATION_RECORD.md`](../context-graph/CONTEXT_GRAPH_L4_CERTIFICATION_RECORD.md) | L4 CwF | Program archived |
 | **Relationship Framework** | [`RELATIONSHIP_FRAMEWORK_INDEX.md`](./RELATIONSHIP_FRAMEWORK_INDEX.md) | — | Active index |
 | **Reference Module Catalog** | [`REFERENCE_MODULE_CATALOG.md`](./REFERENCE_MODULE_CATALOG.md) | — | Active |
+| **Application participation composition** | [`APPLICATION_PARTICIPATION_COMPOSITION.md`](./APPLICATION_PARTICIPATION_COMPOSITION.md) | — | Navigation / composition reference (not subsystem) |
 | **Platform Portfolio** | [`../platform-portfolio/PLATFORM_PORTFOLIO_REFRESH_2026.md`](../platform-portfolio/PLATFORM_PORTFOLIO_REFRESH_2026.md) | — | Discovery complete |
 
 **Supporting:** [`../platform-kernel/`](../platform-kernel/) · [`../context-graph/`](../context-graph/) · [`../platform-adoption/`](../platform-adoption/)
@@ -134,6 +136,7 @@ Install, configure, assign, and discover applications.
 | Topic | Canonical document | Cert | Status |
 |-------|-------------------|------|--------|
 | **Application lifecycle** | [`APPLICATION_LIFECYCLE.md`](./APPLICATION_LIFECYCLE.md) | — | Active (2026-06-29) |
+| **Application participation composition** | [`APPLICATION_PARTICIPATION_COMPOSITION.md`](./APPLICATION_PARTICIPATION_COMPOSITION.md) | — | Composition / navigation (Phase 3A) |
 | **Module interoperability** | [`../../memory-bank/moduleSpecs.md`](../../memory-bank/moduleSpecs.md) | — | Constitutional |
 | **Marketplace partner pipeline** | [`../guides/THIRD_PARTY_MODULE_PIPELINE_SOURCE_OF_TRUTH.md`](../guides/THIRD_PARTY_MODULE_PIPELINE_SOURCE_OF_TRUTH.md) | L3 CwF | Active |
 | **Marketplace status** | [`../marketplace/MARKETPLACE_PARTNER_CAPABILITY_CERTIFICATION_RECORD.md`](../marketplace/MARKETPLACE_PARTNER_CAPABILITY_CERTIFICATION_RECORD.md) | L3 CwF | Phase 1B-G complete |

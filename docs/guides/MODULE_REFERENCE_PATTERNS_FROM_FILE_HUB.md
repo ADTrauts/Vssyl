@@ -493,7 +493,7 @@ Source: `server/src/startup/builtInModuleManifests.ts` — **drive** is the refe
 |-------------|----------|
 | `trash: true` | Global Trash handler + `trashedAt` |
 | `vlink: true` | Access + lifecycle services + resolver |
-| `realtime: true` | Realtime adapter + safe socket fan-out |
+| `realtime: true` | Certified module realtime adapter + safe socket fan-out — **not** merely “emits some events on the shared hub.” Using shared transport without claiming `realtime` is allowed; the claim means certified participation (Pattern 14). Platform realtime **ownership** SoT remains TBD. |
 | `notifications: true` | `notifications[]` metadata + adapter |
 | `ai: true` | Context providers + service-backed writes |
 | `search: true` | Permission-aware search/provider |
