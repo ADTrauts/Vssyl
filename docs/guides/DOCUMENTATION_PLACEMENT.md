@@ -11,7 +11,8 @@ Where to put new docs and rules. **Agent orientation** lives in root `AGENTS.md`
 | Platform architecture (why, diagrams, checklists) | `docs/architecture/` |
 | UX standards (tokens, layouts, certification) | `docs/ux/` |
 | How-to, onboarding, templates, troubleshooting | `docs/guides/` |
-| Product intent, status, decisions | `memory-bank/` |
+| Durable product definition / canonical language | `docs/product/` |
+| Product intent, status, module ProductContexts | `memory-bank/` |
 | Setup / secrets / SMTP / Stripe | `docs/setup/` |
 | Deploy / Cloud Run / migrations in CI | `docs/deployment/` |
 | Phased execution plans | `docs/plans/` |
@@ -37,8 +38,8 @@ Where to put new docs and rules. **Agent orientation** lives in root `AGENTS.md`
 |-------------|---------|
 | Product contexts (`*ProductContext.md`) | Operational guides |
 | `activeContext.md`, `progress.md` (status; selective agent reads) | Architecture reference (`docs/architecture/`) |
-| `moduleSpecs.md` (contract) | Partner onboarding (`docs/guides/`) |
-| Strategic / product roadmaps (verify currency) | Setup and deployment |
+| `moduleSpecs.md` (contract) | Product definition & canonical language (`docs/product/`) |
+| Strategic / product roadmaps (verify currency) | Partner onboarding (`docs/guides/`); setup and deployment |
 
 Agents must **not** universally baseline-read `activeContext.md` / `progress.md`; load them only when workstream status, recent history, sequencing, or unfinished work is materially relevant (`AGENTS.md` §2).
 
@@ -48,7 +49,8 @@ Agents must **not** universally baseline-read `activeContext.md` / `progress.md`
 - `docs/architecture/README.md` (architecture only)
 - `docs/ux/README.md` (UX only; audits under `docs/ux/audits/`)
 - `docs/README.md`
+- `docs/product/` when adding durable product-definition docs
 - `.cursor/rules/RULES_SUMMARY.md`
 - Root `AGENTS.md` when changing agent orientation or placement of agent guidance
 
-**Last updated:** 2026-09-03
+**Last updated:** 2026-09-08

@@ -4,6 +4,7 @@ This repository defines the canonical references for VSSYL:
 
 1. **GitHub repo is canonical for code**
 2. **Memory Bank is canonical for product intent** — see [`memory-bank/`](../memory-bank/); architectural truth lives in `docs/architecture/`
+2a. **Product language reference (Draft 2):** [`docs/product/VSSYL_PRODUCT_DEFINITION_AND_CANONICAL_LANGUAGE.md`](product/VSSYL_PRODUCT_DEFINITION_AND_CANONICAL_LANGUAGE.md) — durable product meaning and terminology; **not** architecture law or implementation status
 3. **Architecture entry point:** [`docs/architecture/VSSYL_ARCHITECTURE_INDEX.md`](architecture/VSSYL_ARCHITECTURE_INDEX.md) — start here for any architectural topic
 4. **Architecture governance:**
    - [`ARCHITECTURE_SOURCE_OF_TRUTH.md`](architecture/ARCHITECTURE_SOURCE_OF_TRUTH.md) — which document owns each decision; edit policy
@@ -35,4 +36,4 @@ If **repo code** and a **constitutional doc** disagree, stop and reconcile befor
 
 Use this document as the baseline reference across custom GPT, Cursor, and ChatGPT conversations.
 
-**Last updated:** 2026-09-03 (Batch 0 — root `AGENTS.md` orientation layer; selective Memory Bank reads)
+**Last updated:** 2026-09-08 (added `docs/product/` product language guide pointer)

@@ -6,7 +6,20 @@ This directory contains human-readable guides and references for development, de
 **Source of truth hierarchy:** [`VSSYL_SOURCE_OF_TRUTH.md`](./VSSYL_SOURCE_OF_TRUTH.md)  
 **Architecture entry point:** [`architecture/VSSYL_ARCHITECTURE_INDEX.md`](./architecture/VSSYL_ARCHITECTURE_INDEX.md)  
 **AI assistant navigation:** [`architecture/AI_ARCHITECTURE_NAVIGATION_GUIDE.md`](./architecture/AI_ARCHITECTURE_NAVIGATION_GUIDE.md)  
-**Product intent:** [`memory-bank/`](../memory-bank/) (selective reads; not universal baseline)
+**Product intent:** [`memory-bank/`](../memory-bank/) (selective reads; not universal baseline)  
+**Product language:** [`product/VSSYL_PRODUCT_DEFINITION_AND_CANONICAL_LANGUAGE.md`](./product/VSSYL_PRODUCT_DEFINITION_AND_CANONICAL_LANGUAGE.md) (Draft 2 — not architecture law)
+
+---
+
+## Product definition (`product/`)
+
+Durable product meaning and canonical terminology (not architecture law, not implementation status).
+
+| Document | Purpose |
+|----------|---------|
+| [VSSYL_PRODUCT_DEFINITION_AND_CANONICAL_LANGUAGE](./product/VSSYL_PRODUCT_DEFINITION_AND_CANONICAL_LANGUAGE.md) | Product definition, Personal/Business distinction, glossary, naming rules (Draft 2 for ratification) |
+
+Module-level product intent remains in [`memory-bank/`](../memory-bank/).
 
 ---
 
@@ -137,12 +150,13 @@ Load `memory-bank/activeContext.md` / `progress.md` only when current workstream
 | `docs/` | `memory-bank/` |
 |---------|----------------|
 | Architecture truth & governance | Product intent & bounded current context |
-| How-to guides & deployment | Why features exist |
-| Certification & contracts | `activeContext.md`, `progress.md` (selective agent reads) |
-| Domain README landing pages | `*ProductContext.md` per module |
+| Product definition & canonical language (`product/`) | Why features exist |
+| How-to guides & deployment | `activeContext.md`, `progress.md` (selective agent reads) |
+| Certification & contracts | `*ProductContext.md` per module |
+| Domain README landing pages | (module ProductContexts live in Memory Bank; domain indexes live under `docs/`) |
 
-**Rule:** Architecture decisions → `docs/architecture/` SoT. Product intent → Memory Bank. Implementation → code. Memory Bank must not override architecture or code. See [`ARCHITECTURE_SOURCE_OF_TRUTH.md`](./architecture/ARCHITECTURE_SOURCE_OF_TRUTH.md) and root [`AGENTS.md`](../AGENTS.md).
+**Rule:** Architecture decisions → `docs/architecture/` SoT. Durable product language → `docs/product/`. Module product intent / status → Memory Bank. Implementation → code. Memory Bank and product language must not override architecture or code. See [`ARCHITECTURE_SOURCE_OF_TRUTH.md`](./architecture/ARCHITECTURE_SOURCE_OF_TRUTH.md) and root [`AGENTS.md`](../AGENTS.md).
 
 ---
 
-**Last updated:** 2026-09-03 (Batch 0.5 — selective agent bootstrap)
+**Last updated:** 2026-09-08 (added `docs/product/` product language guide)
