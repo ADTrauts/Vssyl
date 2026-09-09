@@ -37,13 +37,17 @@ Desired outcome: a **product principle**, not another platform system.
 | Item | Value |
 |------|-------|
 | Branch | `main` |
-| HEAD / origin/main | `088e8cb95` — Phase 4 org-chart contract repair |
+| Modeling baseline | `088e8cb95` — Phase 4 org-chart contract repair |
+| Report first landed | `ed8ce9867` — initial Phase 5 modeling commit |
 | Org foundation readiness | `READY_WITH_KNOWN_GAPS` (live BA browser smoke still outstanding; not a modeling blocker) |
 | Unrelated dirty work | Preserved; not staged |
 | Methods | Static inspection of composition/PE/product docs + application layouts/permissions/ProductContexts |
 | Runtime testing | Not required for this modeling phase |
 
-Known deferred gaps (not modeling blockers): multi-position semantics, WC BUSINESS audience, transitional org JSON permissions, approval-hierarchy product use, BA live smoke.
+Known deferred items (not modeling blockers; see §18): multi-position semantics, WC BUSINESS audience, transitional org JSON / BA→PE permissions, approval-hierarchy product use, BA live smoke.
+
+**Note:** Startup expected HEAD `088e8cb95`; `origin/main` had already advanced to include this report. Content below is aligned to the refined Phase 5 brief (≤3 role-aware gaps; WC audience and approval hierarchy deferred out of the gap list).
+
 
 ---
 
@@ -310,106 +314,122 @@ Role-aware behavior is a product/design principle implemented by applications an
 
 ---
 
-## 17. Highest-value product gaps
+## 17. Highest-value role-aware product gaps
 
-At most five. Architecture change required only if a new platform subsystem is needed — for these, **NO**.
+At most **three** high-confidence **role-aware experience** gaps.  
+Do **not** treat unfinished domain semantics (WC BUSINESS audience, approval hierarchy wiring) as role-aware gaps — those are §18.
+
+Architecture change required for these: **NO**.
 
 ### 1. Scheduling manager Scope ignores known reporting
 
 | | |
 |--|--|
 | Surface | Scheduling |
-| Current | Manager UI from BusinessRole; non-admin manager Scope can expand to all employees |
-| Known fact | `Position.reportsTo` / direct reports (used elsewhere, e.g. HR) |
-| Better | “Do I manage this team’s schedule?” → report-based Scope |
+| Current | Manager chrome from `BusinessRole`; non-admin manager Scope can expand to all employees |
+| Known fact | `Position.reportsTo` / direct reports (already used elsewhere, e.g. HR) |
+| Better | Ask “Do I manage this team’s schedule?” and scope using reporting / authorized team facts |
 | Why it matters | Ordinary supervisors see too much or the wrong people |
 | Architecture? | **NO** |
 
-### 2. BusinessRole chrome ≠ people-manager fact (HR / Scheduling)
+### 2. HR / Scheduling chrome vs actual people-management fact
 
 | | |
 |--|--|
 | Surface | HR (primary), Scheduling |
 | Current | Nav/cards keyed to ADMIN/MANAGER membership role |
-| Known fact | Reporting occupancy vs BusinessRole are distinct |
-| Better | Chrome/Scope follow the question the surface asks (admin vs reports vs approver) |
-| Why it matters | Example C supervisors under-served; Example D over-served |
+| Known fact | Reporting occupancy vs `BusinessRole` are distinct |
+| Better | Surface-specific chrome asks the correct domain question (admin vs reports vs approver) |
+| Why it matters | Supervisors with `EMPLOYEE` role under-served; `MANAGER` without reports over-served |
 | Architecture? | **NO** |
 
-### 3. Business home / Dashboard emphasis
+### 3. Business Home / Dashboard emphasis
 
 | | |
 |--|--|
 | Surface | Business workspace hub / Dashboard |
 | Current | Setup/admin checklist orientation; limited situational projection of app Scope |
-| Known fact | Installed apps, membership, placement, module summary APIs |
-| Better | Project authorized, high-signal domain summaries for the participant’s Scope |
-| Why it matters | First surface after “work” should reflect actual work, not only setup |
-| Architecture? | **NO** (product UX; keep widget-as-projection) |
-
-### 4. Workforce Comms BUSINESS audience
-
-| | |
-|--|--|
-| Surface | Workforce Comms |
-| Current | BUSINESS ≈ active EmployeePositions |
-| Known fact | Valid members may have no placement |
-| Better | Explicit product choice: workforce-only vs all active members |
-| Why it matters | Admins/owners without seats miss or mis-target “whole business” comms |
-| Architecture? | **NO** |
-
-### 5. Approval hierarchy underused in product Emphasis
-
-| | |
-|--|--|
-| Surface | HR/PTO and related workflows |
-| Current | Approval APIs exist; little “am I the approver?” foregrounding |
-| Known fact | `ManagerApprovalHierarchy` / domain approvers |
-| Better | Pending-approval Emphasis for workflow approvers without promoting to BA admin |
-| Why it matters | Example E is real; chrome-only MANAGER is a poor proxy |
-| Architecture? | **NO** |
+| Known fact | Installed apps, participant facts, notifications/tasks, module summary / projection APIs |
+| Better | Foreground useful current work via application-owned projections where appropriate |
+| Why it matters | First “work” surface should reflect actual work, not only setup |
+| Architecture? | **NO** (product UX; keep widget-as-projection; no DashboardProvider) |
 
 ---
 
-## 18. Multi-position implication
+## 18. Deferred domain/product decisions
 
-Role-aware modeling **surfaces** multi-position but does **not** require solving it to adopt the principle.
+Kept **separate** from highest-value role-aware gaps.
 
-| Guidance | Detail |
-|----------|--------|
-| Default inclination | **Union** relevant Scopes across active placements for “my work” |
-| When to select | Domain needs an explicit acting seat (rare; define per app when pain appears) |
-| Blocking for this phase? | **NO** |
-| Risk to watch | Paths that `findFirst` one EP while other paths union many |
+### 1. Workforce Comms BUSINESS audience
 
-Leave detailed semantics deferred until a concrete domain pain forces the decision.
+**Question:** Should BUSINESS mean all active `BusinessMember`s or only workforce placements (`EmployeePosition`)?
+
+This is a **Workforce Comms domain semantic** decision, not a role-aware presentation principle.
+
+### 2. Multi-position participant behavior
+
+**Question:** When multiple active placements exist, should applications union relevant Scope, select an active/acting position, or decide per domain?
+
+**Not blocking** the role-aware principle. Provisional direction: domain-specific interpretation, often **union** where sensible. Do not ratify implementation here; do not create an “acting as position” system.
+
+### 3. Approval hierarchy
+
+**Question:** When and where should approval hierarchy become active product behavior/UI?
+
+This is **workflow/domain product completion**, not a top role-aware gap.
+
+### 4. Business Administration permission UI
+
+**Question:** When does current BA permission configuration migrate toward PE-backed policy?
+
+This is **authorization / product administration** work, not role-aware presentation.
+
+### 5. Business Home (non-admin content)
+
+**Question:** For non-admin participants, should Business Home prioritize current operational projections over setup/admin content?
+
+Relevant to **future product UX** (also reflected as gap #3 above); still not new architecture.
 
 ---
 
-## 19. Product decisions still required
+## 19. Multi-position implication
+
+**Blocking decision for the role-aware product principle: NO.**
+
+Implementation evidence:
+
+- Schema allows multiple active `EmployeePosition` rows.  
+- Some consumers **union** (e.g. Scheduling “my schedule” filtering by current-user EP ids).  
+- Many other paths use `findFirst` / first placement (BCC `getUserPosition`, middleware helpers, some audience maps).  
+- Behavior is **inconsistent**, but that does not require a shared role-aware engine.
+
+**Future product question (unsolved here):** for each domain, when multi-placement first hurts, choose union vs explicit acting seat — without a platform “acting as” subsystem.
+
+---
+
+## 20. Product decisions still required
 
 Genuine decisions only:
 
-1. **Workforce Comms BUSINESS audience:** all active `BusinessMember`s vs workforce placements only.  
-2. **Multi-position:** confirm union-default vs first domain that needs “acting as.”  
-3. **Business home content:** how much situational projection vs setup checklist for non-admins (UX, not architecture).  
-4. **BA permissions → PE-backed configuration** (AuthZ migration track — **out of band** for role-aware experience).
+1. Workforce Comms BUSINESS audience (members vs placements) — §18.1.  
+2. Multi-position interpretation when first domain pain appears — §18.2 / §19.  
+3. Business Home balance for non-admins (setup vs operational projections) — §18.5.  
+4. BA permissions → PE-backed configuration (AuthZ track; out of band for role-aware experience) — §18.4.  
+5. Approval hierarchy product/UI activation timing — §18.3.
 
-Not required: relevance engine, role templates, universal manager persona, Responsibility model.
+Not required: relevance engine, role templates, universal manager persona, Responsibility model, presentation rule builder.
 
 ---
 
-## 20. Recommended next phase
+## 21. Recommended next phase
 
-**Targeted application product improvement**, not a new platform capability and not Dashboard architecture.
+**Targeted application product modeling / improvement** — smallest next step:
 
-**Suggested order:**
+1. **Scheduling manager/team Scope** using existing `reportsTo` (concrete mismatch; no new architecture).  
+2. Follow-up: **HR chrome / team-context alignment** with contextual manager senses.  
+3. Optional separate thread: **Business Home / Dashboard product** modeling for projections (still no engine, no DashboardProvider).
 
-1. Scheduling — manager Scope from `reportsTo` (highest integrity gap).  
-2. Align HR/Scheduling chrome with contextual manager senses (ask the right question).  
-3. Optional parallel: Business home / Dashboard **product** modeling for projections (still no engine).  
-
-Organizational foundation work is sufficient for modeling; remaining org gaps (BA smoke, WC audience, multi-position, approval UI) proceed as separate product decisions when prioritized.
+Do **not** open another general architecture program unless new evidence requires it.
 
 ---
 
