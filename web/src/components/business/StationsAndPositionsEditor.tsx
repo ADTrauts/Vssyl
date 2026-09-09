@@ -17,6 +17,7 @@ import {
   updatePosition,
   deletePosition,
   getOrganizationalTiers,
+  countActiveOccupants,
   type Position,
   type OrganizationalTier,
   type CreatePositionData
@@ -360,7 +361,6 @@ export default function StationsAndPositionsEditor({
       const positionData: CreatePositionData = {
         businessId,
         title: positionFormData.title.trim(),
-        description: positionFormData.description || undefined,
         tierId: positionFormData.tierId,
         departmentId: positionFormData.departmentId || undefined,
         maxOccupants: positionFormData.maxOccupants ? parseInt(positionFormData.maxOccupants, 10) : undefined,
@@ -394,11 +394,11 @@ export default function StationsAndPositionsEditor({
   const handleEditPosition = (position: Position) => {
     setEditingPosition(position);
     setPositionFormData({
-      title: position.name,
-      description: position.description || '',
+      title: position.title,
+      description: '',
       tierId: position.tierId,
       departmentId: position.departmentId || '',
-      maxOccupants: position.capacity?.toString() || '',
+      maxOccupants: position.maxOccupants?.toString() || '',
       defaultStartTime: position.defaultStartTime || '',
       defaultEndTime: position.defaultEndTime || '',
     });
@@ -420,7 +420,6 @@ export default function StationsAndPositionsEditor({
         editingPosition.id,
         {
           title: positionFormData.title.trim(),
-          description: positionFormData.description || undefined,
           tierId: positionFormData.tierId,
           departmentId: positionFormData.departmentId || undefined,
           maxOccupants: positionFormData.maxOccupants ? parseInt(positionFormData.maxOccupants, 10) : undefined,
@@ -597,7 +596,7 @@ export default function StationsAndPositionsEditor({
                 <div className="flex items-start justify-between mb-3">
                   <div className="flex-1">
                     <div className="flex items-center space-x-2 mb-1">
-                      <h4 className="font-semibold text-v-text-primary">{position.name}</h4>
+                      <h4 className="font-semibold text-v-text-primary">{position.title}</h4>
                     </div>
                     {position.tier && (
                       <Badge color="gray" size="sm" className="mb-2">
@@ -609,11 +608,10 @@ export default function StationsAndPositionsEditor({
                         {position.department.name}
                       </div>
                     )}
-                    {position.description && (
-                      <p className="text-xs text-v-text-secondary mt-2">{position.description}</p>
-                    )}
                     <div className="text-xs text-v-text-muted mt-2">
-                      Capacity: {position.currentEmployees} / {position.capacity}
+                      Capacity:{' '}
+                      {countActiveOccupants(position.id, [], position.employeePositions)} /{' '}
+                      {position.maxOccupants}
                     </div>
                     {formatTimeRange(position.defaultStartTime, position.defaultEndTime) && (
                       <div className="text-xs text-v-text-muted mt-1">

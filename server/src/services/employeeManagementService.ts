@@ -170,8 +170,8 @@ export class EmployeeManagementService {
       throw new Error(`Position ${position.title} is at maximum capacity`);
     }
 
-    // Check if user is already assigned to this position
-    const existingAssignment = await prisma.employeePosition.findFirst({
+    // Active placement already present
+    const existingActive = await prisma.employeePosition.findFirst({
       where: {
         userId: data.userId,
         positionId: data.positionId,
@@ -180,8 +180,55 @@ export class EmployeeManagementService {
       },
     });
 
-    if (existingAssignment) {
+    if (existingActive) {
       throw new Error('User is already assigned to this position');
+    }
+
+    const assignmentInclude = {
+      position: true,
+      user: {
+        select: {
+          id: true,
+          name: true,
+          email: true,
+        },
+      },
+    } as const;
+
+    // Soft-removed row for same (user, position, business) — unique constraint
+    // requires reactivation rather than a second create.
+    const inactiveAssignment = await prisma.employeePosition.findFirst({
+      where: {
+        userId: data.userId,
+        positionId: data.positionId,
+        businessId: data.businessId,
+        active: false,
+      },
+    });
+
+    if (inactiveAssignment) {
+      const assignment = await prisma.employeePosition.update({
+        where: { id: inactiveAssignment.id },
+        data: {
+          assignedById: data.assignedById,
+          startDate: data.startDate,
+          endDate: data.endDate ?? null,
+          customPermissions: data.customPermissions as unknown as Prisma.InputJsonValue,
+          active: true,
+        },
+        include: assignmentInclude,
+      });
+
+      void logger.info('Employee reassigned to position (reactivated historical row)', {
+        operation: 'employee_management_assign_to_position',
+        employeePositionId: assignment.id,
+        userId: data.userId,
+        positionId: data.positionId,
+        businessId: position.businessId,
+        reactivated: true,
+      });
+
+      return assignment;
     }
 
     // Create the assignment (businessId always from authoritative position row)
@@ -198,16 +245,7 @@ export class EmployeeManagementService {
         customPermissions: data.customPermissions as unknown as Prisma.InputJsonValue,
         active: true,
       },
-      include: {
-        position: true,
-        user: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
-      },
+      include: assignmentInclude,
     });
 
     void logger.info('Employee assigned to position', {

@@ -17,6 +17,7 @@ import {
   deleteOrganizationalTier,
   deleteDepartment,
   deletePosition,
+  countActiveOccupants,
   OrganizationalTier,
   Department,
   Position,
@@ -78,11 +79,10 @@ export function OrgChartBuilder({ orgChartData, businessId, onUpdate }: OrgChart
     parentDepartmentId: ''
   });
   const [positionForm, setPositionForm] = useState({
-    name: '',
-    description: '',
+    title: '',
     tierId: '',
     departmentId: '',
-    capacity: 1
+    maxOccupants: 1
   });
 
   useEffect(() => {
@@ -121,20 +121,20 @@ export function OrgChartBuilder({ orgChartData, businessId, onUpdate }: OrgChart
           description: item.description || '',
           parentDepartmentId: item.parentDepartmentId || ''
         });
-      } else if (mode === 'position' && 'tierId' in item && 'capacity' in item) {
+      } else if (mode === 'position' && 'tierId' in item && 'title' in item) {
+        const position = item as Position;
         setPositionForm({
-          name: item.name,
-          description: item.description || '',
-          tierId: item.tierId,
-          departmentId: item.departmentId || '',
-          capacity: item.capacity
+          title: position.title,
+          tierId: position.tierId,
+          departmentId: position.departmentId || '',
+          maxOccupants: position.maxOccupants ?? 1
         });
       }
     } else {
       // Reset forms for create mode
       setTierForm({ name: '', level: 1, description: '' });
       setDepartmentForm({ name: '', description: '', parentDepartmentId: '' });
-      setPositionForm({ name: '', description: '', tierId: '', departmentId: '', capacity: 1 });
+      setPositionForm({ title: '', tierId: '', departmentId: '', maxOccupants: 1 });
     }
   };
 
@@ -210,17 +210,21 @@ export function OrgChartBuilder({ orgChartData, businessId, onUpdate }: OrgChart
     try {
       if (editAction === 'create') {
         const data: CreatePositionData = {
-          title: positionForm.name,
-          description: positionForm.description,
+          title: positionForm.title,
           tierId: positionForm.tierId,
           departmentId: positionForm.departmentId || undefined,
-          maxOccupants: positionForm.capacity,
+          maxOccupants: positionForm.maxOccupants,
           businessId,
           permissions: []
         };
         await createPosition(data, session.accessToken);
       } else {
-        await updatePosition(editingItem?.id || '', positionForm, session.accessToken);
+        await updatePosition(editingItem?.id || '', {
+          title: positionForm.title,
+          tierId: positionForm.tierId,
+          departmentId: positionForm.departmentId || undefined,
+          maxOccupants: positionForm.maxOccupants,
+        }, session.accessToken);
       }
       
       onUpdate();
@@ -486,14 +490,15 @@ export function OrgChartBuilder({ orgChartData, businessId, onUpdate }: OrgChart
                           <Users className="w-5 h-5 text-purple-600" />
                         </div>
                         <div>
-                          <h4 className="font-medium text-v-text-primary">{position.name}</h4>
-                          {position.description && (
-                            <p className="text-sm text-v-text-secondary">{position.description}</p>
-                          )}
+                          <h4 className="font-medium text-v-text-primary">{position.title}</h4>
                           <div className="flex items-center space-x-4 mt-1 text-xs text-v-text-muted">
                             <span>Tier: {getTierName(position.tierId)}</span>
                             <span>Dept: {getDepartmentName(position.departmentId || '')}</span>
-                            <span>Capacity: {position.currentEmployees}/{position.capacity}</span>
+                            <span>
+                              Capacity:{' '}
+                              {countActiveOccupants(position.id, [], position.employeePositions)}/
+                              {position.maxOccupants}
+                            </span>
                           </div>
                         </div>
                       </div>
@@ -646,11 +651,11 @@ export function OrgChartBuilder({ orgChartData, businessId, onUpdate }: OrgChart
             <form onSubmit={handlePositionSubmit} className="space-y-4">
               <div>
                 <label className="block text-sm font-medium text-v-text-secondary mb-1">
-                  Position Name
+                  Position Title
                 </label>
                 <Input
-                  value={positionForm.name}
-                  onChange={(e) => setPositionForm({ ...positionForm, name: e.target.value })}
+                  value={positionForm.title}
+                  onChange={(e) => setPositionForm({ ...positionForm, title: e.target.value })}
                   placeholder="e.g., Software Engineer, Marketing Manager"
                   required
                 />
@@ -699,21 +704,10 @@ export function OrgChartBuilder({ orgChartData, businessId, onUpdate }: OrgChart
                 </label>
                 <Input
                   type="number"
-                  value={positionForm.capacity}
-                  onChange={(e) => setPositionForm({ ...positionForm, capacity: parseInt(e.target.value) })}
+                  value={positionForm.maxOccupants}
+                  onChange={(e) => setPositionForm({ ...positionForm, maxOccupants: parseInt(e.target.value) || 1 })}
                   min="1"
                   required
-                />
-              </div>
-              <div>
-                <label className="block text-sm font-medium text-v-text-secondary mb-1">
-                  Description
-                </label>
-                <Textarea
-                  value={positionForm.description}
-                  onChange={(e) => setPositionForm({ ...positionForm, description: e.target.value })}
-                  placeholder="Optional description of this position's responsibilities"
-                  rows={3}
                 />
               </div>
               <div className="flex justify-end space-x-3 pt-4">

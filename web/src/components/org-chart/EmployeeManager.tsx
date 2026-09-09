@@ -10,6 +10,8 @@ import {
   assignEmployeeToPosition,
   removeEmployeeFromPosition,
   transferEmployee,
+  isPlacedEmployeeAssignment,
+  countActiveOccupants,
   type EmployeePosition,
   type Position,
   type OrganizationalTier,
@@ -67,13 +69,13 @@ export function EmployeeManager({ orgChartData, businessId, onUpdate }: Employee
   const [assignForm, setAssignForm] = useState({
     userId: '',
     positionId: '',
-    effectiveDate: new Date().toISOString().split('T')[0]
+    startDate: new Date().toISOString().split('T')[0]
   });
   const [transferForm, setTransferForm] = useState({
     userId: '',
     fromPositionId: '',
     toPositionId: '',
-    effectiveDate: new Date().toISOString().split('T')[0]
+    startDate: new Date().toISOString().split('T')[0]
   });
 
   // Real business members
@@ -143,19 +145,19 @@ export function EmployeeManager({ orgChartData, businessId, onUpdate }: Employee
     setEditAction(action);
     setEditingItem(item || null);
     
-    if (action === 'edit' && item) {
+    if (action === 'edit' && item && isPlacedEmployeeAssignment(item)) {
       if (mode === 'assign') {
         setAssignForm({
           userId: item.userId || '',
           positionId: item.positionId || '',
-          effectiveDate: item.effectiveDate ? new Date(item.effectiveDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]
+          startDate: item.startDate ? new Date(item.startDate).toISOString().split('T')[0] : new Date().toISOString().split('T')[0]
         });
       } else if (mode === 'transfer') {
         setTransferForm({
           userId: item.userId || '',
           fromPositionId: item.positionId || '',
           toPositionId: '',
-          effectiveDate: new Date().toISOString().split('T')[0]
+          startDate: new Date().toISOString().split('T')[0]
         });
       }
     } else {
@@ -163,13 +165,13 @@ export function EmployeeManager({ orgChartData, businessId, onUpdate }: Employee
       setAssignForm({
         userId: '',
         positionId: '',
-        effectiveDate: new Date().toISOString().split('T')[0]
+        startDate: new Date().toISOString().split('T')[0]
       });
       setTransferForm({
         userId: '',
         fromPositionId: '',
         toPositionId: '',
-        effectiveDate: new Date().toISOString().split('T')[0]
+        startDate: new Date().toISOString().split('T')[0]
       });
     }
   };
@@ -191,7 +193,7 @@ export function EmployeeManager({ orgChartData, businessId, onUpdate }: Employee
         userId: assignForm.userId,
         positionId: assignForm.positionId,
         assignedById: session.user?.id || '',
-        effectiveDate: assignForm.effectiveDate
+        startDate: assignForm.startDate
       }, session.accessToken);
       
       onUpdate();
@@ -216,7 +218,7 @@ export function EmployeeManager({ orgChartData, businessId, onUpdate }: Employee
         businessId,
         session.user?.id || '',
         session.accessToken,
-        transferForm.effectiveDate
+        transferForm.startDate
       );
       
       onUpdate();
@@ -228,8 +230,12 @@ export function EmployeeManager({ orgChartData, businessId, onUpdate }: Employee
     }
   };
 
-  const handleRemoveEmployee = async (userId: string, positionId: string) => {
+  const handleRemoveEmployee = async (employee: EmployeePosition) => {
     if (!session?.accessToken) return;
+    if (!isPlacedEmployeeAssignment(employee) || !employee.positionId) {
+      console.error('Cannot remove synthetic or unplaced member row');
+      return;
+    }
     const ok = await confirm({
       title: 'Remove employee from position?',
       description: 'This removes the assignment but does not remove the user from the business.',
@@ -240,7 +246,13 @@ export function EmployeeManager({ orgChartData, businessId, onUpdate }: Employee
 
     setLoading(true);
     try {
-      await removeEmployeeFromPosition(userId, positionId, businessId, session.accessToken);
+      await removeEmployeeFromPosition(
+        employee.userId,
+        employee.positionId,
+        businessId,
+        session.accessToken,
+        employee.id
+      );
       onUpdate();
     } catch (error) {
       console.error('Error removing employee:', error);
@@ -278,32 +290,36 @@ export function EmployeeManager({ orgChartData, businessId, onUpdate }: Employee
     }
   };
 
-  const getPositionName = (positionId: string) => {
+  const getPositionName = (positionId: string | null | undefined) => {
+    if (!positionId) return 'Unassigned';
     const position = orgChartData?.positions?.find((p: Position) => p.id === positionId);
-    return position?.name || 'Unknown Position';
+    return position?.title || 'Unknown Position';
   };
 
-  const getDepartmentName = (positionId: string) => {
+  const getDepartmentName = (positionId: string | null | undefined) => {
+    if (!positionId) return 'No Department';
     const position = orgChartData?.positions?.find((p: Position) => p.id === positionId);
     if (!position?.departmentId) return 'No Department';
     const dept = orgChartData?.departments?.find((d: Department) => d.id === position.departmentId);
     return dept?.name || 'Unknown Department';
   };
 
-  const getTierName = (positionId: string) => {
+  const getTierName = (positionId: string | null | undefined) => {
+    if (!positionId) return 'No Tier';
     const position = orgChartData?.positions?.find((p: Position) => p.id === positionId);
     if (!position?.tierId) return 'No Tier';
     const tier = orgChartData?.tiers?.find((t: OrganizationalTier) => t.id === position.tierId);
     return tier?.name || 'Unknown Tier';
   };
 
+  const placedEmployees = employees.filter(isPlacedEmployeeAssignment);
+
   const getAvailableUsersForPosition = (positionId: string) => {
     const position = orgChartData?.positions?.find((p: Position) => p.id === positionId);
     if (!position) return [];
     
-    // Filter out users already assigned to this position
-    const assignedUserIds = employees
-      .filter(emp => emp.positionId === positionId && emp.isActive)
+    const assignedUserIds = placedEmployees
+      .filter(emp => emp.positionId === positionId)
       .map(emp => emp.userId);
     
     return availableUsers.filter(user => !assignedUserIds.includes(user.id));
@@ -313,8 +329,8 @@ export function EmployeeManager({ orgChartData, businessId, onUpdate }: Employee
     const position = orgChartData?.positions?.find((p: Position) => p.id === positionId);
     if (!position) return { current: 0, total: 0 };
     
-    const currentEmployees = employees.filter(emp => emp.positionId === positionId && emp.isActive).length;
-    return { current: currentEmployees, total: position.capacity };
+    const current = countActiveOccupants(positionId, employees, position.employeePositions);
+    return { current, total: position.maxOccupants ?? 0 };
   };
 
   return (
@@ -347,7 +363,7 @@ export function EmployeeManager({ orgChartData, businessId, onUpdate }: Employee
             >
               <Users className="w-5 h-5 text-blue-600" />
               <h3 className="text-lg font-medium text-v-text-primary">Current Employees</h3>
-              <Badge color="blue">{employees.filter(emp => emp.isActive).length}</Badge>
+              <Badge color="blue">{placedEmployees.length}</Badge>
               {expandedSections.has('employees') ? (
                 <ChevronDown className="w-5 h-5 text-gray-400" />
               ) : (
@@ -367,7 +383,7 @@ export function EmployeeManager({ orgChartData, businessId, onUpdate }: Employee
 
           {expandedSections.has('employees') && (
             <div className="mt-4 space-y-4">
-              {employees.filter(emp => emp.isActive).length === 0 ? (
+              {placedEmployees.length === 0 ? (
                 <BusinessAdminEmptyState
                   icon={<Users className="w-12 h-12" />}
                   title="No employees assigned yet"
@@ -375,20 +391,20 @@ export function EmployeeManager({ orgChartData, businessId, onUpdate }: Employee
                 />
               ) : (
                 <div className="grid gap-4">
-                  {employees.filter(emp => emp.isActive).map((employee) => (
+                  {placedEmployees.map((employee) => (
                     <div key={employee.id} className="border border-v-border rounded-lg p-4">
                       <div className="flex items-center justify-between">
                         <div className="flex items-center space-x-3">
                           <Avatar
-                            nameOrEmail={availableUsers.find(u => u.id === employee.userId)?.name || 'Unknown User'}
+                            nameOrEmail={employee.user?.name || availableUsers.find(u => u.id === employee.userId)?.name || 'Unknown User'}
                             size={40}
                           />
                           <div>
                             <h4 className="font-medium text-v-text-primary">
-                              {availableUsers.find(u => u.id === employee.userId)?.name || 'Unknown User'}
+                              {employee.user?.name || availableUsers.find(u => u.id === employee.userId)?.name || 'Unknown User'}
                             </h4>
                             <p className="text-sm text-v-text-secondary">
-                              {availableUsers.find(u => u.id === employee.userId)?.email || 'Unknown Email'}
+                              {employee.user?.email || availableUsers.find(u => u.id === employee.userId)?.email || 'Unknown Email'}
                             </p>
                             <div className="flex items-center space-x-4 mt-1 text-xs text-v-text-muted">
                               <span className="flex items-center">
@@ -419,7 +435,7 @@ export function EmployeeManager({ orgChartData, businessId, onUpdate }: Employee
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => handleRemoveEmployee(employee.userId, employee.positionId)}
+                            onClick={() => handleRemoveEmployee(employee)}
                             className="text-red-600 hover:text-red-700"
                           >
                             <UserMinus className="w-4 h-4" />
@@ -430,8 +446,8 @@ export function EmployeeManager({ orgChartData, businessId, onUpdate }: Employee
                       {/* Assignment Details */}
                       <div className="mt-3 pt-3 border-t border-gray-100 text-xs text-v-text-muted">
                         <div className="flex items-center justify-between">
-                          <span>Assigned: {new Date(employee.effectiveDate).toLocaleDateString()}</span>
-                          <span>Status: {employee.isActive ? 'Active' : 'Inactive'}</span>
+                          <span>Assigned: {new Date(employee.startDate).toLocaleDateString()}</span>
+                          <span>Status: {employee.active ? 'Active' : 'Inactive'}</span>
                         </div>
                       </div>
                     </div>
@@ -482,10 +498,7 @@ export function EmployeeManager({ orgChartData, businessId, onUpdate }: Employee
                               <UserCheck className="w-5 h-5 text-yellow-600" />
                             </div>
                             <div>
-                              <h4 className="font-medium text-v-text-primary">{position.name}</h4>
-                              {position.description && (
-                                <p className="text-sm text-v-text-secondary">{position.description}</p>
-                              )}
+                              <h4 className="font-medium text-v-text-primary">{position.title}</h4>
                               <div className="flex items-center space-x-4 mt-1 text-xs text-v-text-muted">
                                 <span className="flex items-center">
                                   <Building2 className="w-3 h-3 mr-1" />
@@ -573,7 +586,7 @@ export function EmployeeManager({ orgChartData, businessId, onUpdate }: Employee
                     const capacity = getPositionCapacity(position.id);
                     return (
                       <option key={position.id} value={position.id} disabled={capacity.current >= capacity.total}>
-                        {position.name} - {getDepartmentName(position.id)} ({capacity.current}/{capacity.total})
+                        {position.title} - {getDepartmentName(position.id)} ({capacity.current}/{capacity.total})
                       </option>
                     );
                   })}
@@ -585,8 +598,8 @@ export function EmployeeManager({ orgChartData, businessId, onUpdate }: Employee
                 </label>
                 <Input
                   type="date"
-                  value={assignForm.effectiveDate}
-                  onChange={(e) => setAssignForm({ ...assignForm, effectiveDate: e.target.value })}
+                  value={assignForm.startDate}
+                  onChange={(e) => setAssignForm({ ...assignForm, startDate: e.target.value })}
                   required
                 />
               </div>
@@ -620,7 +633,7 @@ export function EmployeeManager({ orgChartData, businessId, onUpdate }: Employee
                   className="w-full px-3 py-2 border border-v-border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 >
                   <option value="">Select an employee</option>
-                  {employees.filter(emp => emp.isActive).map(emp => {
+                  {placedEmployees.map(emp => {
                     const user = availableUsers.find(u => u.id === emp.userId);
                     return (
                       <option key={emp.id} value={emp.userId}>
@@ -641,10 +654,10 @@ export function EmployeeManager({ orgChartData, businessId, onUpdate }: Employee
                   className="w-full px-3 py-2 border border-v-border rounded-md shadow-sm focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                 >
                   <option value="">Select current position</option>
-                  {employees
-                    .filter(emp => emp.isActive && emp.userId === transferForm.userId)
+                  {placedEmployees
+                    .filter(emp => emp.userId === transferForm.userId)
                     .map(emp => (
-                      <option key={emp.id} value={emp.positionId}>
+                      <option key={emp.id} value={emp.positionId as string}>
                         {getPositionName(emp.positionId)} - {getDepartmentName(emp.positionId)}
                       </option>
                     ))
@@ -666,7 +679,7 @@ export function EmployeeManager({ orgChartData, businessId, onUpdate }: Employee
                     const capacity = getPositionCapacity(position.id);
                     return (
                       <option key={position.id} value={position.id} disabled={capacity.current >= capacity.total}>
-                        {position.name} - {getDepartmentName(position.id)} ({capacity.current}/{capacity.total})
+                        {position.title} - {getDepartmentName(position.id)} ({capacity.current}/{capacity.total})
                       </option>
                     );
                   })}
@@ -678,8 +691,8 @@ export function EmployeeManager({ orgChartData, businessId, onUpdate }: Employee
                 </label>
                 <Input
                   type="date"
-                  value={transferForm.effectiveDate}
-                  onChange={(e) => setTransferForm({ ...transferForm, effectiveDate: e.target.value })}
+                  value={transferForm.startDate}
+                  onChange={(e) => setTransferForm({ ...transferForm, startDate: e.target.value })}
                   required
                 />
               </div>

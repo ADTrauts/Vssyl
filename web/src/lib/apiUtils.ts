@@ -265,6 +265,24 @@ export async function authenticatedApiCall<T>(
     throw error;
   }
 
+  // 204/205 and empty bodies must not call response.json() (org-chart deletes, etc.)
+  if (response.status === 204 || response.status === 205) {
+    return undefined as T;
+  }
+
+  const contentType = response.headers.get('content-type') || '';
+  if (!contentType.includes('application/json')) {
+    const text = await response.text();
+    if (!text) {
+      return undefined as T;
+    }
+    try {
+      return JSON.parse(text) as T;
+    } catch {
+      return text as unknown as T;
+    }
+  }
+
   const data = await response.json();
   return data;
 }

@@ -298,6 +298,27 @@ describe('/api/org-chart — policy, activity, and domain events (BA-1D)', () =>
 
       expect(removeRes.status).toBe(204);
       expect(removeSpy).toHaveBeenCalled();
+
+      // Re-assign then remove via query string (Next proxy-safe DELETE without body)
+      const reassign = await request(app)
+        .post('/api/org-chart/employees/assign')
+        .set(createAuthHeader(manager))
+        .send({
+          businessId: business.id,
+          userId: employee.id,
+          positionId: position.id,
+          startDate: new Date().toISOString(),
+        });
+      expect(reassign.status).toBe(201);
+
+      removeSpy.mockClear();
+      const removeQueryRes = await request(app)
+        .delete(
+          `/api/org-chart/employees/remove?userId=${employee.id}&positionId=${position.id}&businessId=${business.id}`
+        )
+        .set(createAuthHeader(manager));
+      expect(removeQueryRes.status).toBe(204);
+      expect(removeSpy).toHaveBeenCalled();
     } finally {
       await prisma.employeePosition.deleteMany({
         where: { businessId: business.id, userId: employee.id },

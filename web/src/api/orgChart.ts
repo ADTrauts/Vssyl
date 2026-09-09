@@ -68,20 +68,23 @@ export interface Department {
 export interface Position {
   id: string;
   businessId: string;
-  name: string;
-  description?: string;
+  /** Canonical job title for the org seat */
+  title: string;
   tierId: string;
-  tier: OrganizationalTier;
-  departmentId?: string;
-  department?: Department;
-  capacity: number;
-  currentEmployees: number;
-  permissions: PermissionData[];
-  permissionSets: PermissionSet[];
+  tier?: OrganizationalTier;
+  departmentId?: string | null;
+  department?: Department | null;
+  reportsToId?: string | null;
+  /** Max concurrent active occupants */
+  maxOccupants: number;
+  permissions?: PermissionData[] | unknown;
+  permissionSets?: PermissionSet[];
+  assignedModules?: unknown;
+  employeePositions?: Array<{ id: string; active?: boolean; userId?: string }>;
   defaultStartTime?: string | null;
   defaultEndTime?: string | null;
-  createdAt: string;
-  updatedAt: string;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface Permission {
@@ -114,15 +117,19 @@ export interface EmployeePosition {
   id: string;
   businessId: string;
   userId: string;
-  positionId: string;
-  position: Position;
-  assignedById?: string;
-  assignedBy: UserData;
-  effectiveDate: string;
-  endDate?: string;
-  isActive: boolean;
-  createdAt: string;
-  updatedAt: string;
+  /** Null on transitional synthetic member-* presentation rows */
+  positionId: string | null;
+  position?: Position | null;
+  assignedById?: string | null;
+  assignedBy?: UserData | null;
+  /** Canonical assignment start (ISO) */
+  startDate: string;
+  endDate?: string | null;
+  /** Canonical active flag */
+  active: boolean;
+  user?: UserData;
+  createdAt?: string;
+  updatedAt?: string;
 }
 
 export interface OrgChartStructure {
@@ -157,14 +164,13 @@ export interface CreateDepartmentData {
 export interface CreatePositionData {
   businessId: string;
   title: string;
-  description?: string;
   tierId: string;
   departmentId?: string;
-  reportsToId?: string;
+  reportsToId?: string | null;
   maxOccupants?: number;
   permissions?: PermissionData[];
-  assignedModules?: any;
-  customPermissions?: any;
+  assignedModules?: unknown;
+  customPermissions?: unknown;
   defaultStartTime?: string;
   defaultEndTime?: string;
 }
@@ -194,7 +200,8 @@ export interface AssignEmployeeData {
   userId: string;
   positionId: string;
   assignedById: string;
-  effectiveDate?: string;
+  /** Canonical server field (ISO date or datetime string) */
+  startDate: string;
 }
 
 export interface PermissionCheckResult {
@@ -213,13 +220,61 @@ export interface UserPermissions {
   inheritedPermissions: PermissionData[];
 }
 
+/** Transitional presentation id for members without EmployeePosition */
+export function isSyntheticEmployeeRowId(id: string | null | undefined): boolean {
+  return typeof id === 'string' && id.startsWith('member-');
+}
+
+/** True when the row is a real active placement (not synthetic / not unplaced). */
+export function isPlacedEmployeeAssignment(
+  ep: Pick<EmployeePosition, 'id' | 'positionId' | 'active'>
+): boolean {
+  return (
+    Boolean(ep.positionId) &&
+    !isSyntheticEmployeeRowId(ep.id) &&
+    ep.active === true
+  );
+}
+
+/** Derive occupancy from nested relation or employee list. */
+export function countActiveOccupants(
+  positionId: string,
+  employees: Array<Pick<EmployeePosition, 'id' | 'positionId' | 'active'>>,
+  nestedEmployeePositions?: Array<{ active?: boolean }> | null
+): number {
+  if (nestedEmployeePositions) {
+    return nestedEmployeePositions.filter((ep) => ep.active !== false).length;
+  }
+  return employees.filter(
+    (ep) => ep.positionId === positionId && isPlacedEmployeeAssignment(ep)
+  ).length;
+}
+
+export function assertRemovablePlacement(
+  userId: string,
+  positionId: string | null | undefined,
+  rowId?: string | null
+): asserts positionId is string {
+  if (!userId || isSyntheticEmployeeRowId(userId)) {
+    throw new Error('Invalid user identity for position removal');
+  }
+  if (!positionId || isSyntheticEmployeeRowId(positionId) || isSyntheticEmployeeRowId(rowId)) {
+    throw new Error('Cannot remove a synthetic or unplaced member row as an EmployeePosition');
+  }
+}
+
 // Helper function to make authenticated API calls
 async function apiCall<T>(
   endpoint: string, 
   options: RequestInit = {}, 
   token?: string
 ): Promise<T> {
-  return authenticatedApiCall<T>(`/api/org-chart${endpoint}`, options, token);
+  const result = await authenticatedApiCall<T | undefined>(`/api/org-chart${endpoint}`, options, token);
+  // Normalize 204 → success envelope for delete helpers typed as { success: boolean }
+  if (result === undefined && options.method === 'DELETE') {
+    return { success: true } as T;
+  }
+  return result as T;
 }
 
 // Organizational Tier API functions
@@ -447,22 +502,31 @@ export const deletePermissionSet = async (
 export const assignEmployeeToPosition = async (
   data: AssignEmployeeData,
   token: string
-): Promise<{ success: boolean; data: EmployeePosition }> => {
+): Promise<EmployeePosition> => {
+  if (isSyntheticEmployeeRowId(data.userId) || isSyntheticEmployeeRowId(data.positionId)) {
+    throw new Error('Cannot assign using a synthetic member-* identifier');
+  }
   return apiCall('/employees/assign', {
     method: 'POST',
     body: JSON.stringify(data),
   }, token);
 };
 
+/**
+ * DELETE remove — identifiers in query string so Next.js API proxy can forward them
+ * (proxy does not forward DELETE bodies).
+ */
 export const removeEmployeeFromPosition = async (
   userId: string,
   positionId: string,
   businessId: string,
-  token: string
+  token: string,
+  rowId?: string | null
 ): Promise<{ success: boolean }> => {
-  return apiCall('/employees/remove', {
-    method: 'POST',
-    body: JSON.stringify({ userId, positionId, businessId }),
+  assertRemovablePlacement(userId, positionId, rowId);
+  const params = new URLSearchParams({ userId, positionId, businessId });
+  return apiCall(`/employees/remove?${params.toString()}`, {
+    method: 'DELETE',
   }, token);
 };
 
@@ -473,8 +537,19 @@ export const transferEmployee = async (
   businessId: string,
   transferredById: string,
   token: string,
+  /** Server transfer route field name (maps to new assignment startDate) */
   effectiveDate?: string
-): Promise<{ success: boolean; data: EmployeePosition }> => {
+): Promise<EmployeePosition> => {
+  if (
+    isSyntheticEmployeeRowId(userId) ||
+    isSyntheticEmployeeRowId(fromPositionId) ||
+    isSyntheticEmployeeRowId(toPositionId)
+  ) {
+    throw new Error('Cannot transfer using a synthetic member-* identifier');
+  }
+  if (!fromPositionId || !toPositionId) {
+    throw new Error('fromPositionId and toPositionId are required');
+  }
   return apiCall('/employees/transfer', {
     method: 'POST',
     body: JSON.stringify({ 

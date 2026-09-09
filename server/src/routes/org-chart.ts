@@ -90,6 +90,18 @@ const fromBody =
     return typeof v === 'string' ? v : undefined;
   };
 
+/** Body first, then query — supports DELETE via query when proxies omit DELETE bodies. */
+const fromBodyOrQuery =
+  (key: string) =>
+  (req: Request): string | undefined => {
+    const fromB = fromBody(key)(req);
+    if (fromB) return fromB;
+    const q = req.query[key];
+    if (typeof q === 'string' && q.length > 0) return q;
+    if (Array.isArray(q) && typeof q[0] === 'string' && q[0].length > 0) return q[0];
+    return undefined;
+  };
+
 // Apply authentication middleware to all routes
 router.use(authenticateJWT);
 
@@ -820,7 +832,38 @@ router.post(
     if (!authUser) {
       return res.status(401).json({ error: 'Unauthorized' });
     }
-    const assignmentData = { ...req.body, assignedById: authUser.id };
+    const body = req.body as Record<string, unknown>;
+    const businessId = typeof body.businessId === 'string' ? body.businessId : undefined;
+    const userId = typeof body.userId === 'string' ? body.userId : undefined;
+    const positionId = typeof body.positionId === 'string' ? body.positionId : undefined;
+    const rawStart = body.startDate;
+    const startDate =
+      rawStart instanceof Date
+        ? rawStart
+        : typeof rawStart === 'string' || typeof rawStart === 'number'
+          ? new Date(rawStart)
+          : undefined;
+    if (!businessId || !userId || !positionId) {
+      return res.status(400).json({
+        error: 'businessId, userId, and positionId are required',
+      });
+    }
+    if (!startDate || Number.isNaN(startDate.getTime())) {
+      return res.status(400).json({ error: 'startDate is required' });
+    }
+    const assignmentData = {
+      businessId,
+      userId,
+      positionId,
+      assignedById: authUser.id,
+      startDate,
+      endDate:
+        body.endDate instanceof Date
+          ? body.endDate
+          : typeof body.endDate === 'string' || typeof body.endDate === 'number'
+            ? new Date(body.endDate)
+            : undefined,
+    };
     const assignment = await employeeManagementService.assignEmployeeToPosition(assignmentData);
     void recordOrgChartEmployeeAssigned({
       actorUserId: authUser.id,
@@ -841,11 +884,12 @@ router.post(
 
 /**
  * DELETE /api/org-chart/employees/remove
- * Remove an employee from a position
+ * Remove an employee from a position.
+ * Accepts identifiers from JSON body (direct API) or query string (Next proxy-safe).
  */
 router.delete(
   '/employees/remove',
-  requireOrgChartAccess(fromBody('businessId'), 'manage'),
+  requireOrgChartAccess(fromBodyOrQuery('businessId'), 'manage'),
   checkOrgChartPolicy(POLICY_ACTIONS.ORGCHART_EMPLOYEE_ASSIGN),
   async (req, res) => {
   try {
@@ -853,7 +897,14 @@ router.delete(
     if (!authUser) {
       return res.status(401).json({ error: 'Unauthorized' });
     }
-    const { userId, positionId, businessId } = req.body;
+    const userId = fromBodyOrQuery('userId')(req);
+    const positionId = fromBodyOrQuery('positionId')(req);
+    const businessId = fromBodyOrQuery('businessId')(req);
+    if (!userId || !positionId || !businessId) {
+      return res.status(400).json({
+        error: 'userId, positionId, and businessId are required',
+      });
+    }
     await employeeManagementService.removeEmployeeFromPosition(userId, positionId, businessId);
     void recordOrgChartEmployeeRemoved({
       actorUserId: authUser.id,

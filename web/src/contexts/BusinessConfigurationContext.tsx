@@ -807,7 +807,7 @@ export function BusinessConfigurationProvider({ children, businessId }: Business
     if (!configuration) return null;
     
     const employeePosition = configuration.orgChart.employeePositions.find(
-      ep => ep.userId === userId && ep.isActive
+      ep => ep.userId === userId && ep.active === true && Boolean(ep.positionId)
     );
     
     if (!employeePosition) return null;

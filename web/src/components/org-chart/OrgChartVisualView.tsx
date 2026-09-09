@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
+import { useSession } from 'next-auth/react';
 import { Card, Button, Spinner } from 'shared/components';
 import { 
   ZoomIn, 
@@ -11,20 +12,15 @@ import {
   Users as UsersIcon,
   Building2
 } from 'lucide-react';
-import type { OrgChartStructure, Position as APIPosition } from '@/api/orgChart';
+import { updatePosition, type OrgChartStructure, type Position as APIPosition } from '@/api/orgChart';
 
-// Local Position type with additional fields for visual rendering
-type Position = APIPosition & {
-  reportsToId?: string | null;
-  employeePositions?: any[];
-  title?: string; // DB uses 'title' instead of 'name'
-};
+type Position = APIPosition;
 
 interface OrgChartVisualViewProps {
   orgChartData: OrgChartStructure;
   businessId: string;
   onUpdate: () => void;
-  onEditPosition?: (position: any) => void;
+  onEditPosition?: (position: Position) => void;
 }
 
 interface TreeNode {
@@ -46,6 +42,7 @@ export function OrgChartVisualView({
   onUpdate,
   onEditPosition 
 }: OrgChartVisualViewProps) {
+  const { data: session } = useSession();
   const [positions, setPositions] = useState<Position[]>([]);
   const [treeData, setTreeData] = useState<TreeNode | null>(null);
   const [zoom, setZoom] = useState(1);
@@ -204,21 +201,14 @@ export function OrgChartVisualView({
   };
 
   const updateReportingRelationship = async (positionId: string, newManagerId: string) => {
-    // This will call the API to update the position's reportsToId
-    // The actual API endpoint will be added shortly
-    const response = await fetch(`/api/org-chart/positions/${positionId}`, {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        reportsToId: newManagerId
-      })
-    });
-
-    if (!response.ok) {
-      throw new Error('Failed to update reporting relationship');
+    if (!session?.accessToken) {
+      throw new Error('Authentication required');
     }
+    await updatePosition(
+      positionId,
+      { reportsToId: newManagerId },
+      session.accessToken
+    );
   };
 
   // Render tree connections
@@ -263,7 +253,8 @@ export function OrgChartVisualView({
     const isHovered = hoveredNode === node.position.id;
     const isDragSource = draggingNode === node.position.id;
     const isDropTarget = dropTargetNode === node.position.id;
-    const employeeCount = node.position.employeePositions?.length || 0;
+    const employeeCount =
+      node.position.employeePositions?.filter((ep) => ep.active !== false).length || 0;
 
     // Determine stroke color based on state
     let strokeColor = '#e2e8f0';
@@ -323,7 +314,7 @@ export function OrgChartVisualView({
           className="font-semibold text-sm fill-gray-900"
           style={{ fontSize: '14px' }}
         >
-          {truncateText(node.position.name || node.position.title || 'Untitled', 20)}
+          {truncateText(node.position.title || 'Untitled', 20)}
         </text>
 
         {/* Department */}

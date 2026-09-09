@@ -61,6 +61,55 @@ describe('EmployeeManagementService — identity authority', () => {
     });
   });
 
+  describe('assignEmployeeToPosition', () => {
+    it('reactivates soft-removed row for same user/position/business (unique constraint)', async () => {
+      vi.spyOn(prisma.position, 'findUnique').mockResolvedValue({
+        id: 'pos-1',
+        businessId: 'biz-1',
+        title: 'Role',
+        maxOccupants: 2,
+        employeePositions: [],
+      } as never);
+      vi.spyOn(prisma.businessMember, 'findUnique').mockResolvedValue({
+        isActive: true,
+      } as never);
+      const findFirst = vi.spyOn(prisma.employeePosition, 'findFirst');
+      findFirst
+        .mockResolvedValueOnce(null) // no active
+        .mockResolvedValueOnce({ id: 'ep-hist', active: false } as never); // inactive
+      const updateSpy = vi.spyOn(prisma.employeePosition, 'update').mockResolvedValue({
+        id: 'ep-hist',
+        active: true,
+        userId: 'user-1',
+        positionId: 'pos-1',
+      } as never);
+      const createSpy = vi.spyOn(prisma.employeePosition, 'create');
+
+      const startDate = new Date('2026-03-01T00:00:00.000Z');
+      const result = await service.assignEmployeeToPosition({
+        userId: 'user-1',
+        positionId: 'pos-1',
+        businessId: 'biz-1',
+        assignedById: 'admin-1',
+        startDate,
+      });
+
+      expect(result.id).toBe('ep-hist');
+      expect(updateSpy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          where: { id: 'ep-hist' },
+          data: expect.objectContaining({
+            active: true,
+            startDate,
+            endDate: null,
+            assignedById: 'admin-1',
+          }),
+        })
+      );
+      expect(createSpy).not.toHaveBeenCalled();
+    });
+  });
+
   describe('importEmployeesFromCSV', () => {
     it('creates placement via assignEmployeeToPosition for new rows', async () => {
       const assignSpy = vi.spyOn(service, 'assignEmployeeToPosition').mockResolvedValue({

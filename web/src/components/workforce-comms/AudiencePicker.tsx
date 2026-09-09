@@ -55,12 +55,12 @@ export default function AudiencePicker({
           getBusinessEmployees(businessId, token),
         ]);
         setDepartments((deptData.data ?? []).map((d) => ({ id: d.id, name: d.name })));
-        setPositions((posData.data ?? []).map((p) => ({ id: p.id, name: p.name })));
+        setPositions((posData.data ?? []).map((p) => ({ id: p.id, name: p.title })));
         setEmployees(
           (empData.data ?? []).map((e) => ({
             id: e.userId,
             employeePositionId: e.id,
-            name: e.position?.name ? `${e.position.name}` : e.userId.slice(0, 8),
+            name: e.position?.title ? `${e.position.title}` : e.userId.slice(0, 8),
           }))
         );
       } catch {
