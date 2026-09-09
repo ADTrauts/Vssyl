@@ -29,6 +29,7 @@ Complement (not replace) `memory-bank/systemPatterns.md` for product-level archi
 | **Platform standards** | [VSSYL_PLATFORM_STANDARDS_AND_MODULE_CONTRACT.md](./VSSYL_PLATFORM_STANDARDS_AND_MODULE_CONTRACT.md) | `platform-standards.mdc` |
 | **Application lifecycle** | [APPLICATION_LIFECYCLE.md](./APPLICATION_LIFECYCLE.md) | `module-development.mdc` |
 | **Application participation composition** | [APPLICATION_PARTICIPATION_COMPOSITION.md](./APPLICATION_PARTICIPATION_COMPOSITION.md) | — |
+| **Business participant composition** | [BUSINESS_PARTICIPANT_COMPOSITION.md](./BUSINESS_PARTICIPANT_COMPOSITION.md) | — |
 | **Navigation discovery** | [NAVIGATION_WORKSPACE_ARCHITECTURE_DISCOVERY.md](./NAVIGATION_WORKSPACE_ARCHITECTURE_DISCOVERY.md) | — |
 | Policy Engine | [POLICY_ENGINE.md](./POLICY_ENGINE.md) | `policy-engine.mdc` |
 | Domain Events | [DOMAIN_EVENTS.md](./DOMAIN_EVENTS.md) | `domain-events.mdc` |

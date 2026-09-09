@@ -45,6 +45,7 @@ Read documents in this order when resolving conflicts:
 | Where users navigate | [Navigation & Workspace](#2-navigation--workspace) |
 | How apps install and appear | [Applications & Marketplace](#3-applications--marketplace) |
 | How apps participate in platform capabilities | [`APPLICATION_PARTICIPATION_COMPOSITION.md`](./APPLICATION_PARTICIPATION_COMPOSITION.md) |
+| How Business identity / membership / placement / AuthZ compose | [`BUSINESS_PARTICIPANT_COMPOSITION.md`](./BUSINESS_PARTICIPANT_COMPOSITION.md) |
 | AI and Digital Life Twin | [AI Platform](#4-ai-platform) |
 | Finding content | [Search & Discovery](#5-search--discovery) |
 | A specific product module | [Product Modules](#6-product-modules) |
@@ -101,6 +102,7 @@ Platform-wide constitutional framework, kernel capabilities, and cross-cutting s
 | **Relationship Framework** | [`RELATIONSHIP_FRAMEWORK_INDEX.md`](./RELATIONSHIP_FRAMEWORK_INDEX.md) | — | Active index |
 | **Reference Module Catalog** | [`REFERENCE_MODULE_CATALOG.md`](./REFERENCE_MODULE_CATALOG.md) | — | Active |
 | **Application participation composition** | [`APPLICATION_PARTICIPATION_COMPOSITION.md`](./APPLICATION_PARTICIPATION_COMPOSITION.md) | — | Navigation / composition reference (not subsystem) |
+| **Business participant composition** | [`BUSINESS_PARTICIPANT_COMPOSITION.md`](./BUSINESS_PARTICIPANT_COMPOSITION.md) | — | Identity / membership / placement / AuthZ composition |
 | **Platform Portfolio** | [`../platform-portfolio/PLATFORM_PORTFOLIO_REFRESH_2026.md`](../platform-portfolio/PLATFORM_PORTFOLIO_REFRESH_2026.md) | — | Discovery complete |
 
 **Supporting:** [`../platform-kernel/`](../platform-kernel/) · [`../context-graph/`](../context-graph/) · [`../platform-adoption/`](../platform-adoption/)
@@ -235,6 +237,7 @@ Business domain modules, administration, and account platform.
 | **Scheduling** | [`audits/SCHEDULING_OPERATION_MATRIX.md`](./audits/SCHEDULING_OPERATION_MATRIX.md) | L3 CwF | BO Ref Candidate #6 |
 | **Workforce Comms** | [`audits/WORKFORCE_COMMUNICATIONS_OPERATION_MATRIX.md`](./audits/WORKFORCE_COMMUNICATIONS_OPERATION_MATRIX.md) | L3 CwF | BO Ref Candidate #7 |
 | **Business Administration** | [`../business-administration/BUSINESS_ADMINISTRATION_REFERENCE_STATUS_RECORD.md`](../business-administration/BUSINESS_ADMINISTRATION_REFERENCE_STATUS_RECORD.md) | L3 | #OC-1/2/3 |
+| **Business participant composition** | [`BUSINESS_PARTICIPANT_COMPOSITION.md`](./BUSINESS_PARTICIPANT_COMPOSITION.md) | — | Composition / navigation (not a subsystem) |
 | **Account Platform** | [`../account-platform/ACCOUNT_PLATFORM_STATUS_RECORD.md`](../account-platform/ACCOUNT_PLATFORM_STATUS_RECORD.md) | L3 CwF | Program archived |
 | **Place dual-surface** | [`PLACE_PATTERN_GUIDE.md`](./PLACE_PATTERN_GUIDE.md) | L3 | Consumer + publisher |
 | **Place domain model** | [`PLACE_DOMAIN_MODEL.md`](./PLACE_DOMAIN_MODEL.md) | — | Locked |

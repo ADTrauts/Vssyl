@@ -14,7 +14,26 @@ Centralized authorization lives under **`server/src/auth/`**. Discoverability re
 
 Frontend hiding of modules or controls is **not** authorization. Visible UI never guarantees permission to execute. V_Link membership and workspace visibility are also **not** AuthZ by themselves.
 
-**Role-aware experience** (Product Definition): broader than permission gating — may use role, responsibility, membership, org position, preferences, and context to shape what is emphasized. Detailed role-aware UX architecture is **future product/UX work**. Architecture rule for now: presentation inputs may inform UX; they must not replace Policy Engine / server AuthZ. Composition: [`APPLICATION_PARTICIPATION_COMPOSITION.md`](./APPLICATION_PARTICIPATION_COMPOSITION.md).
+**Role-aware experience** (Product Definition): broader than permission gating — may use role, responsibility, membership, org position, preferences, and context to shape what is emphasized. Detailed role-aware UX architecture is **future product/UX work**. Architecture rule for now: presentation inputs may inform UX; they must not replace Policy Engine / server AuthZ. Composition: [`APPLICATION_PARTICIPATION_COMPOSITION.md`](./APPLICATION_PARTICIPATION_COMPOSITION.md). Business participant layers: [`BUSINESS_PARTICIPANT_COMPOSITION.md`](./BUSINESS_PARTICIPANT_COMPOSITION.md).
+
+### Organizational facts vs authorization (do not conflate)
+
+| Kind | Role relative to PE |
+|------|---------------------|
+| **Business membership** (`BusinessMember`) | Permanent **domain fact**; routinely feeds PE business-scoped decisions |
+| **BusinessRole** / `canManage` / `canInvite` | Permanent **membership facts**; feed PE where policies encode them (`canBilling` is stored but **not** currently used by PE billing policies) |
+| **Org structure** (tier / department / position / `EmployeePosition` / `reportsTo`) | Structural facts owned by Business Administration. May be **policy inputs only when a named policy explicitly needs them** (example today: HR manager path may use occupied position with `directReports`). They are **not** automatically permissions. |
+| **Org-chart JSON permissions** (`permissionService`, Position/Tier/Department permission JSON, PermissionSet as parallel AuthZ) | **Transitional / planned deprecation** — parallel authorization path; must not remain a competing permanent AuthZ authority. Do not expand new protected behavior onto this path. |
+| **`BusinessConfigurationContext` permission / module maps** | **Presentation** only — never server authorization |
+
+**Direction:** Business Administration may remain the **configuration surface** for access/policy. Policy Engine remains the **authorization owner**. A future BA permissions UI may configure PE-backed policy; migration is not completed by documentation alone.
+
+**Anti-collapse rules:**
+
+- Org **position** ≠ platform/business authorization by itself  
+- **BusinessRole** ≠ org chart seat  
+- Occupying a managerial reporting seat ≠ administer-all-of-Vssyl  
+- Hiding an application/control ≠ deny of a protected API  
 
 ## v1 scope
 
@@ -158,6 +177,8 @@ Do not remove legacy checks before policy implements the action.
 - Adding new actions to routes **without** extending `policyActions.ts` and tests (v1 will deny).
 - Skipping **`policy_deny`** logging by catching and swallowing `PolicyDeniedError` without structured log.
 - Treating **UI role maps / module visibility / workspace chrome** as authorization.
+- Treating **org-chart JSON permissions / `permissionService` inheritance** as the permanent AuthZ SoT (transitional only; PE is the target).
+- Treating **department/position `*Modules` fields** as application installation authority (lifecycle owns install).
 
 ## Review checklist
 
@@ -178,5 +199,5 @@ Do not remove legacy checks before policy implements the action.
 - Incremental migration of business/member routes; remove dual enforcement when complete
 - Drive: `file:restore`, `hardDeleteFile`, `reorderFiles`, permission revoke/update routes, global trash restore; `file.moved` / `folder.created` domain events; business AI/SSO settings routes if separate from `updateBusiness`
 
-**Last updated:** 2026-09-08 (AuthZ vs presentation + role-aware experience boundary — Phase 3B)
+**Last updated:** 2026-09-08 (Business participant org facts vs AuthZ — Phase 2 reconciliation)
 

@@ -2,8 +2,8 @@
 
 **Phase:** Business Operations Phase 0B — Discovery only  
 **Status:** Canonical HR ↔ Org Chart **ownership** reference  
-**Last updated:** 2026-06-14  
-**Companion:** [WORKFORCE_IDENTITY_ARCHITECTURE.md](./WORKFORCE_IDENTITY_ARCHITECTURE.md) (structural identity — not ownership per capability alone)  
+**Last updated:** 2026-09-08 (Phase 2 — approval hierarchy status corrected; manager senses distinguished)  
+**Companion:** [WORKFORCE_IDENTITY_ARCHITECTURE.md](./WORKFORCE_IDENTITY_ARCHITECTURE.md) (structural identity — not ownership per capability alone) · [`../architecture/BUSINESS_PARTICIPANT_COMPOSITION.md`](../architecture/BUSINESS_PARTICIPANT_COMPOSITION.md)  
 **Baseline:** [WORKFORCE_DOMAIN_BOUNDARY_ANALYSIS.md](./WORKFORCE_DOMAIN_BOUNDARY_ANALYSIS.md) (Phase 0A — scheduling rows not re-opened)
 
 ---
@@ -41,7 +41,8 @@
 | **Department** | Org-chart-owned | `Department`; `/api/org-chart/departments` | Org chart | `business.prisma`, `orgChartService` | HR reads for filters only |
 | **Position (job slot)** | Org-chart-owned | `Position`; `/api/org-chart/positions` | Org chart | `org-chart.prisma` | Includes scheduling fields on same model |
 | **Reporting structure** | Org-chart-owned | `Position.reportsToId`; org chart visual | Org chart | `org-chart.prisma`, `OrgChartVisualView.tsx` | |
-| **Manager relationship (runtime)** | Org-chart-owned | `resolveManagerContext` uses `reportsToId` | Org chart | `hrController.ts` L375–432 | `ManagerApprovalHierarchy` unused |
+| **Manager relationship (runtime people manager)** | Org-chart-owned | `resolveManagerContext` uses `reportsToId` occupancy | Org chart | HR services / `reportsTo` | Distinct from BusinessRole and approval hierarchy |
+| **Approval hierarchy** | BA-hosted API + HR schema | `ManagerApprovalHierarchy`; `/api/org-chart/approval-hierarchy/*` | BA API + HR schema | `approvalHierarchyService`; PE dual; no admin UI | Workflow approval authority ≠ structural reporting |
 | **Employment status** | HR-owned | `EmploymentStatus` on `EmployeeHRProfile` | HR | `terminateEmployee` | Termination also deactivates EP |
 | **Certifications** | Unknown | `OnboardingTaskType.TRAINING` enum only | Unknown | `onboarding.prisma` | No certifications registry |
 | **Skills** | NOT PRESENT | — | Unknown | Grep: no skills model | |
@@ -111,7 +112,7 @@ flowchart TB
 | Employee without HR profile | Valid state | Org assign without `createEmployee` | **Low** — by design |
 | HR profile without org assign | Invalid | `createEmployee` requires EP | — |
 | Terminate vs org remove | Asymmetric lifecycle | HR terminate vs `removeEmployeeFromPosition` | **Medium** |
-| `ManagerApprovalHierarchy` vs `reportsToId` | Unused schema | `core.prisma` vs `resolveManagerContext` | **Low** — dead schema |
+| `ManagerApprovalHierarchy` vs `reportsToId` | Different concepts | Approval API implemented; people manager uses `reportsTo` | **Low** if consumers pick the right authority; **Medium** if conflated as one “manager” |
 | Scheduling fields on `Position` | Cross-domain blur | `org-chart.prisma` L42–50 | **Low** — org design carries scheduling config |
 | Org employee list includes non-position members | List semantics | `employeeManagementService` fake `member-*` ids | **Medium** — HR directory ≠ org list |
 

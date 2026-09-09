@@ -7,7 +7,7 @@
 **Source of Truth for:** Application participation composition and navigation only  
 **Supporting to:** Per-concern canonical owners listed in §9
 
-> **This document does not own** Search, AI, Dashboard, V_Link, Policy Engine, lifecycle, Analytics, realtime semantics, external-system interoperability, or partner pipeline contracts. It explains how those existing contracts compose when an application participates in the platform.
+> **This document does not own** Search, AI, Dashboard, V_Link, Policy Engine, lifecycle, Analytics, realtime semantics, external-system interoperability, partner pipeline contracts, or Business participant identity/membership/placement composition. It explains how application participation contracts compose when an application participates in the platform. For Business participant layers, see [`BUSINESS_PARTICIPANT_COMPOSITION.md`](./BUSINESS_PARTICIPANT_COMPOSITION.md).
 
 **Product language (not architecture law):** [`docs/product/VSSYL_PRODUCT_DEFINITION_AND_CANONICAL_LANGUAGE.md`](../product/VSSYL_PRODUCT_DEFINITION_AND_CANONICAL_LANGUAGE.md)  
 **Evidence baselines:** [Phase 1](./audits/APPLICATION_PARTICIPATION_TRACE_PHASE_1.md) · [Phase 2](./audits/APPLICATION_PARTICIPATION_MATRIX_PHASE_2.md) · [Phase 3B](./audits/APPLICATION_PARTICIPATION_CONTRACT_PHASE_3B.md)
@@ -198,6 +198,7 @@ The consuming capability **never** becomes system of record.
 | Realtime semantics | [`REALTIME.md`](./REALTIME.md) |
 | External-system interoperability | [`EXTERNAL_SYSTEM_INTEROPERABILITY.md`](./EXTERNAL_SYSTEM_INTEROPERABILITY.md) |
 | Product language | [`../product/VSSYL_PRODUCT_DEFINITION_AND_CANONICAL_LANGUAGE.md`](../product/VSSYL_PRODUCT_DEFINITION_AND_CANONICAL_LANGUAGE.md) |
+| Business participant composition | [`BUSINESS_PARTICIPANT_COMPOSITION.md`](./BUSINESS_PARTICIPANT_COMPOSITION.md) |
 | Participation evidence | [Phase 1](./audits/APPLICATION_PARTICIPATION_TRACE_PHASE_1.md), [Phase 2](./audits/APPLICATION_PARTICIPATION_MATRIX_PHASE_2.md), [Phase 3B](./audits/APPLICATION_PARTICIPATION_CONTRACT_PHASE_3B.md) |
 
 ---
@@ -211,6 +212,7 @@ The consuming capability **never** becomes system of record.
 - **Search** bypassing authorization / visibility
 - Treating **V_Link membership** as permission to content
 - Treating **role / UI visibility / module chrome** as server authorization
+- Treating **org position / department `*Modules` JSON** as application installation authority (lifecycle owns install; see [`BUSINESS_PARTICIPANT_COMPOSITION.md`](./BUSINESS_PARTICIPANT_COMPOSITION.md))
 - Inventing another platform layer to “unify” existing contracts
 - Requiring every application to implement every capability
 - Confusing **partner Vssyl modules** with **external systems**
@@ -236,4 +238,4 @@ Do **not** create a Participation Engine, AnalyticsProvider, DashboardProvider r
 
 ---
 
-**Last updated:** 2026-09-08 (Phase 3B pointers)
+**Last updated:** 2026-09-08 (Phase 2 — Business participant cross-link; org module JSON ≠ install)

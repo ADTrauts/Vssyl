@@ -2,24 +2,22 @@
 
 **Phase:** Business Operations Phase 0B — Discovery only  
 **Status:** Canonical **workforce identity structure** reference for HR, Scheduling, Workforce Communications (future), Calendar, Analytics, AI, and Business Operations Strategic Architecture  
-**Last updated:** 2026-06-14  
-**Companion:** [HR_ORG_CHART_BOUNDARY_ANALYSIS.md](./HR_ORG_CHART_BOUNDARY_ANALYSIS.md) (ownership per capability)  
+**Last updated:** 2026-09-08 (Phase 2 — membership without placement clarified vs workforce ops identity)  
+**Companion:** [HR_ORG_CHART_BOUNDARY_ANALYSIS.md](./HR_ORG_CHART_BOUNDARY_ANALYSIS.md) (ownership per capability) · [`../architecture/BUSINESS_PARTICIPANT_COMPOSITION.md`](../architecture/BUSINESS_PARTICIPANT_COMPOSITION.md)  
 **Baseline:** [WORKFORCE_DOMAIN_BOUNDARY_ANALYSIS.md](./WORKFORCE_DOMAIN_BOUNDARY_ANALYSIS.md) (Phase 0A capability ownership)
-
----
-
-## Executive summary
 
 ### What is workforce identity in Vssyl?
 
 Workforce identity is **not** a single table. It is a **layered stack**:
 
 1. **Platform user** (`User`) — authentication identity  
-2. **Business membership** (`BusinessMember`) — access to a business workspace  
-3. **Workforce placement** (`EmployeePosition`) — **authoritative answer to "who is an employee here?"**  
+2. **Business membership** (`BusinessMember`) — participation in a business (roster / access gate)  
+3. **Workforce placement** (`EmployeePosition`) — **authoritative answer to "who is placed in the workforce hierarchy here?"** for operational workforce features  
 4. **HR employment record** (`EmployeeHRProfile`) — optional extension with hire/status/HR workflows  
 
-**An employee in workforce/scheduling/PTO terms is a person with an active `EmployeePosition` in a business.** HR profile enriches that placement but does not define it.
+**Business participation vs workforce placement:** Membership **without** an `EmployeePosition` is a **valid** Business participant state (owner/admin not on the chart, contractor, occasional participant, etc.). Do not invent fake positions to force placement. See [`../architecture/BUSINESS_PARTICIPANT_COMPOSITION.md`](../architecture/BUSINESS_PARTICIPANT_COMPOSITION.md).
+
+**Operational “employee” meaning:** For HR/Scheduling/PTO and similar workforce operations, an employee is typically a person with an **active** `EmployeePosition` in a business. HR profile enriches that placement but does not define it. That domain meaning does **not** redefine Business membership.
 
 This model is **validated by repository evidence** — not assumed.
 

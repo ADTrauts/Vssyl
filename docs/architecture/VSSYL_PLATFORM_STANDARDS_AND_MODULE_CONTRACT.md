@@ -392,7 +392,7 @@ All privileged mutations flow through **canonical services**. Controllers, AI to
 | Trash (soft/restore/permanent) | `trashController.ts` + per-module trash handlers | Aggregates cross-module trash |
 | V_Link CRUD + membership | `vlinkService.ts`, `vlinkPermissionService.ts` | Separate from entity content access |
 | Authorization | `policyEngine.ts` | Sole gate for new privileged actions |
-| Org-chart templates | `permissionService.ts` | **Partial** — must become PE adapter |
+| Org-chart templates / JSON RBAC | `permissionService.ts` | **Transitional** — must become PE adapter / retire as competing AuthZ ([`BUSINESS_PARTICIPANT_COMPOSITION.md`](./BUSINESS_PARTICIPANT_COMPOSITION.md), [`POLICY_ENGINE.md`](./POLICY_ENGINE.md)) |
 | Notifications | `notificationService.ts` | All user-facing notifications |
 | Module activity | `moduleActivityService.ts` | Feed events only |
 | Domain events | `emitDomainEvent.ts` via services | After successful mutation |
